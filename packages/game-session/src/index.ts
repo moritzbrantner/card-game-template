@@ -1,11 +1,14 @@
 import type {
   GameMove,
+  MatchReplay,
+  MatchReplayAnalysis,
   MatchExecutionMode,
   MatchResult,
   MatchState,
   PlayerId,
   PlayerProfile,
 } from '@repo/game-contracts';
+import { createMatchReplay, summarizeMatchReplay } from '@repo/game-contracts';
 import { createGameEngine, type GameAdapter } from '@repo/game-engine';
 
 export type SessionParticipant = PlayerProfile & {
@@ -65,8 +68,44 @@ export type LocalGameSession<TState, TMove extends GameMove, TView> = {
   subscribe(listener: (snapshot: LocalGameSessionSnapshot<TState, TMove, TView>) => void): () => void;
 };
 
+export type ServerGameSessionSnapshot<TState, TMove extends GameMove> = {
+  analysis: MatchReplayAnalysis;
+  history: readonly MatchState<TState>[];
+  legalMoves: readonly TMove[];
+  match: MatchState<TState>;
+  matchResult: MatchResult | null;
+  participants: readonly PlayerProfile[];
+  replay: MatchReplay<TState, TMove>;
+};
+
+export type ServerGameSessionPersistence<TState, TMove extends GameMove> = {
+  save(snapshot: ServerGameSessionSnapshot<TState, TMove>): Promise<void> | void;
+};
+
+export type CreateServerGameSessionInput<TSetup, TState, TMove extends GameMove> = {
+  adapter: GameAdapter<TSetup, TState, TMove>;
+  executionMode?: Extract<MatchExecutionMode, 'server-authoritative'>;
+  matchId: string;
+  now?: () => string;
+  participants: readonly PlayerProfile[];
+  persistence?: ServerGameSessionPersistence<TState, TMove>;
+  setup: TSetup;
+};
+
+export type ServerGameSession<TState, TMove extends GameMove> = {
+  getAnalysis(): MatchReplayAnalysis;
+  getReplay(): MatchReplay<TState, TMove>;
+  getSnapshot(): ServerGameSessionSnapshot<TState, TMove>;
+  submitMove(move: TMove): void;
+  subscribe(listener: (snapshot: ServerGameSessionSnapshot<TState, TMove>) => void): () => void;
+};
+
 function cloneState<TState>(state: MatchState<TState>): MatchState<TState> {
   return structuredClone(state);
+}
+
+function cloneValue<TValue>(value: TValue): TValue {
+  return structuredClone(value);
 }
 
 export function createLocalGameSession<TSetup, TState, TMove extends GameMove, TView>(
@@ -228,6 +267,137 @@ export function createLocalGameSession<TSetup, TState, TMove extends GameMove, T
     submitMove(move) {
       pushState(engine.submitMove(currentState, move));
       processBots();
+      emit();
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}
+
+export function reconstructMatchHistoryFromReplay<TSetup, TState, TMove extends GameMove>(input: {
+  adapter: GameAdapter<TSetup, TState, TMove>;
+  replay: MatchReplay<TState, TMove>;
+}): MatchState<TState>[] {
+  const engine = createGameEngine(input.adapter);
+  const history = [cloneState(input.replay.initialState)];
+  let currentState = cloneState(input.replay.initialState);
+
+  for (const acceptedMove of input.replay.acceptedMoves) {
+    currentState = engine.submitMove(currentState, acceptedMove.move);
+    history.push(cloneState(currentState));
+  }
+
+  return history;
+}
+
+export function createServerGameSession<TSetup, TState, TMove extends GameMove>(
+  input: CreateServerGameSessionInput<TSetup, TState, TMove>,
+): ServerGameSession<TState, TMove> {
+  const engine = createGameEngine(input.adapter);
+  const listeners = new Set<(snapshot: ServerGameSessionSnapshot<TState, TMove>) => void>();
+  const orderedParticipants = [...input.participants].sort((left, right) => left.seat - right.seat);
+  const now = input.now ?? (() => new Date().toISOString());
+  const executionMode = input.executionMode ?? 'server-authoritative';
+  const startedAt = now();
+
+  let currentState = engine.startMatch({
+    matchId: input.matchId,
+    players: orderedParticipants,
+    setup: input.setup,
+    executionMode,
+  });
+  let history: MatchState<TState>[] = [cloneState(currentState)];
+  let matchResult = engine.finalizeMatch(currentState);
+
+  if (matchResult) {
+    matchResult = {
+      ...matchResult,
+      finishedAt: startedAt,
+    };
+  }
+
+  let replay = createMatchReplay<TState, TMove>({
+    startedAt,
+    initialState: cloneState(currentState),
+    latestState: cloneState(currentState),
+    finishedAt: matchResult?.finishedAt ?? null,
+    result: cloneValue(matchResult),
+  });
+
+  function getSnapshot(): ServerGameSessionSnapshot<TState, TMove> {
+    const legalMoves = matchResult ? [] : input.adapter.listLegalMoves(currentState);
+
+    return {
+      analysis: summarizeMatchReplay(replay),
+      history,
+      legalMoves,
+      match: currentState,
+      matchResult,
+      participants: orderedParticipants,
+      replay: cloneValue(replay),
+    };
+  }
+
+  function persistSnapshot(snapshot: ServerGameSessionSnapshot<TState, TMove>) {
+    void input.persistence?.save(snapshot);
+  }
+
+  function emit() {
+    const snapshot = getSnapshot();
+
+    for (const listener of listeners) {
+      listener(snapshot);
+    }
+
+    persistSnapshot(snapshot);
+  }
+
+  persistSnapshot(getSnapshot());
+
+  return {
+    getAnalysis() {
+      return summarizeMatchReplay(replay);
+    },
+    getReplay() {
+      return cloneValue(replay);
+    },
+    getSnapshot,
+    submitMove(move) {
+      if (matchResult) {
+        throw new Error(`Match ${currentState.matchId} is already complete`);
+      }
+
+      const acceptedAt = now();
+      const nextState = engine.submitMove(currentState, move);
+      const finalizedResult = engine.finalizeMatch(nextState);
+
+      currentState = nextState;
+      history = [...history, cloneState(nextState)];
+      matchResult = finalizedResult
+        ? {
+            ...finalizedResult,
+            finishedAt: acceptedAt,
+          }
+        : null;
+      replay = {
+        ...replay,
+        latestState: cloneState(nextState),
+        acceptedMoves: [
+          ...replay.acceptedMoves,
+          {
+            sequence: replay.acceptedMoves.length + 1,
+            acceptedAt,
+            move: cloneValue(move),
+          },
+        ],
+        finishedAt: matchResult?.finishedAt ?? null,
+        result: cloneValue(matchResult),
+      };
+
       emit();
     },
     subscribe(listener) {

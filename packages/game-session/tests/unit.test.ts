@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import type { GameMove, MatchState } from '../../game-contracts/src/index.ts';
-import { createLocalGameSession } from '../src/index.ts';
+import {
+  createLocalGameSession,
+  createServerGameSession,
+  reconstructMatchHistoryFromReplay,
+} from '../src/index.ts';
 
 type CounterState = {
   total: number;
@@ -152,4 +156,108 @@ test('local session hides the next hotseat hand until confirmation', () => {
 
   assert.equal(hotseatSession.getSnapshot().viewerPlayerId, 'p2');
   assert.equal(hotseatSession.getSnapshot().pendingHotseatPlayerId, null);
+});
+
+test('server session records accepted moves and reconstructs replay history', () => {
+  const timestamps = [
+    '2026-04-17T12:00:00.000Z',
+    '2026-04-17T12:00:01.000Z',
+    '2026-04-17T12:00:02.000Z',
+    '2026-04-17T12:00:03.000Z',
+  ];
+
+  const session = createServerGameSession({
+    adapter: counterAdapter,
+    matchId: 'server-session-1',
+    participants: participants.slice(0, 2),
+    setup: { target: 2 },
+    now() {
+      return timestamps.shift() ?? '2026-04-17T12:00:59.000Z';
+    },
+  });
+
+  assert.equal(session.getSnapshot().replay.startedAt, '2026-04-17T12:00:00.000Z');
+  assert.deepEqual(session.getSnapshot().replay.acceptedMoves, []);
+
+  session.submitMove({
+    playerId: 'p1',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:00:00.500Z',
+    payload: { amount: 1 },
+  });
+  session.submitMove({
+    playerId: 'p2',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:00:01.500Z',
+    payload: { amount: 1 },
+  });
+  session.submitMove({
+    playerId: 'p1',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:00:02.500Z',
+    payload: { amount: 1 },
+  });
+
+  const snapshot = session.getSnapshot();
+
+  assert.equal(snapshot.match.state.total, 3);
+  assert.equal(snapshot.matchResult?.winnerIds[0], 'p1');
+  assert.deepEqual(
+    snapshot.replay.acceptedMoves.map((entry) => ({
+      sequence: entry.sequence,
+      acceptedAt: entry.acceptedAt,
+      playerId: entry.move.playerId,
+    })),
+    [
+      { sequence: 1, acceptedAt: '2026-04-17T12:00:01.000Z', playerId: 'p1' },
+      { sequence: 2, acceptedAt: '2026-04-17T12:00:02.000Z', playerId: 'p2' },
+      { sequence: 3, acceptedAt: '2026-04-17T12:00:03.000Z', playerId: 'p1' },
+    ],
+  );
+  assert.deepEqual(
+    reconstructMatchHistoryFromReplay({
+      adapter: counterAdapter,
+      replay: snapshot.replay,
+    }).map((state) => state.state.total),
+    [0, 1, 2, 3],
+  );
+  assert.deepEqual(snapshot.analysis.players, [
+    { playerId: 'p1', displayName: 'Alice', movesAccepted: 2 },
+    { playerId: 'p2', displayName: 'Bot Bob', movesAccepted: 1 },
+  ]);
+  assert.equal(snapshot.analysis.durationMs, 3000);
+});
+
+test('server session persists the opening snapshot so progression tracking starts at match creation', () => {
+  const savedSnapshots: Array<{ acceptedMoveCount: number; startedAt: string }> = [];
+
+  const session = createServerGameSession({
+    adapter: counterAdapter,
+    matchId: 'server-session-2',
+    participants: participants.slice(0, 2),
+    setup: { target: 2 },
+    now() {
+      return '2026-04-17T12:10:00.000Z';
+    },
+    persistence: {
+      save(snapshot) {
+        savedSnapshots.push({
+          acceptedMoveCount: snapshot.analysis.acceptedMoveCount,
+          startedAt: snapshot.replay.startedAt,
+        });
+      },
+    },
+  });
+
+  session.submitMove({
+    playerId: 'p1',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:10:00.500Z',
+    payload: { amount: 1 },
+  });
+
+  assert.deepEqual(savedSnapshots, [
+    { acceptedMoveCount: 0, startedAt: '2026-04-17T12:10:00.000Z' },
+    { acceptedMoveCount: 1, startedAt: '2026-04-17T12:10:00.000Z' },
+  ]);
 });
