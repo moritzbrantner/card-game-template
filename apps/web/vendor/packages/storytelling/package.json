@@ -1,0 +1,70 @@
+{
+  "name": "@moritzbrantner/storytelling",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moritzbrantner/platform-packages.git",
+    "directory": "packages/storytelling"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./remotion": {
+      "types": "./dist/remotion.d.ts",
+      "import": "./dist/remotion.js"
+    },
+    "./three": {
+      "types": "./dist/three.d.ts",
+      "import": "./dist/three.js"
+    }
+  },
+  "peerDependencies": {
+    "@react-three/fiber": "^9.4.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "^4.0.379",
+    "three": "^0.180.0"
+  },
+  "peerDependenciesMeta": {
+    "@react-three/fiber": {
+      "optional": true
+    },
+    "remotion": {
+      "optional": true
+    },
+    "three": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "motion": "^12.35.0"
+  },
+  "devDependencies": {
+    "@react-three/fiber": "^9.4.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "remotion": "^4.0.379",
+    "three": "^0.180.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/remotion.tsx src/three.tsx --format esm --dts --clean --out-dir dist",
+    "lint": "node ../../scripts/verify-package-imports.mjs ./src @/ next/ next-intl",
+    "check-types": "tsc --noEmit",
+    "test": "cd ../.. && vitest run packages/storytelling/tests/storytelling.test.tsx"
+  }
+}

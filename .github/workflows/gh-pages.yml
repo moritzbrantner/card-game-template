@@ -1,0 +1,104 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: ['staging']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.12
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build GitHub Pages artifact
+        env:
+          AUTH_SECRET: 0123456789abcdef0123456789abcdef
+          AUTH_URL: https://example.invalid
+          NEXTAUTH_URL: https://example.invalid
+          GITHUB_PAGES: 'true'
+          VITE_GITHUB_PAGES: 'true'
+          GITHUB_PAGES_BASE_PATH: /${{ github.event.repository.name }}/
+        run: bun run --filter next-template build
+
+      - name: Add GitHub Pages fallbacks
+        run: |
+          set -euo pipefail
+
+          output_dir="apps/web/dist/client"
+          base_path="/${{ github.event.repository.name }}"
+
+          if [[ -f "$output_dir/_shell.html" ]]; then
+            shell_src="$output_dir/_shell.html"
+          elif [[ -f "$output_dir/index.html" ]]; then
+            shell_src="$output_dir/index.html"
+          else
+            echo "No SPA shell found in $output_dir" >&2
+            ls -R "$output_dir" >&2 || true
+            exit 1
+          fi
+
+          # 404.html must be the real app shell for deep links on GitHub Pages
+          cp "$shell_src" "$output_dir/404.html"
+
+          # Root index redirects to the default locale
+          cat > "$output_dir/index.html" <<EOF
+          <!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <meta http-equiv="refresh" content="0; url=${base_path}/en/" />
+              <title>Redirecting...</title>
+              <script>
+                window.location.replace('${base_path}/en/');
+              </script>
+            </head>
+            <body>
+              <p><a href="${base_path}/en/">Continue to the app</a></p>
+            </body>
+          </html>
+          EOF
+
+          touch "$output_dir/.nojekyll"
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: apps/web/dist/client
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v5

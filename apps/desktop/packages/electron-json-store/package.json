@@ -1,0 +1,12 @@
+{
+  "name": "@moritzbrantner/electron-json-store",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/main.ts",
+  "types": "./src/main.ts",
+  "exports": {
+    "./main": "./src/main.ts",
+    "./shared": "./src/shared.ts"
+  }
+}

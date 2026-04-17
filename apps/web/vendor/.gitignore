@@ -1,0 +1,15 @@
+*
+!.gitignore
+!packages/
+packages/*
+!packages/ui/
+!packages/storytelling/
+packages/ui/*
+!packages/ui/package.json
+!packages/ui/styles.css
+!packages/ui/dist/
+!packages/ui/dist/**
+packages/storytelling/*
+!packages/storytelling/package.json
+!packages/storytelling/dist/
+!packages/storytelling/dist/**

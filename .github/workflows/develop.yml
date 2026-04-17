@@ -1,0 +1,20 @@
+name: Develop
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+
+jobs:
+  develop:
+    # Branch flow: develop is tested first, then pushes promote that exact commit to nightly.
+    permissions:
+      contents: write
+    uses: ./.github/workflows/snapshot-stage.yml
+    with:
+      stage: develop
+      tested_sha: ${{ github.sha }}
+      promote_to: nightly
+      promote: ${{ github.event_name == 'push' }}
+    secrets: inherit

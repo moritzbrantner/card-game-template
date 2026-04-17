@@ -1,0 +1,18 @@
+name: Beta
+
+on:
+  push:
+    branches: [beta]
+
+jobs:
+  beta:
+    # Branch flow: beta is a tested snapshot of nightly, then promotes the same commit to staging.
+    permissions:
+      contents: write
+    uses: ./.github/workflows/snapshot-stage.yml
+    with:
+      stage: beta
+      tested_sha: ${{ github.sha }}
+      promote_to: staging
+      promote: true
+    secrets: inherit

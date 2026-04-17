@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "commonjs",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@moritzbrantner/electron-commands/main": ["packages/electron-commands/src/main.ts"],
+      "@moritzbrantner/electron-commands/preload": ["packages/electron-commands/src/preload.ts"],
+      "@moritzbrantner/electron-commands/renderer": ["packages/electron-commands/src/renderer.ts"],
+      "@moritzbrantner/electron-commands/shared": ["packages/electron-commands/src/shared.ts"],
+      "@moritzbrantner/electron-documents/main": ["packages/electron-documents/src/main.ts"],
+      "@moritzbrantner/electron-documents/preload": ["packages/electron-documents/src/preload.ts"],
+      "@moritzbrantner/electron-documents/renderer": ["packages/electron-documents/src/renderer.ts"],
+      "@moritzbrantner/electron-documents/shared": ["packages/electron-documents/src/shared.ts"],
+      "@moritzbrantner/electron-json-store/main": ["packages/electron-json-store/src/main.ts"],
+      "@moritzbrantner/electron-json-store/shared": ["packages/electron-json-store/src/shared.ts"],
+      "@moritzbrantner/electron-preferences/main": ["packages/electron-preferences/src/main.ts"],
+      "@moritzbrantner/electron-preferences/preload": ["packages/electron-preferences/src/preload.ts"],
+      "@moritzbrantner/electron-preferences/renderer": ["packages/electron-preferences/src/renderer.ts"],
+      "@moritzbrantner/electron-preferences/shared": ["packages/electron-preferences/src/shared.ts"],
+      "@moritzbrantner/electron-window-state/main": ["packages/electron-window-state/src/main.ts"],
+      "@moritzbrantner/electron-window-state/shared": ["packages/electron-window-state/src/shared.ts"]
+    },
+    "outDir": "dist",
+    "moduleResolution": "node",
+    "resolveJsonModule": true
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "platform-packages",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "packageManager": "bun@1.3.12",
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run check-types",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.7",
+    "turbo": "^2.8.16",
+    "typescript": "5.9.2"
+  }
+}

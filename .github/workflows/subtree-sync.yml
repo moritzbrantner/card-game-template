@@ -1,0 +1,247 @@
+name: Subtree Sync
+
+on:
+  repository_dispatch:
+    types: [subtree_sync]
+  workflow_dispatch:
+    inputs:
+      prefix:
+        description: App subtree prefix to sync into develop
+        required: true
+        type: choice
+        options:
+          - apps/web
+          - apps/mobile
+          - apps/desktop
+
+concurrency:
+  group: subtree-sync-${{ inputs.prefix || github.event.client_payload.prefix || github.run_id }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require subtree sync token
+        env:
+          SUBTREE_SYNC_TOKEN: ${{ secrets.GH_SUBTREE_SYNC_TOKEN }}
+        run: |
+          if [ -z "${SUBTREE_SYNC_TOKEN}" ]; then
+            echo "::error::GH_SUBTREE_SYNC_TOKEN is required to push subtree sync branches and manage pull requests." >&2
+            exit 1
+          fi
+
+      - name: Resolve subtree target
+        id: resolve
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PREFIX: ${{ inputs.prefix }}
+          PAYLOAD_PREFIX: ${{ github.event.client_payload.prefix }}
+          PAYLOAD_SOURCE_REPO: ${{ github.event.client_payload.source_repo }}
+          PAYLOAD_SOURCE_BRANCH: ${{ github.event.client_payload.source_branch }}
+          PAYLOAD_SOURCE_SHA: ${{ github.event.client_payload.source_sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${EVENT_NAME}" == "repository_dispatch" ]]; then
+            prefix="${PAYLOAD_PREFIX}"
+            source_repo="${PAYLOAD_SOURCE_REPO}"
+            source_branch="${PAYLOAD_SOURCE_BRANCH}"
+            source_sha="${PAYLOAD_SOURCE_SHA}"
+          else
+            prefix="${INPUT_PREFIX}"
+            source_branch="main"
+            source_sha=""
+
+            case "${prefix}" in
+              apps/web)
+                source_repo="next-template"
+                ;;
+              apps/mobile)
+                source_repo="expo-template"
+                ;;
+              apps/desktop)
+                source_repo="electron-template"
+                ;;
+              *)
+                echo "::error::Unsupported prefix: ${prefix}" >&2
+                exit 1
+                ;;
+            esac
+          fi
+
+          case "${prefix}" in
+            apps/web)
+              expected_repo="next-template"
+              remote_name="app-web"
+              sync_branch="auto/subtree-sync/apps-web"
+              ;;
+            apps/mobile)
+              expected_repo="expo-template"
+              remote_name="app-mobile"
+              sync_branch="auto/subtree-sync/apps-mobile"
+              ;;
+            apps/desktop)
+              expected_repo="electron-template"
+              remote_name="app-desktop"
+              sync_branch="auto/subtree-sync/apps-desktop"
+              ;;
+            *)
+              echo "::error::Unsupported prefix: ${prefix}" >&2
+              exit 1
+              ;;
+          esac
+
+          if [[ "${source_repo}" != "${expected_repo}" ]]; then
+            echo "::error::Prefix ${prefix} does not match source_repo ${source_repo}." >&2
+            exit 1
+          fi
+
+          if [[ "${source_branch}" != "main" ]]; then
+            echo "::error::Expected source_branch=main for ${prefix}, received ${source_branch}." >&2
+            exit 1
+          fi
+
+          if [[ -n "${source_sha}" ]] && [[ ! "${source_sha}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::source_sha must be a 40-character lowercase Git SHA." >&2
+            exit 1
+          fi
+
+          {
+            echo "prefix=${prefix}"
+            echo "source_repo=${source_repo}"
+            echo "source_branch=${source_branch}"
+            echo "source_sha=${source_sha}"
+            echo "remote_name=${remote_name}"
+            echo "sync_branch=${sync_branch}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Checkout develop
+        uses: actions/checkout@v5
+        with:
+          ref: develop
+          fetch-depth: 0
+          token: ${{ secrets.GH_SUBTREE_SYNC_TOKEN }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Configure subtree remotes
+        run: bash scripts/setup-subtree-remotes.sh --apps
+
+      - name: Resolve upstream head
+        id: upstream
+        shell: bash
+        env:
+          REMOTE_NAME: ${{ steps.resolve.outputs.remote_name }}
+          SOURCE_BRANCH: ${{ steps.resolve.outputs.source_branch }}
+          PAYLOAD_SOURCE_SHA: ${{ steps.resolve.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+
+          git fetch "${REMOTE_NAME}" "${SOURCE_BRANCH}"
+          actual_source_sha="$(git rev-parse FETCH_HEAD)"
+
+          if [[ -n "${PAYLOAD_SOURCE_SHA}" && "${PAYLOAD_SOURCE_SHA}" != "${actual_source_sha}" ]]; then
+            echo "::warning::Dispatch requested ${PAYLOAD_SOURCE_SHA}, but ${REMOTE_NAME}/${SOURCE_BRANCH} currently resolves to ${actual_source_sha}. Syncing the current branch head." >&2
+          fi
+
+          echo "actual_source_sha=${actual_source_sha}" >> "${GITHUB_OUTPUT}"
+
+      - name: Sync subtree
+        id: sync
+        shell: bash
+        env:
+          PREFIX: ${{ steps.resolve.outputs.prefix }}
+        run: |
+          set -euo pipefail
+
+          before_sha="$(git rev-parse HEAD)"
+          bash scripts/sync-subtrees.sh --apps --prefix "${PREFIX}"
+          after_sha="$(git rev-parse HEAD)"
+
+          if [[ "${before_sha}" == "${after_sha}" ]]; then
+            echo "has_changes=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          echo "has_changes=true" >> "${GITHUB_OUTPUT}"
+          echo "sync_commit=${after_sha}" >> "${GITHUB_OUTPUT}"
+
+      - name: Prepare sync branch
+        if: steps.sync.outputs.has_changes == 'true'
+        env:
+          SYNC_BRANCH: ${{ steps.resolve.outputs.sync_branch }}
+        run: git checkout -B "${SYNC_BRANCH}"
+
+      - name: Push sync branch
+        if: steps.sync.outputs.has_changes == 'true'
+        shell: bash
+        env:
+          SYNC_BRANCH: ${{ steps.resolve.outputs.sync_branch }}
+        run: |
+          set -euo pipefail
+
+          if git ls-remote --exit-code --heads origin "${SYNC_BRANCH}" >/dev/null 2>&1; then
+            git fetch origin "${SYNC_BRANCH}"
+            expected_target="$(git rev-parse FETCH_HEAD)"
+            git push \
+              --force-with-lease="refs/heads/${SYNC_BRANCH}:${expected_target}" \
+              origin \
+              "${SYNC_BRANCH}:refs/heads/${SYNC_BRANCH}"
+          else
+            git push origin "${SYNC_BRANCH}:refs/heads/${SYNC_BRANCH}"
+          fi
+
+      - name: Create or update pull request
+        if: steps.sync.outputs.has_changes == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GH_SUBTREE_SYNC_TOKEN }}
+          PREFIX: ${{ steps.resolve.outputs.prefix }}
+          SOURCE_REPO: ${{ steps.resolve.outputs.source_repo }}
+          SOURCE_BRANCH: ${{ steps.resolve.outputs.source_branch }}
+          SYNC_BRANCH: ${{ steps.resolve.outputs.sync_branch }}
+          SOURCE_SHA: ${{ steps.upstream.outputs.actual_source_sha }}
+          DISPATCHED_SOURCE_SHA: ${{ steps.resolve.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+
+          short_sha="${SOURCE_SHA:0:7}"
+          pr_title="chore(subtree): sync ${PREFIX} from ${SOURCE_REPO}@${short_sha}"
+          pr_body="$(
+            cat <<EOF
+          ## Subtree sync
+
+          - Prefix: \`${PREFIX}\`
+          - Source repo: \`${SOURCE_REPO}\`
+          - Source branch: \`${SOURCE_BRANCH}\`
+          - Source SHA synced: \`${SOURCE_SHA}\`
+          - Triggered SHA payload: \`${DISPATCHED_SOURCE_SHA:-manual}\`
+          EOF
+          )"
+
+          existing_pr="$(
+            gh api \
+              "repos/${GITHUB_REPOSITORY}/pulls?state=open&base=develop&head=${GITHUB_REPOSITORY_OWNER}:${SYNC_BRANCH}" \
+              --jq '.[0].number // empty'
+          )"
+
+          if [[ -n "${existing_pr}" ]]; then
+            gh pr edit "${existing_pr}" --repo "${GITHUB_REPOSITORY}" --title "${pr_title}" --body "${pr_body}"
+          else
+            gh pr create \
+              --repo "${GITHUB_REPOSITORY}" \
+              --base develop \
+              --head "${SYNC_BRANCH}" \
+              --title "${pr_title}" \
+              --body "${pr_body}"
+          fi

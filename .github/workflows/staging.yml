@@ -1,0 +1,17 @@
+name: Staging
+
+on:
+  push:
+    branches: [staging]
+
+jobs:
+  staging:
+    # Branch flow: staging is the final snapshot branch and does not promote further.
+    permissions:
+      contents: write
+    uses: ./.github/workflows/snapshot-stage.yml
+    with:
+      stage: staging
+      tested_sha: ${{ github.sha }}
+      promote: false
+    secrets: inherit
