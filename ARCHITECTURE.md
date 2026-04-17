@@ -1,71 +1,76 @@
-# ARCHITECTURE.md — monorepo-nextjs-expo-electron template
+# Architecture
 
-This repository is a starter template, not the long-lived source of truth for a fleet of production apps.
+This repository is intended to become a reusable platform for card games across web, desktop, and mobile.
 
-## Purpose
-- bootstrap new app repositories with a working monorepo shape
-- provide baseline Next.js, Expo, and Electron entrypoints
-- provide lint, typecheck, test, build, CI, and agent conventions
-- demonstrate where shared code belongs without making this repo the shared platform itself
+## Primary architectural goal
+
+Keep game rules independent from delivery surface so the same game can run:
+
+- entirely on-device for local or offline play
+- on a backend service for online multiplayer and validation
 
 ## Workspace boundaries
 
-### `apps/*`
-Deployable composition roots.
+### `apps/web`
 
-These workspaces own:
-- product-specific routes, screens, and flows
-- deployment configuration
-- app branding and content
-- composition of shared packages
-- app-level manifests
+Browser client for account-based play, onboarding, lobbies, match history, and gameplay.
 
-These workspaces should not become publishable shared packages by default.
+### `apps/mobile`
+
+Mobile client with the same core gameplay features, adapted for touch interactions and mobile authentication/session handling.
+
+### `apps/desktop`
+
+Desktop client for larger-screen play, local sessions, and multiplayer access with the same shared domain logic.
 
 ### `packages/*`
-Reusable local packages that demonstrate extraction boundaries.
 
-Use this area for:
-- UI primitives and design tokens
-- lint and TypeScript presets
-- cross-app utility or domain modules that are still template-level examples
+Shared packages should carry the reusable platform logic. The intended package split is:
 
-If a package becomes real shared platform code for multiple repositories, extract it into a dedicated private packages repository and consume it as a versioned dependency.
+- `game-contracts`: shared types for cards, moves, turns, players, rooms, and results
+- `game-engine`: deterministic rules engine that can run locally or on the server
+- `game-catalog`: registration of supported games and their metadata
+- `multiplayer`: room and synchronization abstractions used by clients and server adapters
+- `auth`: account/session contracts and shared client helpers
+- `ui`: cross-platform presentation primitives where reuse is worth it
 
-### `templates/platform-packages/*`
-Scaffolding for a separate private packages repository.
+## Runtime model
 
-This folder exists to make the extraction path explicit:
-- publish shared packages from a dedicated repo
-- version with Changesets
-- distribute through private GitHub Packages
-- let independent app repos upgrade on their own schedule
+### Local mode
 
-## Decision rules
-- Put code in `apps/*` when it belongs to one deployable app or one release cadence.
-- Put code in `packages/*` when it is shared inside this starter or demonstrates a boundary worth copying.
-- Move code to a separate packages repo when 3+ apps are expected to reuse it and it needs independent versioning.
-- Keep this template focused on scaffolding improvements, not live product logic.
+- the client hosts the game engine
+- moves are validated in-process
+- results can be stored locally first and synced later when appropriate
 
-## Extraction policy
-- `@repo/eslint-config`, `@repo/typescript-config`, and `@repo/ui` are examples of what should become private shared packages in a real app portfolio.
-- `@repo/upload-playbook` is demo domain code. Keep or replace it only if it teaches the structure; do not treat it as permanent platform logic by default.
-- Avoid cross-package private imports and app-specific assumptions in shared packages.
-- Favor explicit public APIs and semver-governed exports for anything intended to leave this repository.
+### Online mode
 
-## App manifest contract
-Every deployable app should expose an `app.manifest.ts` file.
+- the server is authoritative for room state and accepted moves
+- clients submit intents or moves through a typed transport layer
+- the same shared engine validates and applies those moves on the server
+- clients render the resulting state and maintain optimistic UI only where safe
 
-Required fields:
-- `appId`
-- `slug`
-- `displayName`
-- `platform`
-- `packageName`
-- `entryWorkspace`
-- `releaseCadence`
-- `sharedPackages`
-- `featureFlags`
-- `deployment`
+## Core invariants
 
-The manifest is the contract between app-specific configuration and shared platform code. It should stay small, typed by convention, and safe to read in tests and tooling.
+- game rules must be deterministic for the same starting state and move sequence
+- shared rule evaluation must not depend on UI framework or platform APIs
+- account identity must be stable across platforms
+- match results must be attributable to players and games in a normalized way
+- adding a new card game should mostly mean implementing a new rules package plus metadata, not reworking the platform
+
+## Data flow
+
+1. A player authenticates and enters a local session or online room.
+2. A game definition is loaded from the shared game catalog.
+3. The shared engine creates the initial match state.
+4. Players submit moves through the local runtime or server API.
+5. The engine validates and applies the move.
+6. State updates are broadcast to connected clients when online.
+7. Final results are persisted to player history when the match ends.
+
+## Recommended implementation order
+
+1. define shared contracts
+2. implement the portable game engine
+3. add a server-authoritative multiplayer path
+4. connect account and result persistence
+5. add sample games from simple to complex

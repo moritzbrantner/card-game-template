@@ -1,29 +1,27 @@
-# PLANS.md — monorepo-nextjs-expo-electron template
+# Plans
 
-Use this file as the single execution queue for long-running autonomous work.
-
-## How to use
-1. Copy this template folder into a new repository.
-2. Rename/update this file with your real roadmap items.
-3. Ask the coding agent to **follow the plan step by step** and keep going until all open items are done.
-4. Keep one item marked `in_progress` at a time.
+This is the initial roadmap implied by the current product brief.
 
 ## Status legend
-- `pending`: not started yet.
-- `in_progress`: currently being executed.
-- `blocked`: cannot proceed until a serious blocker is resolved.
-- `completed`: finished, validated, and documented.
+
+- `pending`: not started yet
+- `in_progress`: currently being executed
+- `blocked`: cannot safely continue
+- `completed`: implemented and validated
 
 ## Plan queue
 
-| ID | Status | Topic | Scope | Acceptance Criteria | Notes |
-| --- | --- | --- | --- | --- | --- |
-| P-001 | pending | Example feature slice | Replace with concrete area | Tests added/updated, checks pass, docs updated | |
-| P-002 | pending | Example reliability task | Replace with concrete area | Failure mode handled and regression test added | |
-| P-003 | pending | Example cleanup/refactor | Replace with concrete area | No behavior regressions and lint/type/build clean | |
+| ID    | Status  | Topic                       | Scope                                                             | Acceptance Criteria                                                         | Notes                                               |
+| ----- | ------- | --------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------- |
+| P-001 | pending | Shared game contracts       | Define cards, moves, turns, players, rooms, and result models     | Contracts are documented, typed, and reused across apps and server code     | Start here before platform-specific work            |
+| P-002 | pending | Portable game engine        | Build deterministic rules engine runnable on client and server    | Engine passes tests in local and server-style execution                     | Keep it free of UI dependencies                     |
+| P-003 | pending | Account foundation          | Add account, session, and player profile model                    | A user can authenticate and resolve to one player identity across platforms |                                                     |
+| P-004 | pending | Online multiplayer backbone | Add rooms, move submission, synchronization, and server authority | Multiple players can complete a match online with validated moves           | Start with private rooms before broader matchmaking |
+| P-005 | pending | Result tracking             | Persist match outcomes and surface player history                 | Completed matches create durable records tied to accounts and games         |                                                     |
+| P-006 | pending | Sample games                | Implement at least one simple game and one more complex game      | The template proves it can host different rule complexity levels            | UNO-style game is a good first sample               |
 
-## Execution log
+## Execution notes
 
-Append short progress updates here as work is completed.
-
-- YYYY-MM-DD: Initialized plan.
+- update contracts before platform implementations when interfaces change
+- validate both local and online execution paths for gameplay changes
+- prefer shared packages for domain logic and typed contracts

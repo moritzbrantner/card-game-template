@@ -1,35 +1,59 @@
-# INFRASTRUCTURE.md — monorepo-nextjs-expo-electron template
+# Infrastructure
 
-Document the infrastructure and operational constraints the agent must treat as non-negotiable.
+This document describes the backend and environment needs implied by the current product direction.
 
 ## Environments
-- **local**: developer machine defaults and required services.
-- **ci**: commands and assumptions in automation.
-- **staging**: pre-production validation environment.
-- **production**: live environment constraints and safety guardrails.
 
-## Services and dependencies
-| Component | Purpose | Owner | Access pattern | Notes |
-| --- | --- | --- | --- | --- |
-| App runtime | Main application process | Team | Internal | Fill with actual runtime details |
-| Database | Persistent storage | Team | Private network | Include migration/backup policy |
-| Queue/Cache | Async or performance layer | Team | Private network | Include ttl, retry, and failure behavior |
+- `local`: developer machine running one or more client apps plus optional local backend services
+- `test`: automated validation for shared logic, API contracts, and multiplayer flows
+- `staging`: pre-production environment for account, matchmaking, and persistence checks
+- `production`: live environment for authenticated players and tracked results
 
-## Secrets and configuration
-- List required environment variables and where they are managed.
-- Specify rotation policy and least-privilege expectations.
-- Explicitly mark variables that must never be logged.
-- `GH_PROMOTION_TOKEN`: repository secret in the monorepo with permission to push snapshot branch promotions that must trigger downstream workflows.
-- `GH_SUBTREE_SYNC_TOKEN`: repository secret in the monorepo with `Contents: write` and `Pull requests: write` so `.github/workflows/subtree-sync.yml` can push sync branches and create or update PRs into `develop`.
-- `MONOREPO_SUBTREE_DISPATCH_TOKEN`: repository secret in each upstream subtree repository with permission to call `POST /repos/moritzbrantner/monorepo/dispatches` and trigger the monorepo subtree sync workflow.
-- Do not print any of these tokens in workflow logs; pass them only through GitHub Actions secrets.
+## Required services
 
-## Deployment and rollback
-- Define deploy command or pipeline trigger.
-- Define health checks and canary/verification window.
-- Define rollback command and decision threshold.
+| Component            | Purpose                                           | Notes                                                |
+| -------------------- | ------------------------------------------------- | ---------------------------------------------------- |
+| Client apps          | Web, desktop, and mobile gameplay surfaces        | Share domain contracts and engine integration        |
+| Auth service         | Player accounts, login, session lifecycle         | Must support the same identity across platforms      |
+| API service          | Game catalog, player profile, match endpoints     | Owns persistence-facing application logic            |
+| Realtime service     | Room presence, move delivery, state fan-out       | Required for online multiplayer                      |
+| Database             | Accounts, profiles, rooms, match records, results | Should support transactional match completion writes |
+| Optional cache/queue | Presence, rate limiting, async processing         | Useful once multiplayer concurrency grows            |
 
-## Safety constraints for autonomous agents
-- Never run destructive production commands without explicit human direction.
-- Prefer idempotent migrations and reversible operations.
-- Treat missing infrastructure details as a blocker and pause safely.
+## Data that must persist
+
+- player accounts
+- player profiles
+- match records
+- per-player results
+- game metadata
+- optional rankings, streaks, or progression summaries
+
+## Environment configuration
+
+Expected secret and config categories:
+
+- auth provider credentials
+- database connection string
+- realtime provider credentials or server keys
+- session signing secret
+- storage keys if avatars or media are added later
+
+## Operational constraints
+
+- local development should work with the shared engine without requiring the full online stack
+- online mode should tolerate reconnects and transient client disconnects
+- result persistence should happen on the backend in multiplayer mode
+- the platform should support adding new games without new infrastructure primitives
+
+## Suggested deployment shape
+
+- web app deployed independently
+- backend API and realtime services deployed together or behind a shared gateway
+- desktop and mobile clients consuming the same backend contracts
+
+## Safety constraints
+
+- never trust client-reported wins in online multiplayer without server validation
+- avoid coupling persistent match records to a single client platform
+- keep auth and result schemas stable across game additions
