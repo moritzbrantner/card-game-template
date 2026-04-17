@@ -1,0 +1,1 @@
+export { buildNavigationJourneyDetail } from './shared';

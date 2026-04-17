@@ -1,0 +1,1 @@
+export { buildSecurityAccessDetail } from './shared';

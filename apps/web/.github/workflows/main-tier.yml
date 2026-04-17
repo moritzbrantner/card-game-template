@@ -1,0 +1,22 @@
+name: Main Tier
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  main-tier:
+    name: Main Tier
+    uses: ./.github/workflows/tier-checks.yml
+    permissions:
+      contents: read
+      packages: read
+    with:
+      tier-name: main
+      check-command: checks:main

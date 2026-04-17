@@ -1,0 +1,121 @@
+@import "@moritzbrantner/ui/styles.css";
+
+@source "../packages/storytelling/src/**/*.{ts,tsx}";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --app-shell-background: #f4f4f5;
+  --app-shell-accent: rgba(255, 255, 255, 0.72);
+  --app-shell-glow: rgba(255, 255, 255, 0.8);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+html.light {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+html.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --app-shell-background: #09090b;
+  --app-shell-accent: rgba(9, 9, 11, 0.62);
+  --app-shell-glow: rgba(24, 24, 27, 0.55);
+}
+
+html[data-background='paper'] {
+  --app-shell-background: #f5f2eb;
+  --app-shell-accent: rgba(255, 251, 235, 0.7);
+  --app-shell-glow: rgba(254, 243, 199, 0.5);
+}
+
+html[data-background='aurora'] {
+  --app-shell-background: #ecfeff;
+  --app-shell-accent: rgba(224, 242, 254, 0.7);
+  --app-shell-glow: rgba(167, 243, 208, 0.45);
+}
+
+html[data-background='dusk'] {
+  --app-shell-background: #fff1f2;
+  --app-shell-accent: rgba(255, 237, 213, 0.72);
+  --app-shell-glow: rgba(254, 202, 202, 0.52);
+}
+
+html[data-background='forest'] {
+  --app-shell-background: #f0fdf4;
+  --app-shell-accent: rgba(220, 252, 231, 0.7);
+  --app-shell-glow: rgba(190, 242, 100, 0.42);
+}
+
+html.dark[data-background='paper'] {
+  --app-shell-background: #18181b;
+  --app-shell-accent: rgba(39, 39, 42, 0.68);
+  --app-shell-glow: rgba(120, 113, 108, 0.32);
+}
+
+html.dark[data-background='aurora'] {
+  --app-shell-background: #082f49;
+  --app-shell-accent: rgba(8, 47, 73, 0.72);
+  --app-shell-glow: rgba(13, 148, 136, 0.26);
+}
+
+html.dark[data-background='dusk'] {
+  --app-shell-background: #3f1d2e;
+  --app-shell-accent: rgba(63, 29, 46, 0.72);
+  --app-shell-glow: rgba(190, 24, 93, 0.24);
+}
+
+html.dark[data-background='forest'] {
+  --app-shell-background: #052e16;
+  --app-shell-accent: rgba(5, 46, 22, 0.72);
+  --app-shell-glow: rgba(21, 128, 61, 0.22);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light):not(.dark) {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--app-shell-background), var(--background) 42%);
+  color: var(--foreground);
+  font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.app-shell {
+  transition: padding 160ms ease;
+}
+
+html[data-density='compact'] .app-shell {
+  padding-top: 1.75rem;
+  padding-bottom: 1.75rem;
+}
+
+html[data-motion='reduced'] *,
+html[data-motion='reduced'] *::before,
+html[data-motion='reduced'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+@keyframes spin-cube {
+  from {
+    transform: rotateX(-18deg) rotateY(0deg);
+  }
+
+  to {
+    transform: rotateX(-18deg) rotateY(360deg);
+  }
+}

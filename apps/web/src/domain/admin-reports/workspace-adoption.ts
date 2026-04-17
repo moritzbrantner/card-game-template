@@ -1,0 +1,1 @@
+export { buildWorkspaceAdoptionDetail } from './shared';

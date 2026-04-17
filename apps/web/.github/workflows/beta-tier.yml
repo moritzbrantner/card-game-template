@@ -1,0 +1,15 @@
+name: Beta Tier
+
+on:
+  pull_request:
+    branches: [beta]
+  push:
+    branches: [beta]
+
+jobs:
+  beta-tier:
+    name: Beta Tier
+    uses: ./.github/workflows/tier-checks.yml
+    with:
+      tier-name: beta
+      check-command: checks:beta
