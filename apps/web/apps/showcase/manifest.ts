@@ -68,6 +68,18 @@ const showcaseManifest: AppManifest = {
       },
     },
     {
+      id: 'pastGames',
+      slug: 'past-games',
+      kind: 'component',
+      namespace: 'PastGamesPage',
+      featureKey: 'showcase.uno',
+      render: async ({ locale }) => {
+        const pageModule = await import('./pages/past-games-page');
+        const PastGamesPage = pageModule.default;
+        return createElement(PastGamesPage, { locale });
+      },
+    },
+    {
       id: 'about',
       slug: 'about',
       kind: 'component',
@@ -191,12 +203,13 @@ const showcaseManifest: AppManifest = {
     { pageId: 'home', category: 'discover', hotkey: ['alt', 'h'], order: 10 },
     { pageId: 'about', category: 'discover', hotkey: ['alt', 'a'], order: 20 },
     { pageId: 'uno', category: 'discover', hotkey: ['alt', 'o'], order: 30 },
-    { pageId: 'remocn', category: 'discover', hotkey: ['alt', 'v'], prefetch: false, order: 40 },
-    { pageId: 'story', category: 'discover', hotkey: ['alt', 's'], prefetch: false, order: 50 },
-    { pageId: 'communication', category: 'discover', hotkey: ['alt', 'c'], prefetch: false, order: 60 },
-    { pageId: 'forms', category: 'workspace', hotkey: ['alt', 'f'], prefetch: false, order: 70 },
-    { pageId: 'table', category: 'workspace', hotkey: ['alt', 't'], order: 80 },
-    { pageId: 'uploads', category: 'workspace', hotkey: ['alt', 'u'], prefetch: false, order: 90 },
+    { pageId: 'pastGames', category: 'discover', hotkey: ['alt', 'y'], order: 40 },
+    { pageId: 'remocn', category: 'discover', hotkey: ['alt', 'v'], prefetch: false, order: 50 },
+    { pageId: 'story', category: 'discover', hotkey: ['alt', 's'], prefetch: false, order: 60 },
+    { pageId: 'communication', category: 'discover', hotkey: ['alt', 'c'], prefetch: false, order: 70 },
+    { pageId: 'forms', category: 'workspace', hotkey: ['alt', 'f'], prefetch: false, order: 80 },
+    { pageId: 'table', category: 'workspace', hotkey: ['alt', 't'], order: 90 },
+    { pageId: 'uploads', category: 'workspace', hotkey: ['alt', 'u'], prefetch: false, order: 100 },
   ],
   contentRoots: {
     pages: ['apps/showcase/content/pages'],

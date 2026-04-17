@@ -9,21 +9,32 @@ export default async function UnoPage({ locale }: { locale: AppLocale }) {
   return (
     <UnoPageClient
       labels={{
-        actionsTitle: t('actionsTitle'),
-        activeColorLabel: t('activeColorLabel'),
-        catalogTitle: t('catalogTitle'),
-        confirmHandoff: t('confirmHandoff'),
-        deckLabel: t('deckLabel'),
         description: t('description'),
-        hiddenHand: t('hiddenHand'),
-        pendingDrawLabel: t('pendingDrawLabel'),
-        presetsTitle: t('presetsTitle'),
-        restart: t('restart'),
-        rulesTitle: t('rulesTitle'),
-        statusTitle: t('statusTitle'),
+        activeMatchDescription: t('activeMatchDescription'),
+        activeMatchTitle: t('activeMatchTitle'),
+        createAction: t('createAction'),
+        createHint: t('createHint'),
+        createTitle: t('createTitle'),
+        emptyOpenLobbies: t('emptyOpenLobbies'),
+        exitGame: t('exitGame'),
+        exitedGameStatus: t('exitedGameStatus'),
+        finishGame: t('finishGame'),
+        hostBadge: t('hostBadge'),
+        joinAction: t('joinAction'),
+        joinedLobbyStatus: t('joinedLobbyStatus'),
+        leaveLobby: t('leaveLobby'),
+        leftLobbyStatus: t('leftLobbyStatus'),
+        lobbyReadyTitle: t('lobbyReadyTitle'),
+        nameLabel: t('nameLabel'),
+        openLobbiesTitle: t('openLobbiesTitle'),
+        pastGamesCta: t('pastGamesCta'),
+        readyToStart: t('readyToStart'),
+        startGame: t('startGame'),
+        startedGameStatus: t('startedGameStatus'),
         title: t('title'),
-        waitingForPlayer: t('waitingForPlayer'),
+        waitingForPlayers: t('waitingForPlayers'),
       }}
+      pastGamesHref={`/${locale}/past-games`}
     />
   );
 }

@@ -3,6 +3,7 @@ import { communicationPage } from './communication-page';
 import { formsPage } from './forms-page';
 import { homePage } from './home-page';
 import { navigationBar } from './navigation-bar';
+import { pastGamesPage } from './past-games-page';
 import { remocnPage } from './remocn-page';
 import { storyPage } from './story-page';
 import { unoPage } from './uno-page';
@@ -17,6 +18,7 @@ const showcaseMessages = {
   RemocnPage: remocnPage,
   StoryPage: storyPage,
   UnoPage: unoPage,
+  PastGamesPage: pastGamesPage,
   UploadsPage: uploadsPage,
 };
 
