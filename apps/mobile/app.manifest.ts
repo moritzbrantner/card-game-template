@@ -6,8 +6,14 @@ export const appManifest = {
   packageName: 'mobile',
   entryWorkspace: 'apps/mobile',
   releaseCadence: 'independent',
-  sharedPackages: ['@repo/upload-playbook'],
-  featureFlags: ['tabs', 'profiles', 'uploads'],
+  sharedPackages: [
+    '@repo/auth-contract',
+    '@repo/game-catalog',
+    '@repo/game-contracts',
+    '@repo/game-engine',
+    '@repo/multiplayer-contract',
+  ],
+  featureFlags: ['accounts', 'touch-play', 'match-history', 'multiplayer'],
   deployment: {
     runtime: 'expo',
     scheme: 'mobile',

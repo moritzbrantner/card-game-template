@@ -44,6 +44,11 @@
     "vite": "^5.4.21"
   },
   "dependencies": {
+    "@repo/auth-contract": "workspace:*",
+    "@repo/game-catalog": "workspace:*",
+    "@repo/game-contracts": "workspace:*",
+    "@repo/game-engine": "workspace:*",
+    "@repo/multiplayer-contract": "workspace:*",
     "@moritzbrantner/electron-commands": "file:packages/electron-commands",
     "@moritzbrantner/electron-documents": "file:packages/electron-documents",
     "@moritzbrantner/electron-json-store": "file:packages/electron-json-store",

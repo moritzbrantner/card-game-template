@@ -18,6 +18,11 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@repo/auth-contract": "workspace:*",
+    "@repo/game-catalog": "workspace:*",
+    "@repo/game-contracts": "workspace:*",
+    "@repo/game-engine": "workspace:*",
+    "@repo/multiplayer-contract": "workspace:*",
     "@expo/vector-icons": "^15.1.1",
     "@react-navigation/bottom-tabs": "^7.15.5",
     "@react-navigation/elements": "^2.9.10",

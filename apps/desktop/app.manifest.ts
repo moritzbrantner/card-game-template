@@ -6,8 +6,14 @@ export const appManifest = {
   packageName: 'desktop',
   entryWorkspace: 'apps/desktop',
   releaseCadence: 'independent',
-  sharedPackages: ['@moritzbrantnerupload-playbook'],
-  featureFlags: ['library', 'uploads', 'react-query'],
+  sharedPackages: [
+    '@repo/auth-contract',
+    '@repo/game-catalog',
+    '@repo/game-contracts',
+    '@repo/game-engine',
+    '@repo/multiplayer-contract',
+  ],
+  featureFlags: ['accounts', 'local-play', 'match-history', 'multiplayer'],
   deployment: {
     runtime: 'electron',
     entrypoint: '.vite/build/main.js',

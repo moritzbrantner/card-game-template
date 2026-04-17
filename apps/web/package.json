@@ -39,6 +39,11 @@
     "jobs:work": "bun ./scripts/run-jobs.ts --watch"
   },
   "dependencies": {
+    "@repo/auth-contract": "workspace:*",
+    "@repo/game-catalog": "workspace:*",
+    "@repo/game-contracts": "workspace:*",
+    "@repo/game-engine": "workspace:*",
+    "@repo/multiplayer-contract": "workspace:*",
     "@base-ui/react": "^1.3.0",
     "@auth/drizzle-adapter": "^1.11.1",
     "@tanstack/react-table": "^8.21.3",

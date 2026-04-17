@@ -2,6 +2,8 @@
 
 This repository is intended to become a reusable platform for card games across web, desktop, and mobile.
 
+It remains a starter template, so the architecture still needs to preserve the thin-template boundary and the extraction path for long-lived shared packages.
+
 ## Primary architectural goal
 
 Keep game rules independent from delivery surface so the same game can run:
@@ -10,6 +12,8 @@ Keep game rules independent from delivery surface so the same game can run:
 - on a backend service for online multiplayer and validation
 
 ## Workspace boundaries
+
+The top-level workspace split is still `apps/*`, `packages/*`, and `templates/platform-packages/*`.
 
 ### `apps/web`
 
@@ -33,6 +37,10 @@ Shared packages should carry the reusable platform logic. The intended package s
 - `multiplayer`: room and synchronization abstractions used by clients and server adapters
 - `auth`: account/session contracts and shared client helpers
 - `ui`: cross-platform presentation primitives where reuse is worth it
+
+### `templates/platform-packages/*`
+
+This scaffold remains the extraction path for packages that outgrow this repository and need to move into a dedicated private packages repository.
 
 ## Runtime model
 
@@ -74,3 +82,7 @@ Shared packages should carry the reusable platform logic. The intended package s
 3. add a server-authoritative multiplayer path
 4. connect account and result persistence
 5. add sample games from simple to complex
+
+## App manifest contract
+
+Every deployable app should expose an `app.manifest.ts` file.

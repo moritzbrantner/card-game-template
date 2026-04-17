@@ -38,6 +38,9 @@ Expected secret and config categories:
 - realtime provider credentials or server keys
 - session signing secret
 - storage keys if avatars or media are added later
+- `GH_PROMOTION_TOKEN`
+- `GH_SUBTREE_SYNC_TOKEN`
+- `MONOREPO_SUBTREE_DISPATCH_TOKEN`
 
 ## Operational constraints
 
@@ -57,3 +60,4 @@ Expected secret and config categories:
 - never trust client-reported wins in online multiplayer without server validation
 - avoid coupling persistent match records to a single client platform
 - keep auth and result schemas stable across game additions
+- Do not print any of these tokens in workflow logs

@@ -1,0 +1,21 @@
+export const appManifest = {
+  appId: 'web',
+  slug: 'web',
+  displayName: 'Web',
+  platform: 'web',
+  packageName: 'next-template',
+  entryWorkspace: 'apps/web',
+  releaseCadence: 'independent',
+  sharedPackages: [
+    '@repo/auth-contract',
+    '@repo/game-catalog',
+    '@repo/game-contracts',
+    '@repo/game-engine',
+    '@repo/multiplayer-contract',
+  ],
+  featureFlags: ['accounts', 'lobbies', 'match-history', 'multiplayer'],
+  deployment: {
+    runtime: 'nextjs',
+    entrypoint: 'app',
+  },
+} as const;
