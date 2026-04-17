@@ -63,7 +63,7 @@
     "@moritzbrantner/storytelling": "workspace:*",
     "@moritzbrantner/ui": "workspace:*",
     "@next/mdx": "^16.2.3",
-    "@react-email/components": "1.0.8",
+    "@react-email/components": "1.0.12",
     "@react-three/fiber": "^9.5.0",
     "@remotion/player": "^4.0.447",
     "bcryptjs": "^3.0.3",
