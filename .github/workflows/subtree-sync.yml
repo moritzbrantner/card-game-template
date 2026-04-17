@@ -215,6 +215,19 @@ jobs:
         run: |
           set -euo pipefail
 
+          if [[ "${SYNC_BRANCH}" == "develop" ]]; then
+            echo "::warning::Skipping subtree sync PR because SYNC_BRANCH resolved to develop." >&2
+            exit 0
+          fi
+
+          git fetch origin develop "${SYNC_BRANCH}"
+          commit_count="$(git rev-list --count "origin/develop..origin/${SYNC_BRANCH}")"
+
+          if [[ "${commit_count}" == "0" ]]; then
+            echo "::warning::Skipping subtree sync PR because there are no commits between develop and ${SYNC_BRANCH}." >&2
+            exit 0
+          fi
+
           short_sha="${SOURCE_SHA:0:7}"
           pr_title="chore(subtree): sync ${PREFIX} from ${SOURCE_REPO}@${short_sha}"
           pr_body="$(

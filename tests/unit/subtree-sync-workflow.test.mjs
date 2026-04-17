@@ -42,6 +42,13 @@ test("subtree sync workflow validates payload mappings and syncs only one prefix
   assert.match(workflowSource, /auto\/subtree-sync\/apps-desktop/);
 });
 
+test("subtree sync workflow skips PR creation when the head would match develop or no commits exist", () => {
+  assert.match(workflowSource, /SYNC_BRANCH\}" == "develop"/);
+  assert.match(workflowSource, /git fetch origin develop "\$\{SYNC_BRANCH\}"/);
+  assert.match(workflowSource, /git rev-list --count "origin\/develop\.\.origin\/\$\{SYNC_BRANCH\}"/);
+  assert.match(workflowSource, /Skipping subtree sync PR because there are no commits between develop and/);
+});
+
 test("README and infrastructure docs record the subtree sync automation secrets", () => {
   assert.match(readmeSource, /GH_SUBTREE_SYNC_TOKEN/);
   assert.match(readmeSource, /MONOREPO_SUBTREE_DISPATCH_TOKEN/);
