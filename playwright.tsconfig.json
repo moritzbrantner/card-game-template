@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": false,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/app/*": ["./app/*"],
+      "@/components/*": ["./components/*"],
+      "@/src/*": ["./src/*"],
+      "@/lib/*": ["./lib/*"],
+      "@/i18n/*": ["./i18n/*"],
+      "@/tests/*": ["./tests/*"],
+      "@/scripts/*": ["./scripts/*"],
+      "@/messages/*": ["./messages/*"],
+      "@/emails/*": ["./emails/*"],
+      "@/db-schema.json": ["./db-schema.json"]
+    }
+  }
+}

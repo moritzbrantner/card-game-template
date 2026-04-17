@@ -1,0 +1,46 @@
+export const navigationBar = {
+  categories: {
+    discover: 'Discover',
+    workspace: 'Workspace',
+    admin: 'Admin',
+  },
+  links: {
+    blog: 'Blog',
+    changelog: 'Changelog',
+    reportProblem: 'Report a problem',
+    people: 'People',
+    notifications: 'Notifications',
+    profile: 'Profile',
+    dataEntry: 'Data entry',
+    admin: 'Admin',
+  },
+  auth: {
+    login: 'Log in',
+    register: 'Register',
+  },
+  menu: {
+    profile: 'Profile',
+    settings: 'Settings',
+    logout: 'Log out',
+    openMenu: 'Open user menu',
+  },
+  notifications: {
+    button: 'Open notifications ({count} unread)',
+    title: 'Notifications',
+    subtitle: '{count} unread right now',
+    empty: 'No notifications yet.',
+    markRead: 'Mark as read',
+    markingRead: 'Updating...',
+    markReadError: 'Unable to update this notification right now.',
+    viewAll: 'View all notifications',
+  },
+  hotkeys: {
+    button: 'Hotkeys',
+    title: 'Navigation hotkeys',
+    description: 'Jump between routes with Alt shortcuts without reaching for the menu.',
+    searchPlaceholder: 'Search pages…',
+    empty: 'No matching pages.',
+    pending: 'Hold Alt while pressing a shortcut key',
+    accountGroup: 'Account',
+  },
+};

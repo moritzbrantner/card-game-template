@@ -1,0 +1,148 @@
+{
+  "tables": [
+    {
+      "name": "Profile",
+      "label": "Profile",
+      "description": "Create profile records from a schema-driven form.",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "userId",
+          "label": "User Id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "bio",
+          "label": "Bio",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "locale",
+          "label": "Locale",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "timezone",
+          "label": "Timezone",
+          "type": "text",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "SecurityRateLimitCounter",
+      "label": "Security Rate Limit Counter",
+      "description": "Create or repair security rate-limit rows.",
+      "fields": [
+        {
+          "name": "key",
+          "label": "Key",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "count",
+          "label": "Count",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "resetAt",
+          "label": "Reset At",
+          "type": "date",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "SecurityAuditLog",
+      "label": "Security Audit Log",
+      "description": "Create security audit entries manually.",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "actorId",
+          "label": "Actor Id",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "action",
+          "label": "Action",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "outcome",
+          "label": "Outcome",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "statusCode",
+          "label": "Status Code",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "metadata",
+          "label": "Metadata",
+          "type": "textarea",
+          "required": true,
+          "format": "json",
+          "placeholder": "{\"key\":\"value\"}"
+        },
+        {
+          "name": "timestamp",
+          "label": "Timestamp",
+          "type": "date",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "label": "User",
+      "description": "Create local user records (admin use only).",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "email",
+          "label": "Email",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "name",
+          "label": "Name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "passwordHash",
+          "label": "Password Hash",
+          "type": "text",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

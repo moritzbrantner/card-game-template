@@ -1,0 +1,1 @@
+export { buildSchemaHealthDetail } from './shared';
