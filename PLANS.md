@@ -25,3 +25,4 @@ This is the initial roadmap implied by the current product brief.
 - update contracts before platform implementations when interfaces change
 - validate both local and online execution paths for gameplay changes
 - prefer shared packages for domain logic and typed contracts
+- the initial UNO-style sample proves shared local execution first; online rooms, persistence, and realtime transport remain a follow-up slice

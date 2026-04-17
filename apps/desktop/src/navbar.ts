@@ -1,5 +1,6 @@
 export type AppRoute =
   | 'home'
+  | 'uno'
   | 'settings'
   | 'documents'
   | 'three'
@@ -23,6 +24,13 @@ export function createNavbar(route: AppRoute): HTMLElement {
   homeLink.textContent = 'Home';
   if (route === 'home') {
     homeLink.className = 'is-active';
+  }
+
+  const unoLink = document.createElement('a');
+  unoLink.href = '#/uno';
+  unoLink.textContent = 'UNO-style';
+  if (route === 'uno') {
+    unoLink.className = 'is-active';
   }
 
   const settingsLink = document.createElement('a');
@@ -69,6 +77,7 @@ export function createNavbar(route: AppRoute): HTMLElement {
 
   actions.append(
     homeLink,
+    unoLink,
     settingsLink,
     documentsLink,
     threeLink,

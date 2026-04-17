@@ -28,6 +28,7 @@ const enabledFeatures = {
   'showcase.forms': true,
   'showcase.story': true,
   'showcase.communication': true,
+  'showcase.uno': true,
   'showcase.uploads': true,
   'showcase.remocn': true,
   'showcase.employeeTable': true,
@@ -52,6 +53,18 @@ const showcaseManifest: AppManifest = {
         const pageModule = await import('./pages/home-page');
         const HomePage = pageModule.default;
         return createElement(HomePage, { locale });
+      },
+    },
+    {
+      id: 'uno',
+      slug: 'uno',
+      kind: 'component',
+      namespace: 'UnoPage',
+      featureKey: 'showcase.uno',
+      render: async ({ locale }) => {
+        const pageModule = await import('./pages/uno-page');
+        const UnoPage = pageModule.default;
+        return createElement(UnoPage, { locale });
       },
     },
     {
@@ -177,12 +190,13 @@ const showcaseManifest: AppManifest = {
   publicNavigation: [
     { pageId: 'home', category: 'discover', hotkey: ['alt', 'h'], order: 10 },
     { pageId: 'about', category: 'discover', hotkey: ['alt', 'a'], order: 20 },
-    { pageId: 'remocn', category: 'discover', hotkey: ['alt', 'v'], prefetch: false, order: 30 },
-    { pageId: 'story', category: 'discover', hotkey: ['alt', 's'], prefetch: false, order: 40 },
-    { pageId: 'communication', category: 'discover', hotkey: ['alt', 'c'], prefetch: false, order: 50 },
-    { pageId: 'forms', category: 'workspace', hotkey: ['alt', 'f'], prefetch: false, order: 60 },
-    { pageId: 'table', category: 'workspace', hotkey: ['alt', 't'], order: 70 },
-    { pageId: 'uploads', category: 'workspace', hotkey: ['alt', 'u'], prefetch: false, order: 80 },
+    { pageId: 'uno', category: 'discover', hotkey: ['alt', 'o'], order: 30 },
+    { pageId: 'remocn', category: 'discover', hotkey: ['alt', 'v'], prefetch: false, order: 40 },
+    { pageId: 'story', category: 'discover', hotkey: ['alt', 's'], prefetch: false, order: 50 },
+    { pageId: 'communication', category: 'discover', hotkey: ['alt', 'c'], prefetch: false, order: 60 },
+    { pageId: 'forms', category: 'workspace', hotkey: ['alt', 'f'], prefetch: false, order: 70 },
+    { pageId: 'table', category: 'workspace', hotkey: ['alt', 't'], order: 80 },
+    { pageId: 'uploads', category: 'workspace', hotkey: ['alt', 'u'], prefetch: false, order: 90 },
   ],
   contentRoots: {
     pages: ['apps/showcase/content/pages'],

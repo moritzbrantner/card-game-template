@@ -131,6 +131,12 @@ export const foundationFeatureMetadata: Record<FoundationFeatureKey, FoundationF
     category: 'showcase',
     supportsUserOverrides: false,
   },
+  'showcase.uno': {
+    label: 'Showcase UNO-style',
+    description: 'Expose the shared UNO-style example page.',
+    category: 'showcase',
+    supportsUserOverrides: false,
+  },
   'showcase.story': {
     label: 'Showcase story',
     description: 'Expose the storytelling example page.',

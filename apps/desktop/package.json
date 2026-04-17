@@ -48,6 +48,8 @@
     "@repo/game-catalog": "workspace:*",
     "@repo/game-contracts": "workspace:*",
     "@repo/game-engine": "workspace:*",
+    "@repo/game-session": "workspace:*",
+    "@repo/game-uno": "workspace:*",
     "@repo/multiplayer-contract": "workspace:*",
     "@moritzbrantner/electron-commands": "file:packages/electron-commands",
     "@moritzbrantner/electron-documents": "file:packages/electron-documents",

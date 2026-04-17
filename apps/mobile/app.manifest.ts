@@ -11,6 +11,8 @@ export const appManifest = {
     '@repo/game-catalog',
     '@repo/game-contracts',
     '@repo/game-engine',
+    '@repo/game-session',
+    '@repo/game-uno',
     '@repo/multiplayer-contract',
   ],
   featureFlags: ['accounts', 'touch-play', 'match-history', 'multiplayer'],

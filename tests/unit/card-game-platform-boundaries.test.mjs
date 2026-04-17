@@ -10,6 +10,8 @@ const sharedPackages = [
   '@repo/game-catalog',
   '@repo/game-contracts',
   '@repo/game-engine',
+  '@repo/game-session',
+  '@repo/game-uno',
   '@repo/multiplayer-contract',
 ];
 
@@ -18,6 +20,8 @@ test('card-game packages expose the shared domain boundaries', () => {
     'packages/game-contracts/package.json',
     'packages/game-engine/package.json',
     'packages/game-catalog/package.json',
+    'packages/game-session/package.json',
+    'packages/game-uno/package.json',
     'packages/multiplayer-contract/package.json',
   ];
 

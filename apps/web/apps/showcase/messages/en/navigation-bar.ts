@@ -3,6 +3,7 @@ export const navigationBar = {
   links: {
     home: 'Home',
     about: 'About',
+    uno: 'UNO-style',
     remocn: 'remocn',
     forms: 'Form Demo',
     story: 'Story Demo',

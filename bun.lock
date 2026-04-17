@@ -24,6 +24,8 @@
         "@repo/game-catalog": "workspace:*",
         "@repo/game-contracts": "workspace:*",
         "@repo/game-engine": "workspace:*",
+        "@repo/game-session": "workspace:*",
+        "@repo/game-uno": "workspace:*",
         "@repo/multiplayer-contract": "workspace:*",
         "@tanstack/react-query": "^5.90.21",
         "electron-squirrel-startup": "^1.0.1",
@@ -70,6 +72,8 @@
         "@repo/game-catalog": "workspace:*",
         "@repo/game-contracts": "workspace:*",
         "@repo/game-engine": "workspace:*",
+        "@repo/game-session": "workspace:*",
+        "@repo/game-uno": "workspace:*",
         "@repo/multiplayer-contract": "workspace:*",
         "expo": "~54.0.33",
         "expo-constants": "~18.0.13",
@@ -124,6 +128,8 @@
         "@repo/game-catalog": "workspace:*",
         "@repo/game-contracts": "workspace:*",
         "@repo/game-engine": "workspace:*",
+        "@repo/game-session": "workspace:*",
+        "@repo/game-uno": "workspace:*",
         "@repo/multiplayer-contract": "workspace:*",
         "@tanstack/react-table": "^8.21.3",
         "bcryptjs": "^3.0.3",
@@ -355,6 +361,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@repo/game-contracts": "workspace:*",
+        "@repo/game-uno": "workspace:*",
       },
       "devDependencies": {
         "@repo/typescript-config": "workspace:*",
@@ -374,6 +381,31 @@
       "version": "0.0.0",
       "dependencies": {
         "@repo/game-contracts": "workspace:*",
+      },
+      "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "typescript": "5.9.2",
+      },
+    },
+    "packages/game-session": {
+      "name": "@repo/game-session",
+      "version": "0.0.0",
+      "dependencies": {
+        "@repo/game-contracts": "workspace:*",
+        "@repo/game-engine": "workspace:*",
+      },
+      "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "typescript": "5.9.2",
+      },
+    },
+    "packages/game-uno": {
+      "name": "@repo/game-uno",
+      "version": "0.0.0",
+      "dependencies": {
+        "@repo/game-contracts": "workspace:*",
+        "@repo/game-engine": "workspace:*",
+        "@repo/game-session": "workspace:*",
       },
       "devDependencies": {
         "@repo/typescript-config": "workspace:*",
@@ -1560,6 +1592,10 @@
     "@repo/game-contracts": ["@repo/game-contracts@workspace:packages/game-contracts"],
 
     "@repo/game-engine": ["@repo/game-engine@workspace:packages/game-engine"],
+
+    "@repo/game-session": ["@repo/game-session@workspace:packages/game-session"],
+
+    "@repo/game-uno": ["@repo/game-uno@workspace:packages/game-uno"],
 
     "@repo/multiplayer-contract": ["@repo/multiplayer-contract@workspace:packages/multiplayer-contract"],
 

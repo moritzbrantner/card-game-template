@@ -6,6 +6,11 @@ const path = require('node:path');
 test('desktop renderer uses the preload-backed desktop platform APIs', () => {
   const source = fs.readFileSync(path.resolve(__dirname, '../src/renderer.ts'), 'utf8');
 
+  assert.match(source, /@repo\/game-session/);
+  assert.match(source, /createUnoScreen/);
+  assert.match(source, /pendingHotseatPlayerId/);
+  assert.match(source, /Restart match/);
+  assert.match(source, /Reveal next hand/);
   assert.match(source, /window\.desktop\.preferences\.getAll\(\)/);
   assert.match(source, /window\.desktop\.documents\.getState\(\)/);
   assert.match(source, /document\.save/);
@@ -27,12 +32,14 @@ test('desktop navbar component provides app navigation links including documents
   assert.match(source, /navbar__brand/);
   assert.match(source, /Desktop App/);
   assert.match(source, /Home/);
+  assert.match(source, /UNO-style/);
   assert.match(source, /Settings/);
   assert.match(source, /Documents/);
   assert.match(source, /Three\.js/);
   assert.match(source, /React Hook Form/);
   assert.match(source, /Communication/);
   assert.match(source, /#\/documents/);
+  assert.match(source, /#\/uno/);
   assert.match(source, /#\/communication/);
   assert.match(source, /#\/react-hook-form/);
   assert.match(source, /#\/three/);

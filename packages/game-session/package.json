@@ -1,5 +1,5 @@
 {
-  "name": "@repo/game-catalog",
+  "name": "@repo/game-session",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@repo/game-contracts": "workspace:*",
-    "@repo/game-uno": "workspace:*"
+    "@repo/game-engine": "workspace:*"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

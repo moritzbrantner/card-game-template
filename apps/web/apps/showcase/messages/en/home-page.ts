@@ -3,6 +3,7 @@ export const homePage = {
   title: 'One template, multiple production-ready starting points.',
   description:
     'The merged starter now combines localized navigation, auth, forms, data views, storytelling, communication notes, and upload scaffolding in one Next.js base.',
+  visitUno: 'Open UNO-style Example',
   visitForm: 'Open Form Example',
   visitStory: 'Open Story Example',
   visitCommunication: 'Open Communication Example',

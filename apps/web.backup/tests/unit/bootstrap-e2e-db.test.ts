@@ -159,6 +159,7 @@ exit 0
           FAKE_NODE_STATE: nodeStatePath,
           FAKE_BUN_LOG: bunLogPath,
           PATH: `${binDir}:${process.env.PATH ?? ''}`,
+          PROFILE_IMAGE_STORAGE_ENDPOINT: 'http://127.0.0.1:65535',
           TMPDIR: testDir,
         },
       });

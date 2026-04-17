@@ -61,6 +61,19 @@ test('mobile has a dedicated communication screen with Websockets and CRDTs sect
   assert.match(source, /Communication topic/);
 });
 
+test('mobile has a dedicated UNO-style screen with hotseat handoff and local session state', () => {
+  const source = fs.readFileSync(
+    path.resolve(__dirname, '../app/(tabs)/uno.tsx'),
+    'utf8',
+  );
+
+  assert.match(source, /UNO-style/);
+  assert.match(source, /createLocalGameSession/);
+  assert.match(source, /pendingHotseatPlayerId/);
+  assert.match(source, /Reveal next hand/);
+  assert.match(source, /House rule toggles/);
+});
+
 test('mobile home links to own and dummy profile pages', () => {
   const source = fs.readFileSync(
     path.resolve(__dirname, '../app/(tabs)/index.tsx'),

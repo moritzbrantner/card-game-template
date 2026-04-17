@@ -63,9 +63,20 @@ function Item({
   ...props
 }: React.ComponentProps<"div"> &
   VariantProps<typeof itemVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot.Root : "div"
+  if (asChild) {
+    return (
+      <Slot.Root
+        data-slot="item"
+        data-variant={variant}
+        data-size={size}
+        className={cn(itemVariants({ variant, size, className }))}
+        {...(props as React.ComponentProps<typeof Slot.Root>)}
+      />
+    )
+  }
+
   return (
-    <Comp
+    <div
       data-slot="item"
       data-variant={variant}
       data-size={size}

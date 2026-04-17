@@ -200,6 +200,46 @@ body {
   margin-top: 1.5rem;
 }
 
+.uno-toolbar,
+.uno-controls,
+.uno-status-grid,
+.uno-seats-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.uno-toolbar {
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  align-items: center;
+}
+
+.uno-controls,
+.uno-status-grid,
+.uno-seats-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.uno-seat-card.is-active {
+  border-color: rgba(103, 232, 249, 0.4);
+  box-shadow: 0 1rem 2.5rem rgba(103, 232, 249, 0.1);
+}
+
+.uno-hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.uno-card-token {
+  display: inline-flex;
+  border-radius: 999px;
+  border: 1px solid rgba(113, 113, 122, 0.28);
+  padding: 0.45rem 0.8rem;
+  background: color-mix(in srgb, var(--background) 96%, var(--foreground) 4%);
+}
+
 .settings-toggle-group,
 .document-toolbar,
 .recent-list {
@@ -488,6 +528,9 @@ body {
   .overview-grid,
   .settings-grid,
   .document-layout,
+  .uno-controls,
+  .uno-status-grid,
+  .uno-seats-grid,
   .upload-card--hero,
   .upload-surface-grid,
   .upload-platform-grid,

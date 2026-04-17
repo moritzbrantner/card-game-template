@@ -3,7 +3,12 @@ import test from 'node:test';
 
 import type { GameMove, MatchState, PlayerProfile } from '../../game-contracts/src/index.ts';
 
-import { createGameEngine } from '../src/index.ts';
+import {
+  areMovesEquivalent,
+  createGameEngine,
+  createSeededRandom,
+  shuffleWithSeed,
+} from '../src/index.ts';
 
 type CounterState = {
   total: number;
@@ -57,6 +62,9 @@ const counterAdapter = {
         payload: { amount: 1 },
       },
     ];
+  },
+  isLegalMove(state: MatchState<CounterState>, move: CounterMove): boolean {
+    return counterAdapter.listLegalMoves(state).some((candidate) => areMovesEquivalent(candidate, move));
   },
   applyMove(state: MatchState<CounterState>, move: CounterMove): MatchState<CounterState> {
     return {
@@ -129,5 +137,39 @@ test('createGameEngine rejects illegal moves', () => {
         payload: { amount: 0 },
       }),
     /Illegal move submitted/,
+  );
+});
+
+test('areMovesEquivalent compares payloads instead of only kind and player', () => {
+  const left: CounterMove = {
+    playerId: 'p1',
+    kind: 'play-card',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: { amount: 1, cardId: 'red-1' },
+  };
+  const right: CounterMove = {
+    playerId: 'p1',
+    kind: 'play-card',
+    createdAt: '2026-04-17T12:01:00.000Z',
+    payload: { amount: 1, cardId: 'red-2' },
+  };
+
+  assert.equal(areMovesEquivalent(left, right), false);
+});
+
+test('shuffleWithSeed is deterministic for the same seed', () => {
+  const deck = ['a', 'b', 'c', 'd', 'e'];
+
+  assert.deepEqual(shuffleWithSeed(deck, 'uno-seed'), shuffleWithSeed(deck, 'uno-seed'));
+  assert.notDeepEqual(shuffleWithSeed(deck, 'uno-seed'), shuffleWithSeed(deck, 'other-seed'));
+});
+
+test('createSeededRandom produces a stable sequence', () => {
+  const first = createSeededRandom(42);
+  const second = createSeededRandom(42);
+
+  assert.deepEqual(
+    [first(), first(), first()],
+    [second(), second(), second()],
   );
 });

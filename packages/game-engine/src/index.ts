@@ -6,7 +6,7 @@ import {
   type MatchResult,
   type MatchState,
   type PlayerProfile,
-} from '../../game-contracts/src/index.ts';
+} from '@repo/game-contracts';
 
 export type StartMatchInput<TSetup> = {
   matchId: string;
@@ -19,9 +19,83 @@ export interface GameAdapter<TSetup, TState, TMove extends GameMove = GameMove> 
   definition: GameDefinition;
   createInitialState(input: StartMatchInput<TSetup> & { executionMode: MatchExecutionMode }): MatchState<TState>;
   listLegalMoves(state: MatchState<TState>): readonly TMove[];
+  isLegalMove(state: MatchState<TState>, move: TMove): boolean;
   applyMove(state: MatchState<TState>, move: TMove): MatchState<TState>;
   isMatchComplete(state: MatchState<TState>): boolean;
   getResult?(state: MatchState<TState>): MatchResult | null;
+}
+
+function hashSeed(seed: number | string): number {
+  if (typeof seed === 'number' && Number.isFinite(seed)) {
+    return seed >>> 0;
+  }
+
+  const text = `${seed}`;
+  let hash = 2166136261;
+
+  for (const character of text) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
+}
+
+export function createSeededRandom(seed: number | string) {
+  let state = hashSeed(seed) || 0x9e3779b9;
+
+  return function nextRandom() {
+    state += 0x6d2b79f5;
+    let next = state;
+    next = Math.imul(next ^ (next >>> 15), next | 1);
+    next ^= next + Math.imul(next ^ (next >>> 7), next | 61);
+    return ((next ^ (next >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function shuffleWithRandom<T>(items: readonly T[], nextRandom: () => number): T[] {
+  const shuffled = [...items];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(nextRandom() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex]!, shuffled[index]!];
+  }
+
+  return shuffled;
+}
+
+export function shuffleWithSeed<T>(items: readonly T[], seed: number | string): T[] {
+  return shuffleWithRandom(items, createSeededRandom(seed));
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function deepEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) {
+    return true;
+  }
+
+  if (Array.isArray(left) && Array.isArray(right)) {
+    return left.length === right.length && left.every((item, index) => deepEqual(item, right[index]));
+  }
+
+  if (isRecord(left) && isRecord(right)) {
+    const leftKeys = Object.keys(left);
+    const rightKeys = Object.keys(right);
+
+    return (
+      leftKeys.length === rightKeys.length &&
+      leftKeys.every((key) => rightKeys.includes(key) && deepEqual(left[key], right[key]))
+    );
+  }
+
+  return false;
+}
+
+export function areMovesEquivalent<TMove extends GameMove>(left: TMove, right: TMove): boolean {
+  return left.playerId === right.playerId && left.kind === right.kind && deepEqual(left.payload, right.payload);
 }
 
 export function createGameEngine<TSetup, TState, TMove extends GameMove = GameMove>(
@@ -38,11 +112,7 @@ export function createGameEngine<TSetup, TState, TMove extends GameMove = GameMo
       });
     },
     submitMove(state: MatchState<TState>, move: TMove): MatchState<TState> {
-      const isLegalMove = adapter
-        .listLegalMoves(state)
-        .some((candidate) => candidate.kind === move.kind && candidate.playerId === move.playerId);
-
-      if (!isLegalMove) {
+      if (!adapter.isLegalMove(state, move)) {
         throw new Error(`Illegal move submitted for ${adapter.definition.gameId}: ${move.kind}`);
       }
 

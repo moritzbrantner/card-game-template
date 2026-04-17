@@ -14,6 +14,9 @@ test('mobile navigation exposes settings, libraries, and profile routes', () => 
   assert.match(source, /name="communication"/);
   assert.match(source, /title: 'Communication'/);
   assert.match(source, /bubble\.left\.and\.bubble\.right\.fill/);
+  assert.match(source, /name="uno"/);
+  assert.match(source, /title: 'UNO-style'/);
+  assert.match(source, /rectangle\.stack\.fill/);
   assert.match(source, /name="uploads"/);
   assert.match(source, /title: 'Uploads'/);
   assert.match(source, /square\.and\.arrow\.up\.fill/);
@@ -27,6 +30,7 @@ test('mobile navigation exposes settings, libraries, and profile routes', () => 
   assert.match(source, /title: 'Form'/);
   assert.match(source, /list\.bullet\.clipboard\.fill/);
   assert.match(iconSource, /'bubble\.left\.and\.bubble\.right\.fill': 'forum'/);
+  assert.match(iconSource, /'rectangle\.stack\.fill': 'style'/);
   assert.match(iconSource, /'square\.and\.arrow\.up\.fill': 'upload'/);
   assert.match(stackSource, /name="profile\/\[profile\]"/);
   assert.match(stackSource, /title: 'Profile'/);

@@ -1,4 +1,5 @@
-import type { GameDefinition, GameId, MatchExecutionMode } from '../../game-contracts/src/index.ts';
+import type { GameDefinition, GameId, MatchExecutionMode } from '@repo/game-contracts';
+import { unoCatalogEntry } from '@repo/game-uno';
 
 export type GameCatalogEntry<TMetadata = Record<string, unknown>> = {
   definition: GameDefinition;
@@ -47,3 +48,5 @@ export function createGameCatalog<TMetadata = Record<string, unknown>>(
     },
   };
 }
+
+export const defaultGameCatalog = createGameCatalog([unoCatalogEntry]);

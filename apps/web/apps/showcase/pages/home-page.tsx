@@ -23,6 +23,9 @@ export default async function HomePage({ locale }: { locale: AppLocale }) {
         </div>
 
         <div className="mt-8 flex flex-wrap gap-3">
+          <LocalizedLink href="/uno" locale={routingLocale} prefetch={false} className={buttonVariants({ variant: 'default' })}>
+            {t('visitUno')}
+          </LocalizedLink>
           <LocalizedLink href="/examples/forms" locale={routingLocale} prefetch={false} className={buttonVariants({ variant: 'default' })}>
             {t('visitForm')}
           </LocalizedLink>

@@ -21,6 +21,7 @@ const MAPPING = {
   'gearshape.fill': 'settings',
   'cube.fill': 'view-in-ar',
   'list.bullet.clipboard.fill': 'fact-check',
+  'rectangle.stack.fill': 'style',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
 } as IconMapping;

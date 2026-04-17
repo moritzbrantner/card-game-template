@@ -70,3 +70,5 @@ The repository should evolve toward:
 ## Current status
 
 The repository structure already supports a monorepo with platform-specific apps. The root documentation now defines the intended card-game platform direction that future implementation should follow.
+
+The first playable sample is now a local-first UNO-style example shared across web, mobile, and desktop through common rules and session packages. Online rooms, authoritative multiplayer, and match persistence remain deferred follow-up work.

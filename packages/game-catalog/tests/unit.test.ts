@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createGameCatalog } from '../src/index.ts';
+import { createGameCatalog, defaultGameCatalog } from '../src/index.ts';
 
 test('createGameCatalog lists entries in a stable name order', () => {
   const catalog = createGameCatalog([
@@ -69,4 +69,11 @@ test('createGameCatalog rejects duplicate registrations', () => {
       }),
     /Duplicate game registration/,
   );
+});
+
+test('defaultGameCatalog registers the UNO-style sample', () => {
+  const unoEntry = defaultGameCatalog.get('uno-style');
+
+  assert.equal(unoEntry?.definition.name, 'UNO-style');
+  assert.equal(unoEntry?.metadata?.route, '/uno');
 });

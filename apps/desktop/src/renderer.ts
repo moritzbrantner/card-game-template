@@ -1,6 +1,20 @@
 import './index.css';
 
 import { createSharedButtonLabel } from '@moritzbrantner/ui';
+import { defaultGameCatalog } from '@repo/game-catalog';
+import { createLocalGameSession, type LocalGameSession } from '@repo/game-session';
+import {
+  createUnoAdapter,
+  createUnoBots,
+  defaultUnoRules,
+  getUnoExamplePreset,
+  projectUnoPlayerView,
+  type UnoExamplePresetId,
+  type UnoMove,
+  type UnoPlayerView,
+  type UnoRules,
+  type UnoState,
+} from '@repo/game-uno';
 
 import type { DocumentState } from '@moritzbrantner/electron-documents/renderer';
 
@@ -29,6 +43,48 @@ const appState = {
   ready: false,
 };
 
+const unoRuntime = {
+  presetId: 'mixed-table' as UnoExamplePresetId,
+  rules: defaultUnoRules,
+  session: null as LocalGameSession<UnoState, UnoMove, UnoPlayerView> | null,
+  snapshot: null as ReturnType<LocalGameSession<UnoState, UnoMove, UnoPlayerView>['getSnapshot']> | null,
+  unsubscribe: null as (() => void) | null,
+};
+
+function createUnoSession(presetId: UnoExamplePresetId, rules: UnoRules) {
+  const preset = getUnoExamplePreset(presetId);
+  const seed = `desktop:${presetId}:${JSON.stringify(rules)}`;
+
+  return createLocalGameSession({
+    adapter: createUnoAdapter(),
+    bots: createUnoBots(preset.seats, seed),
+    hotseat: preset.hotseat,
+    matchId: `desktop-uno:${presetId}`,
+    participants: preset.seats,
+    projectView: projectUnoPlayerView,
+    setup: {
+      rules,
+      seed,
+    },
+  });
+}
+
+function replaceUnoSession() {
+  unoRuntime.unsubscribe?.();
+  unoRuntime.session = createUnoSession(unoRuntime.presetId, unoRuntime.rules);
+  unoRuntime.snapshot = unoRuntime.session.getSnapshot();
+  unoRuntime.unsubscribe = unoRuntime.session.subscribe((snapshot) => {
+    unoRuntime.snapshot = snapshot;
+    renderApp();
+  });
+}
+
+function ensureUnoSession() {
+  if (!unoRuntime.session || !unoRuntime.snapshot) {
+    replaceUnoSession();
+  }
+}
+
 function applyTheme(preferences: DesktopPreferences) {
   const theme = resolveThemePreference(preferences.appearance.theme, systemThemeQuery.matches);
   document.documentElement.dataset.theme = theme;
@@ -37,6 +93,10 @@ function applyTheme(preferences: DesktopPreferences) {
 function getCurrentRoute(): AppRoute {
   if (window.location.hash === '#/settings') {
     return 'settings';
+  }
+
+  if (window.location.hash === '#/uno') {
+    return 'uno';
   }
 
   if (window.location.hash === '#/documents') {
@@ -131,6 +191,199 @@ function createHomeScreen() {
   featuresCard.append(featuresTitle, featuresList);
   grid.append(sharedPackageCard, featuresCard);
   screen.append(grid);
+
+  return screen;
+}
+
+function createUnoScreen() {
+  ensureUnoSession();
+
+  const snapshot = unoRuntime.snapshot!;
+  const catalogEntry = defaultGameCatalog.get('uno-style');
+  const screen = createScreenFrame(
+    'Shared gameplay example',
+    'UNO-style',
+    'The desktop shell renders the same local session and player-view model as web and mobile while keeping the renderer imperative.',
+  );
+
+  const topBar = document.createElement('div');
+  topBar.className = 'uno-toolbar';
+
+  const restartButton = document.createElement('button');
+  restartButton.type = 'button';
+  restartButton.className = 'upload-button upload-button--primary';
+  restartButton.textContent = 'Restart match';
+  restartButton.addEventListener('click', () => {
+    unoRuntime.session?.restart();
+  });
+
+  const catalogBadge = document.createElement('span');
+  catalogBadge.className = 'shared-package-label';
+  catalogBadge.textContent = `${catalogEntry?.definition.name ?? 'UNO-style'} ${catalogEntry?.metadata.route ?? '/uno'}`;
+
+  topBar.append(restartButton, catalogBadge);
+  screen.append(topBar);
+
+  const controls = document.createElement('div');
+  controls.className = 'uno-controls';
+
+  const presetCard = document.createElement('article');
+  presetCard.className = 'overview-card';
+  presetCard.innerHTML = '<h2>Match presets</h2><p>Swap between hotseat and bot-heavy local sessions without changing the shared rules package.</p>';
+
+  const presetRow = document.createElement('div');
+  presetRow.className = 'settings-toggle-group';
+
+  for (const preset of catalogEntry?.metadata.presets ?? []) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = preset.id === unoRuntime.presetId ? 'settings-chip is-active' : 'settings-chip';
+    button.textContent = preset.label;
+    button.addEventListener('click', () => {
+      unoRuntime.presetId = preset.id;
+      replaceUnoSession();
+      renderApp();
+    });
+    presetRow.append(button);
+  }
+
+  presetCard.append(presetRow);
+
+  const rulesCard = document.createElement('article');
+  rulesCard.className = 'overview-card';
+  rulesCard.innerHTML = '<h2>House rule toggles</h2><p>Enable draw stacking, jump-in, 7-0, or an explicit UNO call without changing app-specific code.</p>';
+
+  const rulesRow = document.createElement('div');
+  rulesRow.className = 'settings-toggle-group';
+
+  ([
+    ['drawStacking', 'Draw stacking'],
+    ['jumpIn', 'Jump-in'],
+    ['sevenZero', '7-0 swap'],
+    ['requireUnoCall', 'Require UNO call'],
+  ] as const).forEach(([ruleKey, label]) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = unoRuntime.rules[ruleKey] ? 'settings-chip is-active' : 'settings-chip';
+    button.textContent = label;
+    button.addEventListener('click', () => {
+      unoRuntime.rules = {
+        ...unoRuntime.rules,
+        [ruleKey]: !unoRuntime.rules[ruleKey],
+      };
+      replaceUnoSession();
+      renderApp();
+    });
+    rulesRow.append(button);
+  });
+
+  rulesCard.append(rulesRow);
+  controls.append(presetCard, rulesCard);
+  screen.append(controls);
+
+  const statusGrid = document.createElement('div');
+  statusGrid.className = 'uno-status-grid';
+
+  [
+    ['Active color', snapshot.view.activeColor],
+    ['Pending draw', `${snapshot.view.pendingDrawAmount}`],
+    ['Draw pile', `${snapshot.view.drawPileCount}`],
+    ['Event', snapshot.view.status],
+  ].forEach(([label, value]) => {
+    const card = document.createElement('article');
+    card.className = 'overview-card';
+    card.innerHTML = `<h2>${label}</h2><p>${value}</p>`;
+    statusGrid.append(card);
+  });
+
+  if (snapshot.view.matchResultBanner) {
+    const winnerCard = document.createElement('article');
+    winnerCard.className = 'overview-card';
+    winnerCard.innerHTML = `<h2>Result</h2><p>${snapshot.view.matchResultBanner}</p>`;
+    statusGrid.append(winnerCard);
+  }
+
+  screen.append(statusGrid);
+
+  const seatsGrid = document.createElement('div');
+  seatsGrid.className = 'uno-seats-grid';
+
+  snapshot.view.players.forEach((player) => {
+    const card = document.createElement('article');
+    card.className = player.isActive ? 'overview-card uno-seat-card is-active' : 'overview-card uno-seat-card';
+
+    const title = document.createElement('h2');
+    title.textContent = `${player.displayName} (${player.controller})`;
+
+    const summary = document.createElement('p');
+    summary.textContent = `${player.handCount} cards${player.isViewer ? ' · viewer' : ''}`;
+
+    const hand = document.createElement('div');
+    hand.className = 'uno-hand';
+
+    if (player.visibleCards.length > 0) {
+      player.visibleCards.forEach((visibleCard) => {
+        const token = document.createElement('span');
+        token.className = 'uno-card-token';
+        token.textContent = visibleCard.label;
+        hand.append(token);
+      });
+    } else {
+      const hidden = document.createElement('p');
+      hidden.textContent = 'Hidden until this seat is active on the device.';
+      hand.append(hidden);
+    }
+
+    card.append(title, summary, hand);
+    seatsGrid.append(card);
+  });
+
+  screen.append(seatsGrid);
+
+  const actionsCard = document.createElement('article');
+  actionsCard.className = 'overview-card';
+
+  const actionsTitle = document.createElement('h2');
+  actionsTitle.textContent = snapshot.view.pendingHotseatPlayerId ? 'Hotseat handoff' : 'Legal actions';
+  actionsCard.append(actionsTitle);
+
+  if (snapshot.view.pendingHotseatPlayerId) {
+    const message = document.createElement('p');
+    message.textContent = `Waiting for ${snapshot.view.pendingHotseatPlayerId} to take over this device.`;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'upload-button upload-button--primary';
+    button.textContent = 'Reveal next hand';
+    button.addEventListener('click', () => {
+      unoRuntime.session?.confirmHotseat();
+    });
+
+    actionsCard.append(message, button);
+  } else {
+    const actions = document.createElement('div');
+    actions.className = 'document-toolbar';
+
+    if (snapshot.view.legalActions.length === 0) {
+      const empty = document.createElement('p');
+      empty.textContent = 'No visible actions right now.';
+      actionsCard.append(empty);
+    } else {
+      snapshot.view.legalActions.forEach((action) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'upload-button';
+        button.textContent = action.label;
+        button.addEventListener('click', () => {
+          unoRuntime.session?.submitMove(action.move);
+        });
+        actions.append(button);
+      });
+      actionsCard.append(actions);
+    }
+  }
+
+  screen.append(actionsCard);
 
   return screen;
 }
@@ -468,6 +721,11 @@ function renderApp() {
 
   if (route === 'settings') {
     app.append(createSettingsScreen());
+    return;
+  }
+
+  if (route === 'uno') {
+    app.append(createUnoScreen());
     return;
   }
 

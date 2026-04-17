@@ -3,6 +3,7 @@ export const homePage = {
   title: 'Eine Vorlage mit mehreren produktionsnahen Ausgangspunkten.',
   description:
     'Der zusammengefuehrte Starter vereint lokalisierte Navigation, Auth, Formulare, Datenansichten, Storytelling, Kommunikationsleitlinien und Upload-Grundlagen in einer Next.js-Basis.',
+  visitUno: 'UNO-aehnliches Beispiel oeffnen',
   visitForm: 'Formularbeispiel öffnen',
   visitStory: 'Story-Beispiel öffnen',
   visitCommunication: 'Kommunikationsbeispiel öffnen',

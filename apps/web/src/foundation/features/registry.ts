@@ -20,6 +20,7 @@ export const foundationFeatureModules: readonly FoundationFeatureModule[] = [
   { featureKey: 'admin.systemSettings', requiredMessageNamespaces: ['AdminPage'], requiredContentCollections: [] },
   { featureKey: 'admin.dataStudio', requiredMessageNamespaces: ['AdminPage'], requiredContentCollections: [] },
   { featureKey: 'showcase.forms', requiredMessageNamespaces: ['FormsPage'], requiredContentCollections: [] },
+  { featureKey: 'showcase.uno', requiredMessageNamespaces: ['UnoPage'], requiredContentCollections: [] },
   { featureKey: 'showcase.story', requiredMessageNamespaces: ['StoryPage'], requiredContentCollections: [] },
   { featureKey: 'showcase.communication', requiredMessageNamespaces: ['CommunicationPage'], requiredContentCollections: [] },
   { featureKey: 'showcase.uploads', requiredMessageNamespaces: ['UploadsPage'], requiredContentCollections: [] },
