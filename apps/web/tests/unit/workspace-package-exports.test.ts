@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { foundationFeatureKeys, resolvePublicRoute, withLocalePath, type AppManifest } from '@moritzbrantner/app-pack';
 import { StaticRedirectPage } from '@moritzbrantner/app-pack-react';
 import { Card, buttonVariants } from '@moritzbrantner/ui';
+import { buttonVariants as serverButtonVariants } from '@moritzbrantner/ui/button-variants';
 
 const manifest: AppManifest = {
   id: 'export-check',
@@ -45,5 +46,6 @@ describe('workspace package exports', () => {
   it('exposes the UI surface used by app packs', () => {
     expect(Card).toBeDefined();
     expect(buttonVariants({ variant: 'ghost' })).toContain('inline-flex');
+    expect(serverButtonVariants({ variant: 'ghost' })).toContain('inline-flex');
   });
 });

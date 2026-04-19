@@ -2,12 +2,17 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  MATCH_REPLAY_FORMAT_VERSION,
   createMatchReplay,
   createMatchResult,
   isOnlineCapable,
   summarizeMatchReplay,
   type GameDefinition,
 } from '../src/index.ts';
+
+test('match replay format version stays pinned for persisted payload compatibility', () => {
+  assert.equal(MATCH_REPLAY_FORMAT_VERSION, 1);
+});
 
 test('createMatchResult derives rankings from winner order when omitted', () => {
   const result = createMatchResult({

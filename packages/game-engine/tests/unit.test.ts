@@ -7,6 +7,7 @@ import {
   areMovesEquivalent,
   createGameEngine,
   createSeededRandom,
+  IllegalMoveError,
   shuffleWithSeed,
 } from '../src/index.ts';
 
@@ -128,16 +129,22 @@ test('createGameEngine rejects illegal moves', () => {
     setup: { target: 1 },
   });
 
-  assert.throws(
-    () =>
-      engine.submitMove(initial, {
-        playerId: 'p2',
-        kind: 'skip',
-        createdAt: '2026-04-17T12:00:00.000Z',
-        payload: { amount: 0 },
-      }),
-    /Illegal move submitted/,
-  );
+  assert.throws(() => {
+    engine.submitMove(initial, {
+      playerId: 'p2',
+      kind: 'skip',
+      createdAt: '2026-04-17T12:00:00.000Z',
+      payload: { amount: 0 },
+    });
+  }, (error) => {
+    assert.equal(error instanceof IllegalMoveError, true);
+    assert.equal(error.gameId, 'counter');
+    assert.equal(error.matchId, 'match-2');
+    assert.equal(error.playerId, 'p2');
+    assert.equal(error.moveKind, 'skip');
+    assert.equal(error.reason, 'move is not legal in the current match state');
+    return true;
+  });
 });
 
 test('areMovesEquivalent compares payloads instead of only kind and player', () => {

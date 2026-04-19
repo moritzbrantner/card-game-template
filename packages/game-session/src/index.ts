@@ -1,8 +1,11 @@
+import { isDeepStrictEqual } from 'node:util';
+
 import type {
   GameMove,
-  MatchReplay,
-  MatchReplayAnalysis,
   MatchExecutionMode,
+  MatchReplay,
+  MatchReplayAcceptedMove,
+  MatchReplayAnalysis,
   MatchResult,
   MatchState,
   PlayerId,
@@ -92,6 +95,23 @@ export type CreateServerGameSessionInput<TSetup, TState, TMove extends GameMove>
   setup: TSetup;
 };
 
+export type ResumeServerGameSessionInput<TSetup, TState, TMove extends GameMove> = {
+  adapter: GameAdapter<TSetup, TState, TMove>;
+  now?: () => string;
+  participants: readonly PlayerProfile[];
+  persistence?: ServerGameSessionPersistence<TState, TMove>;
+  replay: MatchReplay<TState, TMove>;
+};
+
+export type ReplayIntegrityCheck =
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      reason: string;
+    };
+
 export type ServerGameSession<TState, TMove extends GameMove> = {
   getAnalysis(): MatchReplayAnalysis;
   getReplay(): MatchReplay<TState, TMove>;
@@ -108,12 +128,75 @@ function cloneValue<TValue>(value: TValue): TValue {
   return structuredClone(value);
 }
 
+function sortPlayersBySeat<TPlayer extends PlayerProfile>(players: readonly TPlayer[]): TPlayer[] {
+  return [...players].sort((left, right) => left.seat - right.seat);
+}
+
+function withAcceptedFinishedAt(result: MatchResult | null, finishedAt: string): MatchResult | null {
+  return result
+    ? {
+        ...result,
+        finishedAt,
+      }
+    : null;
+}
+
+type RebuildReplayInput<TSetup, TState, TMove extends GameMove> = {
+  adapter: GameAdapter<TSetup, TState, TMove>;
+  replay: MatchReplay<TState, TMove>;
+};
+
+function rebuildServerReplay<TSetup, TState, TMove extends GameMove>(
+  input: RebuildReplayInput<TSetup, TState, TMove>,
+) {
+  const engine = createGameEngine(input.adapter);
+  let currentState = cloneState(input.replay.initialState);
+  let history: MatchState<TState>[] = [cloneState(currentState)];
+  let matchResult = withAcceptedFinishedAt(engine.finalizeMatch(currentState), input.replay.startedAt);
+  let replay = createMatchReplay<TState, TMove>({
+    startedAt: input.replay.startedAt,
+    initialState: cloneState(input.replay.initialState),
+    latestState: cloneState(currentState),
+    finishedAt: matchResult?.finishedAt ?? null,
+    result: cloneValue(matchResult),
+  });
+
+  for (const acceptedMove of input.replay.acceptedMoves) {
+    const nextState = engine.submitMove(currentState, acceptedMove.move);
+
+    currentState = nextState;
+    history = [...history, cloneState(nextState)];
+    matchResult = withAcceptedFinishedAt(engine.finalizeMatch(nextState), acceptedMove.acceptedAt);
+    replay = {
+      ...replay,
+      latestState: cloneState(nextState),
+      acceptedMoves: [
+        ...replay.acceptedMoves,
+        {
+          sequence: acceptedMove.sequence,
+          acceptedAt: acceptedMove.acceptedAt,
+          move: cloneValue(acceptedMove.move),
+        },
+      ],
+      finishedAt: matchResult?.finishedAt ?? null,
+      result: cloneValue(matchResult),
+    };
+  }
+
+  return {
+    history,
+    replay,
+    match: currentState,
+    matchResult,
+  };
+}
+
 export function createLocalGameSession<TSetup, TState, TMove extends GameMove, TView>(
   input: CreateLocalGameSessionInput<TSetup, TState, TMove, TView>,
 ): LocalGameSession<TState, TMove, TView> {
   const engine = createGameEngine(input.adapter);
   const listeners = new Set<(snapshot: LocalGameSessionSnapshot<TState, TMove, TView>) => void>();
-  const orderedParticipants = [...input.participants].sort((left, right) => left.seat - right.seat);
+  const orderedParticipants = sortPlayersBySeat(input.participants);
   const humanParticipants = orderedParticipants.filter((participant) => participant.controller === 'human');
 
   let currentState = engine.startMatch({
@@ -282,53 +365,35 @@ export function reconstructMatchHistoryFromReplay<TSetup, TState, TMove extends 
   adapter: GameAdapter<TSetup, TState, TMove>;
   replay: MatchReplay<TState, TMove>;
 }): MatchState<TState>[] {
-  const engine = createGameEngine(input.adapter);
-  const history = [cloneState(input.replay.initialState)];
-  let currentState = cloneState(input.replay.initialState);
-
-  for (const acceptedMove of input.replay.acceptedMoves) {
-    currentState = engine.submitMove(currentState, acceptedMove.move);
-    history.push(cloneState(currentState));
-  }
-
-  return history;
+  return rebuildServerReplay(input).history;
 }
 
-export function createServerGameSession<TSetup, TState, TMove extends GameMove>(
-  input: CreateServerGameSessionInput<TSetup, TState, TMove>,
-): ServerGameSession<TState, TMove> {
+function createServerSessionRuntime<TSetup, TState, TMove extends GameMove>(input: {
+  adapter: GameAdapter<TSetup, TState, TMove>;
+  now: () => string;
+  participants: readonly PlayerProfile[];
+  persistence?: ServerGameSessionPersistence<TState, TMove>;
+  startedAt: string;
+  initialState: MatchState<TState>;
+  acceptedMoves?: readonly MatchReplayAcceptedMove<TMove>[];
+  persistInitialSnapshot: boolean;
+}): ServerGameSession<TState, TMove> {
   const engine = createGameEngine(input.adapter);
   const listeners = new Set<(snapshot: ServerGameSessionSnapshot<TState, TMove>) => void>();
-  const orderedParticipants = [...input.participants].sort((left, right) => left.seat - right.seat);
-  const now = input.now ?? (() => new Date().toISOString());
-  const executionMode = input.executionMode ?? 'server-authoritative';
-  const startedAt = now();
+  const orderedParticipants = sortPlayersBySeat(input.participants);
 
-  let currentState = engine.startMatch({
-    matchId: input.matchId,
-    players: orderedParticipants,
-    setup: input.setup,
-    executionMode,
-  });
+  let currentState = cloneState(input.initialState);
   let history: MatchState<TState>[] = [cloneState(currentState)];
-  let matchResult = engine.finalizeMatch(currentState);
-
-  if (matchResult) {
-    matchResult = {
-      ...matchResult,
-      finishedAt: startedAt,
-    };
-  }
-
+  let matchResult = withAcceptedFinishedAt(engine.finalizeMatch(currentState), input.startedAt);
   let replay = createMatchReplay<TState, TMove>({
-    startedAt,
-    initialState: cloneState(currentState),
+    startedAt: input.startedAt,
+    initialState: cloneState(input.initialState),
     latestState: cloneState(currentState),
     finishedAt: matchResult?.finishedAt ?? null,
     result: cloneValue(matchResult),
   });
 
-  function getSnapshot(): ServerGameSessionSnapshot<TState, TMove> {
+  function buildSnapshot(): ServerGameSessionSnapshot<TState, TMove> {
     const legalMoves = matchResult ? [] : input.adapter.listLegalMoves(currentState);
 
     return {
@@ -347,7 +412,7 @@ export function createServerGameSession<TSetup, TState, TMove extends GameMove>(
   }
 
   function emit() {
-    const snapshot = getSnapshot();
+    const snapshot = buildSnapshot();
 
     for (const listener of listeners) {
       listener(snapshot);
@@ -356,7 +421,39 @@ export function createServerGameSession<TSetup, TState, TMove extends GameMove>(
     persistSnapshot(snapshot);
   }
 
-  persistSnapshot(getSnapshot());
+  function appendAcceptedMove(acceptedMove: MatchReplayAcceptedMove<TMove>) {
+    if (matchResult) {
+      throw new Error(`Match ${currentState.matchId} is already complete`);
+    }
+
+    const nextState = engine.submitMove(currentState, acceptedMove.move);
+
+    currentState = nextState;
+    history = [...history, cloneState(nextState)];
+    matchResult = withAcceptedFinishedAt(engine.finalizeMatch(nextState), acceptedMove.acceptedAt);
+    replay = {
+      ...replay,
+      latestState: cloneState(nextState),
+      acceptedMoves: [
+        ...replay.acceptedMoves,
+        {
+          sequence: acceptedMove.sequence,
+          acceptedAt: acceptedMove.acceptedAt,
+          move: cloneValue(acceptedMove.move),
+        },
+      ],
+      finishedAt: matchResult?.finishedAt ?? null,
+      result: cloneValue(matchResult),
+    };
+  }
+
+  for (const acceptedMove of input.acceptedMoves ?? []) {
+    appendAcceptedMove(acceptedMove);
+  }
+
+  if (input.persistInitialSnapshot) {
+    persistSnapshot(buildSnapshot());
+  }
 
   return {
     getAnalysis() {
@@ -365,39 +462,15 @@ export function createServerGameSession<TSetup, TState, TMove extends GameMove>(
     getReplay() {
       return cloneValue(replay);
     },
-    getSnapshot,
+    getSnapshot() {
+      return buildSnapshot();
+    },
     submitMove(move) {
-      if (matchResult) {
-        throw new Error(`Match ${currentState.matchId} is already complete`);
-      }
-
-      const acceptedAt = now();
-      const nextState = engine.submitMove(currentState, move);
-      const finalizedResult = engine.finalizeMatch(nextState);
-
-      currentState = nextState;
-      history = [...history, cloneState(nextState)];
-      matchResult = finalizedResult
-        ? {
-            ...finalizedResult,
-            finishedAt: acceptedAt,
-          }
-        : null;
-      replay = {
-        ...replay,
-        latestState: cloneState(nextState),
-        acceptedMoves: [
-          ...replay.acceptedMoves,
-          {
-            sequence: replay.acceptedMoves.length + 1,
-            acceptedAt,
-            move: cloneValue(move),
-          },
-        ],
-        finishedAt: matchResult?.finishedAt ?? null,
-        result: cloneValue(matchResult),
-      };
-
+      appendAcceptedMove({
+        sequence: replay.acceptedMoves.length + 1,
+        acceptedAt: input.now(),
+        move,
+      });
       emit();
     },
     subscribe(listener) {
@@ -407,4 +480,114 @@ export function createServerGameSession<TSetup, TState, TMove extends GameMove>(
       };
     },
   };
+}
+
+export function verifyReplayIntegrity<TSetup, TState, TMove extends GameMove>(input: {
+  adapter: GameAdapter<TSetup, TState, TMove>;
+  replay: MatchReplay<TState, TMove>;
+}): ReplayIntegrityCheck {
+  for (const [index, acceptedMove] of input.replay.acceptedMoves.entries()) {
+    if (acceptedMove.sequence !== index + 1) {
+      return {
+        ok: false,
+        reason: `accepted move sequence ${acceptedMove.sequence} does not match its replay position`,
+      };
+    }
+
+    if (index > 0 && input.replay.acceptedMoves[index - 1]!.acceptedAt > acceptedMove.acceptedAt) {
+      return {
+        ok: false,
+        reason: 'accepted move timestamps are out of order',
+      };
+    }
+  }
+
+  let rebuilt: {
+    history: MatchState<TState>[];
+    replay: MatchReplay<TState, TMove>;
+    match: MatchState<TState>;
+    matchResult: MatchResult | null;
+  };
+
+  try {
+    rebuilt = rebuildServerReplay(input);
+  } catch (error) {
+    return {
+      ok: false,
+      reason: error instanceof Error ? error.message : 'replay reconstruction failed',
+    };
+  }
+
+  if (!isDeepStrictEqual(rebuilt.replay.latestState, input.replay.latestState)) {
+    return {
+      ok: false,
+      reason: 'latest state does not match the accepted move log',
+    };
+  }
+
+  if (!isDeepStrictEqual(rebuilt.replay.result, input.replay.result)) {
+    return {
+      ok: false,
+      reason: 'result does not match the reconstructed replay outcome',
+    };
+  }
+
+  if (input.replay.result && rebuilt.replay.finishedAt !== input.replay.finishedAt) {
+    return {
+      ok: false,
+      reason: 'finished timestamp does not match the reconstructed replay outcome',
+    };
+  }
+
+  return { ok: true };
+}
+
+export function createServerGameSession<TSetup, TState, TMove extends GameMove>(
+  input: CreateServerGameSessionInput<TSetup, TState, TMove>,
+): ServerGameSession<TState, TMove> {
+  const engine = createGameEngine(input.adapter);
+  const orderedParticipants = sortPlayersBySeat(input.participants);
+  const now = input.now ?? (() => new Date().toISOString());
+  const executionMode = input.executionMode ?? 'server-authoritative';
+  const startedAt = now();
+  const initialState = engine.startMatch({
+    matchId: input.matchId,
+    players: orderedParticipants,
+    setup: input.setup,
+    executionMode,
+  });
+
+  return createServerSessionRuntime({
+    adapter: input.adapter,
+    now,
+    participants: orderedParticipants,
+    persistence: input.persistence,
+    startedAt,
+    initialState,
+    persistInitialSnapshot: true,
+  });
+}
+
+export function resumeServerGameSession<TSetup, TState, TMove extends GameMove>(
+  input: ResumeServerGameSessionInput<TSetup, TState, TMove>,
+): ServerGameSession<TState, TMove> {
+  const integrity = verifyReplayIntegrity({
+    adapter: input.adapter,
+    replay: input.replay,
+  });
+
+  if (!integrity.ok) {
+    throw new Error(`Replay integrity check failed: ${integrity.reason}`);
+  }
+
+  return createServerSessionRuntime({
+    adapter: input.adapter,
+    now: input.now ?? (() => new Date().toISOString()),
+    participants: input.participants,
+    persistence: input.persistence,
+    startedAt: input.replay.startedAt,
+    initialState: input.replay.initialState,
+    acceptedMoves: input.replay.acceptedMoves,
+    persistInitialSnapshot: false,
+  });
 }

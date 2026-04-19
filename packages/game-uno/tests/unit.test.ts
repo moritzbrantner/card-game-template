@@ -1,8 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type { MatchState, PlayerProfile } from '../../game-contracts/src/index.ts';
-import { createUnoAdapter, createUnoBots, defaultUnoRules, type UnoCard, type UnoState } from '../src/index.ts';
+import { createMatchReplay, type MatchState, type PlayerProfile } from '../../game-contracts/src/index.ts';
+import {
+  createUnoAdapter,
+  createUnoBots,
+  defaultUnoRules,
+  summarizeUnoReplay,
+  type UnoCard,
+  type UnoMove,
+  type UnoState,
+} from '../src/index.ts';
 
 const adapter = createUnoAdapter();
 const players: readonly PlayerProfile[] = [
@@ -52,6 +60,37 @@ function createState(state: Partial<UnoState>, activePlayerId = 'p1'): MatchStat
       ...state,
     },
   };
+}
+
+function createReplay(initialState: MatchState<UnoState>, moves: readonly UnoMove[]) {
+  let latestState = initialState;
+
+  const acceptedMoves = moves.map((move, index) => {
+    latestState = adapter.applyMove(latestState, move);
+
+    return {
+      sequence: index + 1,
+      acceptedAt: `2026-04-17T12:00:0${index + 1}.000Z`,
+      move,
+    };
+  });
+
+  const result = adapter.getResult?.(latestState) ?? null;
+  const finishedAt = result ? acceptedMoves[acceptedMoves.length - 1]?.acceptedAt ?? null : null;
+
+  return createMatchReplay({
+    startedAt: '2026-04-17T12:00:00.000Z',
+    initialState,
+    latestState,
+    acceptedMoves,
+    finishedAt,
+    result: result
+      ? {
+          ...result,
+          finishedAt: finishedAt ?? result.finishedAt,
+        }
+      : null,
+  });
 }
 
 test('UNO-style initial state is deterministic for the same seed', () => {
@@ -250,4 +289,125 @@ test('bot selection prefers the majority color when choosing a wild', () => {
 
   assert.equal(choice?.kind, 'play-card');
   assert.equal(choice?.payload.chosenColor, 'green');
+});
+
+test('UNO replay analysis tracks penalties, wild color choices, and wins', () => {
+  const replay = createReplay(
+    createState({
+      currentColor: 'blue',
+      hands: {
+        p1: [
+          createCard('wild', 'wild-draw-four', 'wdf'),
+          createCard('red', 'number', 'red-7', 7),
+        ],
+        p2: [createCard('blue', 'number', 'blue-1', 1), createCard('green', 'number', 'green-2', 2)],
+      },
+      rules: {
+        ...defaultUnoRules,
+        requireUnoCall: true,
+      },
+    }),
+    [
+      {
+        playerId: 'p1',
+        kind: 'play-card',
+        createdAt: '2026-04-17T12:00:00.500Z',
+        payload: {
+          cardId: 'wdf',
+          chosenColor: 'red',
+          sayUno: true,
+          targetPlayerId: undefined,
+        },
+      },
+      {
+        playerId: 'p1',
+        kind: 'play-card',
+        createdAt: '2026-04-17T12:00:01.500Z',
+        payload: {
+          cardId: 'red-7',
+          chosenColor: undefined,
+          sayUno: true,
+          targetPlayerId: undefined,
+        },
+      },
+    ],
+  );
+
+  const analysis = summarizeUnoReplay(replay);
+
+  assert.deepEqual(analysis.players, [
+    {
+      playerId: 'p1',
+      displayName: 'Alice',
+      movesAccepted: 2,
+      cardsDrawn: 0,
+      cardsPlayed: 2,
+      penaltiesTaken: 0,
+      turnsSurvived: 2,
+      unoCallsMade: 1,
+      unoCallsMissed: 0,
+      wildColorChoices: [{ color: 'red', count: 1 }],
+      wildsPlayed: 1,
+      won: true,
+    },
+    {
+      playerId: 'p2',
+      displayName: 'Bob',
+      movesAccepted: 0,
+      cardsDrawn: 4,
+      cardsPlayed: 0,
+      penaltiesTaken: 4,
+      turnsSurvived: 2,
+      unoCallsMade: 0,
+      unoCallsMissed: 0,
+      wildColorChoices: [],
+      wildsPlayed: 0,
+      won: false,
+    },
+  ]);
+});
+
+test('UNO replay analysis tracks missed UNO calls as penalties', () => {
+  const replay = createReplay(
+    createState({
+      hands: {
+        p1: [createCard('red', 'number', 'red-5', 5), createCard('blue', 'number', 'blue-1', 1)],
+        p2: [createCard('yellow', 'number', 'yellow-9', 9)],
+      },
+      rules: {
+        ...defaultUnoRules,
+        requireUnoCall: true,
+      },
+    }),
+    [
+      {
+        playerId: 'p1',
+        kind: 'play-card',
+        createdAt: '2026-04-17T12:00:00.500Z',
+        payload: {
+          cardId: 'red-5',
+          chosenColor: undefined,
+          sayUno: false,
+          targetPlayerId: undefined,
+        },
+      },
+    ],
+  );
+
+  const analysis = summarizeUnoReplay(replay);
+
+  assert.deepEqual(analysis.players[0], {
+    playerId: 'p1',
+    displayName: 'Alice',
+    movesAccepted: 1,
+    cardsDrawn: 2,
+    cardsPlayed: 1,
+    penaltiesTaken: 2,
+    turnsSurvived: 1,
+    unoCallsMade: 0,
+    unoCallsMissed: 1,
+    wildColorChoices: [],
+    wildsPlayed: 0,
+    won: false,
+  });
 });

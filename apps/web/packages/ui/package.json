@@ -19,6 +19,10 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./button-variants": {
+      "types": "./src/button-variants.ts",
+      "import": "./src/button-variants.ts"
+    },
     "./styles.css": "./styles.css"
   },
   "sideEffects": [

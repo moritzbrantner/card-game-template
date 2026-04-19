@@ -6,6 +6,8 @@ import {
   createLocalGameSession,
   createServerGameSession,
   reconstructMatchHistoryFromReplay,
+  resumeServerGameSession,
+  verifyReplayIntegrity,
 } from '../src/index.ts';
 
 type CounterState = {
@@ -260,4 +262,138 @@ test('server session persists the opening snapshot so progression tracking start
     { acceptedMoveCount: 0, startedAt: '2026-04-17T12:10:00.000Z' },
     { acceptedMoveCount: 1, startedAt: '2026-04-17T12:10:00.000Z' },
   ]);
+});
+
+test('resuming a persisted replay and submitting another move matches playing the full sequence from scratch', () => {
+  const initialTimestamps = [
+    '2026-04-17T12:20:00.000Z',
+    '2026-04-17T12:20:01.000Z',
+    '2026-04-17T12:20:02.000Z',
+  ];
+  const initialSession = createServerGameSession({
+    adapter: counterAdapter,
+    matchId: 'server-session-3',
+    participants: participants.slice(0, 2),
+    setup: { target: 4 },
+    now() {
+      return initialTimestamps.shift() ?? '2026-04-17T12:20:09.000Z';
+    },
+  });
+
+  initialSession.submitMove({
+    playerId: 'p1',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:20:00.500Z',
+    payload: { amount: 1 },
+  });
+  initialSession.submitMove({
+    playerId: 'p2',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:20:01.500Z',
+    payload: { amount: 1 },
+  });
+
+  const resumed = resumeServerGameSession({
+    adapter: counterAdapter,
+    participants: participants.slice(0, 2),
+    replay: initialSession.getReplay(),
+    now() {
+      return '2026-04-17T12:20:03.000Z';
+    },
+  });
+
+  const fullRun = createServerGameSession({
+    adapter: counterAdapter,
+    matchId: 'server-session-3',
+    participants: participants.slice(0, 2),
+    setup: { target: 4 },
+    now: (() => {
+      const timestamps = [
+        '2026-04-17T12:20:00.000Z',
+        '2026-04-17T12:20:01.000Z',
+        '2026-04-17T12:20:02.000Z',
+        '2026-04-17T12:20:03.000Z',
+      ];
+
+      return () => timestamps.shift() ?? '2026-04-17T12:20:09.000Z';
+    })(),
+  });
+
+  for (const move of initialSession.getReplay().acceptedMoves.map((entry) => entry.move)) {
+    fullRun.submitMove(move);
+  }
+
+  const finalMove: CounterMove = {
+    playerId: 'p1',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:20:02.500Z',
+    payload: { amount: 1 },
+  };
+
+  resumed.submitMove(finalMove);
+  fullRun.submitMove(finalMove);
+
+  assert.deepEqual(resumed.getReplay(), fullRun.getReplay());
+  assert.deepEqual(resumed.getSnapshot().match, fullRun.getSnapshot().match);
+});
+
+test('verifyReplayIntegrity rejects tampered move order and mismatched latest state', () => {
+  const timestamps = [
+    '2026-04-17T12:30:00.000Z',
+    '2026-04-17T12:30:01.000Z',
+    '2026-04-17T12:30:02.000Z',
+  ];
+  const session = createServerGameSession({
+    adapter: counterAdapter,
+    matchId: 'server-session-4',
+    participants: participants.slice(0, 2),
+    setup: { target: 3 },
+    now() {
+      return timestamps.shift() ?? '2026-04-17T12:30:09.000Z';
+    },
+  });
+
+  session.submitMove({
+    playerId: 'p1',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:30:00.500Z',
+    payload: { amount: 1 },
+  });
+  session.submitMove({
+    playerId: 'p2',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:30:01.500Z',
+    payload: { amount: 1 },
+  });
+
+  const replay = session.getReplay();
+  const movedOutOfOrder = {
+    ...replay,
+    acceptedMoves: [
+      { ...replay.acceptedMoves[1]!, sequence: 1 },
+      { ...replay.acceptedMoves[0]!, sequence: 2 },
+    ],
+  };
+  const mismatchedLatestState = {
+    ...replay,
+    latestState: {
+      ...replay.latestState,
+      state: {
+        ...replay.latestState.state,
+        total: 99,
+      },
+    },
+  };
+
+  assert.deepEqual(verifyReplayIntegrity({ adapter: counterAdapter, replay }), {
+    ok: true,
+  });
+  assert.deepEqual(verifyReplayIntegrity({ adapter: counterAdapter, replay: movedOutOfOrder }), {
+    ok: false,
+    reason: 'accepted move timestamps are out of order',
+  });
+  assert.deepEqual(verifyReplayIntegrity({ adapter: counterAdapter, replay: mismatchedLatestState }), {
+    ok: false,
+    reason: 'latest state does not match the accepted move log',
+  });
 });

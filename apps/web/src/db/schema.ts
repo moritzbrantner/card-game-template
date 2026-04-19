@@ -6,3 +6,4 @@ export * from './schema/analytics';
 export * from './schema/notifications';
 export * from './schema/site-config';
 export * from './schema/jobs';
+export * from './schema/games';

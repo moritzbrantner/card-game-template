@@ -5,6 +5,21 @@ export type AccountId = string;
 export type MatchId = string;
 export type GameId = string;
 export type CardId = string;
+export type ReplayFormatVersion = 1;
+export type PersistedMatchStatus = 'active' | 'completed' | 'abandoned';
+
+export type PlayerIdentityRef =
+  | {
+      kind: 'account';
+      accountId: AccountId;
+    }
+  | {
+      kind: 'guest';
+      guestId: string;
+    }
+  | {
+      kind: 'bot';
+    };
 
 export type CardDefinition = {
   id: CardId;
@@ -114,6 +129,25 @@ export type MatchReplayAnalysis = {
   players: readonly MatchReplayPlayerSummary[];
   moveKinds: readonly MatchReplayMoveKindSummary[];
 };
+
+export type PersistedMatchSummary = {
+  matchId: MatchId;
+  gameId: GameId;
+  status: PersistedMatchStatus;
+  executionMode: MatchExecutionMode;
+  replayFormatVersion: ReplayFormatVersion;
+  startedAt: string;
+  finishedAt: string | null;
+  updatedAt: string;
+  participants: readonly (PlayerProfile & {
+    identity: PlayerIdentityRef;
+    isBot: boolean;
+  })[];
+  result: MatchResult | null;
+  analysis: MatchReplayAnalysis | null;
+};
+
+export const MATCH_REPLAY_FORMAT_VERSION: ReplayFormatVersion = 1;
 
 export function createMatchResult(
   input: Omit<MatchResult, 'rankings'> & {

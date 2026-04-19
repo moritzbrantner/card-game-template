@@ -1,11 +1,15 @@
 import type {
   GameDefinition,
   GameMove,
+  MatchReplay,
+  MatchReplayAnalysis,
+  MatchReplayPlayerSummary,
   MatchResult,
   MatchState,
   PlayerId,
   PlayerProfile,
 } from '@repo/game-contracts';
+import { summarizeMatchReplay } from '@repo/game-contracts';
 import {
   areMovesEquivalent,
   createSeededRandom,
@@ -17,6 +21,7 @@ import type {
   LocalGameSessionProjectViewInput,
   SessionParticipant,
 } from '@repo/game-session';
+import { reconstructMatchHistoryFromReplay } from '@repo/game-session';
 
 export type UnoColor = 'red' | 'yellow' | 'green' | 'blue';
 export type UnoCardKind = 'number' | 'skip' | 'reverse' | 'draw-two' | 'wild' | 'wild-draw-four';
@@ -86,6 +91,25 @@ export type UnoPlayerView = {
   }>;
   status: string;
   viewerPlayerId: PlayerId | null;
+};
+
+export type UnoReplayPlayerSummary = MatchReplayPlayerSummary & {
+  cardsDrawn: number;
+  cardsPlayed: number;
+  penaltiesTaken: number;
+  turnsSurvived: number;
+  unoCallsMade: number;
+  unoCallsMissed: number;
+  wildColorChoices: ReadonlyArray<{
+    color: UnoColor;
+    count: number;
+  }>;
+  wildsPlayed: number;
+  won: boolean;
+};
+
+export type UnoReplayAnalysis = MatchReplayAnalysis & {
+  players: readonly UnoReplayPlayerSummary[];
 };
 
 export type UnoCatalogMetadata = {
@@ -395,6 +419,157 @@ function createWinnerResult(state: MatchState<UnoState>): MatchResult | null {
     ],
     finishedAt: '2026-04-17T12:00:01.000Z',
     executionMode: state.executionMode,
+  };
+}
+
+export function summarizeUnoReplay(replay: MatchReplay<UnoState, UnoMove>): UnoReplayAnalysis {
+  const base = summarizeMatchReplay(replay);
+  const history = reconstructMatchHistoryFromReplay({
+    adapter: createUnoAdapter(),
+    replay,
+  });
+
+  const metricsByPlayer = new Map<
+    PlayerId,
+    {
+      cardsDrawn: number;
+      cardsPlayed: number;
+      penaltiesTaken: number;
+      turnsSurvived: number;
+      unoCallsMade: number;
+      unoCallsMissed: number;
+      wildColorChoices: Map<UnoColor, number>;
+      wildsPlayed: number;
+      won: boolean;
+    }
+  >();
+
+  for (const player of replay.initialState.players) {
+    metricsByPlayer.set(player.playerId, {
+      cardsDrawn: 0,
+      cardsPlayed: 0,
+      penaltiesTaken: 0,
+      turnsSurvived: history.slice(0, -1).filter((state) => (state.state.hands[player.playerId]?.length ?? 0) > 0).length,
+      unoCallsMade: 0,
+      unoCallsMissed: 0,
+      wildColorChoices: new Map(),
+      wildsPlayed: 0,
+      won: replay.result?.winnerIds.includes(player.playerId) ?? false,
+    });
+  }
+
+  for (const [index, acceptedMove] of replay.acceptedMoves.entries()) {
+    const before = history[index]!;
+    const after = history[index + 1]!;
+    const metrics = metricsByPlayer.get(acceptedMove.move.playerId);
+
+    if (!metrics) {
+      continue;
+    }
+
+    if (acceptedMove.move.kind === 'draw-card') {
+      const drawnCount =
+        (after.state.hands[acceptedMove.move.playerId]?.length ?? 0) -
+        (before.state.hands[acceptedMove.move.playerId]?.length ?? 0);
+
+      if (drawnCount > 0) {
+        metrics.cardsDrawn += drawnCount;
+
+        if (before.state.pendingDrawAmount > 0 || drawnCount > 1) {
+          metrics.penaltiesTaken += drawnCount;
+        }
+      }
+
+      continue;
+    }
+
+    if (acceptedMove.move.kind !== 'play-card') {
+      continue;
+    }
+
+    metrics.cardsPlayed += 1;
+
+    const playedCard = (before.state.hands[acceptedMove.move.playerId] ?? []).find(
+      (candidate) => candidate.id === acceptedMove.move.payload.cardId,
+    );
+
+    if (before.state.rules.requireUnoCall && (before.state.hands[acceptedMove.move.playerId]?.length ?? 0) === 2) {
+      if (acceptedMove.move.payload.sayUno) {
+        metrics.unoCallsMade += 1;
+      } else {
+        metrics.unoCallsMissed += 1;
+      }
+    }
+
+    if (playedCard?.kind === 'wild' || playedCard?.kind === 'wild-draw-four') {
+      metrics.wildsPlayed += 1;
+
+      if (acceptedMove.move.payload.chosenColor) {
+        metrics.wildColorChoices.set(
+          acceptedMove.move.payload.chosenColor,
+          (metrics.wildColorChoices.get(acceptedMove.move.payload.chosenColor) ?? 0) + 1,
+        );
+      }
+    }
+
+    if (
+      (playedCard?.kind === 'draw-two' || playedCard?.kind === 'wild-draw-four') &&
+      !before.state.rules.drawStacking
+    ) {
+      for (const player of before.players) {
+        if (player.playerId === acceptedMove.move.playerId) {
+          continue;
+        }
+
+        const drawnCount =
+          (after.state.hands[player.playerId]?.length ?? 0) - (before.state.hands[player.playerId]?.length ?? 0);
+
+        if (drawnCount > 0) {
+          const targetMetrics = metricsByPlayer.get(player.playerId);
+
+          if (targetMetrics) {
+            targetMetrics.cardsDrawn += drawnCount;
+            targetMetrics.penaltiesTaken += drawnCount;
+          }
+        }
+      }
+    }
+
+    if (before.state.rules.requireUnoCall && (before.state.hands[acceptedMove.move.playerId]?.length ?? 0) === 2 && !acceptedMove.move.payload.sayUno) {
+      const penaltyDrawCount =
+        (after.state.hands[acceptedMove.move.playerId]?.length ?? 0) -
+        ((before.state.hands[acceptedMove.move.playerId]?.length ?? 0) - 1);
+
+      if (penaltyDrawCount > 0) {
+        metrics.cardsDrawn += penaltyDrawCount;
+        metrics.penaltiesTaken += penaltyDrawCount;
+      }
+    }
+  }
+
+  return {
+    ...base,
+    players: base.players.map((player) => {
+      const metrics = metricsByPlayer.get(player.playerId);
+
+      return {
+        ...player,
+        cardsDrawn: metrics?.cardsDrawn ?? 0,
+        cardsPlayed: metrics?.cardsPlayed ?? 0,
+        penaltiesTaken: metrics?.penaltiesTaken ?? 0,
+        turnsSurvived: metrics?.turnsSurvived ?? 0,
+        unoCallsMade: metrics?.unoCallsMade ?? 0,
+        unoCallsMissed: metrics?.unoCallsMissed ?? 0,
+        wildColorChoices: [...(metrics?.wildColorChoices.entries() ?? [])]
+          .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+          .map(([color, count]) => ({
+            color,
+            count,
+          })),
+        wildsPlayed: metrics?.wildsPlayed ?? 0,
+        won: metrics?.won ?? false,
+      };
+    }),
   };
 }
 

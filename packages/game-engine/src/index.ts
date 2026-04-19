@@ -1,10 +1,13 @@
 import {
   createMatchResult,
   type GameDefinition,
+  type GameId,
   type GameMove,
+  type MatchId,
   type MatchExecutionMode,
   type MatchResult,
   type MatchState,
+  type PlayerId,
   type PlayerProfile,
 } from '@repo/game-contracts';
 
@@ -23,6 +26,32 @@ export interface GameAdapter<TSetup, TState, TMove extends GameMove = GameMove> 
   applyMove(state: MatchState<TState>, move: TMove): MatchState<TState>;
   isMatchComplete(state: MatchState<TState>): boolean;
   getResult?(state: MatchState<TState>): MatchResult | null;
+}
+
+export class IllegalMoveError extends Error {
+  readonly gameId: GameId;
+  readonly matchId: MatchId;
+  readonly playerId: PlayerId;
+  readonly moveKind: string;
+  readonly reason: string;
+
+  constructor(input: {
+    gameId: GameId;
+    matchId: MatchId;
+    playerId: PlayerId;
+    moveKind: string;
+    reason: string;
+  }) {
+    super(
+      `Illegal move submitted for ${input.gameId} in ${input.matchId}: ${input.playerId} cannot perform ${input.moveKind} (${input.reason})`,
+    );
+    this.name = 'IllegalMoveError';
+    this.gameId = input.gameId;
+    this.matchId = input.matchId;
+    this.playerId = input.playerId;
+    this.moveKind = input.moveKind;
+    this.reason = input.reason;
+  }
 }
 
 function hashSeed(seed: number | string): number {
@@ -113,7 +142,13 @@ export function createGameEngine<TSetup, TState, TMove extends GameMove = GameMo
     },
     submitMove(state: MatchState<TState>, move: TMove): MatchState<TState> {
       if (!adapter.isLegalMove(state, move)) {
-        throw new Error(`Illegal move submitted for ${adapter.definition.gameId}: ${move.kind}`);
+        throw new IllegalMoveError({
+          gameId: adapter.definition.gameId,
+          matchId: state.matchId,
+          playerId: move.playerId,
+          moveKind: move.kind,
+          reason: 'move is not legal in the current match state',
+        });
       }
 
       return adapter.applyMove(state, move);

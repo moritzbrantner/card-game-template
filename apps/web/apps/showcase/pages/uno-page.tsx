@@ -33,6 +33,15 @@ export default async function UnoPage({ locale }: { locale: AppLocale }) {
         startedGameStatus: t('startedGameStatus'),
         title: t('title'),
         waitingForPlayers: t('waitingForPlayers'),
+        presetLabel: t('presetLabel'),
+        resumeAction: t('resumeAction'),
+        reloadAction: t('reloadAction'),
+        emptyRecentMatches: t('emptyRecentMatches'),
+        recentMatchesTitle: t('recentMatchesTitle'),
+        activeMatchesTitle: t('activeMatchesTitle'),
+        noActiveMatch: t('noActiveMatch'),
+        legalActionsTitle: t('legalActionsTitle'),
+        analysisTitle: t('analysisTitle'),
       }}
       pastGamesHref={`/${locale}/past-games`}
     />

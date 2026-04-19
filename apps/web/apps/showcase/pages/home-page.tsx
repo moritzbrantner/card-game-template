@@ -1,5 +1,5 @@
 import type { AppLocale } from '@moritzbrantner/app-pack';
-import { buttonVariants } from '@moritzbrantner/ui';
+import { buttonVariants } from '@moritzbrantner/ui/button-variants';
 
 import type { AppLocale as RoutingLocale } from '@/i18n/routing';
 import { LocalizedLink } from '@/i18n/server-link';
