@@ -7,6 +7,7 @@ import {
   areMovesEquivalent,
   createGameEngine,
   createSeededRandom,
+  type GameAdapter,
   IllegalMoveError,
   shuffleWithSeed,
 } from '../src/index.ts';
@@ -92,6 +93,26 @@ const counterAdapter = {
   },
 };
 
+function createSelectableCounterAdapter(
+  selectActor?: GameAdapter<{ target: number }, CounterState, CounterMove>['selectActor'],
+): GameAdapter<{ target: number }, CounterState, CounterMove> {
+  return {
+    ...counterAdapter,
+    listLegalMoves(): readonly CounterMove[] {
+      return players.map((player) => ({
+        playerId: player.playerId,
+        kind: 'increment',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: { amount: 1 },
+      }));
+    },
+    isLegalMove(state: MatchState<CounterState>, move: CounterMove): boolean {
+      return this.listLegalMoves(state).some((candidate) => areMovesEquivalent(candidate, move));
+    },
+    ...(selectActor ? { selectActor } : {}),
+  };
+}
+
 test('createGameEngine starts matches and applies legal moves', () => {
   const engine = createGameEngine(counterAdapter);
   const initial = engine.startMatch({
@@ -131,7 +152,7 @@ test('createGameEngine rejects illegal moves', () => {
 
   assert.throws(() => {
     engine.submitMove(initial, {
-      playerId: 'p2',
+      playerId: 'p1',
       kind: 'skip',
       createdAt: '2026-04-17T12:00:00.000Z',
       payload: { amount: 0 },
@@ -140,9 +161,78 @@ test('createGameEngine rejects illegal moves', () => {
     assert.equal(error instanceof IllegalMoveError, true);
     assert.equal(error.gameId, 'counter');
     assert.equal(error.matchId, 'match-2');
-    assert.equal(error.playerId, 'p2');
+    assert.equal(error.playerId, 'p1');
     assert.equal(error.moveKind, 'skip');
     assert.equal(error.reason, 'move is not legal in the current match state');
+    return true;
+  });
+});
+
+test('createGameEngine defaults selected actor to the active player', () => {
+  const engine = createGameEngine(createSelectableCounterAdapter());
+  const initial = engine.startMatch({
+    matchId: 'match-selected-default',
+    players,
+    setup: { target: 1 },
+  });
+
+  assert.throws(() => {
+    engine.submitMove(initial, {
+      playerId: 'p2',
+      kind: 'increment',
+      createdAt: '2026-04-17T12:00:00.000Z',
+      payload: { amount: 1 },
+    });
+  }, (error) => {
+    assert.equal(error instanceof IllegalMoveError, true);
+    assert.equal(error.reason, 'player is not the selected actor in the current match state');
+    return true;
+  });
+});
+
+test('createGameEngine allows a custom non-active selected actor', () => {
+  const engine = createGameEngine(createSelectableCounterAdapter(() => 'p2'));
+  const initial = engine.startMatch({
+    matchId: 'match-selected-custom',
+    players,
+    setup: { target: 1 },
+  });
+
+  const next = engine.submitMove(initial, {
+    playerId: 'p2',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: { amount: 1 },
+  });
+
+  assert.equal(initial.activePlayerId, 'p1');
+  assert.equal(next.state.total, 1);
+});
+
+test('createGameEngine rejects legal moves from non-selected actors', () => {
+  const engine = createGameEngine(createSelectableCounterAdapter(() => 'p2'));
+  const initial = engine.startMatch({
+    matchId: 'match-selected-reject',
+    players,
+    setup: { target: 1 },
+  });
+
+  assert.equal(counterAdapter.isLegalMove(initial, {
+    playerId: 'p1',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: { amount: 1 },
+  }), true);
+  assert.throws(() => {
+    engine.submitMove(initial, {
+      playerId: 'p1',
+      kind: 'increment',
+      createdAt: '2026-04-17T12:00:00.000Z',
+      payload: { amount: 1 },
+    });
+  }, (error) => {
+    assert.equal(error instanceof IllegalMoveError, true);
+    assert.equal(error.reason, 'player is not the selected actor in the current match state');
     return true;
   });
 });

@@ -69,6 +69,7 @@ export type PersistedUnoMatchSnapshotDto = PersistedUnoMatchSummaryDto & {
   replayFormatVersion: ReplayFormatVersion;
   match: MatchState<UnoState>;
   legalMoves: readonly UnoMove[];
+  selectedActorPlayerId: string | null;
   view: UnoPlayerView;
 };
 

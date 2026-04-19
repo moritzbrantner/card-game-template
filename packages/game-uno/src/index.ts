@@ -80,10 +80,12 @@ export type UnoPlayerView = {
   matchResultBanner: string | null;
   pendingDrawAmount: number;
   pendingHotseatPlayerId: PlayerId | null;
+  selectedActorPlayerId: PlayerId | null;
   players: ReadonlyArray<{
     controller: SessionParticipant['controller'];
     displayName: string;
     handCount: number;
+    isActor: boolean;
     isActive: boolean;
     isViewer: boolean;
     playerId: PlayerId;
@@ -212,6 +214,17 @@ function nextPlayerId(players: readonly PlayerProfile[], currentPlayerId: Player
   const currentIndex = getPlayerIndex(players, currentPlayerId);
   const normalizedIndex = (currentIndex + direction * steps + players.length * 4) % players.length;
   return players[normalizedIndex]!.playerId;
+}
+
+function playerIdsAfter(players: readonly PlayerProfile[], currentPlayerId: PlayerId): PlayerId[] {
+  const currentIndex = getPlayerIndex(players, currentPlayerId);
+  const orderedPlayerIds: PlayerId[] = [];
+
+  for (let offset = 1; offset < players.length; offset += 1) {
+    orderedPlayerIds.push(players[(currentIndex + offset) % players.length]!.playerId);
+  }
+
+  return orderedPlayerIds;
 }
 
 function recycleDrawPile(drawPile: readonly UnoCard[], discardPile: readonly UnoCard[], seed: number | string) {
@@ -393,9 +406,10 @@ function rotateHands(
   direction: 1 | -1,
 ): Record<PlayerId, readonly UnoCard[]> {
   const rotated = cloneHands(hands);
+  const previousDirection = direction === 1 ? -1 : 1;
 
   for (const player of players) {
-    const sourcePlayerId = nextPlayerId(players, player.playerId, direction * -1 as 1 | -1);
+    const sourcePlayerId = nextPlayerId(players, player.playerId, previousDirection);
     rotated[player.playerId] = [...(hands[sourcePlayerId] ?? [])];
   }
 
@@ -692,6 +706,17 @@ export function createUnoAdapter(): GameAdapter<
 
       return legalMoves;
     },
+    selectActor({ state, legalMoves }): PlayerId | null {
+      if (state.state.rules.jumpIn) {
+        for (const playerId of playerIdsAfter(state.players, state.activePlayerId)) {
+          if (legalMoves.some((move) => move.playerId === playerId && move.kind === 'play-card')) {
+            return playerId;
+          }
+        }
+      }
+
+      return state.activePlayerId;
+    },
     isLegalMove(state, move): boolean {
       return this.listLegalMoves(state).some((candidate) => areMovesEquivalent(candidate, move));
     },
@@ -954,10 +979,12 @@ export function projectUnoPlayerView(
       : null,
     pendingDrawAmount: input.state.state.pendingDrawAmount,
     pendingHotseatPlayerId: input.pendingHotseatPlayerId,
+    selectedActorPlayerId: input.selectedActorPlayerId,
     players: input.participants.map((participant) => ({
       controller: participant.controller,
       displayName: participant.displayName,
       handCount: input.state.state.hands[participant.playerId]?.length ?? 0,
+      isActor: participant.playerId === input.selectedActorPlayerId,
       isActive: participant.playerId === input.state.activePlayerId,
       isViewer: participant.playerId === input.viewerPlayerId,
       playerId: participant.playerId,
@@ -1022,11 +1049,11 @@ export function createUnoBots(
   return Object.fromEntries(
     participants
       .filter((participant) => participant.controller === 'bot')
-      .map((participant) => [
-        participant.playerId,
-        {
+      .map((participant) => {
+        const bot: LocalGameSessionBot<UnoState, UnoMove> = {
           chooseMove({ legalMoves, playerId, state }) {
-            const playableMoves = legalMoves.filter((move) => move.kind === 'play-card');
+            const ownLegalMoves = legalMoves.filter((move) => move.playerId === playerId);
+            const playableMoves = ownLegalMoves.filter((move) => move.kind === 'play-card');
 
             if (playableMoves.length > 0) {
               return [...playableMoves].sort(
@@ -1034,10 +1061,12 @@ export function createUnoBots(
               )[0] ?? null;
             }
 
-            return legalMoves.find((move) => move.kind === 'draw-card') ?? legalMoves.find((move) => move.kind === 'pass') ?? null;
+            return ownLegalMoves.find((move) => move.kind === 'draw-card') ?? ownLegalMoves.find((move) => move.kind === 'pass') ?? null;
           },
-        } satisfies LocalGameSessionBot<UnoState, UnoMove>,
-      ]),
+        };
+
+        return [participant.playerId, bot] as const;
+      }),
   );
 }
 

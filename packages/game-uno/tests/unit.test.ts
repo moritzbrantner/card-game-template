@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { createMatchReplay, type MatchState, type PlayerProfile } from '../../game-contracts/src/index.ts';
+import { createGameEngine, IllegalMoveError } from '../../game-engine/src/index.ts';
 import {
   createUnoAdapter,
   createUnoBots,
@@ -17,6 +18,12 @@ const players: readonly PlayerProfile[] = [
   { playerId: 'p1', displayName: 'Alice', seat: 1 },
   { playerId: 'p2', displayName: 'Bob', seat: 2 },
 ];
+const tablePlayers: readonly PlayerProfile[] = [
+  { playerId: 'p1', displayName: 'Alice', seat: 1 },
+  { playerId: 'p2', displayName: 'Bob', seat: 2 },
+  { playerId: 'p3', displayName: 'Casey', seat: 3 },
+  { playerId: 'p4', displayName: 'Dana', seat: 4 },
+];
 
 function createCard(color: UnoCard['color'], kind: UnoCard['kind'], id: string, value?: number): UnoCard {
   return {
@@ -28,11 +35,15 @@ function createCard(color: UnoCard['color'], kind: UnoCard['kind'], id: string, 
   };
 }
 
-function createState(state: Partial<UnoState>, activePlayerId = 'p1'): MatchState<UnoState> {
+function createState(
+  state: Partial<UnoState>,
+  activePlayerId = 'p1',
+  currentPlayers: readonly PlayerProfile[] = players,
+): MatchState<UnoState> {
   return {
     matchId: 'match-uno',
     gameId: 'uno-style',
-    players,
+    players: currentPlayers,
     activePlayerId,
     turn: 1,
     executionMode: 'local',
@@ -210,6 +221,90 @@ test('jump-in exposes out-of-turn play for the matching face', () => {
   assert.equal(legalMoves.some((move) => move.playerId === 'p2' && move.kind === 'play-card'), true);
 });
 
+test('jump-in selects one out-of-turn actor in table order', () => {
+  const jumpInState = createState(
+    {
+      rules: {
+        ...defaultUnoRules,
+        jumpIn: true,
+      },
+      hands: {
+        p1: [createCard('blue', 'number', 'blue-4', 4)],
+        p2: [createCard('red', 'number', 'p2-matching-face', 5)],
+        p3: [createCard('red', 'number', 'p3-matching-face', 5)],
+        p4: [createCard('green', 'number', 'green-1', 1)],
+      },
+    },
+    'p1',
+    tablePlayers,
+  );
+  const legalMoves = adapter.listLegalMoves(jumpInState);
+
+  assert.equal(adapter.selectActor?.({ state: jumpInState, legalMoves }), 'p2');
+});
+
+test('engine rejects jump-in moves from non-selected jump-in actors', () => {
+  const engine = createGameEngine(adapter);
+  const jumpInState = createState(
+    {
+      rules: {
+        ...defaultUnoRules,
+        jumpIn: true,
+      },
+      hands: {
+        p1: [createCard('blue', 'number', 'blue-4', 4)],
+        p2: [createCard('red', 'number', 'p2-matching-face', 5)],
+        p3: [createCard('red', 'number', 'p3-matching-face', 5)],
+        p4: [createCard('green', 'number', 'green-1', 1)],
+      },
+    },
+    'p1',
+    tablePlayers,
+  );
+  const p3JumpInMove = adapter.listLegalMoves(jumpInState).find(
+    (move) => move.playerId === 'p3' && move.kind === 'play-card',
+  );
+
+  assert.ok(p3JumpInMove);
+  assert.throws(() => {
+    engine.submitMove(jumpInState, p3JumpInMove);
+  }, (error) => {
+    assert.equal(error instanceof IllegalMoveError, true);
+    assert.equal(error.reason, 'player is not the selected actor in the current match state');
+    return true;
+  });
+});
+
+test('selected jump-in actor can submit the matching-face move', () => {
+  const engine = createGameEngine(adapter);
+  const jumpInState = createState(
+    {
+      rules: {
+        ...defaultUnoRules,
+        jumpIn: true,
+      },
+      hands: {
+        p1: [createCard('blue', 'number', 'blue-4', 4)],
+        p2: [createCard('red', 'number', 'p2-matching-face', 5), createCard('green', 'number', 'green-1', 1)],
+        p3: [createCard('red', 'number', 'p3-matching-face', 5)],
+        p4: [createCard('green', 'number', 'green-4', 4)],
+      },
+    },
+    'p1',
+    tablePlayers,
+  );
+  const p2JumpInMove = adapter.listLegalMoves(jumpInState).find(
+    (move) => move.playerId === 'p2' && move.kind === 'play-card',
+  );
+
+  assert.ok(p2JumpInMove);
+
+  const next = engine.submitMove(jumpInState, p2JumpInMove);
+
+  assert.equal(next.state.discardPile[next.state.discardPile.length - 1]?.id, 'p2-matching-face');
+  assert.equal(next.turn, 2);
+});
+
 test('seven-zero rotates hands when zero is played', () => {
   const zeroState = createState({
     rules: {
@@ -289,6 +384,72 @@ test('bot selection prefers the majority color when choosing a wild', () => {
 
   assert.equal(choice?.kind, 'play-card');
   assert.equal(choice?.payload.chosenColor, 'green');
+});
+
+test('UNO bots ignore legal moves belonging to other players', () => {
+  const bots = createUnoBots([
+    { playerId: 'p1', displayName: 'Alice', seat: 1, controller: 'human' },
+    { playerId: 'p2', displayName: 'Bot', seat: 2, controller: 'bot' },
+  ]);
+  const botState = createState(
+    {
+      currentColor: 'red',
+      hands: {
+        p1: [createCard('red', 'number', 'red-5', 5)],
+        p2: [createCard('blue', 'number', 'blue-1', 1)],
+      },
+    },
+    'p2',
+  );
+
+  const ownFallback = bots.p2?.chooseMove({
+    legalMoves: [
+      {
+        playerId: 'p1',
+        kind: 'play-card',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: {
+          cardId: 'red-5',
+          sayUno: true,
+        },
+      },
+      {
+        playerId: 'p2',
+        kind: 'draw-card',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: {},
+      },
+    ],
+    participants: [
+      { playerId: 'p1', displayName: 'Alice', seat: 1, controller: 'human' },
+      { playerId: 'p2', displayName: 'Bot', seat: 2, controller: 'bot' },
+    ],
+    playerId: 'p2',
+    state: botState,
+  });
+  const noOwnMove = bots.p2?.chooseMove({
+    legalMoves: [
+      {
+        playerId: 'p1',
+        kind: 'play-card',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: {
+          cardId: 'red-5',
+          sayUno: true,
+        },
+      },
+    ],
+    participants: [
+      { playerId: 'p1', displayName: 'Alice', seat: 1, controller: 'human' },
+      { playerId: 'p2', displayName: 'Bot', seat: 2, controller: 'bot' },
+    ],
+    playerId: 'p2',
+    state: botState,
+  });
+
+  assert.equal(ownFallback?.playerId, 'p2');
+  assert.equal(ownFallback?.kind, 'draw-card');
+  assert.equal(noOwnMove, null);
 });
 
 test('UNO replay analysis tracks penalties, wild color choices, and wins', () => {

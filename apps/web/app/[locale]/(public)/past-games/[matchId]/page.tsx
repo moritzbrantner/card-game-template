@@ -43,15 +43,24 @@ export default async function PastGameReplayPage({
   });
 
   const steps = history.map((state, index) => {
-    const legalMoves =
+    const allLegalMoves =
       index < replay.replay.acceptedMoves.length && index !== history.length - 1
         ? adapter.listLegalMoves(state)
         : [];
+    const selectedActorPlayerId = allLegalMoves.length > 0
+      ? adapter.selectActor
+        ? adapter.selectActor({ state, legalMoves: allLegalMoves })
+        : state.activePlayerId
+      : null;
+    const legalMoves = selectedActorPlayerId
+      ? allLegalMoves.filter((move) => move.playerId === selectedActorPlayerId)
+      : [];
     const projected = projectUnoPlayerView({
       legalMoves,
       matchResult: index === history.length - 1 ? replay.replay.result : null,
       participants: participantViews,
       pendingHotseatPlayerId: null,
+      selectedActorPlayerId,
       state,
       viewerPlayerId,
     });

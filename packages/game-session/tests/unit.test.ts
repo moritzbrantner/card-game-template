@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type { GameMove, MatchState } from '../../game-contracts/src/index.ts';
+import type { GameMove, MatchState, PlayerId } from '../../game-contracts/src/index.ts';
+import { areMovesEquivalent, type GameAdapter } from '../../game-engine/src/index.ts';
 import {
   createLocalGameSession,
   createServerGameSession,
@@ -102,6 +103,41 @@ const counterAdapter = {
   },
 };
 
+function createSelectedActorCounterAdapter(input: {
+  selectActor(state: MatchState<CounterState>): PlayerId | null;
+  target?: number;
+}): GameAdapter<{ target: number }, CounterState, CounterMove> {
+  return {
+    ...counterAdapter,
+    listLegalMoves(state): readonly CounterMove[] {
+      return state.players.map((player) => ({
+        playerId: player.playerId,
+        kind: 'increment',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: { amount: 1 },
+      }));
+    },
+    isLegalMove(state, move): boolean {
+      return this.listLegalMoves(state).some((candidate) => areMovesEquivalent(candidate, move));
+    },
+    applyMove(state, move): MatchState<CounterState> {
+      return {
+        ...state,
+        turn: state.turn + 1,
+        state: {
+          total: state.state.total + move.payload.amount,
+        },
+      };
+    },
+    isMatchComplete(state): boolean {
+      return state.state.total >= (input.target ?? 3);
+    },
+    selectActor({ state }): PlayerId | null {
+      return input.selectActor(state);
+    },
+  };
+}
+
 test('local session advances bot turns automatically and stops on a human turn', () => {
   const session = createLocalGameSession({
     adapter: counterAdapter,
@@ -126,6 +162,43 @@ test('local session advances bot turns automatically and stops on a human turn',
   assert.equal(snapshot.match.state.total, 2);
   assert.equal(snapshot.match.activePlayerId, 'p3');
   assert.equal(snapshot.viewerPlayerId, 'p3');
+});
+
+test('local session snapshots expose and filter to the selected actor', () => {
+  const session = createLocalGameSession({
+    adapter: createSelectedActorCounterAdapter({
+      selectActor(state) {
+        return state.state.total === 0 ? 'p2' : 'p1';
+      },
+    }),
+    bots: {
+      p2: {
+        chooseMove({ legalMoves, playerId }) {
+          assert.equal(playerId, 'p2');
+          assert.deepEqual([...new Set(legalMoves.map((move) => move.playerId))], ['p2']);
+          return legalMoves[0] ?? null;
+        },
+      },
+    },
+    matchId: 'session-selected-actor-bot',
+    participants,
+    setup: { target: 3 },
+    projectView: ({ legalMoves, selectedActorPlayerId }) => ({
+      legalMovePlayerIds: legalMoves.map((move) => move.playerId),
+      selectedActorPlayerId,
+    }),
+  });
+
+  const snapshot = session.getSnapshot();
+
+  assert.equal(snapshot.match.activePlayerId, 'p1');
+  assert.equal(snapshot.match.state.total, 1);
+  assert.equal(snapshot.selectedActorPlayerId, 'p1');
+  assert.deepEqual([...new Set(snapshot.legalMoves.map((move) => move.playerId))], ['p1']);
+  assert.deepEqual(snapshot.view, {
+    legalMovePlayerIds: ['p1'],
+    selectedActorPlayerId: 'p1',
+  });
 });
 
 test('local session hides the next hotseat hand until confirmation', () => {
@@ -160,6 +233,47 @@ test('local session hides the next hotseat hand until confirmation', () => {
   assert.equal(hotseatSession.getSnapshot().pendingHotseatPlayerId, null);
 });
 
+test('local hotseat handoff follows the selected actor instead of the active player', () => {
+  const hotseatSession = createLocalGameSession({
+    adapter: createSelectedActorCounterAdapter({
+      selectActor(state) {
+        return state.state.total === 0 ? 'p1' : 'p2';
+      },
+    }),
+    hotseat: true,
+    matchId: 'session-selected-hotseat',
+    participants: [
+      { playerId: 'p1', displayName: 'Alice', seat: 1, controller: 'human' as const },
+      { playerId: 'p2', displayName: 'Casey', seat: 2, controller: 'human' as const },
+    ],
+    setup: { target: 3 },
+    projectView: ({ selectedActorPlayerId, viewerPlayerId, pendingHotseatPlayerId }) => ({
+      selectedActorPlayerId,
+      viewerPlayerId,
+      pendingHotseatPlayerId,
+    }),
+  });
+
+  hotseatSession.submitMove({
+    playerId: 'p1',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: { amount: 1 },
+  });
+
+  const pendingSnapshot = hotseatSession.getSnapshot();
+
+  assert.equal(pendingSnapshot.match.activePlayerId, 'p1');
+  assert.equal(pendingSnapshot.selectedActorPlayerId, 'p2');
+  assert.equal(pendingSnapshot.viewerPlayerId, null);
+  assert.equal(pendingSnapshot.pendingHotseatPlayerId, 'p2');
+
+  hotseatSession.confirmHotseat();
+
+  assert.equal(hotseatSession.getSnapshot().viewerPlayerId, 'p2');
+  assert.equal(hotseatSession.getSnapshot().pendingHotseatPlayerId, null);
+});
+
 test('server session records accepted moves and reconstructs replay history', () => {
   const timestamps = [
     '2026-04-17T12:00:00.000Z',
@@ -178,8 +292,11 @@ test('server session records accepted moves and reconstructs replay history', ()
     },
   });
 
-  assert.equal(session.getSnapshot().replay.startedAt, '2026-04-17T12:00:00.000Z');
-  assert.deepEqual(session.getSnapshot().replay.acceptedMoves, []);
+  const openingSnapshot = session.getSnapshot();
+
+  assert.equal(openingSnapshot.replay.startedAt, '2026-04-17T12:00:00.000Z');
+  assert.equal(openingSnapshot.selectedActorPlayerId, 'p1');
+  assert.deepEqual(openingSnapshot.replay.acceptedMoves, []);
 
   session.submitMove({
     playerId: 'p1',
@@ -202,6 +319,7 @@ test('server session records accepted moves and reconstructs replay history', ()
 
   const snapshot = session.getSnapshot();
 
+  assert.equal(snapshot.selectedActorPlayerId, null);
   assert.equal(snapshot.match.state.total, 3);
   assert.equal(snapshot.matchResult?.winnerIds[0], 'p1');
   assert.deepEqual(

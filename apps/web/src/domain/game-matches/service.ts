@@ -74,6 +74,7 @@ function buildView(input: {
   state: PersistedUnoMatchRecord['latestState'];
   matchResult: PersistedUnoMatchRecord['result'];
   legalMoves: readonly UnoMove[];
+  selectedActorPlayerId: string | null;
   viewerPlayerId: string | null;
 }): UnoPlayerView {
   return projectUnoPlayerView({
@@ -81,6 +82,7 @@ function buildView(input: {
     matchResult: input.matchResult,
     participants: toSessionParticipants(input.participants),
     pendingHotseatPlayerId: null,
+    selectedActorPlayerId: input.selectedActorPlayerId,
     state: input.state,
     viewerPlayerId: input.viewerPlayerId,
   });
@@ -125,11 +127,13 @@ export function buildPersistedUnoMatchSnapshotDto(
       replayFormatVersion: match.replayFormatVersion,
       match: match.latestState,
       legalMoves: [],
+      selectedActorPlayerId: null,
       view: buildView({
         participants: match.participants,
         state: match.latestState,
         matchResult: match.result,
         legalMoves: [],
+        selectedActorPlayerId: null,
         viewerPlayerId,
       }),
     };
@@ -148,11 +152,13 @@ export function buildPersistedUnoMatchSnapshotDto(
     replayFormatVersion: match.replayFormatVersion,
     match: snapshot.match,
     legalMoves: snapshot.legalMoves,
+    selectedActorPlayerId: snapshot.selectedActorPlayerId,
     view: buildView({
       participants: match.participants,
       state: snapshot.match,
       matchResult: snapshot.matchResult,
       legalMoves: snapshot.legalMoves,
+      selectedActorPlayerId: snapshot.selectedActorPlayerId,
       viewerPlayerId,
     }),
   };
@@ -264,18 +270,22 @@ export function processUnoBots(
 
   while (!session.getSnapshot().matchResult) {
     const snapshot = session.getSnapshot();
-    const activeParticipant = participants.find((participant) => participant.playerId === snapshot.match.activePlayerId);
+    const selectedActorPlayerId = snapshot.selectedActorPlayerId;
+    const activeParticipant = selectedActorPlayerId
+      ? participants.find((participant) => participant.playerId === selectedActorPlayerId)
+      : null;
 
     if (!activeParticipant?.isBot) {
       break;
     }
 
+    const legalMoves = snapshot.legalMoves.filter((move) => move.playerId === activeParticipant.playerId);
     const move = bots[activeParticipant.playerId]?.chooseMove({
-      legalMoves: snapshot.legalMoves,
+      legalMoves,
       participants: sessionParticipants,
       playerId: activeParticipant.playerId,
       state: snapshot.match,
-    }) ?? snapshot.legalMoves[0] ?? null;
+    }) ?? legalMoves[0] ?? null;
 
     if (!move) {
       break;

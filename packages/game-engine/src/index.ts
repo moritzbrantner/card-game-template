@@ -22,6 +22,10 @@ export interface GameAdapter<TSetup, TState, TMove extends GameMove = GameMove> 
   definition: GameDefinition;
   createInitialState(input: StartMatchInput<TSetup> & { executionMode: MatchExecutionMode }): MatchState<TState>;
   listLegalMoves(state: MatchState<TState>): readonly TMove[];
+  selectActor?(input: {
+    state: MatchState<TState>;
+    legalMoves: readonly TMove[];
+  }): PlayerId | null;
   isLegalMove(state: MatchState<TState>, move: TMove): boolean;
   applyMove(state: MatchState<TState>, move: TMove): MatchState<TState>;
   isMatchComplete(state: MatchState<TState>): boolean;
@@ -127,6 +131,21 @@ export function areMovesEquivalent<TMove extends GameMove>(left: TMove, right: T
   return left.playerId === right.playerId && left.kind === right.kind && deepEqual(left.payload, right.payload);
 }
 
+function resolveSelectedActor<TSetup, TState, TMove extends GameMove>(
+  adapter: GameAdapter<TSetup, TState, TMove>,
+  state: MatchState<TState>,
+  legalMoves: readonly TMove[],
+): PlayerId | null {
+  if (!adapter.selectActor) {
+    return state.activePlayerId;
+  }
+
+  return adapter.selectActor({
+    state,
+    legalMoves,
+  });
+}
+
 export function createGameEngine<TSetup, TState, TMove extends GameMove = GameMove>(
   adapter: GameAdapter<TSetup, TState, TMove>,
 ) {
@@ -141,6 +160,21 @@ export function createGameEngine<TSetup, TState, TMove extends GameMove = GameMo
       });
     },
     submitMove(state: MatchState<TState>, move: TMove): MatchState<TState> {
+      const allLegalMoves = adapter.listLegalMoves(state);
+      const selectedActorPlayerId = resolveSelectedActor(adapter, state, allLegalMoves);
+
+      if (!selectedActorPlayerId || move.playerId !== selectedActorPlayerId) {
+        throw new IllegalMoveError({
+          gameId: adapter.definition.gameId,
+          matchId: state.matchId,
+          playerId: move.playerId,
+          moveKind: move.kind,
+          reason: selectedActorPlayerId
+            ? 'player is not the selected actor in the current match state'
+            : 'no actor is selected in the current match state',
+        });
+      }
+
       if (!adapter.isLegalMove(state, move)) {
         throw new IllegalMoveError({
           gameId: adapter.definition.gameId,

@@ -25,6 +25,7 @@ export type LocalGameSessionSnapshot<TState, TMove extends GameMove, TView> = {
   matchResult: MatchResult | null;
   pendingHotseatPlayerId: PlayerId | null;
   participants: readonly SessionParticipant[];
+  selectedActorPlayerId: PlayerId | null;
   view: TView;
   viewerPlayerId: PlayerId | null;
 };
@@ -34,6 +35,7 @@ export type LocalGameSessionProjectViewInput<TState, TMove extends GameMove> = {
   matchResult: MatchResult | null;
   participants: readonly SessionParticipant[];
   pendingHotseatPlayerId: PlayerId | null;
+  selectedActorPlayerId: PlayerId | null;
   state: MatchState<TState>;
   viewerPlayerId: PlayerId | null;
 };
@@ -79,6 +81,7 @@ export type ServerGameSessionSnapshot<TState, TMove extends GameMove> = {
   matchResult: MatchResult | null;
   participants: readonly PlayerProfile[];
   replay: MatchReplay<TState, TMove>;
+  selectedActorPlayerId: PlayerId | null;
 };
 
 export type ServerGameSessionPersistence<TState, TMove extends GameMove> = {
@@ -130,6 +133,37 @@ function cloneValue<TValue>(value: TValue): TValue {
 
 function sortPlayersBySeat<TPlayer extends PlayerProfile>(players: readonly TPlayer[]): TPlayer[] {
   return [...players].sort((left, right) => left.seat - right.seat);
+}
+
+function resolveSelectedActor<TSetup, TState, TMove extends GameMove>(input: {
+  adapter: GameAdapter<TSetup, TState, TMove>;
+  state: MatchState<TState>;
+  matchResult: MatchResult | null;
+}): {
+  legalMoves: readonly TMove[];
+  selectedActorPlayerId: PlayerId | null;
+} {
+  if (input.matchResult) {
+    return {
+      legalMoves: [],
+      selectedActorPlayerId: null,
+    };
+  }
+
+  const allLegalMoves = input.adapter.listLegalMoves(input.state);
+  const selectedActorPlayerId = input.adapter.selectActor
+    ? input.adapter.selectActor({
+        state: input.state,
+        legalMoves: allLegalMoves,
+      })
+    : input.state.activePlayerId;
+
+  return {
+    legalMoves: selectedActorPlayerId
+      ? allLegalMoves.filter((move) => move.playerId === selectedActorPlayerId)
+      : [],
+    selectedActorPlayerId,
+  };
 }
 
 function withAcceptedFinishedAt(result: MatchResult | null, finishedAt: string): MatchResult | null {
@@ -215,7 +249,11 @@ export function createLocalGameSession<TSetup, TState, TMove extends GameMove, T
   }
 
   function getSnapshot(): LocalGameSessionSnapshot<TState, TMove, TView> {
-    const legalMoves = matchResult ? [] : input.adapter.listLegalMoves(currentState);
+    const { legalMoves, selectedActorPlayerId } = resolveSelectedActor({
+      adapter: input.adapter,
+      state: currentState,
+      matchResult,
+    });
 
     return {
       history,
@@ -224,11 +262,13 @@ export function createLocalGameSession<TSetup, TState, TMove extends GameMove, T
       matchResult,
       pendingHotseatPlayerId,
       participants: orderedParticipants,
+      selectedActorPlayerId,
       view: input.projectView({
         legalMoves,
         matchResult,
         participants: orderedParticipants,
         pendingHotseatPlayerId,
+        selectedActorPlayerId,
         state: currentState,
         viewerPlayerId,
       }),
@@ -259,7 +299,12 @@ export function createLocalGameSession<TSetup, TState, TMove extends GameMove, T
       return;
     }
 
-    const activeParticipant = getParticipant(currentState.activePlayerId);
+    const { selectedActorPlayerId } = resolveSelectedActor({
+      adapter: input.adapter,
+      state: currentState,
+      matchResult,
+    });
+    const activeParticipant = selectedActorPlayerId ? getParticipant(selectedActorPlayerId) : null;
 
     if (!activeParticipant || activeParticipant.controller === 'bot') {
       pendingHotseatPlayerId = null;
@@ -290,13 +335,17 @@ export function createLocalGameSession<TSetup, TState, TMove extends GameMove, T
     }
 
     while (!matchResult) {
-      const activeParticipant = getParticipant(currentState.activePlayerId);
+      const { legalMoves, selectedActorPlayerId } = resolveSelectedActor({
+        adapter: input.adapter,
+        state: currentState,
+        matchResult,
+      });
+      const activeParticipant = selectedActorPlayerId ? getParticipant(selectedActorPlayerId) : null;
 
       if (!activeParticipant || activeParticipant.controller !== 'bot') {
         break;
       }
 
-      const legalMoves = input.adapter.listLegalMoves(currentState);
       const bot = input.bots?.[activeParticipant.playerId];
       const chosenMove = bot?.chooseMove({
         legalMoves,
@@ -394,7 +443,11 @@ function createServerSessionRuntime<TSetup, TState, TMove extends GameMove>(inpu
   });
 
   function buildSnapshot(): ServerGameSessionSnapshot<TState, TMove> {
-    const legalMoves = matchResult ? [] : input.adapter.listLegalMoves(currentState);
+    const { legalMoves, selectedActorPlayerId } = resolveSelectedActor({
+      adapter: input.adapter,
+      state: currentState,
+      matchResult,
+    });
 
     return {
       analysis: summarizeMatchReplay(replay),
@@ -404,6 +457,7 @@ function createServerSessionRuntime<TSetup, TState, TMove extends GameMove>(inpu
       matchResult,
       participants: orderedParticipants,
       replay: cloneValue(replay),
+      selectedActorPlayerId,
     };
   }
 
