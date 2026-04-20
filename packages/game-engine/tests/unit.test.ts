@@ -4,12 +4,28 @@ import test from 'node:test';
 import type { GameMove, MatchState, PlayerProfile } from '../../game-contracts/src/index.ts';
 
 import {
+  addCards,
   areMovesEquivalent,
   createGameEngine,
   createSeededRandom,
+  drawCardsBetweenStacks,
+  drawCardsFromSources,
+  drawCardsFromBottom,
+  drawCardsFromTop,
   type GameAdapter,
+  hideAllCards,
+  hideCardById,
   IllegalMoveError,
+  moveCardById,
+  moveCardsBetweenStacks,
+  removeCardById,
+  removeCardsById,
+  revealAllCards,
+  revealCardById,
+  shuffleCards,
   shuffleWithSeed,
+  sortCards,
+  sortCardsByRankAndSuit,
 } from '../src/index.ts';
 
 type CounterState = {
@@ -259,6 +275,239 @@ test('shuffleWithSeed is deterministic for the same seed', () => {
 
   assert.deepEqual(shuffleWithSeed(deck, 'uno-seed'), shuffleWithSeed(deck, 'uno-seed'));
   assert.notDeepEqual(shuffleWithSeed(deck, 'uno-seed'), shuffleWithSeed(deck, 'other-seed'));
+});
+
+test('card stack helpers add, remove, draw, and move cards immutably', () => {
+  const stack = [
+    { id: 'c1', label: 'One' },
+    { id: 'c2', label: 'Two' },
+    { id: 'c3', label: 'Three' },
+  ];
+
+  assert.deepEqual(
+    addCards(stack, [{ id: 'c0', label: 'Zero' }], { position: 'start' }),
+    [{ id: 'c0', label: 'Zero' }, ...stack],
+  );
+  assert.deepEqual(
+    addCards(stack, [{ id: 'c4', label: 'Four' }], { position: 'end' }),
+    [...stack, { id: 'c4', label: 'Four' }],
+  );
+  assert.deepEqual(
+    addCards(stack, [{ id: 'inserted', label: 'Inserted' }], {
+      position: 2,
+    }).map((card) => card.id),
+    ['c1', 'c2', 'inserted', 'c3'],
+  );
+
+  const removed = removeCardById(stack, 'c2');
+  assert.deepEqual(removed.card, { id: 'c2', label: 'Two' });
+  assert.deepEqual(
+    removed.cards.map((card) => card.id),
+    ['c1', 'c3'],
+  );
+  assert.deepEqual(removeCardById(stack, 'missing'), {
+    cards: stack,
+    card: null,
+  });
+
+  const removedMany = removeCardsById(stack, ['c1', 'c3']);
+  assert.deepEqual(
+    removedMany.cards.map((card) => card.id),
+    ['c2'],
+  );
+  assert.deepEqual(
+    removedMany.removedCards.map((card) => card.id),
+    ['c1', 'c3'],
+  );
+
+  const drawn = drawCardsFromTop(stack, 2);
+  assert.deepEqual(
+    drawn.cards.map((card) => card.id),
+    ['c3'],
+  );
+  assert.deepEqual(
+    drawn.drawnCards.map((card) => card.id),
+    ['c1', 'c2'],
+  );
+
+  const bottomDrawn = drawCardsFromBottom(stack, 2);
+  assert.deepEqual(
+    bottomDrawn.cards.map((card) => card.id),
+    ['c1'],
+  );
+  assert.deepEqual(
+    bottomDrawn.drawnCards.map((card) => card.id),
+    ['c2', 'c3'],
+  );
+
+  const moved = moveCardById(stack, 'c1', { position: 'end' });
+  assert.deepEqual(
+    moved.cards.map((card) => card.id),
+    ['c2', 'c3', 'c1'],
+  );
+  assert.deepEqual(
+    stack.map((card) => card.id),
+    ['c1', 'c2', 'c3'],
+  );
+});
+
+test('card stack helpers draw and move cards between named sources', () => {
+  type StackId = 'draw-pile' | 'discard-pile' | 'hand:p1' | 'hand:p2';
+  const stacks: Record<StackId, readonly { id: string; label: string }[]> = {
+    'draw-pile': [
+      { id: 'draw-1', label: 'Draw One' },
+      { id: 'draw-2', label: 'Draw Two' },
+    ],
+    'discard-pile': [
+      { id: 'discard-1', label: 'Discard One' },
+      { id: 'discard-2', label: 'Discard Two' },
+    ],
+    'hand:p1': [{ id: 'p1-card', label: 'Player One Card' }],
+    'hand:p2': [
+      { id: 'p2-left', label: 'Player Two Left' },
+      { id: 'p2-right', label: 'Player Two Right' },
+    ],
+  };
+
+  const stolen = drawCardsBetweenStacks(stacks, {
+    source: 'hand:p2',
+    destination: 'hand:p1',
+    amount: 1,
+    sourcePosition: 'bottom',
+  });
+
+  assert.deepEqual(
+    stolen.drawnCards.map((card) => card.id),
+    ['p2-right'],
+  );
+  assert.deepEqual(
+    stolen.stacks['hand:p1'].map((card) => card.id),
+    ['p1-card', 'p2-right'],
+  );
+  assert.deepEqual(
+    stolen.stacks['hand:p2'].map((card) => card.id),
+    ['p2-left'],
+  );
+
+  const moved = moveCardsBetweenStacks(stacks, {
+    source: 'hand:p2',
+    destination: 'discard-pile',
+    cardIds: ['p2-left'],
+    destinationPosition: 'start',
+  });
+
+  assert.deepEqual(
+    moved.movedCards.map((card) => card.id),
+    ['p2-left'],
+  );
+  assert.deepEqual(
+    moved.stacks['discard-pile'].map((card) => card.id),
+    ['p2-left', 'discard-1', 'discard-2'],
+  );
+  assert.deepEqual(
+    stacks['hand:p2'].map((card) => card.id),
+    ['p2-left', 'p2-right'],
+  );
+});
+
+test('card stack helpers can draw from ordered fallback sources', () => {
+  type StackId = 'primary' | 'secondary' | 'hand:p1';
+  const stacks: Record<StackId, readonly { id: string; label: string }[]> = {
+    primary: [{ id: 'primary-1', label: 'Primary One' }],
+    secondary: [
+      { id: 'secondary-1', label: 'Secondary One' },
+      { id: 'secondary-2', label: 'Secondary Two' },
+    ],
+    'hand:p1': [],
+  };
+
+  const drawn = drawCardsFromSources(stacks, {
+    sources: [
+      { source: 'primary', position: 'top' },
+      { source: 'secondary', position: 'bottom' },
+    ],
+    destination: 'hand:p1',
+    amount: 3,
+  });
+
+  assert.deepEqual(
+    drawn.drawnCards.map((card) => card.id),
+    ['primary-1', 'secondary-1', 'secondary-2'],
+  );
+  assert.deepEqual(
+    drawn.sourceResults.map((result) => ({
+      source: result.source,
+      cardIds: result.drawnCards.map((card) => card.id),
+    })),
+    [
+      { source: 'primary', cardIds: ['primary-1'] },
+      { source: 'secondary', cardIds: ['secondary-1', 'secondary-2'] },
+    ],
+  );
+  assert.deepEqual(
+    drawn.stacks['hand:p1'].map((card) => card.id),
+    ['primary-1', 'secondary-1', 'secondary-2'],
+  );
+  assert.deepEqual(drawn.stacks.primary, []);
+  assert.deepEqual(drawn.stacks.secondary, []);
+  assert.equal(drawn.remainingAmount, 0);
+});
+
+test('card stack helpers reveal and hide cards immutably', () => {
+  const hand = [
+    { id: 'visible', label: 'Visible', visibility: 'face-up' as const },
+    { id: 'hidden', label: 'Hidden', visibility: 'face-down' as const },
+  ];
+
+  assert.deepEqual(revealCardById(hand, 'hidden'), [
+    { id: 'visible', label: 'Visible', visibility: 'face-up' },
+    { id: 'hidden', label: 'Hidden', visibility: 'face-up' },
+  ]);
+  assert.deepEqual(hideCardById(hand, 'visible'), [
+    { id: 'visible', label: 'Visible', visibility: 'face-down' },
+    { id: 'hidden', label: 'Hidden', visibility: 'face-down' },
+  ]);
+  assert.deepEqual(
+    revealAllCards(hand).map((card) => card.visibility),
+    ['face-up', 'face-up'],
+  );
+  assert.deepEqual(
+    hideAllCards(hand).map((card) => card.visibility),
+    ['face-down', 'face-down'],
+  );
+});
+
+test('card stack helpers sort and shuffle without mutating the source deck', () => {
+  const deck = [
+    { id: 'hearts-10', suit: 'hearts', rank: 10 },
+    { id: 'clubs-a', suit: 'clubs', rank: 'A' },
+    { id: 'spades-2', suit: 'spades', rank: 2 },
+    { id: 'hearts-3', suit: 'hearts', rank: 3 },
+  ];
+
+  assert.deepEqual(
+    sortCards(deck, (left, right) => left.id.localeCompare(right.id)).map(
+      (card) => card.id,
+    ),
+    ['clubs-a', 'hearts-10', 'hearts-3', 'spades-2'],
+  );
+
+  assert.deepEqual(
+    sortCardsByRankAndSuit(deck).map((card) => card.id),
+    ['clubs-a', 'hearts-3', 'hearts-10', 'spades-2'],
+  );
+
+  const firstShuffle = shuffleCards(deck, { seed: 'cards' });
+  const secondShuffle = shuffleCards(deck, { seed: 'cards' });
+  assert.deepEqual(firstShuffle, secondShuffle);
+  assert.notDeepEqual(
+    firstShuffle.map((card) => card.id),
+    deck.map((card) => card.id),
+  );
+  assert.deepEqual(
+    deck.map((card) => card.id),
+    ['hearts-10', 'clubs-a', 'spades-2', 'hearts-3'],
+  );
 });
 
 test('createSeededRandom produces a stable sequence', () => {
