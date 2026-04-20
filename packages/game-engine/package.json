@@ -10,6 +10,7 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
+    "test:integration": "../../scripts/run-with-node.sh --experimental-strip-types --test ./tests/integration.test.ts",
     "test:unit": "../../scripts/run-with-node.sh --experimental-strip-types --test ./tests/unit.test.ts"
   },
   "dependencies": {

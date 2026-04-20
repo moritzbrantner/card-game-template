@@ -175,11 +175,12 @@ test('createGameEngine rejects illegal moves', () => {
     });
   }, (error) => {
     assert.equal(error instanceof IllegalMoveError, true);
-    assert.equal(error.gameId, 'counter');
-    assert.equal(error.matchId, 'match-2');
-    assert.equal(error.playerId, 'p1');
-    assert.equal(error.moveKind, 'skip');
-    assert.equal(error.reason, 'move is not legal in the current match state');
+    const illegalMoveError = error as IllegalMoveError;
+    assert.equal(illegalMoveError.gameId, 'counter');
+    assert.equal(illegalMoveError.matchId, 'match-2');
+    assert.equal(illegalMoveError.playerId, 'p1');
+    assert.equal(illegalMoveError.moveKind, 'skip');
+    assert.equal(illegalMoveError.reason, 'move is not legal in the current match state');
     return true;
   });
 });
@@ -201,7 +202,8 @@ test('createGameEngine defaults selected actor to the active player', () => {
     });
   }, (error) => {
     assert.equal(error instanceof IllegalMoveError, true);
-    assert.equal(error.reason, 'player is not the selected actor in the current match state');
+    const illegalMoveError = error as IllegalMoveError;
+    assert.equal(illegalMoveError.reason, 'player is not the selected actor in the current match state');
     return true;
   });
 });
@@ -248,19 +250,76 @@ test('createGameEngine rejects legal moves from non-selected actors', () => {
     });
   }, (error) => {
     assert.equal(error instanceof IllegalMoveError, true);
-    assert.equal(error.reason, 'player is not the selected actor in the current match state');
+    const illegalMoveError = error as IllegalMoveError;
+    assert.equal(illegalMoveError.reason, 'player is not the selected actor in the current match state');
     return true;
   });
 });
 
+test('createGameEngine rejects moves when no actor is selected', () => {
+  const engine = createGameEngine(createSelectableCounterAdapter(() => null));
+  const initial = engine.startMatch({
+    matchId: 'match-selected-none',
+    players,
+    setup: { target: 1 },
+  });
+
+  assert.throws(
+    () => {
+      engine.submitMove(initial, {
+        playerId: 'p1',
+        kind: 'increment',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: { amount: 1 },
+      });
+    },
+    (error) => {
+      assert.equal(error instanceof IllegalMoveError, true);
+      const illegalMoveError = error as IllegalMoveError;
+      assert.equal(illegalMoveError.reason, 'no actor is selected in the current match state');
+      return true;
+    },
+  );
+});
+
+test('createGameEngine falls back to an empty result when adapters return none', () => {
+  const engine = createGameEngine({
+    ...counterAdapter,
+    getResult() {
+      return null;
+    },
+  });
+  const initial = engine.startMatch({
+    matchId: 'match-fallback-result',
+    players,
+    setup: { target: 1 },
+  });
+  const complete = engine.submitMove(initial, {
+    playerId: 'p1',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: { amount: 1 },
+  });
+
+  const result = engine.finalizeMatch(complete);
+
+  assert.ok(result);
+  assert.equal(result.matchId, 'match-fallback-result');
+  assert.equal(result.gameId, 'counter');
+  assert.deepEqual(result.winnerIds, []);
+  assert.deepEqual(result.rankings, []);
+  assert.equal(result.executionMode, 'local');
+  assert.equal(Number.isFinite(Date.parse(result.finishedAt)), true);
+});
+
 test('areMovesEquivalent compares payloads instead of only kind and player', () => {
-  const left: CounterMove = {
+  const left: GameMove<{ amount: number; cardId: string }> = {
     playerId: 'p1',
     kind: 'play-card',
     createdAt: '2026-04-17T12:00:00.000Z',
     payload: { amount: 1, cardId: 'red-1' },
   };
-  const right: CounterMove = {
+  const right: GameMove<{ amount: number; cardId: string }> = {
     playerId: 'p1',
     kind: 'play-card',
     createdAt: '2026-04-17T12:01:00.000Z',
@@ -349,6 +408,9 @@ test('card stack helpers add, remove, draw, and move cards immutably', () => {
     stack.map((card) => card.id),
     ['c1', 'c2', 'c3'],
   );
+
+  assert.throws(() => addCards(stack, [], { position: 1.5 }), RangeError);
+  assert.throws(() => drawCardsFromTop(stack, -1), RangeError);
 });
 
 test('card stack helpers draw and move cards between named sources', () => {
@@ -408,6 +470,14 @@ test('card stack helpers draw and move cards between named sources', () => {
     stacks['hand:p2'].map((card) => card.id),
     ['p2-left', 'p2-right'],
   );
+
+  assert.throws(() => {
+    drawCardsBetweenStacks(stacks, {
+      source: 'missing-stack' as StackId,
+      destination: 'hand:p1',
+      amount: 1,
+    });
+  }, /Unknown card stack missing-stack/);
 });
 
 test('card stack helpers can draw from ordered fallback sources', () => {
@@ -451,6 +521,41 @@ test('card stack helpers can draw from ordered fallback sources', () => {
   assert.deepEqual(drawn.stacks.primary, []);
   assert.deepEqual(drawn.stacks.secondary, []);
   assert.equal(drawn.remainingAmount, 0);
+});
+
+test('card stack helpers report remaining draws when fallback sources run dry', () => {
+  type StackId = 'primary' | 'secondary' | 'hand:p1';
+  const stacks: Record<StackId, readonly { id: string; label: string }[]> = {
+    primary: [{ id: 'primary-1', label: 'Primary One' }],
+    secondary: [],
+    'hand:p1': [{ id: 'existing', label: 'Existing' }],
+  };
+
+  const drawn = drawCardsFromSources(stacks, {
+    sources: [
+      { source: 'secondary', amount: 0 },
+      { source: 'primary', amount: 4 },
+    ],
+    destination: 'hand:p1',
+    destinationPosition: 'start',
+    amount: 3,
+  });
+
+  assert.deepEqual(
+    drawn.sourceResults.map((result) => ({
+      source: result.source,
+      cardIds: result.drawnCards.map((card) => card.id),
+    })),
+    [
+      { source: 'secondary', cardIds: [] },
+      { source: 'primary', cardIds: ['primary-1'] },
+    ],
+  );
+  assert.deepEqual(
+    drawn.stacks['hand:p1'].map((card) => card.id),
+    ['primary-1', 'existing'],
+  );
+  assert.equal(drawn.remainingAmount, 2);
 });
 
 test('card stack helpers reveal and hide cards immutably', () => {
@@ -508,6 +613,23 @@ test('card stack helpers sort and shuffle without mutating the source deck', () 
     deck.map((card) => card.id),
     ['hearts-10', 'clubs-a', 'spades-2', 'hearts-3'],
   );
+
+  assert.deepEqual(
+    sortCardsByRankAndSuit(deck, {
+      direction: 'descending',
+      ranks: [10, 3, 2, 'A'],
+      suits: ['hearts', 'spades', 'clubs'],
+    }).map((card) => card.id),
+    ['clubs-a', 'spades-2', 'hearts-3', 'hearts-10'],
+  );
+
+  assert.deepEqual(
+    shuffleCards(deck, { nextRandom: () => 0 }).map((card) => card.id),
+    ['clubs-a', 'spades-2', 'hearts-3', 'hearts-10'],
+  );
+  assert.throws(() => {
+    shuffleCards(deck, { seed: 'cards', nextRandom: () => 0 });
+  }, /either a seed or nextRandom/);
 });
 
 test('createSeededRandom produces a stable sequence', () => {
