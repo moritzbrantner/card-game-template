@@ -393,6 +393,22 @@
         "typescript": "6.0.3",
       },
     },
+    "packages/game-fixtures": {
+      "name": "@repo/game-fixtures",
+      "version": "0.0.0",
+      "dependencies": {
+        "@repo/game-contracts": "workspace:*",
+        "@repo/game-engine": "workspace:*",
+        "@repo/game-poker": "workspace:*",
+        "@repo/game-session": "workspace:*",
+        "@repo/game-tcg": "workspace:*",
+        "@repo/game-uno": "workspace:*",
+      },
+      "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "typescript": "6.0.3",
+      },
+    },
     "packages/game-poker": {
       "name": "@repo/game-poker",
       "version": "0.0.0",
@@ -1626,6 +1642,8 @@
     "@repo/game-contracts": ["@repo/game-contracts@workspace:packages/game-contracts"],
 
     "@repo/game-engine": ["@repo/game-engine@workspace:packages/game-engine"],
+
+    "@repo/game-fixtures": ["@repo/game-fixtures@workspace:packages/game-fixtures"],
 
     "@repo/game-poker": ["@repo/game-poker@workspace:packages/game-poker"],
 
