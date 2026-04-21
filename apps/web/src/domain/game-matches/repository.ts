@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { DEFAULT_RNG_VERSION, GAME_ENGINE_VERSION } from '@repo/game-engine';
-import { UNO_GAME_VERSION, UNO_RULESET_VERSION } from '@repo/game-uno';
+import { UNO_GAME_VERSION, UNO_RULESET_VERSION, type UnoMove } from '@repo/game-uno';
 
 import { getDb } from '@/src/db/client';
 import { gameMatchMoves, gameMatchParticipants, gameMatches } from '@/src/db/schema';
@@ -44,14 +44,16 @@ function deriveReplayMetadata(match: typeof gameMatches.$inferSelect): Persisted
     return null;
   }
 
+  const initialState = match.initialStateJson as PersistedUnoMatchRecord['initialState'];
+
   return {
     engineVersion: GAME_ENGINE_VERSION,
     gameVersion: UNO_GAME_VERSION,
     rngVersion: DEFAULT_RNG_VERSION,
     rulesetVersion: UNO_RULESET_VERSION,
     setup: {
-      seed: match.initialStateJson.state.seed,
-      rules: match.initialStateJson.state.rules,
+      seed: initialState.state.seed,
+      rules: initialState.state.rules,
     },
   };
 }
@@ -74,8 +76,8 @@ function mapMatchRecord(input: {
     createdBy: input.match.createdByKind === 'account'
       ? { kind: 'account', accountId: input.match.createdByAccountId ?? '' }
       : { kind: 'guest', guestId: input.match.createdByGuestId ?? '' },
-    initialState: input.match.initialStateJson,
-    latestState: input.match.latestStateJson,
+    initialState: input.match.initialStateJson as PersistedUnoMatchRecord['initialState'],
+    latestState: input.match.latestStateJson as PersistedUnoMatchRecord['latestState'],
     result: input.match.resultJson,
     analysis: input.match.analysisJson as GameMatchAnalysisRecord | null,
     replayMetadata: deriveReplayMetadata(input.match),
@@ -86,7 +88,7 @@ function mapMatchRecord(input: {
       .map((move) => ({
         sequence: move.sequence,
         acceptedAt: move.acceptedAt.toISOString(),
-        move: move.moveJson,
+        move: move.moveJson as UnoMove,
       })),
   };
 }

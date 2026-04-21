@@ -68,3 +68,37 @@ test('all client apps depend on the shared card-game packages', () => {
     }
   }
 });
+
+test('roadmap status reflects the implemented card-game foundation', () => {
+  const readme = readFileSync(resolve(repoRoot, 'README.md'), 'utf8');
+  const plans = readFileSync(resolve(repoRoot, 'PLANS.md'), 'utf8');
+
+  assert.match(plans, /\| P-001 \| completed\s+\| Shared game contracts/);
+  assert.match(plans, /\| P-002 \| completed\s+\| Portable game engine/);
+  assert.match(plans, /\| P-006 \| completed\s+\| Sample games/);
+  assert.match(plans, /Generic persisted match service/);
+  assert.match(readme, /web UNO-style server-authoritative matches with guest\/account ownership/);
+  assert.doesNotMatch(readme, /match persistence remain deferred/);
+});
+
+test('integration tasks pass service bootstrap environment through turbo', () => {
+  const turboConfig = JSON.parse(readFileSync(resolve(repoRoot, 'turbo.json'), 'utf8'));
+
+  for (const taskName of ['test:integration', 'test:e2e']) {
+    const passThroughEnv = new Set(turboConfig.tasks[taskName]?.passThroughEnv ?? []);
+
+    for (const variableName of [
+      'DATABASE_URL',
+      'POSTGRES_PORT',
+      'TEST_POSTGRES_PORT',
+      'MAILPIT_BASE_URL',
+      'PROFILE_IMAGE_STORAGE_ENDPOINT',
+    ]) {
+      assert.equal(
+        passThroughEnv.has(variableName),
+        true,
+        `${taskName} must pass ${variableName} through to package test processes`,
+      );
+    }
+  }
+});

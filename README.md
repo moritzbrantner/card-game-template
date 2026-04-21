@@ -69,6 +69,13 @@ The repository should evolve toward:
 
 ## Current status
 
-The repository structure already supports a monorepo with platform-specific apps. The root documentation now defines the intended card-game platform direction that future implementation should follow.
+The repository structure supports a monorepo with platform-specific apps and shared packages for reusable card-game logic.
 
-The first playable sample is now a local-first UNO-style example shared across web, mobile, and desktop through common rules and session packages. Online rooms, authoritative multiplayer, and match persistence remain deferred follow-up work.
+Implemented foundation:
+
+- shared contracts for players, games, moves, match state, replay logs, and persisted match summaries
+- deterministic game engine helpers plus local and server-authoritative session runtimes
+- local UNO-style, Texas Hold'em, and Arcane Duel samples shared across mobile and desktop
+- web UNO-style server-authoritative matches with guest/account ownership, persisted move logs, replay inspection, and match history
+
+Next platform work should focus on generic multi-game persistence, private online rooms, realtime fan-out, and bringing the persisted server-authoritative path to poker and TCG.

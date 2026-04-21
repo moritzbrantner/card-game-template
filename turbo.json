@@ -19,10 +19,42 @@
     },
     "test:integration": {
       "dependsOn": ["^test:integration"],
+      "passThroughEnv": [
+        "AUTH_SECRET",
+        "DATABASE_URL",
+        "POSTGRES_PORT",
+        "TEST_POSTGRES_PORT",
+        "MAILPIT_BASE_URL",
+        "MINIO_API_PORT",
+        "MINIO_CONSOLE_PORT",
+        "PROFILE_IMAGE_STORAGE_BUCKET",
+        "PROFILE_IMAGE_STORAGE_REGION",
+        "PROFILE_IMAGE_STORAGE_ENDPOINT",
+        "PROFILE_IMAGE_STORAGE_ACCESS_KEY_ID",
+        "PROFILE_IMAGE_STORAGE_SECRET_ACCESS_KEY",
+        "PROFILE_IMAGE_PUBLIC_BASE_URL",
+        "PROFILE_IMAGE_STORAGE_FORCE_PATH_STYLE"
+      ],
       "outputs": []
     },
     "test:e2e": {
       "dependsOn": ["^test:e2e"],
+      "passThroughEnv": [
+        "AUTH_SECRET",
+        "DATABASE_URL",
+        "POSTGRES_PORT",
+        "TEST_POSTGRES_PORT",
+        "MAILPIT_BASE_URL",
+        "MINIO_API_PORT",
+        "MINIO_CONSOLE_PORT",
+        "PROFILE_IMAGE_STORAGE_BUCKET",
+        "PROFILE_IMAGE_STORAGE_REGION",
+        "PROFILE_IMAGE_STORAGE_ENDPOINT",
+        "PROFILE_IMAGE_STORAGE_ACCESS_KEY_ID",
+        "PROFILE_IMAGE_STORAGE_SECRET_ACCESS_KEY",
+        "PROFILE_IMAGE_PUBLIC_BASE_URL",
+        "PROFILE_IMAGE_STORAGE_FORCE_PATH_STYLE"
+      ],
       "outputs": []
     },
     "dev": {

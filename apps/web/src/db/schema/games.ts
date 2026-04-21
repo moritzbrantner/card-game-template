@@ -1,5 +1,4 @@
-import type { MatchReplayAnalysis, MatchResult, MatchState } from '@repo/game-contracts';
-import type { UnoMove, UnoReplayAnalysis, UnoState } from '@repo/game-uno';
+import type { GameMove, MatchReplayAnalysis, MatchResult, MatchState } from '@repo/game-contracts';
 import { desc } from 'drizzle-orm';
 import { boolean, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
@@ -23,13 +22,13 @@ export const gameMatches = pgTable(
       onUpdate: 'cascade',
     }),
     createdByGuestId: text('created_by_guest_id'),
-    initialStateJson: jsonb('initial_state_json').$type<MatchState<UnoState>>().notNull(),
-    latestStateJson: jsonb('latest_state_json').$type<MatchState<UnoState>>().notNull(),
+    initialStateJson: jsonb('initial_state_json').$type<MatchState<unknown>>().notNull(),
+    latestStateJson: jsonb('latest_state_json').$type<MatchState<unknown>>().notNull(),
     resultJson: jsonb('result_json').$type<MatchResult | null>(),
     analysisJson: jsonb('analysis_json')
       .$type<{
         generic: MatchReplayAnalysis;
-        uno: UnoReplayAnalysis;
+        [gameAnalysisKey: string]: unknown;
       } | null>(),
     lastSequence: integer('last_sequence').notNull().default(0),
   },
@@ -76,7 +75,7 @@ export const gameMatchMoves = pgTable(
     acceptedAt: timestamp('accepted_at', { withTimezone: false, mode: 'date' }).notNull(),
     playerId: text('player_id').notNull(),
     moveKind: text('move_kind').notNull(),
-    moveJson: jsonb('move_json').$type<UnoMove>().notNull(),
+    moveJson: jsonb('move_json').$type<GameMove>().notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.matchId, table.sequence], name: 'game_match_moves_pkey' }),

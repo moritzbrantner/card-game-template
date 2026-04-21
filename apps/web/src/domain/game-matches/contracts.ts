@@ -1,4 +1,6 @@
 import type {
+  GameId,
+  GameMove,
   MatchReplay,
   MatchReplayAcceptedMove,
   MatchReplayAnalysis,
@@ -25,7 +27,7 @@ export type GameMatchAnalysisRecord = {
   uno: UnoReplayAnalysis;
 };
 
-export type GameMatchParticipantRecord = {
+export type PersistedGameMatchParticipantRecord = {
   playerId: string;
   seat: number;
   displayName: string;
@@ -33,9 +35,17 @@ export type GameMatchParticipantRecord = {
   isBot: boolean;
 };
 
-export type PersistedUnoMatchRecord = {
+export type GameMatchParticipantRecord = PersistedGameMatchParticipantRecord;
+
+export type PersistedGameMatchRecord<
+  TGameId extends GameId = GameId,
+  TState = unknown,
+  TMove extends GameMove = GameMove,
+  TAnalysis = unknown,
+  TSetup = unknown,
+> = {
   matchId: string;
-  gameId: 'uno-style';
+  gameId: TGameId;
   status: PersistedMatchStatus;
   executionMode: 'server-authoritative';
   replayFormatVersion: ReplayFormatVersion;
@@ -44,28 +54,41 @@ export type PersistedUnoMatchRecord = {
   updatedAt: string;
   createdAt: string;
   createdBy: MatchOwnerIdentity;
-  initialState: MatchState<UnoState>;
-  latestState: MatchState<UnoState>;
+  initialState: MatchState<TState>;
+  latestState: MatchState<TState>;
   result: MatchResult | null;
-  analysis: GameMatchAnalysisRecord | null;
-  replayMetadata: GameReplayMetadata<UnoSetup> | null;
+  analysis: TAnalysis | null;
+  replayMetadata: GameReplayMetadata<TSetup> | null;
   lastSequence: number;
-  participants: readonly GameMatchParticipantRecord[];
-  acceptedMoves: readonly MatchReplayAcceptedMove<UnoMove>[];
+  participants: readonly PersistedGameMatchParticipantRecord[];
+  acceptedMoves: readonly MatchReplayAcceptedMove<TMove>[];
 };
 
-export type PersistedUnoMatchSummaryDto = {
+export type PersistedUnoMatchRecord = PersistedGameMatchRecord<
+  'uno-style',
+  UnoState,
+  UnoMove,
+  GameMatchAnalysisRecord,
+  UnoSetup
+>;
+
+export type PersistedGameMatchSummaryDto<
+  TGameId extends GameId = GameId,
+  TAnalysis = unknown,
+> = {
   matchId: string;
-  gameId: 'uno-style';
+  gameId: TGameId;
   status: PersistedMatchStatus;
   startedAt: string;
   finishedAt: string | null;
   updatedAt: string;
-  participants: readonly GameMatchParticipantRecord[];
+  participants: readonly PersistedGameMatchParticipantRecord[];
   result: MatchResult | null;
-  analysis: GameMatchAnalysisRecord | null;
+  analysis: TAnalysis | null;
   lastSequence: number;
 };
+
+export type PersistedUnoMatchSummaryDto = PersistedGameMatchSummaryDto<'uno-style', GameMatchAnalysisRecord>;
 
 export type PersistedUnoMatchSnapshotDto = PersistedUnoMatchSummaryDto & {
   executionMode: 'server-authoritative';
