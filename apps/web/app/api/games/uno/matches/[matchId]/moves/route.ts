@@ -1,18 +1,13 @@
 import * as z from 'zod';
+import { parseUnoMove } from '@repo/game-uno';
 
 import type { SubmitUnoMoveInput } from '@/src/domain/game-matches/contracts';
 import { submitUnoMoveUseCase } from '@/src/domain/game-matches/use-cases';
 import { problem, ProblemError } from '@/src/http/errors';
 import { createApiRoute } from '@/src/http/route';
 
-const movePayloadSchema = z.record(z.string(), z.unknown());
 const submitMoveBodySchema = z.object({
-  move: z.object({
-    playerId: z.string(),
-    kind: z.string(),
-    createdAt: z.string(),
-    payload: movePayloadSchema,
-  }),
+  move: z.unknown(),
 });
 
 function getMatchId(request: Request) {
@@ -25,7 +20,22 @@ export const POST = createApiRoute({
   featureKey: 'showcase.uno',
   bodySchema: submitMoveBodySchema,
   async handler({ body, request, session }) {
-    const result = await submitUnoMoveUseCase(session, getMatchId(request), body as SubmitUnoMoveInput);
+    let input: SubmitUnoMoveInput;
+
+    try {
+      input = {
+        move: parseUnoMove(body.move),
+      };
+    } catch (error) {
+      throw new ProblemError(problem(
+        '/problems/uno-match-move',
+        'Unable to submit move',
+        400,
+        error instanceof Error ? error.message : 'Invalid UNO move.',
+      ));
+    }
+
+    const result = await submitUnoMoveUseCase(session, getMatchId(request), input);
 
     if (!result.ok) {
       const status = result.error.code === 'NOT_FOUND' ? 404 : result.error.code === 'CONFLICT' ? 409 : 400;

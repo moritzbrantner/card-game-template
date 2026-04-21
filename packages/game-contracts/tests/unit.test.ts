@@ -11,7 +11,7 @@ import {
 } from '../src/index.ts';
 
 test('match replay format version stays pinned for persisted payload compatibility', () => {
-  assert.equal(MATCH_REPLAY_FORMAT_VERSION, 1);
+  assert.equal(MATCH_REPLAY_FORMAT_VERSION, 2);
 });
 
 test('createMatchResult derives rankings from winner order when omitted', () => {
@@ -50,6 +50,57 @@ test('isOnlineCapable requires multiplayer and explicit online support', () => {
 
   assert.equal(isOnlineCapable(onlineGame), true);
   assert.equal(isOnlineCapable(soloOnlyGame), false);
+});
+
+test('createMatchReplay defaults metadata to null for legacy replay compatibility', () => {
+  const replay = createMatchReplay({
+    startedAt: '2026-04-17T12:00:00.000Z',
+    initialState: {
+      matchId: 'match-legacy',
+      gameId: 'crazy-eights',
+      players: [{ playerId: 'p1', displayName: 'Alice', seat: 1 }],
+      activePlayerId: 'p1',
+      turn: 1,
+      executionMode: 'server-authoritative',
+      state: {},
+    },
+  });
+
+  assert.equal(replay.metadata, null);
+});
+
+test('createMatchReplay preserves explicit replay metadata', () => {
+  const replay = createMatchReplay({
+    startedAt: '2026-04-17T12:00:00.000Z',
+    initialState: {
+      matchId: 'match-metadata',
+      gameId: 'crazy-eights',
+      players: [{ playerId: 'p1', displayName: 'Alice', seat: 1 }],
+      activePlayerId: 'p1',
+      turn: 1,
+      executionMode: 'server-authoritative',
+      state: {},
+    },
+    metadata: {
+      engineVersion: 1,
+      gameVersion: '1.0.0',
+      rngVersion: 'mulberry32-fnv1a-v1',
+      rulesetVersion: 'crazy-eights-v1',
+      setup: {
+        seed: 'match-metadata',
+      },
+    },
+  });
+
+  assert.deepEqual(replay.metadata, {
+    engineVersion: 1,
+    gameVersion: '1.0.0',
+    rngVersion: 'mulberry32-fnv1a-v1',
+    rulesetVersion: 'crazy-eights-v1',
+    setup: {
+      seed: 'match-metadata',
+    },
+  });
 });
 
 test('summarizeMatchReplay groups accepted moves by player and kind', () => {

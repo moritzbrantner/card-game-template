@@ -5,6 +5,7 @@ export const adminPage = {
     content: 'Inhalte',
     reports: 'Berichte',
     users: 'Benutzer',
+    botAis: 'Bot-KIs',
     systemSettings: 'Systemeinstellungen',
     dataStudio: 'Data Studio',
   },
@@ -260,6 +261,10 @@ export const adminPage = {
         read: 'Gelesen',
       },
     },
+  },
+  botAis: {
+    title: 'Bot-KIs',
+    description: 'Pruefe und tune die KI-Profile fuer serverseitige UNO-Bot-Sitze.',
   },
   systemSettings: {
     title: 'Systemeinstellungen',

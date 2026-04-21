@@ -21,11 +21,16 @@ export const foundationSiteSettingKeys = [
   'foundation.featureOverrides',
 ] as const;
 
+export const gameSiteSettingKeys = [
+  'game.uno.botAiProfiles',
+] as const;
+
 export const siteSettingKeys = [
   ...publicSiteSettingKeys,
   ...analyticsSiteSettingKeys,
   ...authorizationSiteSettingKeys,
   ...foundationSiteSettingKeys,
+  ...gameSiteSettingKeys,
 ] as const;
 
 export type SiteSettingKey = (typeof siteSettingKeys)[number];
@@ -33,6 +38,7 @@ export type PublicSiteSettingKey = (typeof publicSiteSettingKeys)[number];
 export type AnalyticsSiteSettingKey = (typeof analyticsSiteSettingKeys)[number];
 export type AuthorizationSiteSettingKey = (typeof authorizationSiteSettingKeys)[number];
 export type FoundationSiteSettingKey = (typeof foundationSiteSettingKeys)[number];
+export type GameSiteSettingKey = (typeof gameSiteSettingKeys)[number];
 
 export const featureFlagKeys = [
   'marketing.blog',

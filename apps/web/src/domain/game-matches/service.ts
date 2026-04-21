@@ -2,12 +2,12 @@ import {
   MATCH_REPLAY_FORMAT_VERSION,
   createMatchReplay,
   summarizeMatchReplay,
+  type GameReplayMetadata,
   type MatchReplay,
   type PlayerIdentityRef,
 } from '@repo/game-contracts';
 import {
   createUnoAdapter,
-  createUnoBots,
   getUnoExamplePreset,
   projectUnoPlayerView,
   summarizeUnoReplay,
@@ -15,6 +15,7 @@ import {
   type UnoMove,
   type UnoPlayerView,
   type UnoState,
+  type UnoSetup,
 } from '@repo/game-uno';
 import {
   createServerGameSession,
@@ -22,6 +23,13 @@ import {
   type SessionParticipant,
   type ServerGameSession,
 } from '@repo/game-session';
+
+import {
+  chooseUnoBotMove,
+  getDefaultUnoBotAiProfiles,
+  resolveUnoBotAiProfileForParticipant,
+  type UnoBotAiProfile,
+} from '@/src/domain/game-bot-ai/service';
 
 import type {
   CreateUnoMatchInput,
@@ -95,6 +103,7 @@ export function createReplayFromPersistedMatch(match: PersistedUnoMatchRecord) {
     latestState: match.latestState,
     acceptedMoves: match.acceptedMoves,
     finishedAt: match.finishedAt,
+    metadata: match.replayMetadata,
     result: match.result,
   });
 }
@@ -232,6 +241,7 @@ export function createUnoMatchSession(input: {
   fallbackDisplayName: string | null;
   presetId: UnoExamplePresetId;
   displayName?: string | null;
+  botAiProfiles?: readonly UnoBotAiProfile[];
   now?: () => string;
 }) {
   const participants = buildUnoParticipants({
@@ -253,7 +263,7 @@ export function createUnoMatchSession(input: {
     now: input.now,
   });
 
-  processUnoBots(session, participants);
+  processUnoBots(session, participants, input.botAiProfiles);
 
   return {
     participants,
@@ -264,10 +274,8 @@ export function createUnoMatchSession(input: {
 export function processUnoBots(
   session: UnoServerSession,
   participants: readonly GameMatchParticipantRecord[],
+  botAiProfiles: readonly UnoBotAiProfile[] = getDefaultUnoBotAiProfiles(),
 ) {
-  const sessionParticipants = toSessionParticipants(participants);
-  const bots = createUnoBots(sessionParticipants, session.getSnapshot().match.matchId);
-
   while (!session.getSnapshot().matchResult) {
     const snapshot = session.getSnapshot();
     const selectedActorPlayerId = snapshot.selectedActorPlayerId;
@@ -280,11 +288,13 @@ export function processUnoBots(
     }
 
     const legalMoves = snapshot.legalMoves.filter((move) => move.playerId === activeParticipant.playerId);
-    const move = bots[activeParticipant.playerId]?.chooseMove({
+    const profile = resolveUnoBotAiProfileForParticipant(activeParticipant, botAiProfiles);
+    const move = chooseUnoBotMove({
       legalMoves,
-      participants: sessionParticipants,
       playerId: activeParticipant.playerId,
-      state: snapshot.match,
+      profile,
+      seed: snapshot.match.matchId,
+      state: snapshot.match.state,
     }) ?? legalMoves[0] ?? null;
 
     if (!move) {
@@ -324,6 +334,7 @@ export function buildPersistedUnoMatchRecord(input: {
     latestState: replay.latestState,
     result: replay.result,
     analysis,
+    replayMetadata: replay.metadata as GameReplayMetadata<UnoSetup> | null,
     lastSequence: replay.acceptedMoves.length,
     participants: input.participants,
     acceptedMoves: replay.acceptedMoves,

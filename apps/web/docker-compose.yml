@@ -17,6 +17,63 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  postgres-dev:
+    image: postgres:16-alpine
+    container_name: "${DEV_DB_CONTAINER_NAME:-web-dev-postgres}"
+    profiles: ["dev"]
+    environment:
+      POSTGRES_DB: "${DEV_DB_NAME:-next_template}"
+      POSTGRES_USER: "${DEV_DB_USER:-postgres}"
+      POSTGRES_PASSWORD: "${DEV_DB_PASSWORD:-postgres}"
+    ports:
+      - "${DEV_DB_PORT:-55434}:5432"
+    tmpfs:
+      - /var/lib/postgresql/data:rw
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DEV_DB_USER:-postgres} -d ${DEV_DB_NAME:-next_template}"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+  postgres-dev-host:
+    image: postgres:16-alpine
+    container_name: "${DEV_DB_HOST_CONTAINER_NAME:-web-dev-postgres-host}"
+    profiles: ["dev"]
+    network_mode: host
+    environment:
+      POSTGRES_DB: "${DEV_DB_NAME:-next_template}"
+      POSTGRES_USER: "${DEV_DB_USER:-postgres}"
+      POSTGRES_PASSWORD: "${DEV_DB_PASSWORD:-postgres}"
+    command: postgres -c "port=${DEV_DB_PORT:-55434}"
+    tmpfs:
+      - /var/lib/postgresql/data:rw
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DEV_DB_USER:-postgres} -d ${DEV_DB_NAME:-next_template} -p ${DEV_DB_PORT:-55434}"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: "${TEST_DB_CONTAINER_NAME:-web-test-postgres}"
+    profiles: ["test"]
+    environment:
+      POSTGRES_DB: next_template
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "${TEST_POSTGRES_PORT:-55435}:5432"
+    tmpfs:
+      - /var/lib/postgresql/data:rw
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d next_template"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
   
   mailpit:
     image: axllent/mailpit:latest

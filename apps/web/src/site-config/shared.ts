@@ -90,6 +90,7 @@ const siteConfigDefaults: Record<SiteSettingKey, string> = {
   'analytics.defaultAdminReportWindow': '7d',
   'authorization.rolePermissions': JSON.stringify(defaultRolePermissionAssignments),
   'foundation.featureOverrides': JSON.stringify({}),
+  'game.uno.botAiProfiles': '[]',
 };
 
 const featureFlagDefaults: Record<FeatureFlagKey, boolean> = {

@@ -1,4 +1,6 @@
 import { and, desc, eq, inArray } from 'drizzle-orm';
+import { DEFAULT_RNG_VERSION, GAME_ENGINE_VERSION } from '@repo/game-engine';
+import { UNO_GAME_VERSION, UNO_RULESET_VERSION } from '@repo/game-uno';
 
 import { getDb } from '@/src/db/client';
 import { gameMatchMoves, gameMatchParticipants, gameMatches } from '@/src/db/schema';
@@ -11,6 +13,13 @@ import type {
 } from './contracts';
 
 type DbExecutor = Pick<ReturnType<typeof getDb>, 'select' | 'selectDistinct' | 'insert' | 'update'>;
+
+export class StaleMatchProgressError extends Error {
+  constructor(matchId: string) {
+    super(`Match ${matchId} was updated by another request.`);
+    this.name = 'StaleMatchProgressError';
+  }
+}
 
 function toIsoString(value: Date | null) {
   return value?.toISOString() ?? null;
@@ -27,6 +36,23 @@ function mapParticipantRow(row: typeof gameMatchParticipants.$inferSelect): Game
         ? { kind: 'account', accountId: row.accountId }
         : { kind: 'guest', guestId: row.guestId ?? '' },
     isBot: row.isBot,
+  };
+}
+
+function deriveReplayMetadata(match: typeof gameMatches.$inferSelect): PersistedUnoMatchRecord['replayMetadata'] {
+  if (match.replayFormatVersion < 2) {
+    return null;
+  }
+
+  return {
+    engineVersion: GAME_ENGINE_VERSION,
+    gameVersion: UNO_GAME_VERSION,
+    rngVersion: DEFAULT_RNG_VERSION,
+    rulesetVersion: UNO_RULESET_VERSION,
+    setup: {
+      seed: match.initialStateJson.state.seed,
+      rules: match.initialStateJson.state.rules,
+    },
   };
 }
 
@@ -52,6 +78,7 @@ function mapMatchRecord(input: {
     latestState: input.match.latestStateJson,
     result: input.match.resultJson,
     analysis: input.match.analysisJson as GameMatchAnalysisRecord | null,
+    replayMetadata: deriveReplayMetadata(input.match),
     lastSequence: input.match.lastSequence,
     participants: [...input.participants].sort((left, right) => left.seat - right.seat).map(mapParticipantRow),
     acceptedMoves: [...input.moves]
@@ -181,14 +208,11 @@ export async function appendUnoMatchProgress(
     finishedAt: Date | null;
     updatedAt: Date;
     lastSequence: number;
+    previousLastSequence: number;
     moves: readonly typeof gameMatchMoves.$inferInsert[];
   },
 ) {
-  if (input.moves.length > 0) {
-    await db.insert(gameMatchMoves).values([...input.moves]);
-  }
-
-  await db
+  const updatedRows = await db
     .update(gameMatches)
     .set({
       latestStateJson: input.latestStateJson,
@@ -199,7 +223,20 @@ export async function appendUnoMatchProgress(
       updatedAt: input.updatedAt,
       lastSequence: input.lastSequence,
     })
-    .where(eq(gameMatches.id, input.matchId));
+    .where(and(
+      eq(gameMatches.id, input.matchId),
+      eq(gameMatches.lastSequence, input.previousLastSequence),
+      eq(gameMatches.status, 'active'),
+    ))
+    .returning({ id: gameMatches.id });
+
+  if (updatedRows.length === 0) {
+    throw new StaleMatchProgressError(input.matchId);
+  }
+
+  if (input.moves.length > 0) {
+    await db.insert(gameMatchMoves).values([...input.moves]);
+  }
 }
 
 export async function abandonUnoMatch(

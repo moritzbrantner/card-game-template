@@ -35,6 +35,7 @@ export function createE2EEnvironment(baseURL = getE2EBaseURL()) {
     EMAIL_PROVIDER: 'mailpit',
     MAILPIT_BASE_URL: process.env.MAILPIT_BASE_URL ?? DEFAULT_MAILPIT_BASE_URL,
     INTERNAL_CRON_SECRET: DEFAULT_INTERNAL_CRON_SECRET,
+    E2E_MANAGED_DATABASE: process.env.E2E_MANAGED_DATABASE ?? '1',
     POSTGRES_PORT: process.env.POSTGRES_PORT ?? getComposePostgresPort(),
     MINIO_API_PORT: minioApiPort,
     MINIO_CONSOLE_PORT: process.env.MINIO_CONSOLE_PORT ?? DEFAULT_MINIO_CONSOLE_PORT,

@@ -3,6 +3,7 @@ import {
   type CardId,
   type GameDefinition,
   type GameId,
+  type GameReplayMetadata,
   type GameMove,
   type MatchId,
   type MatchExecutionMode,
@@ -11,6 +12,9 @@ import {
   type PlayerId,
   type PlayerProfile,
 } from '@repo/game-contracts';
+
+export const GAME_ENGINE_VERSION = 1;
+export const DEFAULT_RNG_VERSION = 'mulberry32-fnv1a-v1';
 
 export type StartMatchInput<TSetup> = {
   matchId: string;
@@ -80,9 +84,19 @@ export type SortCardsByRankAndSuitOptions = {
   suits?: readonly string[];
 };
 
+export type GameAdapterMetadata = {
+  gameVersion: string;
+  rulesetVersion: string;
+  rngVersion?: string;
+};
+
 export interface GameAdapter<TSetup, TState, TMove extends GameMove = GameMove> {
   definition: GameDefinition;
+  metadata?: GameAdapterMetadata;
+  canonicalizeMove?(move: TMove): TMove;
   createInitialState(input: StartMatchInput<TSetup> & { executionMode: MatchExecutionMode }): MatchState<TState>;
+  validateSetup?(setup: unknown): TSetup;
+  validateMove?(move: unknown): TMove;
   listLegalMoves(state: MatchState<TState>): readonly TMove[];
   selectActor?(input: {
     state: MatchState<TState>;
@@ -118,6 +132,97 @@ export class IllegalMoveError extends Error {
     this.moveKind = input.moveKind;
     this.reason = input.reason;
   }
+}
+
+function assertSerializableNumber(value: number, path: string): number {
+  if (!Number.isFinite(value)) {
+    throw new TypeError(`${path} must be a finite number`);
+  }
+
+  return value;
+}
+
+function isPlainObject(value: object): value is Record<string, unknown> {
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function canonicalizeSerializableValueAtPath(value: unknown, path: string): unknown {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    return assertSerializableNumber(value, path);
+  }
+
+  if (typeof value === 'bigint' || typeof value === 'function' || typeof value === 'symbol') {
+    throw new TypeError(`${path} must be JSON-serializable`);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item, index) => {
+      const canonicalItem = canonicalizeSerializableValueAtPath(item, `${path}[${index}]`);
+
+      if (canonicalItem === undefined) {
+        throw new TypeError(`${path}[${index}] must be JSON-serializable`);
+      }
+
+      return canonicalItem;
+    });
+  }
+
+  if (!isPlainObject(value)) {
+    throw new TypeError(`${path} must be a plain JSON-serializable object`);
+  }
+
+  const canonical: Record<string, unknown> = {};
+
+  for (const [key, item] of Object.entries(value)) {
+    if (item === undefined) {
+      continue;
+    }
+
+    const canonicalItem = canonicalizeSerializableValueAtPath(item, `${path}.${key}`);
+
+    if (canonicalItem !== undefined) {
+      canonical[key] = canonicalItem;
+    }
+  }
+
+  return canonical;
+}
+
+export function canonicalizeSerializableValue<T>(value: T): T {
+  return canonicalizeSerializableValueAtPath(value, 'value') as T;
+}
+
+export function canonicalizeMove<TMove extends GameMove>(move: TMove): TMove {
+  return canonicalizeSerializableValue(move);
+}
+
+function canonicalizeAdapterMove<TSetup, TState, TMove extends GameMove>(
+  adapter: GameAdapter<TSetup, TState, TMove>,
+  move: TMove,
+): TMove {
+  return canonicalizeMove(adapter.canonicalizeMove ? adapter.canonicalizeMove(move) : move);
+}
+
+export function createReplayMetadata<TSetup>(
+  adapter: Pick<GameAdapter<TSetup, unknown, GameMove>, 'definition' | 'metadata'>,
+  setup: TSetup,
+): GameReplayMetadata<TSetup> {
+  return {
+    engineVersion: GAME_ENGINE_VERSION,
+    gameVersion: adapter.metadata?.gameVersion ?? adapter.definition.gameId,
+    rngVersion: adapter.metadata?.rngVersion ?? DEFAULT_RNG_VERSION,
+    rulesetVersion: adapter.metadata?.rulesetVersion ?? adapter.definition.gameId,
+    setup: canonicalizeSerializableValue(setup),
+  };
 }
 
 function hashSeed(seed: number | string): number {
@@ -500,6 +605,8 @@ export function shuffleCards<TCard>(
     return shuffleWithSeed(cards, options.seed);
   }
 
+  // Replayable games should pass a seed or injected RNG; this fallback is only
+  // for non-persisted helper usage.
   return shuffleWithRandom(cards, Math.random);
 }
 
@@ -656,7 +763,14 @@ function deepEqual(left: unknown, right: unknown): boolean {
 }
 
 export function areMovesEquivalent<TMove extends GameMove>(left: TMove, right: TMove): boolean {
-  return left.playerId === right.playerId && left.kind === right.kind && deepEqual(left.payload, right.payload);
+  const canonicalLeft = canonicalizeMove(left);
+  const canonicalRight = canonicalizeMove(right);
+
+  return (
+    canonicalLeft.playerId === canonicalRight.playerId &&
+    canonicalLeft.kind === canonicalRight.kind &&
+    deepEqual(canonicalLeft.payload, canonicalRight.payload)
+  );
 }
 
 function resolveSelectedActor<TSetup, TState, TMove extends GameMove>(
@@ -681,39 +795,47 @@ export function createGameEngine<TSetup, TState, TMove extends GameMove = GameMo
     definition: adapter.definition,
     startMatch(input: StartMatchInput<TSetup>): MatchState<TState> {
       const executionMode = input.executionMode ?? 'local';
+      const setup = adapter.validateSetup ? adapter.validateSetup(input.setup) : input.setup;
 
       return adapter.createInitialState({
         ...input,
+        setup,
         executionMode,
       });
     },
     submitMove(state: MatchState<TState>, move: TMove): MatchState<TState> {
-      const allLegalMoves = adapter.listLegalMoves(state);
+      const submittedMove = canonicalizeAdapterMove(
+        adapter,
+        adapter.validateMove ? adapter.validateMove(move) : move,
+      );
+      const allLegalMoves = adapter.listLegalMoves(state).map((legalMove) =>
+        canonicalizeAdapterMove(adapter, legalMove),
+      );
       const selectedActorPlayerId = resolveSelectedActor(adapter, state, allLegalMoves);
 
-      if (!selectedActorPlayerId || move.playerId !== selectedActorPlayerId) {
+      if (!selectedActorPlayerId || submittedMove.playerId !== selectedActorPlayerId) {
         throw new IllegalMoveError({
           gameId: adapter.definition.gameId,
           matchId: state.matchId,
-          playerId: move.playerId,
-          moveKind: move.kind,
+          playerId: submittedMove.playerId,
+          moveKind: submittedMove.kind,
           reason: selectedActorPlayerId
             ? 'player is not the selected actor in the current match state'
             : 'no actor is selected in the current match state',
         });
       }
 
-      if (!adapter.isLegalMove(state, move)) {
+      if (!adapter.isLegalMove(state, submittedMove)) {
         throw new IllegalMoveError({
           gameId: adapter.definition.gameId,
           matchId: state.matchId,
-          playerId: move.playerId,
-          moveKind: move.kind,
+          playerId: submittedMove.playerId,
+          moveKind: submittedMove.kind,
           reason: 'move is not legal in the current match state',
         });
       }
 
-      return adapter.applyMove(state, move);
+      return adapter.applyMove(state, submittedMove);
     },
     finalizeMatch(state: MatchState<TState>): MatchResult | null {
       if (!adapter.isMatchComplete(state)) {

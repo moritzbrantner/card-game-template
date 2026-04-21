@@ -7,6 +7,8 @@ import {
   createUnoAdapter,
   createUnoBots,
   defaultUnoRules,
+  parseUnoMove,
+  parseUnoSetup,
   summarizeUnoReplay,
   type UnoCard,
   type UnoMove,
@@ -120,6 +122,65 @@ test('UNO-style initial state is deterministic for the same seed', () => {
 
   assert.deepEqual(first.state.discardPile, second.state.discardPile);
   assert.deepEqual(first.state.hands.p1, second.state.hands.p1);
+});
+
+test('JSON round-tripped legal UNO play-card moves remain legal', () => {
+  const state = createState({
+    hands: {
+      p1: [createCard('red', 'number', 'red-4', 4)],
+      p2: [createCard('blue', 'number', 'blue-1', 1)],
+    },
+  });
+  const move = adapter.listLegalMoves(state).find((candidate) => candidate.kind === 'play-card');
+
+  assert.ok(move);
+  assert.equal(adapter.isLegalMove(state, move), true);
+  assert.equal(adapter.isLegalMove(state, JSON.parse(JSON.stringify(move))), true);
+});
+
+test('UNO runtime parsers reject invalid setup and move payloads', () => {
+  assert.throws(() => parseUnoSetup({ rules: { drawStacking: 'yes' } }), /drawStacking must be a boolean/);
+  assert.throws(() => parseUnoSetup({ seed: Number.POSITIVE_INFINITY }), /seed must be a string or finite number/);
+  assert.throws(() => parseUnoMove({
+    playerId: 'p1',
+    kind: 'teleport',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: {},
+  }), /Unsupported UNO move kind/);
+  assert.throws(() => parseUnoMove({
+    playerId: 'p1',
+    kind: 'play-card',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: {
+      cardId: 'wild',
+      chosenColor: 'purple',
+    },
+  }), /chosenColor/);
+});
+
+test('UNO runtime parser accepts valid draw and pass moves with empty payloads', () => {
+  assert.deepEqual(parseUnoMove({
+    playerId: 'p1',
+    kind: 'draw-card',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: {},
+  }), {
+    playerId: 'p1',
+    kind: 'draw-card',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: {},
+  });
+  assert.deepEqual(parseUnoMove({
+    playerId: 'p1',
+    kind: 'pass',
+    createdAt: '2026-04-17T12:00:01.000Z',
+    payload: {},
+  }), {
+    playerId: 'p1',
+    kind: 'pass',
+    createdAt: '2026-04-17T12:00:01.000Z',
+    payload: {},
+  });
 });
 
 test('wild draw four is illegal when the player holds the active color', () => {

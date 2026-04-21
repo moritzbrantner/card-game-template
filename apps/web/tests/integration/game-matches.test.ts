@@ -175,6 +175,39 @@ describe('game matches', () => {
     expect(match?.latestStateJson.turn).toBeGreaterThan(created.data.match.turn);
   });
 
+  it('rejects stale match progress appends with an optimistic concurrency error', async () => {
+    mockGuestIdentity();
+    const { createUnoMatchUseCase } = await import('@/src/domain/game-matches/use-cases');
+    const { appendUnoMatchProgress, StaleMatchProgressError } = await import('@/src/domain/game-matches/repository');
+
+    const created = await createUnoMatchUseCase(null, {
+      presetId: 'bot-duel',
+      displayName: 'Guest Player',
+    });
+
+    expect(created.ok).toBe(true);
+    if (!created.ok) {
+      return;
+    }
+
+    const db = getDb();
+    const [match] = await db.select().from(gameMatches).where(eq(gameMatches.id, created.data.matchId));
+
+    expect(match).toBeDefined();
+    await expect(appendUnoMatchProgress(db, {
+      matchId: created.data.matchId,
+      latestStateJson: match!.latestStateJson,
+      resultJson: match!.resultJson,
+      analysisJson: match!.analysisJson,
+      status: match!.status,
+      finishedAt: match!.finishedAt,
+      updatedAt: match!.updatedAt,
+      lastSequence: match!.lastSequence,
+      previousLastSequence: match!.lastSequence + 1,
+      moves: [],
+    })).rejects.toBeInstanceOf(StaleMatchProgressError);
+  });
+
   it('rejects an illegal move without mutating persisted state', async () => {
     mockGuestIdentity();
     const { createUnoMatchUseCase, submitUnoMoveUseCase } = await import('@/src/domain/game-matches/use-cases');
@@ -251,6 +284,15 @@ describe('game matches', () => {
     expect(replay).toEqual({
       ok: true,
       data: expect.objectContaining({
+        replay: expect.objectContaining({
+          metadata: expect.objectContaining({
+            gameVersion: '1.0.0',
+            rulesetVersion: 'uno-style-v1',
+            setup: expect.objectContaining({
+              seed: created.data.matchId,
+            }),
+          }),
+        }),
         summary: expect.objectContaining({
           status: 'abandoned',
         }),

@@ -6,6 +6,7 @@ import { resumeServerGameSession, type ServerGameSession } from '@repo/game-sess
 
 import type { AppSession } from '@/src/auth';
 import { getDb } from '@/src/db/client';
+import { listUnoBotAiProfiles } from '@/src/domain/game-bot-ai/service';
 import { failure, success, type ServiceResult } from '@/src/domain/shared/result';
 
 import type {
@@ -24,6 +25,7 @@ import {
   createUnoMatch,
   listOwnedUnoMatches,
   loadOwnedUnoMatch,
+  StaleMatchProgressError,
 } from './repository';
 import {
   buildPersistedUnoMatchRecord,
@@ -123,6 +125,7 @@ export async function createUnoMatchUseCase(
   const resolvedIdentity = await resolveOwnedIdentity(session, true);
 
   try {
+    const botAiProfiles = await listUnoBotAiProfiles();
     const snapshot = await getDb().transaction(async (tx) => {
       const createdAt = isoNow();
       const matchId = randomUUID();
@@ -132,6 +135,7 @@ export async function createUnoMatchUseCase(
         fallbackDisplayName: resolvedIdentity.displayName,
         presetId: input.presetId,
         displayName: input.displayName,
+        botAiProfiles,
       });
       const persistedMatch = buildPersistedUnoMatchRecord({
         createdAt,
@@ -221,6 +225,7 @@ export async function submitUnoMoveUseCase(
   }
 
   try {
+    const botAiProfiles = await listUnoBotAiProfiles();
     const snapshot = await getDb().transaction(async (tx) => {
       const persistedMatch = await loadOwnedUnoMatch(tx, resolvedIdentity.identity as MatchOwnerIdentity, matchId);
 
@@ -242,7 +247,7 @@ export async function submitUnoMoveUseCase(
       const serverSession = createResumedSession(persistedMatch, now);
 
       serverSession.submitMove(input.move);
-      processUnoBots(serverSession, persistedMatch.participants);
+      processUnoBots(serverSession, persistedMatch.participants, botAiProfiles);
 
       const updatedMatch = finalizePersistedMatch({
         session: serverSession,
@@ -258,6 +263,7 @@ export async function submitUnoMoveUseCase(
         finishedAt: updatedMatch.finishedAt ? new Date(updatedMatch.finishedAt) : null,
         updatedAt: new Date(updatedMatch.updatedAt),
         lastSequence: updatedMatch.lastSequence,
+        previousLastSequence: persistedMatch.lastSequence,
         moves: buildMoveRows(updatedMatch, persistedMatch.lastSequence),
       });
 
@@ -273,6 +279,13 @@ export async function submitUnoMoveUseCase(
       return failure({
         code: 'CONFLICT',
         message: error.reason,
+      });
+    }
+
+    if (error instanceof StaleMatchProgressError) {
+      return failure({
+        code: 'CONFLICT',
+        message: 'Match was updated by another request. Reload and try again.',
       });
     }
 

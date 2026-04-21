@@ -1,5 +1,6 @@
 import type {
   GameMove,
+  GameReplayMetadata,
   MatchExecutionMode,
   MatchReplay,
   MatchReplayAcceptedMove,
@@ -10,7 +11,7 @@ import type {
   PlayerProfile,
 } from '@repo/game-contracts';
 import { createMatchReplay, summarizeMatchReplay } from '@repo/game-contracts';
-import { createGameEngine, type GameAdapter } from '@repo/game-engine';
+import { canonicalizeMove, createGameEngine, createReplayMetadata, DEFAULT_RNG_VERSION, type GameAdapter } from '@repo/game-engine';
 
 function isSerializableDeepEqual(left: unknown, right: unknown): boolean {
   if (Object.is(left, right)) {
@@ -125,6 +126,7 @@ export type CreateServerGameSessionInput<TSetup, TState, TMove extends GameMove>
   now?: () => string;
   participants: readonly PlayerProfile[];
   persistence?: ServerGameSessionPersistence<TState, TMove>;
+  replayMetadata?: GameReplayMetadata<TSetup>;
   setup: TSetup;
 };
 
@@ -205,6 +207,24 @@ function withAcceptedFinishedAt(result: MatchResult | null, finishedAt: string):
     : null;
 }
 
+function canonicalizeAdapterMove<TSetup, TState, TMove extends GameMove>(
+  adapter: GameAdapter<TSetup, TState, TMove>,
+  move: TMove,
+): TMove {
+  const validatedMove = adapter.validateMove ? adapter.validateMove(move) : move;
+  return canonicalizeMove(adapter.canonicalizeMove ? adapter.canonicalizeMove(validatedMove) : validatedMove);
+}
+
+function expectedReplayVersions<TSetup, TState, TMove extends GameMove>(
+  adapter: GameAdapter<TSetup, TState, TMove>,
+) {
+  return {
+    gameVersion: adapter.metadata?.gameVersion ?? adapter.definition.gameId,
+    rngVersion: adapter.metadata?.rngVersion ?? DEFAULT_RNG_VERSION,
+    rulesetVersion: adapter.metadata?.rulesetVersion ?? adapter.definition.gameId,
+  };
+}
+
 type RebuildReplayInput<TSetup, TState, TMove extends GameMove> = {
   adapter: GameAdapter<TSetup, TState, TMove>;
   replay: MatchReplay<TState, TMove>;
@@ -222,11 +242,13 @@ function rebuildServerReplay<TSetup, TState, TMove extends GameMove>(
     initialState: cloneState(input.replay.initialState),
     latestState: cloneState(currentState),
     finishedAt: matchResult?.finishedAt ?? null,
+    metadata: cloneValue(input.replay.metadata),
     result: cloneValue(matchResult),
   });
 
   for (const acceptedMove of input.replay.acceptedMoves) {
-    const nextState = engine.submitMove(currentState, acceptedMove.move);
+    const submittedMove = canonicalizeAdapterMove(input.adapter, acceptedMove.move);
+    const nextState = engine.submitMove(currentState, submittedMove);
 
     currentState = nextState;
     history = [...history, cloneState(nextState)];
@@ -239,7 +261,7 @@ function rebuildServerReplay<TSetup, TState, TMove extends GameMove>(
         {
           sequence: acceptedMove.sequence,
           acceptedAt: acceptedMove.acceptedAt,
-          move: cloneValue(acceptedMove.move),
+          move: cloneValue(submittedMove),
         },
       ],
       finishedAt: matchResult?.finishedAt ?? null,
@@ -456,6 +478,7 @@ function createServerSessionRuntime<TSetup, TState, TMove extends GameMove>(inpu
   initialState: MatchState<TState>;
   acceptedMoves?: readonly MatchReplayAcceptedMove<TMove>[];
   persistInitialSnapshot: boolean;
+  replayMetadata: GameReplayMetadata | null;
 }): ServerGameSession<TState, TMove> {
   const engine = createGameEngine(input.adapter);
   const listeners = new Set<(snapshot: ServerGameSessionSnapshot<TState, TMove>) => void>();
@@ -469,6 +492,7 @@ function createServerSessionRuntime<TSetup, TState, TMove extends GameMove>(inpu
     initialState: cloneState(input.initialState),
     latestState: cloneState(currentState),
     finishedAt: matchResult?.finishedAt ?? null,
+    metadata: cloneValue(input.replayMetadata),
     result: cloneValue(matchResult),
   });
 
@@ -510,7 +534,8 @@ function createServerSessionRuntime<TSetup, TState, TMove extends GameMove>(inpu
       throw new Error(`Match ${currentState.matchId} is already complete`);
     }
 
-    const nextState = engine.submitMove(currentState, acceptedMove.move);
+    const submittedMove = canonicalizeAdapterMove(input.adapter, acceptedMove.move);
+    const nextState = engine.submitMove(currentState, submittedMove);
 
     currentState = nextState;
     history = [...history, cloneState(nextState)];
@@ -523,7 +548,7 @@ function createServerSessionRuntime<TSetup, TState, TMove extends GameMove>(inpu
         {
           sequence: acceptedMove.sequence,
           acceptedAt: acceptedMove.acceptedAt,
-          move: cloneValue(acceptedMove.move),
+          move: cloneValue(submittedMove),
         },
       ],
       finishedAt: matchResult?.finishedAt ?? null,
@@ -570,6 +595,31 @@ export function verifyReplayIntegrity<TSetup, TState, TMove extends GameMove>(in
   adapter: GameAdapter<TSetup, TState, TMove>;
   replay: MatchReplay<TState, TMove>;
 }): ReplayIntegrityCheck {
+  if (input.replay.metadata) {
+    const expected = expectedReplayVersions(input.adapter);
+
+    if (input.replay.metadata.gameVersion !== expected.gameVersion) {
+      return {
+        ok: false,
+        reason: 'replay game version does not match the adapter',
+      };
+    }
+
+    if (input.replay.metadata.rulesetVersion !== expected.rulesetVersion) {
+      return {
+        ok: false,
+        reason: 'replay ruleset version does not match the adapter',
+      };
+    }
+
+    if (input.replay.metadata.rngVersion !== expected.rngVersion) {
+      return {
+        ok: false,
+        reason: 'replay RNG version does not match the adapter',
+      };
+    }
+  }
+
   for (const [index, acceptedMove] of input.replay.acceptedMoves.entries()) {
     if (acceptedMove.sequence !== index + 1) {
       return {
@@ -649,6 +699,7 @@ export function createServerGameSession<TSetup, TState, TMove extends GameMove>(
     startedAt,
     initialState,
     persistInitialSnapshot: true,
+    replayMetadata: input.replayMetadata ?? createReplayMetadata(input.adapter, input.setup),
   });
 }
 
@@ -673,5 +724,6 @@ export function resumeServerGameSession<TSetup, TState, TMove extends GameMove>(
     initialState: input.replay.initialState,
     acceptedMoves: input.replay.acceptedMoves,
     persistInitialSnapshot: false,
+    replayMetadata: input.replay.metadata,
   });
 }

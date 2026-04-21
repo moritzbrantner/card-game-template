@@ -5,8 +5,16 @@ export type AccountId = string;
 export type MatchId = string;
 export type GameId = string;
 export type CardId = string;
-export type ReplayFormatVersion = 1;
+export type ReplayFormatVersion = 2;
 export type PersistedMatchStatus = 'active' | 'completed' | 'abandoned';
+
+export type GameReplayMetadata<TSetup = unknown> = {
+  engineVersion: number;
+  gameVersion: string;
+  rngVersion: string;
+  rulesetVersion: string;
+  setup: TSetup;
+};
 
 export type PlayerIdentityRef =
   | {
@@ -93,7 +101,11 @@ export type MatchReplayAcceptedMove<TMove extends GameMove = GameMove> = {
   move: TMove;
 };
 
-export type MatchReplay<TState = Record<string, unknown>, TMove extends GameMove = GameMove> = {
+export type MatchReplay<
+  TState = Record<string, unknown>,
+  TMove extends GameMove = GameMove,
+  TSetup = unknown,
+> = {
   matchId: MatchId;
   gameId: GameId;
   executionMode: MatchExecutionMode;
@@ -102,6 +114,7 @@ export type MatchReplay<TState = Record<string, unknown>, TMove extends GameMove
   initialState: MatchState<TState>;
   latestState: MatchState<TState>;
   acceptedMoves: readonly MatchReplayAcceptedMove<TMove>[];
+  metadata: GameReplayMetadata<TSetup> | null;
   result: MatchResult | null;
 };
 
@@ -147,7 +160,7 @@ export type PersistedMatchSummary = {
   analysis: MatchReplayAnalysis | null;
 };
 
-export const MATCH_REPLAY_FORMAT_VERSION: ReplayFormatVersion = 1;
+export const MATCH_REPLAY_FORMAT_VERSION: ReplayFormatVersion = 2;
 
 export function createMatchResult(
   input: Omit<MatchResult, 'rankings'> & {
@@ -167,16 +180,21 @@ export function createMatchResult(
   };
 }
 
-export function createMatchReplay<TState, TMove extends GameMove>(
+export function createMatchReplay<
+  TState,
+  TMove extends GameMove,
+  TSetup = unknown,
+>(
   input: {
     startedAt: string;
     initialState: MatchState<TState>;
     latestState?: MatchState<TState>;
     acceptedMoves?: readonly MatchReplayAcceptedMove<TMove>[];
     finishedAt?: string | null;
+    metadata?: GameReplayMetadata<TSetup> | null;
     result?: MatchResult | null;
   },
-): MatchReplay<TState, TMove> {
+): MatchReplay<TState, TMove, TSetup> {
   const latestState = input.latestState ?? input.initialState;
   const result = input.result ?? null;
 
@@ -189,6 +207,7 @@ export function createMatchReplay<TState, TMove extends GameMove>(
     initialState: input.initialState,
     latestState,
     acceptedMoves: input.acceptedMoves ?? [],
+    metadata: input.metadata ?? null,
     result,
   };
 }

@@ -41,6 +41,11 @@ export type UnoRules = {
   sevenZero: boolean;
 };
 
+export type UnoSetup = {
+  rules?: Partial<UnoRules>;
+  seed?: number | string;
+};
+
 export type UnoState = {
   currentColor: UnoColor;
   direction: 1 | -1;
@@ -140,6 +145,9 @@ export const defaultUnoRules: UnoRules = {
   sevenZero: false,
 };
 
+export const UNO_GAME_VERSION = '1.0.0';
+export const UNO_RULESET_VERSION = 'uno-style-v1';
+
 export const unoDefinition: GameDefinition = {
   gameId: 'uno-style',
   name: 'UNO-style',
@@ -151,6 +159,170 @@ export const unoDefinition: GameDefinition = {
 };
 
 const COLORS: readonly UnoColor[] = ['red', 'yellow', 'green', 'blue'];
+const UNO_RULE_KEYS = ['drawStacking', 'jumpIn', 'requireUnoCall', 'sevenZero'] as const;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function assertNoUnknownKeys(value: Record<string, unknown>, allowedKeys: readonly string[], label: string) {
+  for (const key of Object.keys(value)) {
+    if (!allowedKeys.includes(key)) {
+      throw new Error(`${label} contains an unsupported field: ${key}`);
+    }
+  }
+}
+
+function parseUnoColor(value: unknown): UnoColor {
+  if (COLORS.includes(value as UnoColor)) {
+    return value as UnoColor;
+  }
+
+  throw new Error('UNO move chosenColor must be red, yellow, green, or blue.');
+}
+
+function createUnoPlayPayload(input: {
+  cardId: string;
+  chosenColor?: UnoColor;
+  sayUno?: boolean;
+  targetPlayerId?: PlayerId;
+}): UnoPlayCardMove['payload'] {
+  return {
+    cardId: input.cardId,
+    ...(input.chosenColor !== undefined ? { chosenColor: input.chosenColor } : {}),
+    ...(input.sayUno !== undefined ? { sayUno: input.sayUno } : {}),
+    ...(input.targetPlayerId !== undefined ? { targetPlayerId: input.targetPlayerId } : {}),
+  };
+}
+
+export function parseUnoSetup(value: unknown): UnoSetup {
+  if (!isRecord(value)) {
+    throw new Error('UNO setup must be an object.');
+  }
+
+  assertNoUnknownKeys(value, ['rules', 'seed'], 'UNO setup');
+
+  const setup: UnoSetup = {};
+
+  if (value.seed !== undefined) {
+    if (typeof value.seed !== 'string' && !(typeof value.seed === 'number' && Number.isFinite(value.seed))) {
+      throw new Error('UNO setup seed must be a string or finite number.');
+    }
+
+    setup.seed = value.seed;
+  }
+
+  if (value.rules !== undefined) {
+    if (!isRecord(value.rules)) {
+      throw new Error('UNO setup rules must be an object.');
+    }
+
+    assertNoUnknownKeys(value.rules, UNO_RULE_KEYS, 'UNO setup rules');
+    setup.rules = {};
+
+    for (const key of UNO_RULE_KEYS) {
+      const ruleValue = value.rules[key];
+
+      if (ruleValue === undefined) {
+        continue;
+      }
+
+      if (typeof ruleValue !== 'boolean') {
+        throw new Error(`UNO setup rule ${key} must be a boolean.`);
+      }
+
+      setup.rules[key] = ruleValue;
+    }
+  }
+
+  return setup;
+}
+
+export function canonicalizeUnoMove(move: UnoMove): UnoMove {
+  if (move.kind === 'play-card') {
+    return {
+      ...move,
+      payload: createUnoPlayPayload({
+        cardId: move.payload.cardId,
+        chosenColor: move.payload.chosenColor,
+        sayUno: move.payload.sayUno,
+        targetPlayerId: move.payload.targetPlayerId,
+      }),
+    };
+  }
+
+  return {
+    ...move,
+    payload: {},
+  };
+}
+
+export function parseUnoMove(value: unknown): UnoMove {
+  if (!isRecord(value)) {
+    throw new Error('UNO move must be an object.');
+  }
+
+  assertNoUnknownKeys(value, ['playerId', 'kind', 'createdAt', 'payload'], 'UNO move');
+
+  if (typeof value.playerId !== 'string' || value.playerId.length === 0) {
+    throw new Error('UNO move playerId is required.');
+  }
+
+  if (typeof value.kind !== 'string') {
+    throw new Error('UNO move kind is required.');
+  }
+
+  if (typeof value.createdAt !== 'string' || value.createdAt.length === 0) {
+    throw new Error('UNO move createdAt is required.');
+  }
+
+  if (!isRecord(value.payload)) {
+    throw new Error('UNO move payload must be an object.');
+  }
+
+  if (value.kind === 'draw-card' || value.kind === 'pass') {
+    assertNoUnknownKeys(value.payload, [], `UNO ${value.kind} payload`);
+
+    return {
+      playerId: value.playerId,
+      kind: value.kind,
+      createdAt: value.createdAt,
+      payload: {},
+    };
+  }
+
+  if (value.kind !== 'play-card') {
+    throw new Error(`Unsupported UNO move kind: ${value.kind}`);
+  }
+
+  assertNoUnknownKeys(value.payload, ['cardId', 'chosenColor', 'sayUno', 'targetPlayerId'], 'UNO play-card payload');
+
+  if (typeof value.payload.cardId !== 'string' || value.payload.cardId.length === 0) {
+    throw new Error('UNO play-card payload cardId is required.');
+  }
+
+  if (value.payload.sayUno !== undefined && typeof value.payload.sayUno !== 'boolean') {
+    throw new Error('UNO play-card payload sayUno must be a boolean.');
+  }
+
+  if (value.payload.targetPlayerId !== undefined && typeof value.payload.targetPlayerId !== 'string') {
+    throw new Error('UNO play-card payload targetPlayerId must be a string.');
+  }
+
+  const payload = createUnoPlayPayload({
+    cardId: value.payload.cardId,
+    ...(value.payload.chosenColor !== undefined ? { chosenColor: parseUnoColor(value.payload.chosenColor) } : {}),
+    ...(value.payload.sayUno !== undefined ? { sayUno: value.payload.sayUno } : {}),
+    ...(value.payload.targetPlayerId !== undefined ? { targetPlayerId: value.payload.targetPlayerId } : {}),
+  });
+
+  return {
+    playerId: value.playerId,
+    kind: 'play-card',
+    createdAt: value.createdAt,
+    payload,
+  };
+}
 
 function createCard(color: UnoColor | 'wild', kind: UnoCardKind, occurrence: number, value?: number): UnoCard {
   const valueLabel = kind === 'number' ? `${value}` : kind;
@@ -386,12 +558,12 @@ function createPlayCardMoves(
           playerId,
           kind: 'play-card',
           createdAt: '2026-04-17T12:00:00.000Z',
-          payload: {
+          payload: createUnoPlayPayload({
             cardId: card.id,
             chosenColor,
             sayUno,
             targetPlayerId,
-          },
+          }),
         });
       }
     }
@@ -588,15 +760,19 @@ export function summarizeUnoReplay(replay: MatchReplay<UnoState, UnoMove>): UnoR
 }
 
 export function createUnoAdapter(): GameAdapter<
-  {
-    rules?: Partial<UnoRules>;
-    seed?: number | string;
-  },
+  UnoSetup,
   UnoState,
   UnoMove
 > {
   return {
     definition: unoDefinition,
+    metadata: {
+      gameVersion: UNO_GAME_VERSION,
+      rulesetVersion: UNO_RULESET_VERSION,
+    },
+    validateSetup: parseUnoSetup,
+    validateMove: parseUnoMove,
+    canonicalizeMove: canonicalizeUnoMove,
     createInitialState({
       executionMode,
       matchId,

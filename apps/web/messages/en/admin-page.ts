@@ -5,6 +5,7 @@ export const adminPage = {
     content: 'Content',
     reports: 'Reports',
     users: 'Users',
+    botAis: 'Bot AIs',
     systemSettings: 'System settings',
     dataStudio: 'Data studio',
   },
@@ -257,6 +258,10 @@ export const adminPage = {
         read: 'Read',
       },
     },
+  },
+  botAis: {
+    title: 'Bot AIs',
+    description: 'Inspect and tune the AI profiles used by server-run UNO bot seats.',
   },
   systemSettings: {
     title: 'System settings',

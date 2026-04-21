@@ -1,4 +1,4 @@
-const DEFAULT_POSTGRES_PORT = '55433';
+const DEFAULT_POSTGRES_PORT = '55435';
 const DEFAULT_DATABASE_NAME = 'next_template';
 const DEFAULT_DATABASE_USER = 'postgres';
 const DEFAULT_DATABASE_PASSWORD = 'postgres';

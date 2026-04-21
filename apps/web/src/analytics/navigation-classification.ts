@@ -38,6 +38,7 @@ const DISPLAY_LABELS: Record<string, string> = {
   '/admin/reports/[reportId]': 'Admin report',
   '/admin/users': 'Admin users',
   '/admin/users/[userId]': 'Admin user detail',
+  '/admin/bot-ais': 'Admin bot AIs',
   '/admin/system-settings': 'Admin system settings',
   '/admin/data-studio': 'Admin data studio',
   '/[publicSlug*]': 'Public page',
@@ -101,6 +102,8 @@ export function classifyNavigationPathname(pathname: string): NavigationClassifi
       return buildClassification('/admin/reports', 'admin');
     case '/admin/users':
       return buildClassification('/admin/users', 'admin');
+    case '/admin/bot-ais':
+      return buildClassification('/admin/bot-ais', 'admin');
     case '/admin/system-settings':
       return buildClassification('/admin/system-settings', 'admin');
     case '/admin/data-studio':

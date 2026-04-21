@@ -346,6 +346,46 @@ test('server session records accepted moves and reconstructs replay history', ()
     { playerId: 'p2', displayName: 'Bot Bob', movesAccepted: 1 },
   ]);
   assert.equal(snapshot.analysis.durationMs, 3000);
+  assert.deepEqual(snapshot.replay.metadata, {
+    engineVersion: 1,
+    gameVersion: 'session-counter',
+    rngVersion: 'mulberry32-fnv1a-v1',
+    rulesetVersion: 'session-counter',
+    setup: { target: 2 },
+  });
+});
+
+test('server session accepts explicit replay metadata and preserves it on resume', () => {
+  const session = createServerGameSession({
+    adapter: counterAdapter,
+    matchId: 'server-session-metadata',
+    participants: participants.slice(0, 2),
+    setup: { target: 2 },
+    replayMetadata: {
+      engineVersion: 1,
+      gameVersion: 'session-counter',
+      rngVersion: 'mulberry32-fnv1a-v1',
+      rulesetVersion: 'session-counter',
+      setup: { target: 2, preset: 'explicit' },
+    },
+    now() {
+      return '2026-04-17T12:15:00.000Z';
+    },
+  });
+
+  const resumed = resumeServerGameSession({
+    adapter: counterAdapter,
+    participants: participants.slice(0, 2),
+    replay: session.getReplay(),
+  });
+
+  assert.deepEqual(resumed.getReplay().metadata, {
+    engineVersion: 1,
+    gameVersion: 'session-counter',
+    rngVersion: 'mulberry32-fnv1a-v1',
+    rulesetVersion: 'session-counter',
+    setup: { target: 2, preset: 'explicit' },
+  });
 });
 
 test('server session persists the opening snapshot so progression tracking starts at match creation', () => {
@@ -513,5 +553,39 @@ test('verifyReplayIntegrity rejects tampered move order and mismatched latest st
   assert.deepEqual(verifyReplayIntegrity({ adapter: counterAdapter, replay: mismatchedLatestState }), {
     ok: false,
     reason: 'latest state does not match the accepted move log',
+  });
+});
+
+test('verifyReplayIntegrity rejects mismatched replay metadata but accepts legacy metadata', () => {
+  const session = createServerGameSession({
+    adapter: counterAdapter,
+    matchId: 'server-session-legacy-metadata',
+    participants: participants.slice(0, 2),
+    setup: { target: 3 },
+    now() {
+      return '2026-04-17T12:40:00.000Z';
+    },
+  });
+  const replay = session.getReplay();
+  const mismatchedReplay = {
+    ...replay,
+    metadata: replay.metadata
+      ? {
+          ...replay.metadata,
+          rulesetVersion: 'different-rules',
+        }
+      : null,
+  };
+  const legacyReplay = {
+    ...replay,
+    metadata: null,
+  };
+
+  assert.deepEqual(verifyReplayIntegrity({ adapter: counterAdapter, replay: mismatchedReplay }), {
+    ok: false,
+    reason: 'replay ruleset version does not match the adapter',
+  });
+  assert.deepEqual(verifyReplayIntegrity({ adapter: counterAdapter, replay: legacyReplay }), {
+    ok: true,
   });
 });

@@ -6,8 +6,12 @@ import type { GameMove, MatchState, PlayerProfile } from '../../game-contracts/s
 import {
   addCards,
   areMovesEquivalent,
+  canonicalizeMove,
+  canonicalizeSerializableValue,
   createGameEngine,
+  createReplayMetadata,
   createSeededRandom,
+  DEFAULT_RNG_VERSION,
   drawCardsBetweenStacks,
   drawCardsFromSources,
   drawCardsFromBottom,
@@ -327,6 +331,106 @@ test('areMovesEquivalent compares payloads instead of only kind and player', () 
   };
 
   assert.equal(areMovesEquivalent(left, right), false);
+});
+
+test('areMovesEquivalent treats missing optional keys and undefined optional keys as equivalent', () => {
+  const left: GameMove<{ cardId: string; chosenColor?: string }> = {
+    playerId: 'p1',
+    kind: 'play-card',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: { cardId: 'red-1', chosenColor: undefined },
+  };
+  const right: GameMove<{ cardId: string }> = {
+    playerId: 'p1',
+    kind: 'play-card',
+    createdAt: '2026-04-17T12:00:01.000Z',
+    payload: { cardId: 'red-1' },
+  };
+
+  assert.equal(areMovesEquivalent(left, right), true);
+});
+
+test('canonicalizeSerializableValue strips nested undefined object keys', () => {
+  assert.deepEqual(
+    canonicalizeSerializableValue({
+      keep: true,
+      nested: {
+        omit: undefined,
+        value: 1,
+      },
+      omit: undefined,
+    }),
+    {
+      keep: true,
+      nested: {
+        value: 1,
+      },
+    },
+  );
+});
+
+test('canonicalizeSerializableValue rejects non-serializable values', () => {
+  assert.throws(() => canonicalizeSerializableValue({ amount: Number.NaN }), /finite number/);
+  assert.throws(() => canonicalizeSerializableValue({ callback() {} }), /JSON-serializable/);
+  assert.throws(() => canonicalizeSerializableValue([undefined]), /JSON-serializable/);
+});
+
+test('createGameEngine uses setup validation, move validation, and move canonicalization hooks', () => {
+  const engine = createGameEngine({
+    ...counterAdapter,
+    validateSetup(setup: unknown) {
+      assert.deepEqual(setup, { target: '1' });
+      return { target: 1 };
+    },
+    validateMove(move: unknown): CounterMove {
+      assert.equal(typeof move, 'object');
+      return move as CounterMove;
+    },
+    canonicalizeMove(move: CounterMove): CounterMove {
+      return canonicalizeMove({
+        ...move,
+        payload: {
+          amount: move.payload.amount,
+          optional: undefined,
+        },
+      } as CounterMove);
+    },
+  });
+  const initial = engine.startMatch({
+    matchId: 'match-hooks',
+    players,
+    setup: { target: '1' } as unknown as { target: number },
+  });
+  const next = engine.submitMove(initial, {
+    playerId: 'p1',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: { amount: 1 },
+  });
+
+  assert.equal(next.state.total, 1);
+});
+
+test('createReplayMetadata derives stable adapter metadata', () => {
+  assert.deepEqual(
+    createReplayMetadata(
+      {
+        definition: counterAdapter.definition,
+        metadata: {
+          gameVersion: '1.0.0',
+          rulesetVersion: 'counter-v1',
+        },
+      },
+      { target: 3, unused: undefined },
+    ),
+    {
+      engineVersion: 1,
+      gameVersion: '1.0.0',
+      rngVersion: DEFAULT_RNG_VERSION,
+      rulesetVersion: 'counter-v1',
+      setup: { target: 3 },
+    },
+  );
 });
 
 test('shuffleWithSeed is deterministic for the same seed', () => {

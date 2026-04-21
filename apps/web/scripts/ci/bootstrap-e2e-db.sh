@@ -6,7 +6,8 @@ APP_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 COMPOSE_FILE_PATH="${APP_ROOT}/docker-compose.yml"
 MARKER_FILE="${TMPDIR:-/tmp}/next-template-e2e-db-bootstrap.started"
 
-export POSTGRES_PORT="${POSTGRES_PORT:-55433}"
+export POSTGRES_PORT="${POSTGRES_PORT:-55435}"
+export TEST_POSTGRES_PORT="${TEST_POSTGRES_PORT:-$POSTGRES_PORT}"
 export DB_BOOTSTRAP_TIMEOUT_SECONDS="${DB_BOOTSTRAP_TIMEOUT_SECONDS:-90}"
 export MAILPIT_BASE_URL="${MAILPIT_BASE_URL:-http://127.0.0.1:8025}"
 export MINIO_API_PORT="${MINIO_API_PORT:-9000}"
@@ -21,8 +22,11 @@ export PROFILE_IMAGE_STORAGE_SECRET_ACCESS_KEY="${PROFILE_IMAGE_STORAGE_SECRET_A
 export PROFILE_IMAGE_PUBLIC_BASE_URL="${PROFILE_IMAGE_PUBLIC_BASE_URL:-${PROFILE_IMAGE_STORAGE_ENDPOINT%/}/${PROFILE_IMAGE_STORAGE_BUCKET}}"
 export PROFILE_IMAGE_STORAGE_FORCE_PATH_STYLE="${PROFILE_IMAGE_STORAGE_FORCE_PATH_STYLE:-true}"
 BUN_BINARY="${BUN_BINARY:-bun}"
+DATABASE_URL_WAS_SET=1
+E2E_MANAGED_DATABASE="${E2E_MANAGED_DATABASE:-0}"
 
 if [[ -z "${DATABASE_URL:-}" ]]; then
+  DATABASE_URL_WAS_SET=0
   export DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/next_template?schema=public"
   echo "ℹ️ DATABASE_URL was not set; defaulting to ${DATABASE_URL}"
 fi
@@ -65,6 +69,10 @@ docker_compose_available() {
 
 docker_compose() {
   env -u COMPOSE_FILE docker compose -f "$COMPOSE_FILE_PATH" --project-directory "$APP_ROOT" "$@"
+}
+
+docker_compose_services() {
+  COMPOSE_PROFILES=dev,test docker_compose config --services
 }
 
 can_reach_mailpit() {
@@ -133,7 +141,9 @@ fi
 
 trap cleanup_on_error EXIT
 
-if can_reach_database; then
+if [[ "$DATABASE_URL_WAS_SET" -eq 0 || "$E2E_MANAGED_DATABASE" == "1" ]]; then
+  STARTED_SERVICES+=("postgres-test")
+elif can_reach_database; then
   echo "ℹ️ Reusing already-reachable Postgres instance from DATABASE_URL."
 else
   STARTED_SERVICES+=("postgres")
@@ -167,7 +177,7 @@ if (( ${#STARTED_SERVICES[@]} > 0 )); then
   for service in "${STARTED_SERVICES[@]}"; do
     if ! (
       cd "$APP_ROOT"
-      docker_compose config --services | grep -Fxq "$service"
+      docker_compose_services | grep -Fxq "$service"
     ); then
       echo "❌ docker compose service '$service' is not defined in $APP_ROOT." >&2
       exit 1

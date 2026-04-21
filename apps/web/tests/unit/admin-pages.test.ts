@@ -47,4 +47,20 @@ describe('admin page helpers', () => {
       'dataStudio',
     ]);
   });
+
+  it('exposes bot AI tools with system-settings feature access', () => {
+    const manifest = createManifest({
+      'admin.workspace': true,
+      'admin.content': false,
+      'admin.reports': false,
+      'admin.users': false,
+      'admin.systemSettings': true,
+      'admin.dataStudio': false,
+    });
+
+    expect(getEnabledAdminWorkspacePageDefinitions(manifest).map((page) => page.key)).toEqual([
+      'botAis',
+      'systemSettings',
+    ]);
+  });
 });

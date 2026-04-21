@@ -10,16 +10,15 @@ function writeExecutable(filePath: string, contents: string) {
   chmodSync(filePath, 0o755);
 }
 
-describe('bootstrap-e2e-db.sh', () => {
-  it('pins docker compose to the app compose file and uses the managed e2e database service', () => {
+describe('dev-with-test-db.sh', () => {
+  it('starts the dev Postgres database through the app docker compose file', () => {
     const testFileDir = path.dirname(fileURLToPath(import.meta.url));
     const appRoot = path.resolve(testFileDir, '../..');
-    const scriptPath = path.join(appRoot, 'scripts/ci/bootstrap-e2e-db.sh');
+    const scriptPath = path.join(appRoot, 'scripts/dev-with-test-db.sh');
     const composeFilePath = path.join(appRoot, 'docker-compose.yml');
-    const testDir = mkdtempSync(path.join(tmpdir(), 'bootstrap-e2e-db-'));
+    const testDir = mkdtempSync(path.join(tmpdir(), 'dev-with-test-db-'));
     const binDir = path.join(testDir, 'bin');
     const dockerLogPath = path.join(testDir, 'docker.log');
-    const bunStatePath = path.join(testDir, 'bun-state');
     const bunLogPath = path.join(testDir, 'bun.log');
 
     try {
@@ -32,14 +31,24 @@ set -euo pipefail
 
 printf '%s\\n' "$*" >> "$FAKE_DOCKER_LOG"
 
-if [[ "$1" == "info" ]]; then
-  exit 0
-fi
-
-if [[ "$1" != "compose" ]]; then
-  echo "unexpected docker invocation: $*" >&2
-  exit 1
-fi
+case "\${1:-}" in
+  info)
+    exit 0
+    ;;
+  exec)
+    if [[ "\${2:-}" == "$EXPECTED_CONTAINER_NAME" && "\${3:-}" == "pg_isready" ]]; then
+      exit 0
+    fi
+    echo "unexpected docker exec invocation: $*" >&2
+    exit 1
+    ;;
+  compose)
+    ;;
+  *)
+    echo "unexpected docker invocation: $*" >&2
+    exit 1
+    ;;
+esac
 
 if [[ -n "\${COMPOSE_FILE:-}" && "$COMPOSE_FILE" != "$EXPECTED_COMPOSE_FILE" ]]; then
   echo "inherited COMPOSE_FILE leaked into docker compose: $COMPOSE_FILE" >&2
@@ -69,35 +78,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ "$subcommand" != "version" && "$has_expected_file" -ne 1 ]]; then
+  echo "compose file pin missing for $subcommand" >&2
+  exit 1
+fi
+
 case "$subcommand" in
-  version)
-    exit 0
-    ;;
-  config)
-    if [[ "\${1:-}" == "--services" ]]; then
-      if [[ "$has_expected_file" -eq 1 ]]; then
-        printf 'postgres\\npostgres-test\\nmailpit\\nminio\\n'
-      else
-        printf 'postgres\\n'
-      fi
-      exit 0
-    fi
-    ;;
-  up)
-    if [[ "$has_expected_file" -ne 1 ]]; then
-      echo "compose file pin missing for up" >&2
-      exit 1
-    fi
-    exit 0
-    ;;
-  run)
-    if [[ "$has_expected_file" -ne 1 ]]; then
-      echo "compose file pin missing for run" >&2
-      exit 1
-    fi
-    exit 0
-    ;;
-  stop|rm)
+  version|up|rm)
     exit 0
     ;;
 esac
@@ -115,70 +102,54 @@ set -euo pipefail
 printf '%s\\n' "$*" >> "$FAKE_BUN_LOG"
 
 if [[ "\${1:-}" == "--eval" ]]; then
-  count=0
-  if [[ -f "$FAKE_BUN_STATE" ]]; then
-    count="$(cat "$FAKE_BUN_STATE")"
-  fi
-  count=$((count + 1))
-  printf '%s' "$count" > "$FAKE_BUN_STATE"
+  exit 0
+fi
 
-  case "$count" in
-    1)
-      exit 1
-      ;;
-    2)
-      echo "Postgres is ready."
-      exit 0
-      ;;
-    3)
-      echo "Mailpit is ready."
+if [[ "\${1:-}" == "run" ]]; then
+  case "\${2:-}" in
+    db:migrate|db:schema:generate|db:seed:test-users|dev:app)
       exit 0
       ;;
   esac
 fi
 
-exit 0
+echo "unexpected bun invocation: $*" >&2
+exit 1
 `,
       );
-
-      const spawnEnv = { ...process.env };
-      delete spawnEnv.POSTGRES_PORT;
-      delete spawnEnv.TEST_POSTGRES_PORT;
 
       const result = spawnSync('bash', [scriptPath], {
         cwd: appRoot,
         encoding: 'utf8',
         env: {
-          ...spawnEnv,
+          ...process.env,
           COMPOSE_FILE: '/tmp/incorrect-compose.yml',
           EXPECTED_COMPOSE_FILE: composeFilePath,
+          EXPECTED_CONTAINER_NAME: 'web-dev-postgres',
           FAKE_DOCKER_LOG: dockerLogPath,
-          FAKE_BUN_STATE: bunStatePath,
           FAKE_BUN_LOG: bunLogPath,
-          DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:55435/next_template?schema=public',
-          E2E_MANAGED_DATABASE: '1',
           PATH: `${binDir}:${process.env.PATH ?? ''}`,
-          PROFILE_IMAGE_STORAGE_ENDPOINT: 'http://127.0.0.1:65535',
-          TMPDIR: testDir,
+          DEV_DB_CONTAINER_NAME: 'web-dev-postgres',
+          DEV_DB_HOST_CONTAINER_NAME: 'web-dev-postgres-host',
         },
       });
 
-      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(result.status).toBe(0);
 
       const dockerLog = readFileSync(dockerLogPath, 'utf8');
       const bunLog = readFileSync(bunLogPath, 'utf8');
 
       expect(dockerLog).toContain(
-        `compose -f ${composeFilePath} --project-directory ${appRoot} config --services`,
+        `compose -f ${composeFilePath} --project-directory ${appRoot} up -d postgres-dev`,
       );
       expect(dockerLog).toContain(
-        `compose -f ${composeFilePath} --project-directory ${appRoot} up -d postgres-test mailpit minio`,
+        `compose -f ${composeFilePath} --project-directory ${appRoot} rm -sf postgres-dev postgres-dev-host`,
       );
-      expect(dockerLog).toContain(
-        `compose -f ${composeFilePath} --project-directory ${appRoot} run --rm -T minio-create-bucket`,
-      );
+      expect(dockerLog).toContain('exec web-dev-postgres pg_isready');
       expect(bunLog).toContain('run db:migrate');
+      expect(bunLog).toContain('run db:schema:generate');
       expect(bunLog).toContain('run db:seed:test-users');
+      expect(bunLog).toContain('run dev:app');
     } finally {
       rmSync(testDir, { force: true, recursive: true });
     }

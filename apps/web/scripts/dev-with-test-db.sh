@@ -4,31 +4,41 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 APP_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 APP_NAME="$(basename "$APP_ROOT" | tr -cs '[:alnum:]' '-' | sed 's/^-*//; s/-*$//')"
+COMPOSE_FILE_PATH="${APP_ROOT}/docker-compose.yml"
 
 export DEV_DB_PORT="${DEV_DB_PORT:-55434}"
 export DEV_DB_NAME="${DEV_DB_NAME:-next_template}"
 export DEV_DB_USER="${DEV_DB_USER:-postgres}"
 export DEV_DB_PASSWORD="${DEV_DB_PASSWORD:-postgres}"
 export DEV_DB_CONTAINER_NAME="${DEV_DB_CONTAINER_NAME:-${APP_NAME}-dev-postgres}"
+export DEV_DB_HOST_CONTAINER_NAME="${DEV_DB_HOST_CONTAINER_NAME:-${DEV_DB_CONTAINER_NAME}-host}"
 export DEV_DB_NETWORK_MODE="${DEV_DB_NETWORK_MODE:-auto}"
 export DEV_DATABASE_URL="${DEV_DATABASE_URL:-postgresql://${DEV_DB_USER}:${DEV_DB_PASSWORD}@127.0.0.1:${DEV_DB_PORT}/${DEV_DB_NAME}?schema=public}"
 export DATABASE_URL="$DEV_DATABASE_URL"
 export DB_BOOTSTRAP_TIMEOUT_SECONDS="${DB_BOOTSTRAP_TIMEOUT_SECONDS:-90}"
 DEV_DB_SERVER_PORT="5432"
+DEV_DB_ACTIVE_CONTAINER_NAME="$DEV_DB_CONTAINER_NAME"
 DEV_APP_PID=""
 
 docker_available() {
   command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1
 }
 
-container_exists() {
-  docker container inspect "$DEV_DB_CONTAINER_NAME" >/dev/null 2>&1
+docker_compose_available() {
+  env -u COMPOSE_FILE docker compose version >/dev/null 2>&1
+}
+
+docker_compose() {
+  env -u COMPOSE_FILE docker compose -f "$COMPOSE_FILE_PATH" --project-directory "$APP_ROOT" "$@"
 }
 
 stop_database() {
-  if container_exists; then
+  if docker_available && docker_compose_available; then
     echo "Stopping ephemeral dev database..."
-    docker rm -f "$DEV_DB_CONTAINER_NAME" >/dev/null 2>&1 || true
+    (
+      cd "$APP_ROOT"
+      docker_compose rm -sf postgres-dev postgres-dev-host
+    ) >/dev/null 2>&1 || true
   fi
 }
 
@@ -91,14 +101,14 @@ wait_for_container_database() {
   start_time="$(date +%s)"
 
   while (( $(date +%s) - start_time < timeout_seconds )); do
-    if docker exec "$DEV_DB_CONTAINER_NAME" pg_isready -U "$DEV_DB_USER" -d "$DEV_DB_NAME" -p "$DEV_DB_SERVER_PORT" >/dev/null 2>&1; then
+    if docker exec "$DEV_DB_ACTIVE_CONTAINER_NAME" pg_isready -U "$DEV_DB_USER" -d "$DEV_DB_NAME" -p "$DEV_DB_SERVER_PORT" >/dev/null 2>&1; then
       return 0
     fi
 
     sleep 1
   done
 
-  echo "Timed out waiting for Postgres in container ${DEV_DB_CONTAINER_NAME} after ${timeout_seconds}s." >&2
+  echo "Timed out waiting for Postgres in container ${DEV_DB_ACTIVE_CONTAINER_NAME} after ${timeout_seconds}s." >&2
   return 1
 }
 
@@ -108,33 +118,22 @@ host_network_supported() {
 
 start_database_with_published_port() {
   DEV_DB_SERVER_PORT="5432"
-  echo "Starting ephemeral dev database on port ${DEV_DB_PORT} using Docker port publishing..."
-  docker run \
-    --detach \
-    --rm \
-    --name "$DEV_DB_CONTAINER_NAME" \
-    --tmpfs /var/lib/postgresql/data:rw \
-    --publish "${DEV_DB_PORT}:5432" \
-    --env "POSTGRES_DB=${DEV_DB_NAME}" \
-    --env "POSTGRES_USER=${DEV_DB_USER}" \
-    --env "POSTGRES_PASSWORD=${DEV_DB_PASSWORD}" \
-    postgres:16-alpine >/dev/null
+  DEV_DB_ACTIVE_CONTAINER_NAME="$DEV_DB_CONTAINER_NAME"
+  echo "Starting ephemeral dev database on port ${DEV_DB_PORT} using Docker Compose port publishing..."
+  (
+    cd "$APP_ROOT"
+    docker_compose up -d postgres-dev
+  )
 }
 
 start_database_with_host_network() {
   DEV_DB_SERVER_PORT="$DEV_DB_PORT"
-  echo "Starting ephemeral dev database on port ${DEV_DB_PORT} using host networking..."
-  docker run \
-    --detach \
-    --rm \
-    --name "$DEV_DB_CONTAINER_NAME" \
-    --network host \
-    --tmpfs /var/lib/postgresql/data:rw \
-    --env "POSTGRES_DB=${DEV_DB_NAME}" \
-    --env "POSTGRES_USER=${DEV_DB_USER}" \
-    --env "POSTGRES_PASSWORD=${DEV_DB_PASSWORD}" \
-    postgres:16-alpine \
-    postgres -c "port=${DEV_DB_PORT}" >/dev/null
+  DEV_DB_ACTIVE_CONTAINER_NAME="$DEV_DB_HOST_CONTAINER_NAME"
+  echo "Starting ephemeral dev database on port ${DEV_DB_PORT} using Docker Compose host networking..."
+  (
+    cd "$APP_ROOT"
+    docker_compose up -d postgres-dev-host
+  )
 }
 
 start_database() {
@@ -187,7 +186,12 @@ start_database() {
 }
 
 if ! docker_available; then
-  echo "Docker is required for bun dev because it now starts an ephemeral Postgres database." >&2
+  echo "Docker is required for bun dev because it starts an ephemeral Postgres database." >&2
+  exit 1
+fi
+
+if ! docker_compose_available; then
+  echo "Docker Compose is required for bun dev because it starts the Postgres service from ${COMPOSE_FILE_PATH}." >&2
   exit 1
 fi
 

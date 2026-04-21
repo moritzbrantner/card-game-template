@@ -7,12 +7,14 @@ import type {
   PersistedMatchStatus,
   PlayerIdentityRef,
   ReplayFormatVersion,
+  GameReplayMetadata,
 } from '@repo/game-contracts';
 import type {
   UnoExamplePresetId,
   UnoMove,
   UnoPlayerView,
   UnoReplayAnalysis,
+  UnoSetup,
   UnoState,
 } from '@repo/game-uno';
 
@@ -46,6 +48,7 @@ export type PersistedUnoMatchRecord = {
   latestState: MatchState<UnoState>;
   result: MatchResult | null;
   analysis: GameMatchAnalysisRecord | null;
+  replayMetadata: GameReplayMetadata<UnoSetup> | null;
   lastSequence: number;
   participants: readonly GameMatchParticipantRecord[];
   acceptedMoves: readonly MatchReplayAcceptedMove<UnoMove>[];

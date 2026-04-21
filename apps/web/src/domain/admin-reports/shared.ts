@@ -16,7 +16,7 @@ export type NavigationReportAudience = (typeof navigationReportAudiences)[number
 export const navigationReportRouteGroups = ['all', ...navigationRouteGroups] as const;
 export type NavigationReportRouteGroupFilter = (typeof navigationReportRouteGroups)[number];
 
-export type AdminWorkspaceKey = 'overview' | 'content' | 'reports' | 'users' | 'systemSettings' | 'dataStudio';
+export type AdminWorkspaceKey = 'overview' | 'content' | 'reports' | 'users' | 'botAis' | 'systemSettings' | 'dataStudio';
 
 export type AdminReportStatus = 'live' | 'degraded';
 export type AdminReportTone = 'neutral' | 'positive' | 'warning' | 'critical';
@@ -206,6 +206,7 @@ const ADMIN_WORKSPACE_SEGMENTS: Record<Exclude<AdminWorkspaceKey, 'overview'>, s
   content: 'content',
   reports: 'reports',
   users: 'users',
+  botAis: 'bot-ais',
   systemSettings: 'system-settings',
   dataStudio: 'data-studio',
 };
@@ -215,6 +216,7 @@ const ADMIN_WORKSPACE_LABELS: Record<AdminWorkspaceKey, string> = {
   content: 'Content',
   reports: 'Reports',
   users: 'Users',
+  botAis: 'Bot AIs',
   systemSettings: 'System settings',
   dataStudio: 'Data studio',
 };
@@ -968,7 +970,7 @@ export function buildWorkspaceAdoptionDetail(input: LoadedReportInputs): AdminRe
   const repeatVisitorRatio = uniqueAdmins === 0 ? 0 : repeatVisitors / uniqueAdmins;
   const topWorkspace = [...visitsByWorkspace.entries()].sort((left, right) => right[1].visits - left[1].visits)[0];
   const workspaceData = (
-    ['overview', 'content', 'reports', 'users', 'systemSettings', 'dataStudio'] as AdminWorkspaceKey[]
+    ['overview', 'content', 'reports', 'users', 'botAis', 'systemSettings', 'dataStudio'] as AdminWorkspaceKey[]
   ).map((workspaceKey) => {
     const bucket = visitsByWorkspace.get(workspaceKey);
     return {

@@ -10,6 +10,7 @@ export const adminPageDefinitions = [
   { key: 'content', href: '/admin/content', featureKey: 'admin.content', permission: 'admin.content.read' },
   { key: 'reports', href: '/admin/reports', featureKey: 'admin.reports', permission: 'admin.reports.read' },
   { key: 'users', href: '/admin/users', featureKey: 'admin.users', permission: 'admin.users.read' },
+  { key: 'botAis', href: '/admin/bot-ais', featureKey: 'admin.systemSettings', permission: 'admin.systemSettings.read' },
   { key: 'systemSettings', href: '/admin/system-settings', featureKey: 'admin.systemSettings', permission: 'admin.systemSettings.read' },
   { key: 'dataStudio', href: '/admin/data-studio', featureKey: 'admin.dataStudio', permission: 'admin.dataStudio.read' },
 ] as const satisfies readonly {
