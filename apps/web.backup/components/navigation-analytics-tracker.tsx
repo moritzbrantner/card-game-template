@@ -98,7 +98,7 @@ export function NavigationAnalyticsTracker({ enabled }: NavigationAnalyticsTrack
 
   useEffect(() => {
     void trackNavigation(getCurrentHref(pathname, search));
-  }, [pathname, search, trackNavigation]);
+  }, [pathname, search]);
 
   return null;
 }

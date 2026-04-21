@@ -31,7 +31,10 @@ test.describe('admin content', () => {
     await page.getByRole('button', { name: 'Update announcement' }).click();
     await expect(page.getByText(`Scheduled maintenance ${updatedToken}`)).toBeVisible();
 
-    const announcementCard = page.getByText(`Scheduled maintenance ${updatedToken}`).locator('xpath=../..');
+    const announcementCard = page.locator('div.rounded-2xl').filter({
+      has: page.getByRole('button', { name: 'Publish now' }),
+      hasText: `Scheduled maintenance ${updatedToken}`,
+    });
 
     await announcementCard.getByRole('button', { name: 'Publish now' }).click();
     await expect(announcementCard).toContainText('published');

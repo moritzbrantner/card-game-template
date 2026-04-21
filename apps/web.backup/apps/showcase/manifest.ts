@@ -1,12 +1,18 @@
 import { createElement } from 'react';
-import { redirect } from 'next/navigation';
 
 import type { AppManifest } from '@/src/app-config/contracts';
+import type { AppLocale } from '@/i18n/routing';
 import { withLocalePath } from '@/i18n/routing';
 import { isGithubPagesBuild } from '@/src/runtime/build-target';
 import { StaticRedirectPage } from '@/components/static-redirect-page';
 
 import { loadShowcaseMessages } from './messages';
+
+async function redirectToLocalizedPath(path: string, locale: AppLocale): Promise<never> {
+  const { redirect } = await import('next/navigation');
+  redirect(withLocalePath(path, locale));
+  throw new Error('Next.js redirect did not terminate rendering.');
+}
 
 const enabledFeatures = {
   'account.register': true,
@@ -92,7 +98,7 @@ const showcaseManifest: AppManifest = {
             return createElement(StaticRedirectPage, { href: '../examples/forms/' });
           }
 
-          redirect(withLocalePath('/examples/forms', locale));
+          return redirectToLocalizedPath('/examples/forms', locale);
         }
 
         const pageModule = await import('./pages/examples/forms-page');
@@ -113,7 +119,7 @@ const showcaseManifest: AppManifest = {
             return createElement(StaticRedirectPage, { href: '../examples/story/' });
           }
 
-          redirect(withLocalePath('/examples/story', locale));
+          return redirectToLocalizedPath('/examples/story', locale);
         }
 
         const pageModule = await import('./pages/examples/story-page');
@@ -134,7 +140,7 @@ const showcaseManifest: AppManifest = {
             return createElement(StaticRedirectPage, { href: '../examples/communication/' });
           }
 
-          redirect(withLocalePath('/examples/communication', locale));
+          return redirectToLocalizedPath('/examples/communication', locale);
         }
 
         const pageModule = await import('./pages/examples/communication-page');
@@ -167,7 +173,7 @@ const showcaseManifest: AppManifest = {
             return createElement(StaticRedirectPage, { href: '../examples/uploads/' });
           }
 
-          redirect(withLocalePath('/examples/uploads', locale));
+          return redirectToLocalizedPath('/examples/uploads', locale);
         }
 
         const pageModule = await import('./pages/examples/uploads-page');

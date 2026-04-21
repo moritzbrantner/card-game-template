@@ -3,7 +3,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 
 import type { AppRole } from '@/lib/authorization';
-import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,7 +43,6 @@ export function AdminNotificationComposer({
   className,
 }: AdminNotificationComposerProps) {
   const t = useTranslations('AdminPage');
-  const router = useRouter();
   const defaultAudience = allowedAudiences.includes(initialAudience) ? initialAudience : allowedAudiences[0] ?? 'user';
   const [audience, setAudience] = useState<NotificationAudience>(defaultAudience);
   const [pending, setPending] = useState(false);
@@ -83,7 +81,6 @@ export function AdminNotificationComposer({
       }),
     });
     setPending(false);
-    router.refresh();
   }
 
   const showAudienceSelector = allowedAudiences.length > 1;

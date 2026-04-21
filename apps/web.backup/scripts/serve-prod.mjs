@@ -1,4 +1,5 @@
 import { access } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
@@ -6,7 +7,8 @@ import { spawn } from 'node:child_process';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, '..');
 const nextBuildDir = path.join(appRoot, '.next');
-const nextCli = path.join(appRoot, 'node_modules', 'next', 'dist', 'bin', 'next');
+const require = createRequire(import.meta.url);
+const nextCli = require.resolve('next/dist/bin/next');
 
 const args = new Map();
 

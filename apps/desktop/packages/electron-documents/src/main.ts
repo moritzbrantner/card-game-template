@@ -1,14 +1,11 @@
 import { promises as fs } from 'node:fs';
-import { createRequire } from 'node:module';
 import path from 'node:path';
 
-import type { BrowserWindow, IpcMain, WebContents } from 'electron';
+import type { BrowserWindow, IpcMain, IpcMainInvokeEvent, WebContents } from 'electron';
 
 import type { JsonStore } from '@moritzbrantner/electron-json-store/main';
 
 import { documentsChannels, type DocumentState, type RecentDocument } from './shared.ts';
-
-const require = createRequire(import.meta.url);
 
 function cloneValue<TValue>(value: TValue): TValue {
   return structuredClone(value);
@@ -299,30 +296,33 @@ export function createDocumentsService(options: DocumentsServiceOptions) {
     try {
       await openRecent(recentState.lastOpenedPath, browserWindow);
       return true;
-    } catch (_error) {
+    } catch {
       return false;
     }
   }
 
-  function installIpc(ipcMain: IpcMain) {
-    const { BrowserWindow: ElectronBrowserWindow } = require('electron') as typeof import('electron');
+  async function getWindowForEvent(event: IpcMainInvokeEvent) {
+    const { BrowserWindow: ElectronBrowserWindow } = await import('electron');
+    return ElectronBrowserWindow.fromWebContents(event.sender);
+  }
 
+  function installIpc(ipcMain: IpcMain) {
     ipcMain.handle(documentsChannels.getState, async () => getState());
     ipcMain.handle(documentsChannels.listRecent, async () => listRecent());
     ipcMain.handle(documentsChannels.newDocument, async (event) => {
-      await newDocument(ElectronBrowserWindow.fromWebContents(event.sender));
+      await newDocument(await getWindowForEvent(event));
     });
     ipcMain.handle(documentsChannels.open, async (event) => {
-      await open(ElectronBrowserWindow.fromWebContents(event.sender));
+      await open(await getWindowForEvent(event));
     });
     ipcMain.handle(documentsChannels.openRecent, async (event, filePathValue: string) => {
-      await openRecent(filePathValue, ElectronBrowserWindow.fromWebContents(event.sender));
+      await openRecent(filePathValue, await getWindowForEvent(event));
     });
     ipcMain.handle(documentsChannels.save, async (event) => {
-      await save(ElectronBrowserWindow.fromWebContents(event.sender));
+      await save(await getWindowForEvent(event));
     });
     ipcMain.handle(documentsChannels.saveAs, async (event) => {
-      await saveAs(ElectronBrowserWindow.fromWebContents(event.sender));
+      await saveAs(await getWindowForEvent(event));
     });
     ipcMain.handle(documentsChannels.updateDraft, async (_event, content: string) => {
       await updateDraft(content);

@@ -5,6 +5,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
+      "@moritzbrantner/ui": path.resolve(__dirname, "../web/packages/ui/src/index.ts"),
+      "@moritzbrantner/storytelling": path.resolve(__dirname, "../web/packages/storytelling/src/index.ts"),
     },
   },
   test: {

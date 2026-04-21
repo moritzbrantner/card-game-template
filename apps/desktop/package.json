@@ -16,7 +16,7 @@
     "test": "bun run test:unit && bun run test:integration && bun run test:e2e",
     "test:unit": "../../scripts/run-with-node.sh --experimental-strip-types --test ./tests/unit.test.js ./tests/packages/*.test.mts",
     "test:integration": "../../scripts/run-with-node.sh --test ./tests/integration.test.js",
-    "test:e2e": "bun run build && playwright test"
+    "test:e2e": "bun run build && ../../scripts/run-with-node.sh ../../node_modules/playwright/cli.js test"
   },
   "keywords": [],
   "author": "patty",

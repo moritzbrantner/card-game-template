@@ -1,10 +1,6 @@
-import { createRequire } from 'node:module';
-
 import type { BrowserWindow, IpcMain, IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron';
 
 import { commandsChannels, type CommandState } from './shared.ts';
-
-const require = createRequire(import.meta.url);
 
 export interface CommandContext {
   window: BrowserWindow | null;
@@ -144,10 +140,9 @@ export function createCommandsService(options: CommandsServiceOptions) {
   }
 
   function installIpc(ipcMain: IpcMain) {
-    const { BrowserWindow: ElectronBrowserWindow } = require('electron') as typeof import('electron');
-
     ipcMain.handle(commandsChannels.list, async () => list());
     ipcMain.handle(commandsChannels.run, async (event, commandId: string) => {
+      const { BrowserWindow: ElectronBrowserWindow } = await import('electron');
       const window =
         options.getWindowForEvent?.(event) ??
         ElectronBrowserWindow.fromWebContents(event.sender);

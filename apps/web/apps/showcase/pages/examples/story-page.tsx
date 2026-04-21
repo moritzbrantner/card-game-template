@@ -41,7 +41,9 @@ export default async function StoryPage({ locale }: { locale: AppLocale }) {
     <div className="space-y-8">
       <Card className="mx-auto max-w-3xl rounded-3xl">
         <CardHeader>
-          <CardTitle>{t('title')}</CardTitle>
+          <CardTitle>
+            <h1>{t('title')}</h1>
+          </CardTitle>
           <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <CardContent>

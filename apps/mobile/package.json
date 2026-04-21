@@ -9,7 +9,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios --port 4002",
     "web": "expo start --web --port 4002",
-    "lint": "expo lint",
+    "lint": "../../scripts/run-with-node.sh ../../node_modules/eslint-plugin-react/node_modules/eslint/bin/eslint.js .",
     "dev": "expo start --port 4002",
     "build": "expo export --platform web",
     "test": "../../scripts/run-with-node.sh -e \"console.log('No automated tests configured for this app yet.')\"",

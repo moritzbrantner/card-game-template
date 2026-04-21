@@ -1,5 +1,3 @@
-import { isDeepStrictEqual } from 'node:util';
-
 import type {
   GameMove,
   MatchExecutionMode,
@@ -13,6 +11,38 @@ import type {
 } from '@repo/game-contracts';
 import { createMatchReplay, summarizeMatchReplay } from '@repo/game-contracts';
 import { createGameEngine, type GameAdapter } from '@repo/game-engine';
+
+function isSerializableDeepEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) {
+    return true;
+  }
+
+  if (typeof left !== 'object' || left === null || typeof right !== 'object' || right === null) {
+    return false;
+  }
+
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => isSerializableDeepEqual(value, right[index]))
+    );
+  }
+
+  const leftEntries = Object.entries(left);
+  const rightObject = right as Record<string, unknown>;
+
+  if (leftEntries.length !== Object.keys(rightObject).length) {
+    return false;
+  }
+
+  return leftEntries.every(
+    ([key, value]) =>
+      Object.prototype.hasOwnProperty.call(rightObject, key) &&
+      isSerializableDeepEqual(value, rightObject[key]),
+  );
+}
 
 export type SessionParticipant = PlayerProfile & {
   controller: 'human' | 'bot';
@@ -572,14 +602,14 @@ export function verifyReplayIntegrity<TSetup, TState, TMove extends GameMove>(in
     };
   }
 
-  if (!isDeepStrictEqual(rebuilt.replay.latestState, input.replay.latestState)) {
+  if (!isSerializableDeepEqual(rebuilt.replay.latestState, input.replay.latestState)) {
     return {
       ok: false,
       reason: 'latest state does not match the accepted move log',
     };
   }
 
-  if (!isDeepStrictEqual(rebuilt.replay.result, input.replay.result)) {
+  if (!isSerializableDeepEqual(rebuilt.replay.result, input.replay.result)) {
     return {
       ok: false,
       reason: 'result does not match the reconstructed replay outcome',

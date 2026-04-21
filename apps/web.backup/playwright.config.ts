@@ -11,6 +11,7 @@ export default defineConfig({
   globalTeardown: './tests/e2e/global-teardown.cts',
   testDir: 'tests/e2e',
   timeout: 120_000,
+  workers: 1,
   use: {
     baseURL,
     channel: 'chrome',

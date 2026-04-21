@@ -8,6 +8,7 @@
     "noImplicitAny": true,
     "sourceMap": true,
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@moritzbrantner/electron-commands/main": ["packages/electron-commands/src/main.ts"],
       "@moritzbrantner/electron-commands/preload": ["packages/electron-commands/src/preload.ts"],

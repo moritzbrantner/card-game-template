@@ -34,6 +34,7 @@ export function MarkAllReadButton({ disabled = false, onSuccess }: MarkAllReadBu
     }
 
     onSuccess?.();
+    window.dispatchEvent(new CustomEvent('notifications:mark-all-read'));
     setPending(false);
     router.refresh();
   }

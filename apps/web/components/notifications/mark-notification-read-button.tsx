@@ -52,6 +52,11 @@ export function MarkNotificationReadButton({
     }
 
     onSuccess?.();
+    window.dispatchEvent(
+      new CustomEvent('notifications:mark-read', {
+        detail: { notificationId },
+      }),
+    );
     setPending(false);
     router.refresh();
   }

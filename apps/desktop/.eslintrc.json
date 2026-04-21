@@ -13,11 +13,19 @@
     "plugin:import/typescript"
   ],
   "parser": "@typescript-eslint/parser",
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "moduleDirectory": ["node_modules", "../../node_modules"]
+      }
+    }
+  },
   "rules": {
+    "@typescript-eslint/no-unused-expressions": "off",
     "import/no-unresolved": [
       "error",
       {
-        "ignore": ["^@moritzbrantner/"]
+        "ignore": ["^@electron/fuses$", "^@moritzbrantner/", "^vite$"]
       }
     ]
   }

@@ -9,7 +9,9 @@ export default async function AboutPage({ locale }: { locale: AppLocale }) {
   return (
     <Card className="mx-auto max-w-2xl">
       <CardHeader>
-        <CardTitle>{t('title')}</CardTitle>
+        <CardTitle>
+          <h1>{t('title')}</h1>
+        </CardTitle>
         <CardDescription>{t('description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm text-zinc-700 dark:text-zinc-300">
