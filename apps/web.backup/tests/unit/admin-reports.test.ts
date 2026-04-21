@@ -159,6 +159,9 @@ describe('admin report exports', () => {
   });
 
   it('aggregates navigation journeys and scopes transitions by filters', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-16T12:00:00.000Z'));
+
     const detail = await getAdminReportDetailUseCase(
       'navigationJourneys',
       '7d',

@@ -44,8 +44,7 @@ test.describe('navigation analytics', () => {
     await gotoAndWaitForHydration(page, '/en/admin/reports/navigationJourneys?window=24h&audience=authenticated&path=/people');
 
     await expect(page.getByRole('heading', { name: 'Navigation journeys' })).toBeVisible();
-    await expect(page.getByRole('cell', { name: '/people', exact: true })).toBeVisible();
-    await expect(page.getByRole('cell', { name: '/profile', exact: true })).toBeVisible();
+    await expect(page.getByRole('row', { name: /\/people\s+\/profile/ })).toBeVisible();
   });
 });
 
