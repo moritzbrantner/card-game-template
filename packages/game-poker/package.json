@@ -1,5 +1,5 @@
 {
-  "name": "@repo/game-catalog",
+  "name": "@repo/game-poker",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,9 +14,8 @@
   },
   "dependencies": {
     "@repo/game-contracts": "workspace:*",
-    "@repo/game-poker": "workspace:*",
-    "@repo/game-tcg": "workspace:*",
-    "@repo/game-uno": "workspace:*"
+    "@repo/game-engine": "workspace:*",
+    "@repo/game-session": "workspace:*"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

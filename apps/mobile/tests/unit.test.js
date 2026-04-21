@@ -74,6 +74,32 @@ test('mobile has a dedicated UNO-style screen with hotseat handoff and local ses
   assert.match(source, /House rule toggles/);
 });
 
+test('mobile has dedicated poker and TCG screens with local session state', () => {
+  const pokerSource = fs.readFileSync(
+    path.resolve(__dirname, '../app/(tabs)/poker.tsx'),
+    'utf8',
+  );
+  const tcgSource = fs.readFileSync(
+    path.resolve(__dirname, '../app/(tabs)/tcg.tsx'),
+    'utf8',
+  );
+  const tabsSource = fs.readFileSync(
+    path.resolve(__dirname, '../app/(tabs)/_layout.tsx'),
+    'utf8',
+  );
+
+  assert.match(pokerSource, /Texas Hold/);
+  assert.match(pokerSource, /createPokerAdapter/);
+  assert.match(pokerSource, /createLocalGameSession/);
+  assert.match(pokerSource, /Restart hand/);
+  assert.match(tcgSource, /Arcane Duel/);
+  assert.match(tcgSource, /createTcgAdapter/);
+  assert.match(tcgSource, /createLocalGameSession/);
+  assert.match(tcgSource, /Restart duel/);
+  assert.match(tabsSource, /name="poker"/);
+  assert.match(tabsSource, /name="tcg"/);
+});
+
 test('mobile home links to own and dummy profile pages', () => {
   const source = fs.readFileSync(
     path.resolve(__dirname, '../app/(tabs)/index.tsx'),

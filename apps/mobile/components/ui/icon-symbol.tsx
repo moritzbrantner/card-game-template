@@ -22,6 +22,8 @@ const MAPPING = {
   'cube.fill': 'view-in-ar',
   'list.bullet.clipboard.fill': 'fact-check',
   'rectangle.stack.fill': 'style',
+  'suit.club.fill': 'casino',
+  sparkles: 'auto-awesome',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
 } as IconMapping;

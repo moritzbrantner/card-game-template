@@ -1,4 +1,6 @@
 import type { GameDefinition, GameId, MatchExecutionMode } from '@repo/game-contracts';
+import { pokerCatalogEntry } from '@repo/game-poker';
+import { tcgCatalogEntry } from '@repo/game-tcg';
 import { unoCatalogEntry } from '@repo/game-uno';
 
 export type GameCatalogEntry<TMetadata = Record<string, unknown>> = {
@@ -49,4 +51,13 @@ export function createGameCatalog<TMetadata = Record<string, unknown>>(
   };
 }
 
-export const defaultGameCatalog = createGameCatalog([unoCatalogEntry]);
+export type DefaultGameCatalogMetadata =
+  | typeof pokerCatalogEntry.metadata
+  | typeof tcgCatalogEntry.metadata
+  | typeof unoCatalogEntry.metadata;
+
+export const defaultGameCatalog = createGameCatalog<DefaultGameCatalogMetadata>([
+  pokerCatalogEntry,
+  tcgCatalogEntry,
+  unoCatalogEntry,
+]);

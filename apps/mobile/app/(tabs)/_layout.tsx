@@ -24,6 +24,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="poker"
+        options={{
+          title: "Hold'em",
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="suit.club.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="tcg"
+        options={{
+          title: 'Arcane Duel',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="sparkles" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="index"
         options={{
           title: 'Home',

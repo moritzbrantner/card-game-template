@@ -4,11 +4,35 @@ import { createSharedButtonLabel } from '@moritzbrantner/ui';
 import { defaultGameCatalog } from '@repo/game-catalog';
 import { createLocalGameSession, type LocalGameSession } from '@repo/game-session';
 import {
+  createPokerAdapter,
+  createPokerBots,
+  defaultPokerRules,
+  getPokerExamplePreset,
+  pokerExamplePresets,
+  projectPokerPlayerView,
+  type PokerExamplePresetId,
+  type PokerMove,
+  type PokerPlayerView,
+  type PokerState,
+} from '@repo/game-poker';
+import {
+  createTcgAdapter,
+  createTcgBots,
+  getTcgExamplePreset,
+  projectTcgPlayerView,
+  tcgExamplePresets,
+  type TcgExamplePresetId,
+  type TcgMove,
+  type TcgPlayerView,
+  type TcgState,
+} from '@repo/game-tcg';
+import {
   createUnoAdapter,
   createUnoBots,
   defaultUnoRules,
   getUnoExamplePreset,
   projectUnoPlayerView,
+  unoExamplePresets,
   type UnoExamplePresetId,
   type UnoMove,
   type UnoPlayerView,
@@ -51,6 +75,20 @@ const unoRuntime = {
   unsubscribe: null as (() => void) | null,
 };
 
+const pokerRuntime = {
+  presetId: 'heads-up' as PokerExamplePresetId,
+  session: null as LocalGameSession<PokerState, PokerMove, PokerPlayerView> | null,
+  snapshot: null as ReturnType<LocalGameSession<PokerState, PokerMove, PokerPlayerView>['getSnapshot']> | null,
+  unsubscribe: null as (() => void) | null,
+};
+
+const tcgRuntime = {
+  presetId: 'duel' as TcgExamplePresetId,
+  session: null as LocalGameSession<TcgState, TcgMove, TcgPlayerView> | null,
+  snapshot: null as ReturnType<LocalGameSession<TcgState, TcgMove, TcgPlayerView>['getSnapshot']> | null,
+  unsubscribe: null as (() => void) | null,
+};
+
 function createUnoSession(presetId: UnoExamplePresetId, rules: UnoRules) {
   const preset = getUnoExamplePreset(presetId);
   const seed = `desktop:${presetId}:${JSON.stringify(rules)}`;
@@ -69,6 +107,41 @@ function createUnoSession(presetId: UnoExamplePresetId, rules: UnoRules) {
   });
 }
 
+function createPokerSession(presetId: PokerExamplePresetId) {
+  const preset = getPokerExamplePreset(presetId);
+  const seed = `desktop-poker:${presetId}`;
+
+  return createLocalGameSession({
+    adapter: createPokerAdapter(),
+    bots: createPokerBots(preset.seats, seed),
+    hotseat: preset.hotseat,
+    matchId: `desktop-poker:${presetId}`,
+    participants: preset.seats,
+    projectView: projectPokerPlayerView,
+    setup: {
+      rules: defaultPokerRules,
+      seed,
+    },
+  });
+}
+
+function createTcgSession(presetId: TcgExamplePresetId) {
+  const preset = getTcgExamplePreset(presetId);
+  const seed = `desktop-tcg:${presetId}`;
+
+  return createLocalGameSession({
+    adapter: createTcgAdapter(),
+    bots: createTcgBots(preset.seats),
+    hotseat: preset.hotseat,
+    matchId: `desktop-tcg:${presetId}`,
+    participants: preset.seats,
+    projectView: projectTcgPlayerView,
+    setup: {
+      seed,
+    },
+  });
+}
+
 function replaceUnoSession() {
   unoRuntime.unsubscribe?.();
   unoRuntime.session = createUnoSession(unoRuntime.presetId, unoRuntime.rules);
@@ -79,9 +152,41 @@ function replaceUnoSession() {
   });
 }
 
+function replacePokerSession() {
+  pokerRuntime.unsubscribe?.();
+  pokerRuntime.session = createPokerSession(pokerRuntime.presetId);
+  pokerRuntime.snapshot = pokerRuntime.session.getSnapshot();
+  pokerRuntime.unsubscribe = pokerRuntime.session.subscribe((snapshot) => {
+    pokerRuntime.snapshot = snapshot;
+    renderApp();
+  });
+}
+
+function replaceTcgSession() {
+  tcgRuntime.unsubscribe?.();
+  tcgRuntime.session = createTcgSession(tcgRuntime.presetId);
+  tcgRuntime.snapshot = tcgRuntime.session.getSnapshot();
+  tcgRuntime.unsubscribe = tcgRuntime.session.subscribe((snapshot) => {
+    tcgRuntime.snapshot = snapshot;
+    renderApp();
+  });
+}
+
 function ensureUnoSession() {
   if (!unoRuntime.session || !unoRuntime.snapshot) {
     replaceUnoSession();
+  }
+}
+
+function ensurePokerSession() {
+  if (!pokerRuntime.session || !pokerRuntime.snapshot) {
+    replacePokerSession();
+  }
+}
+
+function ensureTcgSession() {
+  if (!tcgRuntime.session || !tcgRuntime.snapshot) {
+    replaceTcgSession();
   }
 }
 
@@ -97,6 +202,14 @@ function getCurrentRoute(): AppRoute {
 
   if (window.location.hash === '#/uno') {
     return 'uno';
+  }
+
+  if (window.location.hash === '#/poker') {
+    return 'poker';
+  }
+
+  if (window.location.hash === '#/tcg') {
+    return 'tcg';
   }
 
   if (window.location.hash === '#/documents') {
@@ -141,6 +254,70 @@ function createScreenFrame(eyebrowText: string, titleText: string, descriptionTe
   screen.append(eyebrow, title, description);
 
   return screen;
+}
+
+function createSessionActionsCard<TMove>(
+  snapshot: {
+    pendingHotseatPlayerId: string | null;
+    view: {
+      legalActions: ReadonlyArray<{
+        id: string;
+        label: string;
+        move: TMove;
+      }>;
+    };
+  },
+  session: {
+    confirmHotseat(): void;
+    submitMove(move: TMove): void;
+  } | null,
+) {
+  const actionsCard = document.createElement('article');
+  actionsCard.className = 'overview-card';
+
+  const actionsTitle = document.createElement('h2');
+  actionsTitle.textContent = snapshot.pendingHotseatPlayerId ? 'Hotseat handoff' : 'Legal actions';
+  actionsCard.append(actionsTitle);
+
+  if (snapshot.pendingHotseatPlayerId) {
+    const message = document.createElement('p');
+    message.textContent = `Waiting for ${snapshot.pendingHotseatPlayerId} to take over this device.`;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'upload-button upload-button--primary';
+    button.textContent = 'Reveal next hand';
+    button.addEventListener('click', () => {
+      session?.confirmHotseat();
+    });
+
+    actionsCard.append(message, button);
+    return actionsCard;
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'document-toolbar';
+
+  if (snapshot.view.legalActions.length === 0) {
+    const empty = document.createElement('p');
+    empty.textContent = 'No visible actions right now.';
+    actionsCard.append(empty);
+    return actionsCard;
+  }
+
+  snapshot.view.legalActions.forEach((action) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'upload-button';
+    button.textContent = action.label;
+    button.addEventListener('click', () => {
+      session?.submitMove(action.move);
+    });
+    actions.append(button);
+  });
+
+  actionsCard.append(actions);
+  return actionsCard;
 }
 
 function createHomeScreen() {
@@ -219,7 +396,7 @@ function createUnoScreen() {
 
   const catalogBadge = document.createElement('span');
   catalogBadge.className = 'shared-package-label';
-  catalogBadge.textContent = `${catalogEntry?.definition.name ?? 'UNO-style'} ${catalogEntry?.metadata.route ?? '/uno'}`;
+  catalogBadge.textContent = `${catalogEntry?.definition.name ?? 'UNO-style'} ${catalogEntry?.metadata?.route ?? '/uno'}`;
 
   topBar.append(restartButton, catalogBadge);
   screen.append(topBar);
@@ -234,7 +411,7 @@ function createUnoScreen() {
   const presetRow = document.createElement('div');
   presetRow.className = 'settings-toggle-group';
 
-  for (const preset of catalogEntry?.metadata.presets ?? []) {
+  for (const preset of unoExamplePresets) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = preset.id === unoRuntime.presetId ? 'settings-chip is-active' : 'settings-chip';
@@ -384,6 +561,222 @@ function createUnoScreen() {
   }
 
   screen.append(actionsCard);
+
+  return screen;
+}
+
+function createPokerScreen() {
+  ensurePokerSession();
+
+  const snapshot = pokerRuntime.snapshot!;
+  const catalogEntry = defaultGameCatalog.get('texas-holdem');
+  const screen = createScreenFrame(
+    'Shared gameplay example',
+    "Texas Hold'em",
+    'Local poker MVP with deterministic deals, fixed bet sizes, fold wins, and seven-card showdown scoring.',
+  );
+
+  const topBar = document.createElement('div');
+  topBar.className = 'uno-toolbar';
+
+  const restartButton = document.createElement('button');
+  restartButton.type = 'button';
+  restartButton.className = 'upload-button upload-button--primary';
+  restartButton.textContent = 'Restart hand';
+  restartButton.addEventListener('click', () => {
+    pokerRuntime.session?.restart();
+  });
+
+  const catalogBadge = document.createElement('span');
+  catalogBadge.className = 'shared-package-label';
+  catalogBadge.textContent = `${catalogEntry?.definition.name ?? "Texas Hold'em"} ${catalogEntry?.metadata?.route ?? '/poker'}`;
+
+  topBar.append(restartButton, catalogBadge);
+  screen.append(topBar);
+
+  const presetCard = document.createElement('article');
+  presetCard.className = 'overview-card';
+  presetCard.innerHTML = '<h2>Table presets</h2><p>Switch between heads-up human play and a four-seat table with bots.</p>';
+
+  const presetRow = document.createElement('div');
+  presetRow.className = 'settings-toggle-group';
+
+  for (const preset of pokerExamplePresets) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = preset.id === pokerRuntime.presetId ? 'settings-chip is-active' : 'settings-chip';
+    button.textContent = preset.label;
+    button.addEventListener('click', () => {
+      pokerRuntime.presetId = preset.id;
+      replacePokerSession();
+      renderApp();
+    });
+    presetRow.append(button);
+  }
+
+  presetCard.append(presetRow);
+  screen.append(presetCard);
+
+  const statusGrid = document.createElement('div');
+  statusGrid.className = 'uno-status-grid';
+
+  [
+    ['Phase', snapshot.view.phase],
+    ['Pot', `${snapshot.view.pot}`],
+    ['Board', snapshot.view.communityCards.map((card) => card.label).join(', ') || 'No board cards'],
+    ['Event', snapshot.view.status],
+  ].forEach(([label, value]) => {
+    const card = document.createElement('article');
+    card.className = 'overview-card';
+    card.innerHTML = `<h2>${label}</h2><p>${value}</p>`;
+    statusGrid.append(card);
+  });
+
+  if (snapshot.view.matchResultBanner) {
+    const winnerCard = document.createElement('article');
+    winnerCard.className = 'overview-card';
+    winnerCard.innerHTML = `<h2>Result</h2><p>${snapshot.view.matchResultBanner}</p>`;
+    statusGrid.append(winnerCard);
+  }
+
+  screen.append(statusGrid);
+
+  const seatsGrid = document.createElement('div');
+  seatsGrid.className = 'uno-seats-grid';
+
+  snapshot.view.players.forEach((player) => {
+    const card = document.createElement('article');
+    card.className = player.isActive ? 'overview-card uno-seat-card is-active' : 'overview-card uno-seat-card';
+
+    const title = document.createElement('h2');
+    title.textContent = `${player.displayName} (${player.controller})`;
+
+    const summary = document.createElement('p');
+    summary.textContent = `Stack ${player.stack}${player.hasFolded ? ' · folded' : player.isViewer ? ' · viewer' : ''}`;
+
+    const hand = document.createElement('div');
+    hand.className = 'uno-hand';
+
+    if (player.visibleCards.length > 0) {
+      player.visibleCards.forEach((visibleCard) => {
+        const token = document.createElement('span');
+        token.className = 'uno-card-token';
+        token.textContent = visibleCard.label;
+        hand.append(token);
+      });
+    } else {
+      const hidden = document.createElement('p');
+      hidden.textContent = 'Hole cards hidden.';
+      hand.append(hidden);
+    }
+
+    card.append(title, summary, hand);
+    seatsGrid.append(card);
+  });
+
+  screen.append(seatsGrid);
+  screen.append(createSessionActionsCard(snapshot, pokerRuntime.session));
+
+  return screen;
+}
+
+function createTcgScreen() {
+  ensureTcgSession();
+
+  const snapshot = tcgRuntime.snapshot!;
+  const catalogEntry = defaultGameCatalog.get('arcane-duel');
+  const screen = createScreenFrame(
+    'Shared gameplay example',
+    'Arcane Duel',
+    'Trading card game MVP with mana growth, creatures, spells, combat, graveyards, and simple bots.',
+  );
+
+  const topBar = document.createElement('div');
+  topBar.className = 'uno-toolbar';
+
+  const restartButton = document.createElement('button');
+  restartButton.type = 'button';
+  restartButton.className = 'upload-button upload-button--primary';
+  restartButton.textContent = 'Restart duel';
+  restartButton.addEventListener('click', () => {
+    tcgRuntime.session?.restart();
+  });
+
+  const catalogBadge = document.createElement('span');
+  catalogBadge.className = 'shared-package-label';
+  catalogBadge.textContent = `${catalogEntry?.definition.name ?? 'Arcane Duel'} ${catalogEntry?.metadata?.route ?? '/tcg'}`;
+
+  topBar.append(restartButton, catalogBadge);
+  screen.append(topBar);
+
+  const presetCard = document.createElement('article');
+  presetCard.className = 'overview-card';
+  presetCard.innerHTML = '<h2>Duel presets</h2><p>Run a hotseat duel or practice against the deterministic bot player.</p>';
+
+  const presetRow = document.createElement('div');
+  presetRow.className = 'settings-toggle-group';
+
+  for (const preset of tcgExamplePresets) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = preset.id === tcgRuntime.presetId ? 'settings-chip is-active' : 'settings-chip';
+    button.textContent = preset.label;
+    button.addEventListener('click', () => {
+      tcgRuntime.presetId = preset.id;
+      replaceTcgSession();
+      renderApp();
+    });
+    presetRow.append(button);
+  }
+
+  presetCard.append(presetRow);
+  screen.append(presetCard);
+
+  const statusCard = document.createElement('article');
+  statusCard.className = 'overview-card';
+  statusCard.innerHTML = `<h2>Duel status</h2><p>${snapshot.view.status}</p>`;
+  screen.append(statusCard);
+
+  const seatsGrid = document.createElement('div');
+  seatsGrid.className = 'uno-seats-grid';
+
+  snapshot.view.players.forEach((player) => {
+    const card = document.createElement('article');
+    card.className = player.isActive ? 'overview-card uno-seat-card is-active' : 'overview-card uno-seat-card';
+
+    const title = document.createElement('h2');
+    title.textContent = `${player.displayName} (${player.controller})`;
+
+    const summary = document.createElement('p');
+    summary.textContent = `Life ${player.life} · mana ${player.mana}/${player.maxMana} · deck ${player.deckCount} · hand ${player.handCount}`;
+
+    const battlefield = document.createElement('div');
+    battlefield.className = 'uno-hand';
+
+    if (player.battlefield.length > 0) {
+      player.battlefield.forEach((unit) => {
+        const token = document.createElement('span');
+        token.className = 'uno-card-token';
+        token.textContent = `${unit.card.label} ${unit.card.attack}/${(unit.card.health ?? 0) - unit.damage}`;
+        battlefield.append(token);
+      });
+    } else {
+      const empty = document.createElement('p');
+      empty.textContent = 'No creatures in play.';
+      battlefield.append(empty);
+    }
+
+    const hand = document.createElement('p');
+    hand.textContent = player.visibleHand.length > 0
+      ? `Hand: ${player.visibleHand.map((visibleCard) => visibleCard.label).join(', ')}`
+      : 'Hand hidden.';
+
+    card.append(title, summary, battlefield, hand);
+    seatsGrid.append(card);
+  });
+
+  screen.append(seatsGrid);
+  screen.append(createSessionActionsCard(snapshot, tcgRuntime.session));
 
   return screen;
 }
@@ -726,6 +1119,16 @@ function renderApp() {
 
   if (route === 'uno') {
     app.append(createUnoScreen());
+    return;
+  }
+
+  if (route === 'poker') {
+    app.append(createPokerScreen());
+    return;
+  }
+
+  if (route === 'tcg') {
+    app.append(createTcgScreen());
     return;
   }
 

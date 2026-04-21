@@ -8,6 +8,10 @@ test('desktop renderer uses the preload-backed desktop platform APIs', () => {
 
   assert.match(source, /@repo\/game-session/);
   assert.match(source, /createUnoScreen/);
+  assert.match(source, /createPokerScreen/);
+  assert.match(source, /createTcgScreen/);
+  assert.match(source, /createPokerAdapter/);
+  assert.match(source, /createTcgAdapter/);
   assert.match(source, /pendingHotseatPlayerId/);
   assert.match(source, /Restart match/);
   assert.match(source, /Reveal next hand/);
@@ -33,6 +37,8 @@ test('desktop navbar component provides app navigation links including documents
   assert.match(source, /Desktop App/);
   assert.match(source, /Home/);
   assert.match(source, /UNO-style/);
+  assert.match(source, /Hold'em/);
+  assert.match(source, /Arcane Duel/);
   assert.match(source, /Settings/);
   assert.match(source, /Documents/);
   assert.match(source, /Three\.js/);
@@ -40,6 +46,8 @@ test('desktop navbar component provides app navigation links including documents
   assert.match(source, /Communication/);
   assert.match(source, /#\/documents/);
   assert.match(source, /#\/uno/);
+  assert.match(source, /#\/poker/);
+  assert.match(source, /#\/tcg/);
   assert.match(source, /#\/communication/);
   assert.match(source, /#\/react-hook-form/);
   assert.match(source, /#\/three/);

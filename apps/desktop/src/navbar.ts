@@ -1,6 +1,8 @@
 export type AppRoute =
   | 'home'
   | 'uno'
+  | 'poker'
+  | 'tcg'
   | 'settings'
   | 'documents'
   | 'three'
@@ -31,6 +33,20 @@ export function createNavbar(route: AppRoute): HTMLElement {
   unoLink.textContent = 'UNO-style';
   if (route === 'uno') {
     unoLink.className = 'is-active';
+  }
+
+  const pokerLink = document.createElement('a');
+  pokerLink.href = '#/poker';
+  pokerLink.textContent = "Hold'em";
+  if (route === 'poker') {
+    pokerLink.className = 'is-active';
+  }
+
+  const tcgLink = document.createElement('a');
+  tcgLink.href = '#/tcg';
+  tcgLink.textContent = 'Arcane Duel';
+  if (route === 'tcg') {
+    tcgLink.className = 'is-active';
   }
 
   const settingsLink = document.createElement('a');
@@ -78,6 +94,8 @@ export function createNavbar(route: AppRoute): HTMLElement {
   actions.append(
     homeLink,
     unoLink,
+    pokerLink,
+    tcgLink,
     settingsLink,
     documentsLink,
     threeLink,

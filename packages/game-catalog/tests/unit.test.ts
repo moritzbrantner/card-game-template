@@ -71,9 +71,15 @@ test('createGameCatalog rejects duplicate registrations', () => {
   );
 });
 
-test('defaultGameCatalog registers the UNO-style sample', () => {
+test('defaultGameCatalog registers the card game samples', () => {
   const unoEntry = defaultGameCatalog.get('uno-style');
+  const pokerEntry = defaultGameCatalog.get('texas-holdem');
+  const tcgEntry = defaultGameCatalog.get('arcane-duel');
 
   assert.equal(unoEntry?.definition.name, 'UNO-style');
   assert.equal(unoEntry?.metadata?.route, '/uno');
+  assert.equal(pokerEntry?.definition.name, "Texas Hold'em");
+  assert.equal(pokerEntry?.metadata?.route, '/poker');
+  assert.equal(tcgEntry?.definition.name, 'Arcane Duel');
+  assert.equal(tcgEntry?.metadata?.route, '/tcg');
 });
