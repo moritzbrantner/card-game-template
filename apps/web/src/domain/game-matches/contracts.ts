@@ -12,6 +12,13 @@ import type {
   GameReplayMetadata,
 } from '@repo/game-contracts';
 import type {
+  PokerExamplePresetId,
+  PokerMove,
+  PokerPlayerView,
+  PokerSetup,
+  PokerState,
+} from '@repo/game-poker';
+import type {
   UnoExamplePresetId,
   UnoMove,
   UnoPlayerView,
@@ -20,10 +27,17 @@ import type {
   UnoState,
 } from '@repo/game-uno';
 
-export type MatchOwnerIdentity = Extract<PlayerIdentityRef, { kind: 'account' } | { kind: 'guest' }>;
+export type MatchOwnerIdentity = Extract<
+  PlayerIdentityRef,
+  { kind: 'account' } | { kind: 'guest' }
+>;
 
-export type GameMatchAnalysisRecord = {
+export type GenericGameMatchAnalysisRecord = {
   generic: MatchReplayAnalysis;
+  [gameAnalysisKey: string]: unknown;
+};
+
+export type GameMatchAnalysisRecord = GenericGameMatchAnalysisRecord & {
   uno: UnoReplayAnalysis;
 };
 
@@ -41,7 +55,7 @@ export type PersistedGameMatchRecord<
   TGameId extends GameId = GameId,
   TState = unknown,
   TMove extends GameMove = GameMove,
-  TAnalysis = unknown,
+  TAnalysis = GenericGameMatchAnalysisRecord,
   TSetup = unknown,
 > = {
   matchId: string;
@@ -72,6 +86,14 @@ export type PersistedUnoMatchRecord = PersistedGameMatchRecord<
   UnoSetup
 >;
 
+export type PersistedPokerMatchRecord = PersistedGameMatchRecord<
+  'texas-holdem',
+  PokerState,
+  PokerMove,
+  GenericGameMatchAnalysisRecord,
+  PokerSetup
+>;
+
 export type PersistedGameMatchSummaryDto<
   TGameId extends GameId = GameId,
   TAnalysis = unknown,
@@ -88,7 +110,14 @@ export type PersistedGameMatchSummaryDto<
   lastSequence: number;
 };
 
-export type PersistedUnoMatchSummaryDto = PersistedGameMatchSummaryDto<'uno-style', GameMatchAnalysisRecord>;
+export type PersistedUnoMatchSummaryDto = PersistedGameMatchSummaryDto<
+  'uno-style',
+  GameMatchAnalysisRecord
+>;
+export type PersistedPokerMatchSummaryDto = PersistedGameMatchSummaryDto<
+  'texas-holdem',
+  GenericGameMatchAnalysisRecord
+>;
 
 export type PersistedUnoMatchSnapshotDto = PersistedUnoMatchSummaryDto & {
   executionMode: 'server-authoritative';
@@ -99,6 +128,15 @@ export type PersistedUnoMatchSnapshotDto = PersistedUnoMatchSummaryDto & {
   view: UnoPlayerView;
 };
 
+export type PersistedPokerMatchSnapshotDto = PersistedPokerMatchSummaryDto & {
+  executionMode: 'server-authoritative';
+  replayFormatVersion: ReplayFormatVersion;
+  match: MatchState<PokerState>;
+  legalMoves: readonly PokerMove[];
+  selectedActorPlayerId: string | null;
+  view: PokerPlayerView;
+};
+
 export type PersistedUnoReplayDto = {
   summary: PersistedUnoMatchSummaryDto;
   replay: MatchReplay<UnoState, UnoMove>;
@@ -107,9 +145,21 @@ export type PersistedUnoReplayDto = {
   unoAnalysis: UnoReplayAnalysis;
 };
 
+export type PersistedPokerReplayDto = {
+  summary: PersistedPokerMatchSummaryDto;
+  replay: MatchReplay<PokerState, PokerMove, PokerSetup>;
+  moves: readonly MatchReplayAcceptedMove<PokerMove>[];
+  analysis: MatchReplayAnalysis;
+};
+
 export type ListUnoMatchesResult = {
   active: readonly PersistedUnoMatchSummaryDto[];
   recent: readonly PersistedUnoMatchSummaryDto[];
+};
+
+export type ListPokerMatchesResult = {
+  active: readonly PersistedPokerMatchSummaryDto[];
+  recent: readonly PersistedPokerMatchSummaryDto[];
 };
 
 export type CreateUnoMatchInput = {
@@ -117,6 +167,15 @@ export type CreateUnoMatchInput = {
   displayName?: string | null;
 };
 
+export type CreatePokerMatchInput = {
+  presetId: PokerExamplePresetId;
+  displayName?: string | null;
+};
+
 export type SubmitUnoMoveInput = {
   move: UnoMove;
+};
+
+export type SubmitPokerMoveInput = {
+  move: PokerMove;
 };

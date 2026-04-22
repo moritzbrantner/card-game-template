@@ -12,6 +12,7 @@ export type PlayerConnectionStatus = 'connected' | 'reconnecting' | 'offline';
 export type RoomSeat = {
   seat: number;
   playerId?: PlayerId;
+  displayName?: string;
   ready: boolean;
   connectionStatus: PlayerConnectionStatus;
 };

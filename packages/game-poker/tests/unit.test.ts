@@ -7,10 +7,15 @@ import {
   createPokerBots,
   defaultPokerRules,
   evaluateTexasHoldemHand,
+  parsePokerMove,
+  parsePokerSetup,
   type PokerCard,
   type PokerState,
 } from '../src/index.ts';
-import type { MatchState, PlayerProfile } from '../../game-contracts/src/index.ts';
+import type {
+  MatchState,
+  PlayerProfile,
+} from '../../game-contracts/src/index.ts';
 
 const adapter = createPokerAdapter();
 const players: readonly PlayerProfile[] = [
@@ -27,7 +32,10 @@ function card(rank: PokerCard['rank'], suit: PokerCard['suit']): PokerCard {
   };
 }
 
-function createState(state: Partial<PokerState>, activePlayerId = 'p1'): MatchState<PokerState> {
+function createState(
+  state: Partial<PokerState>,
+  activePlayerId = 'p1',
+): MatchState<PokerState> {
   return {
     matchId: 'match-poker',
     gameId: 'texas-holdem',
@@ -84,6 +92,55 @@ test("Texas Hold'em initial state is deterministic for the same seed", () => {
 
   assert.deepEqual(first.state.hands.p1, second.state.hands.p1);
   assert.deepEqual(first.state.deck.slice(0, 5), second.state.deck.slice(0, 5));
+});
+
+test('poker setup and moves parse unknown API payloads', () => {
+  assert.deepEqual(
+    parsePokerSetup({
+      seed: 'api-seed',
+      rules: {
+        betSizes: [5, 10],
+        startingStack: 80,
+      },
+    }),
+    {
+      seed: 'api-seed',
+      rules: {
+        betSizes: [5, 10],
+        startingStack: 80,
+      },
+    },
+  );
+
+  assert.deepEqual(
+    parsePokerMove({
+      playerId: 'p1',
+      kind: 'bet',
+      createdAt: '2026-04-21T12:00:00.000Z',
+      payload: {
+        amount: 10,
+      },
+    }),
+    {
+      playerId: 'p1',
+      kind: 'bet',
+      createdAt: '2026-04-21T12:00:00.000Z',
+      payload: {
+        amount: 10,
+      },
+    },
+  );
+
+  assert.throws(
+    () =>
+      parsePokerMove({
+        playerId: 'p1',
+        kind: 'bet',
+        createdAt: '2026-04-21T12:00:00.000Z',
+        payload: {},
+      }),
+    /amount/,
+  );
 });
 
 test('bet and call move the pot and reveal the flop', () => {

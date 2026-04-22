@@ -27,19 +27,19 @@ This is the initial roadmap implied by the current product brief.
 - `packages/game-session`: local sessions, server-authoritative sessions, replay reconstruction, and replay integrity checks
 - `packages/game-uno`, `packages/game-poker`, `packages/game-tcg`: sample game adapters with local sessions, bots, and unit/fixture coverage
 - `packages/game-catalog`: shared catalog registration for all sample games
-- `apps/web`: persisted server-authoritative UNO-style matches with guest/account ownership, move logs, replay analysis, and match history
+- `apps/web`: persisted server-authoritative UNO-style and poker matches with guest/account ownership, private rooms, move logs, replay analysis, and match history
 - `apps/mobile` and `apps/desktop`: local-first UNO-style, poker, and TCG demos backed by shared game packages
 
 ## Recommended next queue
 
-| ID    | Status  | Topic                           | Scope                                                                      | Acceptance Criteria                                                                 |
-| ----- | ------- | ------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| N-001 | pending | Generic persisted match service | Remove UNO-only persistence assumptions from the web match repository      | Web persistence can store and resume any registered game adapter by `gameId`         |
-| N-002 | pending | Poker persisted web path        | Add server-authoritative Texas Hold'em create/resume/submit/replay support | Poker can be played on web through the same persisted match service as UNO           |
-| N-003 | pending | Private room backbone           | Add room lifecycle, seats, ready state, and host controls                  | Two human players can join a private room before a match starts                      |
-| N-004 | pending | Realtime fan-out                | Add polling/SSE/WebSocket delivery for accepted moves and room updates     | Connected clients receive accepted authoritative state without manual refresh        |
-| N-005 | pending | Cross-platform online client    | Share match API/client contracts with mobile and desktop                   | Mobile and desktop can authenticate and submit online moves through typed adapters   |
-| N-006 | pending | Player history and stats        | Aggregate match history and replay-derived stats by player and game        | Account profiles show recent matches, win/loss summaries, and replay links          |
+| ID    | Status    | Topic                           | Scope                                                                      | Acceptance Criteria                                                                 |
+| ----- | --------- | ------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| N-001 | completed | Generic persisted match service | Remove UNO-only persistence assumptions from the web match repository      | Web persistence can store and resume any registered game adapter by `gameId`         |
+| N-002 | completed | Poker persisted web path        | Add server-authoritative Texas Hold'em create/resume/submit/replay support | Poker can be played on web through the same persisted match service as UNO           |
+| N-003 | completed | Private room backbone           | Add room lifecycle, seats, ready state, and host controls                  | Two human players can join a private room before a match starts                      |
+| N-004 | pending   | Realtime fan-out                | Add polling/SSE/WebSocket delivery for accepted moves and room updates     | Connected clients receive accepted authoritative state without manual refresh        |
+| N-005 | pending   | Cross-platform online client    | Share match API/client contracts with mobile and desktop                   | Mobile and desktop can authenticate and submit online moves through typed adapters   |
+| N-006 | pending   | Player history and stats        | Aggregate match history and replay-derived stats by player and game        | Account profiles show recent matches, win/loss summaries, and replay links          |
 
 ## Execution notes
 

@@ -19,7 +19,20 @@ import type {
 } from '@repo/game-session';
 
 export type PokerSuit = 'clubs' | 'diamonds' | 'hearts' | 'spades';
-export type PokerRank = '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K' | 'A';
+export type PokerRank =
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '7'
+  | '8'
+  | '9'
+  | '10'
+  | 'J'
+  | 'Q'
+  | 'K'
+  | 'A';
 export type PokerPhase = 'preflop' | 'flop' | 'turn' | 'river' | 'complete';
 
 export type PokerCard = {
@@ -73,7 +86,16 @@ export type PokerCheckMove = GameMove<Record<string, never>>;
 export type PokerFoldMove = GameMove<Record<string, never>>;
 export type PokerCallMove = GameMove<Record<string, never>>;
 export type PokerBetMove = GameMove<{ amount: number }>;
-export type PokerMove = PokerCheckMove | PokerFoldMove | PokerCallMove | PokerBetMove;
+export type PokerMove =
+  | PokerCheckMove
+  | PokerFoldMove
+  | PokerCallMove
+  | PokerBetMove;
+
+export type PokerSetup = {
+  rules?: Partial<PokerRules>;
+  seed?: number | string;
+};
 
 export type PokerPlayerView = {
   activePlayerId: PlayerId;
@@ -135,8 +157,24 @@ export const pokerDefinition: GameDefinition = {
 };
 
 const SUITS: readonly PokerSuit[] = ['clubs', 'diamonds', 'hearts', 'spades'];
-const RANKS: readonly PokerRank[] = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-const RANK_VALUES = new Map<PokerRank, number>(RANKS.map((rank, index) => [rank, index + 2]));
+const RANKS: readonly PokerRank[] = [
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  '10',
+  'J',
+  'Q',
+  'K',
+  'A',
+];
+const RANK_VALUES = new Map<PokerRank, number>(
+  RANKS.map((rank, index) => [rank, index + 2]),
+);
 const HAND_STRENGTH: Record<PokerHandRank, number> = {
   'high-card': 1,
   pair: 2,
@@ -149,6 +187,127 @@ const HAND_STRENGTH: Record<PokerHandRank, number> = {
   'straight-flush': 9,
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parseOptionalNumber(
+  value: unknown,
+  fallback: number,
+  label: string,
+): number {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new TypeError(`${label} must be a finite number.`);
+  }
+
+  return value;
+}
+
+export function parsePokerSetup(value: unknown): PokerSetup {
+  if (value === undefined || value === null) {
+    return {};
+  }
+
+  if (!isRecord(value)) {
+    throw new TypeError('Poker setup must be an object.');
+  }
+
+  const setup: PokerSetup = {};
+
+  if (value.seed !== undefined) {
+    if (typeof value.seed !== 'string' && typeof value.seed !== 'number') {
+      throw new TypeError('Poker setup seed must be a string or number.');
+    }
+
+    setup.seed = value.seed;
+  }
+
+  if (value.rules !== undefined) {
+    if (!isRecord(value.rules)) {
+      throw new TypeError('Poker setup rules must be an object.');
+    }
+
+    const rules: Partial<PokerRules> = {
+      startingStack: parseOptionalNumber(
+        value.rules.startingStack,
+        defaultPokerRules.startingStack,
+        'Poker starting stack',
+      ),
+    };
+
+    if (value.rules.betSizes !== undefined) {
+      if (!Array.isArray(value.rules.betSizes)) {
+        throw new TypeError('Poker bet sizes must be an array.');
+      }
+
+      rules.betSizes = value.rules.betSizes.map((amount) =>
+        parseOptionalNumber(
+          amount,
+          defaultPokerRules.betSizes[0] ?? 10,
+          'Poker bet size',
+        ),
+      );
+    }
+
+    setup.rules = rules;
+  }
+
+  return setup;
+}
+
+export function parsePokerMove(value: unknown): PokerMove {
+  if (!isRecord(value)) {
+    throw new TypeError('Poker move must be an object.');
+  }
+
+  if (typeof value.playerId !== 'string' || value.playerId.length === 0) {
+    throw new TypeError('Poker move playerId is required.');
+  }
+
+  if (typeof value.createdAt !== 'string' || value.createdAt.length === 0) {
+    throw new TypeError('Poker move createdAt is required.');
+  }
+
+  if (
+    value.kind === 'check' ||
+    value.kind === 'fold' ||
+    value.kind === 'call'
+  ) {
+    return {
+      playerId: value.playerId,
+      kind: value.kind,
+      createdAt: value.createdAt,
+      payload: {},
+    };
+  }
+
+  if (value.kind === 'bet') {
+    const payload = isRecord(value.payload) ? value.payload : {};
+
+    if (
+      typeof payload.amount !== 'number' ||
+      !Number.isFinite(payload.amount)
+    ) {
+      throw new TypeError('Poker bet amount must be a finite number.');
+    }
+
+    return {
+      playerId: value.playerId,
+      kind: 'bet',
+      createdAt: value.createdAt,
+      payload: {
+        amount: payload.amount,
+      },
+    };
+  }
+
+  throw new TypeError('Poker move kind is not supported.');
+}
+
 function createDeck(): PokerCard[] {
   return SUITS.flatMap((suit) =>
     RANKS.map((rank) => ({
@@ -160,14 +319,24 @@ function createDeck(): PokerCard[] {
   );
 }
 
-function nextPlayerId(players: readonly PlayerProfile[], currentPlayerId: PlayerId): PlayerId {
-  const activePlayers = players.filter((player) => player.playerId !== currentPlayerId);
-  const currentIndex = players.findIndex((player) => player.playerId === currentPlayerId);
+function nextPlayerId(
+  players: readonly PlayerProfile[],
+  currentPlayerId: PlayerId,
+): PlayerId {
+  const activePlayers = players.filter(
+    (player) => player.playerId !== currentPlayerId,
+  );
+  const currentIndex = players.findIndex(
+    (player) => player.playerId === currentPlayerId,
+  );
 
   for (let offset = 1; offset <= players.length; offset += 1) {
-    const candidate = players[(currentIndex + offset + players.length) % players.length]!;
+    const candidate =
+      players[(currentIndex + offset + players.length) % players.length]!;
 
-    if (activePlayers.some((player) => player.playerId === candidate.playerId)) {
+    if (
+      activePlayers.some((player) => player.playerId === candidate.playerId)
+    ) {
       return candidate.playerId;
     }
   }
@@ -180,12 +349,18 @@ function nextEligiblePlayerId(
   state: PokerState,
   currentPlayerId: PlayerId,
 ): PlayerId {
-  const currentIndex = players.findIndex((player) => player.playerId === currentPlayerId);
+  const currentIndex = players.findIndex(
+    (player) => player.playerId === currentPlayerId,
+  );
 
   for (let offset = 1; offset <= players.length; offset += 1) {
-    const candidate = players[(currentIndex + offset + players.length) % players.length]!;
+    const candidate =
+      players[(currentIndex + offset + players.length) % players.length]!;
 
-    if (!state.foldedPlayerIds.includes(candidate.playerId) && state.stacks[candidate.playerId] !== 0) {
+    if (
+      !state.foldedPlayerIds.includes(candidate.playerId) &&
+      state.stacks[candidate.playerId] !== 0
+    ) {
       return candidate.playerId;
     }
   }
@@ -193,29 +368,45 @@ function nextEligiblePlayerId(
   return currentPlayerId;
 }
 
-function activePlayerIds(players: readonly PlayerProfile[], state: PokerState): PlayerId[] {
+function activePlayerIds(
+  players: readonly PlayerProfile[],
+  state: PokerState,
+): PlayerId[] {
   return players
     .map((player) => player.playerId)
     .filter((playerId) => !state.foldedPlayerIds.includes(playerId));
 }
 
 function canAct(playerId: PlayerId, state: PokerState): boolean {
-  return !state.foldedPlayerIds.includes(playerId) && (state.stacks[playerId] ?? 0) > 0;
+  return (
+    !state.foldedPlayerIds.includes(playerId) &&
+    (state.stacks[playerId] ?? 0) > 0
+  );
 }
 
-function isBettingRoundComplete(players: readonly PlayerProfile[], state: PokerState): boolean {
+function isBettingRoundComplete(
+  players: readonly PlayerProfile[],
+  state: PokerState,
+): boolean {
   const actingPlayerIds = players
     .map((player) => player.playerId)
     .filter((playerId) => canAct(playerId, state));
 
   return (
     actingPlayerIds.length <= 1 ||
-    actingPlayerIds.every((playerId) => state.actedPlayerIds.includes(playerId)) &&
-      actingPlayerIds.every((playerId) => (state.betsThisRound[playerId] ?? 0) === state.currentBet)
+    (actingPlayerIds.every((playerId) =>
+      state.actedPlayerIds.includes(playerId),
+    ) &&
+      actingPlayerIds.every(
+        (playerId) => (state.betsThisRound[playerId] ?? 0) === state.currentBet,
+      ))
   );
 }
 
-function compareScores(left: readonly number[], right: readonly number[]): number {
+function compareScores(
+  left: readonly number[],
+  right: readonly number[],
+): number {
   for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
     const diff = (left[index] ?? 0) - (right[index] ?? 0);
 
@@ -228,14 +419,18 @@ function compareScores(left: readonly number[], right: readonly number[]): numbe
 }
 
 function evaluateFiveCards(cards: readonly PokerCard[]): PokerHandEvaluation {
-  const values = cards.map((card) => RANK_VALUES.get(card.rank) ?? 0).sort((left, right) => right - left);
+  const values = cards
+    .map((card) => RANK_VALUES.get(card.rank) ?? 0)
+    .sort((left, right) => right - left);
   const counts = new Map<number, number>();
 
   for (const value of values) {
     counts.set(value, (counts.get(value) ?? 0) + 1);
   }
 
-  const countGroups = [...counts.entries()].sort((left, right) => right[1] - left[1] || right[0] - left[0]);
+  const countGroups = [...counts.entries()].sort(
+    (left, right) => right[1] - left[1] || right[0] - left[0],
+  );
   const isFlush = cards.every((card) => card.suit === cards[0]?.suit);
   const uniqueValues = [...new Set(values)].sort((left, right) => right - left);
   const straightHigh =
@@ -246,14 +441,22 @@ function evaluateFiveCards(cards: readonly PokerCard[]): PokerHandEvaluation {
         : null;
 
   if (isFlush && straightHigh) {
-    return { description: 'Straight flush', rank: 'straight-flush', score: [HAND_STRENGTH['straight-flush'], straightHigh] };
+    return {
+      description: 'Straight flush',
+      rank: 'straight-flush',
+      score: [HAND_STRENGTH['straight-flush'], straightHigh],
+    };
   }
 
   if (countGroups[0]?.[1] === 4) {
     return {
       description: 'Four of a kind',
       rank: 'four-kind',
-      score: [HAND_STRENGTH['four-kind'], countGroups[0][0], countGroups[1]?.[0] ?? 0],
+      score: [
+        HAND_STRENGTH['four-kind'],
+        countGroups[0][0],
+        countGroups[1]?.[0] ?? 0,
+      ],
     };
   }
 
@@ -261,20 +464,35 @@ function evaluateFiveCards(cards: readonly PokerCard[]): PokerHandEvaluation {
     return {
       description: 'Full house',
       rank: 'full-house',
-      score: [HAND_STRENGTH['full-house'], countGroups[0][0], countGroups[1][0]],
+      score: [
+        HAND_STRENGTH['full-house'],
+        countGroups[0][0],
+        countGroups[1][0],
+      ],
     };
   }
 
   if (isFlush) {
-    return { description: 'Flush', rank: 'flush', score: [HAND_STRENGTH.flush, ...values] };
+    return {
+      description: 'Flush',
+      rank: 'flush',
+      score: [HAND_STRENGTH.flush, ...values],
+    };
   }
 
   if (straightHigh) {
-    return { description: 'Straight', rank: 'straight', score: [HAND_STRENGTH.straight, straightHigh] };
+    return {
+      description: 'Straight',
+      rank: 'straight',
+      score: [HAND_STRENGTH.straight, straightHigh],
+    };
   }
 
   if (countGroups[0]?.[1] === 3) {
-    const kickers = countGroups.slice(1).map(([value]) => value).sort((left, right) => right - left);
+    const kickers = countGroups
+      .slice(1)
+      .map(([value]) => value)
+      .sort((left, right) => right - left);
     return {
       description: 'Three of a kind',
       rank: 'three-kind',
@@ -283,7 +501,10 @@ function evaluateFiveCards(cards: readonly PokerCard[]): PokerHandEvaluation {
   }
 
   if (countGroups[0]?.[1] === 2 && countGroups[1]?.[1] === 2) {
-    const pairs = countGroups.slice(0, 2).map(([value]) => value).sort((left, right) => right - left);
+    const pairs = countGroups
+      .slice(0, 2)
+      .map(([value]) => value)
+      .sort((left, right) => right - left);
     return {
       description: 'Two pair',
       rank: 'two-pair',
@@ -292,7 +513,10 @@ function evaluateFiveCards(cards: readonly PokerCard[]): PokerHandEvaluation {
   }
 
   if (countGroups[0]?.[1] === 2) {
-    const kickers = countGroups.slice(1).map(([value]) => value).sort((left, right) => right - left);
+    const kickers = countGroups
+      .slice(1)
+      .map(([value]) => value)
+      .sort((left, right) => right - left);
     return {
       description: 'Pair',
       rank: 'pair',
@@ -300,10 +524,16 @@ function evaluateFiveCards(cards: readonly PokerCard[]): PokerHandEvaluation {
     };
   }
 
-  return { description: 'High card', rank: 'high-card', score: [HAND_STRENGTH['high-card'], ...values] };
+  return {
+    description: 'High card',
+    rank: 'high-card',
+    score: [HAND_STRENGTH['high-card'], ...values],
+  };
 }
 
-export function evaluateTexasHoldemHand(cards: readonly PokerCard[]): PokerHandEvaluation {
+export function evaluateTexasHoldemHand(
+  cards: readonly PokerCard[],
+): PokerHandEvaluation {
   if (cards.length < 5) {
     throw new Error('Texas Holdem evaluation requires at least five cards.');
   }
@@ -367,20 +597,30 @@ function revealForPhase(deck: readonly PokerCard[], phase: PokerPhase) {
   };
 }
 
-function completeByShowdown(state: MatchState<PokerState>): MatchState<PokerState> {
+function completeByShowdown(
+  state: MatchState<PokerState>,
+): MatchState<PokerState> {
   const showdown = Object.fromEntries(
     activePlayerIds(state.players, state.state).map((playerId) => [
       playerId,
-      evaluateTexasHoldemHand([...(state.state.hands[playerId] ?? []), ...state.state.communityCards]),
+      evaluateTexasHoldemHand([
+        ...(state.state.hands[playerId] ?? []),
+        ...state.state.communityCards,
+      ]),
     ]),
   ) as Record<PlayerId, PokerHandEvaluation>;
-  const bestScore = Object.values(showdown)
-    .map((evaluation) => evaluation.score)
-    .sort((left, right) => compareScores(right, left))[0] ?? [];
+  const bestScore =
+    Object.values(showdown)
+      .map((evaluation) => evaluation.score)
+      .sort((left, right) => compareScores(right, left))[0] ?? [];
   const winnerIds = Object.entries(showdown)
-    .filter(([, evaluation]) => compareScores(evaluation.score, bestScore) === 0)
+    .filter(
+      ([, evaluation]) => compareScores(evaluation.score, bestScore) === 0,
+    )
     .map(([playerId]) => playerId);
-  const winningShare = Math.floor(state.state.pot / Math.max(winnerIds.length, 1));
+  const winningShare = Math.floor(
+    state.state.pot / Math.max(winnerIds.length, 1),
+  );
   const stacks = { ...state.state.stacks };
 
   for (const winnerId of winnerIds) {
@@ -403,7 +643,10 @@ function completeByShowdown(state: MatchState<PokerState>): MatchState<PokerStat
   };
 }
 
-function advanceRound(state: MatchState<PokerState>, lastActorId: PlayerId): MatchState<PokerState> {
+function advanceRound(
+  state: MatchState<PokerState>,
+  lastActorId: PlayerId,
+): MatchState<PokerState> {
   if (activePlayerIds(state.players, state.state).length === 1) {
     const winnerId = activePlayerIds(state.players, state.state)[0]!;
     return {
@@ -425,7 +668,11 @@ function advanceRound(state: MatchState<PokerState>, lastActorId: PlayerId): Mat
   if (!isBettingRoundComplete(state.players, state.state)) {
     return {
       ...state,
-      activePlayerId: nextEligiblePlayerId(state.players, state.state, lastActorId),
+      activePlayerId: nextEligiblePlayerId(
+        state.players,
+        state.state,
+        lastActorId,
+      ),
     };
   }
 
@@ -437,12 +684,19 @@ function advanceRound(state: MatchState<PokerState>, lastActorId: PlayerId): Mat
 
   return {
     ...state,
-    activePlayerId: nextEligiblePlayerId(state.players, state.state, state.players[state.players.length - 1]?.playerId ?? lastActorId),
+    activePlayerId: nextEligiblePlayerId(
+      state.players,
+      state.state,
+      state.players[state.players.length - 1]?.playerId ?? lastActorId,
+    ),
     state: {
       ...state.state,
       actedPlayerIds: [],
       betsThisRound: {},
-      communityCards: [...state.state.communityCards, ...revealed.communityCardsToAdd],
+      communityCards: [
+        ...state.state.communityCards,
+        ...revealed.communityCardsToAdd,
+      ],
       currentBet: 0,
       deck: revealed.deck,
       lastEvent: `Dealt the ${revealed.phase}`,
@@ -451,7 +705,10 @@ function advanceRound(state: MatchState<PokerState>, lastActorId: PlayerId): Mat
   };
 }
 
-function legalMovesForPlayer(state: MatchState<PokerState>, playerId: PlayerId): PokerMove[] {
+function legalMovesForPlayer(
+  state: MatchState<PokerState>,
+  playerId: PlayerId,
+): PokerMove[] {
   if (state.state.phase === 'complete' || !canAct(playerId, state.state)) {
     return [];
   }
@@ -500,16 +757,20 @@ function legalMovesForPlayer(state: MatchState<PokerState>, playerId: PlayerId):
 }
 
 export function createPokerAdapter(): GameAdapter<
-  {
-    rules?: Partial<PokerRules>;
-    seed?: number | string;
-  },
+  PokerSetup,
   PokerState,
   PokerMove
 > {
   return {
     definition: pokerDefinition,
-    createInitialState({ executionMode, matchId, players, setup }): MatchState<PokerState> {
+    validateSetup: parsePokerSetup,
+    validateMove: parsePokerMove,
+    createInitialState({
+      executionMode,
+      matchId,
+      players,
+      setup,
+    }): MatchState<PokerState> {
       if (players.length < 2 || players.length > 6) {
         throw new Error("Texas Hold'em MVP supports between 2 and 6 seats.");
       }
@@ -548,7 +809,9 @@ export function createPokerAdapter(): GameAdapter<
           pot: 0,
           rules,
           seed,
-          stacks: Object.fromEntries(players.map((player) => [player.playerId, rules.startingStack])),
+          stacks: Object.fromEntries(
+            players.map((player) => [player.playerId, rules.startingStack]),
+          ),
           showdown: null,
           winnerIds: [],
         },
@@ -558,19 +821,26 @@ export function createPokerAdapter(): GameAdapter<
       return legalMovesForPlayer(state, state.activePlayerId);
     },
     isLegalMove(state, move): boolean {
-      return this.listLegalMoves(state).some((candidate) => areMovesEquivalent(candidate, move));
+      return this.listLegalMoves(state).some((candidate) =>
+        areMovesEquivalent(candidate, move),
+      );
     },
     applyMove(state, move): MatchState<PokerState> {
       const nextState: PokerState = {
         ...state.state,
-        actedPlayerIds: [...new Set([...state.state.actedPlayerIds, move.playerId])],
+        actedPlayerIds: [
+          ...new Set([...state.state.actedPlayerIds, move.playerId]),
+        ],
         betsThisRound: { ...state.state.betsThisRound },
         foldedPlayerIds: [...state.state.foldedPlayerIds],
         stacks: { ...state.state.stacks },
       };
 
       if (move.kind === 'fold') {
-        nextState.foldedPlayerIds = [...nextState.foldedPlayerIds, move.playerId];
+        nextState.foldedPlayerIds = [
+          ...nextState.foldedPlayerIds,
+          move.playerId,
+        ];
         nextState.lastEvent = `${move.playerId} folded`;
       }
 
@@ -579,9 +849,14 @@ export function createPokerAdapter(): GameAdapter<
       }
 
       if (move.kind === 'call') {
-        const toCall = Math.min(nextState.currentBet - (nextState.betsThisRound[move.playerId] ?? 0), nextState.stacks[move.playerId] ?? 0);
-        nextState.betsThisRound[move.playerId] = (nextState.betsThisRound[move.playerId] ?? 0) + toCall;
-        nextState.stacks[move.playerId] = (nextState.stacks[move.playerId] ?? 0) - toCall;
+        const toCall = Math.min(
+          nextState.currentBet - (nextState.betsThisRound[move.playerId] ?? 0),
+          nextState.stacks[move.playerId] ?? 0,
+        );
+        nextState.betsThisRound[move.playerId] =
+          (nextState.betsThisRound[move.playerId] ?? 0) + toCall;
+        nextState.stacks[move.playerId] =
+          (nextState.stacks[move.playerId] ?? 0) - toCall;
         nextState.pot += toCall;
         nextState.lastEvent = `${move.playerId} called ${toCall}`;
       }
@@ -590,7 +865,8 @@ export function createPokerAdapter(): GameAdapter<
         nextState.currentBet = move.payload.amount;
         nextState.actedPlayerIds = [move.playerId];
         nextState.betsThisRound[move.playerId] = move.payload.amount;
-        nextState.stacks[move.playerId] = (nextState.stacks[move.playerId] ?? 0) - move.payload.amount;
+        nextState.stacks[move.playerId] =
+          (nextState.stacks[move.playerId] ?? 0) - move.payload.amount;
         nextState.pot += move.payload.amount;
         nextState.lastEvent = `${move.playerId} bet ${move.payload.amount}`;
       }
@@ -622,7 +898,11 @@ export function createPokerAdapter(): GameAdapter<
             position: state.state.winnerIds.includes(player.playerId) ? 1 : 2,
             score: state.state.stacks[player.playerId] ?? 0,
           }))
-          .sort((left, right) => left.position - right.position || (right.score ?? 0) - (left.score ?? 0)),
+          .sort(
+            (left, right) =>
+              left.position - right.position ||
+              (right.score ?? 0) - (left.score ?? 0),
+          ),
         finishedAt: '2026-04-21T12:00:01.000Z',
         executionMode: state.executionMode,
       };
@@ -653,19 +933,25 @@ export function projectPokerPlayerView(
             move,
           }))
       : [],
-    matchResultBanner: input.matchResult ? `Winner: ${input.matchResult.winnerIds.join(', ')}` : null,
+    matchResultBanner: input.matchResult
+      ? `Winner: ${input.matchResult.winnerIds.join(', ')}`
+      : null,
     phase: input.state.state.phase,
     players: input.participants.map((participant) => ({
       controller: participant.controller,
       displayName: participant.displayName,
-      hasFolded: input.state.state.foldedPlayerIds.includes(participant.playerId),
+      hasFolded: input.state.state.foldedPlayerIds.includes(
+        participant.playerId,
+      ),
       isActive: participant.playerId === input.state.activePlayerId,
       isViewer: participant.playerId === input.viewerPlayerId,
       playerId: participant.playerId,
       stack: input.state.state.stacks[participant.playerId] ?? 0,
-      visibleCards: participant.playerId === input.viewerPlayerId || input.state.state.phase === 'complete'
-        ? [...(input.state.state.hands[participant.playerId] ?? [])]
-        : [],
+      visibleCards:
+        participant.playerId === input.viewerPlayerId ||
+        input.state.state.phase === 'complete'
+          ? [...(input.state.state.hands[participant.playerId] ?? [])]
+          : [],
     })),
     pot: input.state.state.pot,
     status: input.state.state.lastEvent,
@@ -683,17 +969,28 @@ export function createPokerBots(
       .map((participant) => {
         const bot: LocalGameSessionBot<PokerState, PokerMove> = {
           chooseMove({ legalMoves, playerId, state }) {
-            const ownMoves = legalMoves.filter((move) => move.playerId === playerId);
+            const ownMoves = legalMoves.filter(
+              (move) => move.playerId === playerId,
+            );
             const check = ownMoves.find((move) => move.kind === 'check');
             const call = ownMoves.find((move) => move.kind === 'call');
-            const bets = ownMoves.filter((move): move is PokerBetMove => move.kind === 'bet');
-            const random = createSeededRandom(`${seed}:${state.turn}:${playerId}`);
+            const bets = ownMoves.filter(
+              (move): move is PokerBetMove => move.kind === 'bet',
+            );
+            const random = createSeededRandom(
+              `${seed}:${state.turn}:${playerId}`,
+            );
 
             if (check && bets.length > 0 && random() > 0.72) {
               return bets[0] ?? null;
             }
 
-            return check ?? call ?? ownMoves.find((move) => move.kind === 'fold') ?? null;
+            return (
+              check ??
+              call ??
+              ownMoves.find((move) => move.kind === 'fold') ??
+              null
+            );
           },
         };
 
@@ -708,8 +1005,18 @@ export const pokerExamplePresets: readonly PokerExamplePreset[] = [
     label: 'Heads-up',
     hotseat: true,
     seats: [
-      { playerId: 'p1', displayName: 'Player One', seat: 1, controller: 'human' },
-      { playerId: 'p2', displayName: 'Player Two', seat: 2, controller: 'human' },
+      {
+        playerId: 'p1',
+        displayName: 'Player One',
+        seat: 1,
+        controller: 'human',
+      },
+      {
+        playerId: 'p2',
+        displayName: 'Player Two',
+        seat: 2,
+        controller: 'human',
+      },
     ],
   },
   {
@@ -717,16 +1024,31 @@ export const pokerExamplePresets: readonly PokerExamplePreset[] = [
     label: 'Four-seat bots',
     hotseat: true,
     seats: [
-      { playerId: 'p1', displayName: 'Player One', seat: 1, controller: 'human' },
+      {
+        playerId: 'p1',
+        displayName: 'Player One',
+        seat: 1,
+        controller: 'human',
+      },
       { playerId: 'p2', displayName: 'Caller Bot', seat: 2, controller: 'bot' },
-      { playerId: 'p3', displayName: 'Player Two', seat: 3, controller: 'human' },
+      {
+        playerId: 'p3',
+        displayName: 'Player Two',
+        seat: 3,
+        controller: 'human',
+      },
       { playerId: 'p4', displayName: 'Check Bot', seat: 4, controller: 'bot' },
     ],
   },
 ] as const;
 
-export function getPokerExamplePreset(presetId: PokerExamplePresetId): PokerExamplePreset {
-  return pokerExamplePresets.find((preset) => preset.id === presetId) ?? pokerExamplePresets[0]!;
+export function getPokerExamplePreset(
+  presetId: PokerExamplePresetId,
+): PokerExamplePreset {
+  return (
+    pokerExamplePresets.find((preset) => preset.id === presetId) ??
+    pokerExamplePresets[0]!
+  );
 }
 
 export const pokerCatalogEntry: PokerCatalogEntry = {

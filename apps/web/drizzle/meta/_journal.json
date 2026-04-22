@@ -134,6 +134,13 @@
       "when": 1776470484887,
       "tag": "0018_mean_ted_forrester",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1776850150996,
+      "tag": "0019_brief_starfox",
+      "breakpoints": true
     }
   ]
 }

@@ -17,8 +17,28 @@ describe('game match persistence contract', () => {
     const contracts = readFileSync(path.join(process.cwd(), 'src/domain/game-matches/contracts.ts'), 'utf8');
 
     expect(contracts).toContain('export type PersistedGameMatchRecord<');
-    expect(contracts).toContain("export type PersistedUnoMatchRecord = PersistedGameMatchRecord<");
-    expect(contracts).toContain("'uno-style'");
+    expect(contracts).toMatch(/export type PersistedUnoMatchRecord = PersistedGameMatchRecord<\s*['"]uno-style['"]/);
+    expect(contracts).toMatch(/export type PersistedPokerMatchRecord = PersistedGameMatchRecord<\s*['"]texas-holdem['"]/);
     expect(contracts).toContain('export type PersistedGameMatchSummaryDto<');
+  });
+
+  it('keeps the web match repository generic across registered game ids', () => {
+    const repository = readFileSync(path.join(process.cwd(), 'src/domain/game-matches/repository.ts'), 'utf8');
+
+    expect(repository).toContain('export async function listOwnedGameMatches');
+    expect(repository).toContain('export async function loadOwnedGameMatch');
+    expect(repository).toContain('gameId?: GameId');
+    expect(repository).not.toContain("@repo/game-uno");
+    expect(repository).not.toContain("gameId: 'uno-style'");
+  });
+
+  it('keeps private rooms persisted separately from match replay state', () => {
+    const schema = readFileSync(path.join(process.cwd(), 'src/db/schema/games.ts'), 'utf8');
+
+    expect(schema).toContain('export const gameRooms = pgTable');
+    expect(schema).toContain('export const gameRoomSeats = pgTable');
+    expect(schema).toContain("visibility: text('visibility').notNull()");
+    expect(schema).toContain("ready: boolean('ready').notNull().default(false)");
+    expect(schema).toContain("activeMatchId: text('active_match_id')");
   });
 });

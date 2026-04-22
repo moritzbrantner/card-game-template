@@ -1,16 +1,17 @@
 import { and, desc, eq, inArray } from 'drizzle-orm';
-import { DEFAULT_RNG_VERSION, GAME_ENGINE_VERSION } from '@repo/game-engine';
-import { UNO_GAME_VERSION, UNO_RULESET_VERSION, type UnoMove } from '@repo/game-uno';
+import { createReplayMetadata } from '@repo/game-engine';
+import type { GameId, GameMove, MatchState } from '@repo/game-contracts';
 
 import { getDb } from '@/src/db/client';
 import { gameMatchMoves, gameMatchParticipants, gameMatches } from '@/src/db/schema';
 
 import type {
-  GameMatchAnalysisRecord,
+  GenericGameMatchAnalysisRecord,
   GameMatchParticipantRecord,
   MatchOwnerIdentity,
-  PersistedUnoMatchRecord,
+  PersistedGameMatchRecord,
 } from './contracts';
+import { createRegisteredGameAdapter } from './registry';
 
 type DbExecutor = Pick<ReturnType<typeof getDb>, 'select' | 'selectDistinct' | 'insert' | 'update'>;
 
@@ -39,36 +40,54 @@ function mapParticipantRow(row: typeof gameMatchParticipants.$inferSelect): Game
   };
 }
 
-function deriveReplayMetadata(match: typeof gameMatches.$inferSelect): PersistedUnoMatchRecord['replayMetadata'] {
+function extractReplaySetup(initialState: MatchState<unknown>) {
+  const state = initialState.state;
+
+  if (!state || typeof state !== 'object') {
+    return {};
+  }
+
+  const setup: Record<string, unknown> = {};
+
+  if ('seed' in state) {
+    setup.seed = state.seed;
+  }
+
+  if ('rules' in state) {
+    setup.rules = state.rules;
+  }
+
+  return setup;
+}
+
+function deriveReplayMetadata(match: typeof gameMatches.$inferSelect): PersistedGameMatchRecord['replayMetadata'] {
   if (match.replayFormatVersion < 2) {
     return null;
   }
 
-  const initialState = match.initialStateJson as PersistedUnoMatchRecord['initialState'];
+  const adapter = createRegisteredGameAdapter(match.gameId);
 
-  return {
-    engineVersion: GAME_ENGINE_VERSION,
-    gameVersion: UNO_GAME_VERSION,
-    rngVersion: DEFAULT_RNG_VERSION,
-    rulesetVersion: UNO_RULESET_VERSION,
-    setup: {
-      seed: initialState.state.seed,
-      rules: initialState.state.rules,
-    },
-  };
+  if (!adapter) {
+    return null;
+  }
+
+  const setup = extractReplaySetup(match.initialStateJson);
+  const validatedSetup = adapter.validateSetup ? adapter.validateSetup(setup) : setup;
+
+  return createReplayMetadata(adapter, validatedSetup);
 }
 
-function mapMatchRecord(input: {
+function mapMatchRecord<TRecord extends PersistedGameMatchRecord = PersistedGameMatchRecord>(input: {
   match: typeof gameMatches.$inferSelect;
   participants: readonly typeof gameMatchParticipants.$inferSelect[];
   moves: readonly typeof gameMatchMoves.$inferSelect[];
-}): PersistedUnoMatchRecord {
+}): TRecord {
   return {
     matchId: input.match.id,
-    gameId: 'uno-style',
-    status: input.match.status as PersistedUnoMatchRecord['status'],
+    gameId: input.match.gameId,
+    status: input.match.status as PersistedGameMatchRecord['status'],
     executionMode: 'server-authoritative',
-    replayFormatVersion: input.match.replayFormatVersion as PersistedUnoMatchRecord['replayFormatVersion'],
+    replayFormatVersion: input.match.replayFormatVersion as PersistedGameMatchRecord['replayFormatVersion'],
     startedAt: input.match.startedAt.toISOString(),
     finishedAt: toIsoString(input.match.finishedAt),
     updatedAt: input.match.updatedAt.toISOString(),
@@ -76,10 +95,10 @@ function mapMatchRecord(input: {
     createdBy: input.match.createdByKind === 'account'
       ? { kind: 'account', accountId: input.match.createdByAccountId ?? '' }
       : { kind: 'guest', guestId: input.match.createdByGuestId ?? '' },
-    initialState: input.match.initialStateJson as PersistedUnoMatchRecord['initialState'],
-    latestState: input.match.latestStateJson as PersistedUnoMatchRecord['latestState'],
+    initialState: input.match.initialStateJson,
+    latestState: input.match.latestStateJson,
     result: input.match.resultJson,
-    analysis: input.match.analysisJson as GameMatchAnalysisRecord | null,
+    analysis: input.match.analysisJson as GenericGameMatchAnalysisRecord | null,
     replayMetadata: deriveReplayMetadata(input.match),
     lastSequence: input.match.lastSequence,
     participants: [...input.participants].sort((left, right) => left.seat - right.seat).map(mapParticipantRow),
@@ -88,9 +107,9 @@ function mapMatchRecord(input: {
       .map((move) => ({
         sequence: move.sequence,
         acceptedAt: move.acceptedAt.toISOString(),
-        move: move.moveJson as UnoMove,
+        move: move.moveJson as GameMove,
       })),
-  };
+  } as unknown as TRecord;
 }
 
 function getOwnerParticipantFilter(identity: MatchOwnerIdentity) {
@@ -99,7 +118,13 @@ function getOwnerParticipantFilter(identity: MatchOwnerIdentity) {
     : and(eq(gameMatchParticipants.guestId, identity.guestId), eq(gameMatchParticipants.isBot, false));
 }
 
-export async function listOwnedUnoMatches(db: DbExecutor, identity: MatchOwnerIdentity) {
+export async function listOwnedGameMatches<TRecord extends PersistedGameMatchRecord = PersistedGameMatchRecord>(
+  db: DbExecutor,
+  identity: MatchOwnerIdentity,
+  options: {
+    gameId?: GameId;
+  } = {},
+) {
   const ownedMatchRows = await db
     .selectDistinct({ matchId: gameMatchParticipants.matchId })
     .from(gameMatchParticipants)
@@ -115,7 +140,9 @@ export async function listOwnedUnoMatches(db: DbExecutor, identity: MatchOwnerId
     db
       .select()
       .from(gameMatches)
-      .where(and(eq(gameMatches.gameId, 'uno-style'), inArray(gameMatches.id, ownedMatchIds)))
+      .where(options.gameId
+        ? and(eq(gameMatches.gameId, options.gameId), inArray(gameMatches.id, ownedMatchIds))
+        : inArray(gameMatches.id, ownedMatchIds))
       .orderBy(desc(gameMatches.updatedAt)),
     db
       .select()
@@ -132,7 +159,7 @@ export async function listOwnedUnoMatches(db: DbExecutor, identity: MatchOwnerId
   }
 
   return matches.map((match) =>
-    mapMatchRecord({
+    mapMatchRecord<TRecord>({
       match,
       participants: participantsByMatchId.get(match.id) ?? [],
       moves: [],
@@ -140,7 +167,14 @@ export async function listOwnedUnoMatches(db: DbExecutor, identity: MatchOwnerId
   );
 }
 
-export async function loadOwnedUnoMatch(db: DbExecutor, identity: MatchOwnerIdentity, matchId: string) {
+export async function loadOwnedGameMatch<TRecord extends PersistedGameMatchRecord = PersistedGameMatchRecord>(
+  db: DbExecutor,
+  identity: MatchOwnerIdentity,
+  matchId: string,
+  options: {
+    gameId?: GameId;
+  } = {},
+) {
   const [owned] = await db
     .select({ matchId: gameMatchParticipants.matchId })
     .from(gameMatchParticipants)
@@ -154,7 +188,9 @@ export async function loadOwnedUnoMatch(db: DbExecutor, identity: MatchOwnerIden
   const [match] = await db
     .select()
     .from(gameMatches)
-    .where(and(eq(gameMatches.id, matchId), eq(gameMatches.gameId, 'uno-style')))
+    .where(options.gameId
+      ? and(eq(gameMatches.id, matchId), eq(gameMatches.gameId, options.gameId))
+      : eq(gameMatches.id, matchId))
     .limit(1);
 
   if (!match) {
@@ -173,14 +209,14 @@ export async function loadOwnedUnoMatch(db: DbExecutor, identity: MatchOwnerIden
       .orderBy(gameMatchMoves.sequence),
   ]);
 
-  return mapMatchRecord({
+  return mapMatchRecord<TRecord>({
     match,
     participants,
     moves,
   });
 }
 
-export async function createUnoMatch(
+export async function createGameMatch(
   db: DbExecutor,
   input: {
     match: typeof gameMatches.$inferInsert;
@@ -199,7 +235,7 @@ export async function createUnoMatch(
   }
 }
 
-export async function appendUnoMatchProgress(
+export async function appendGameMatchProgress(
   db: DbExecutor,
   input: {
     matchId: string;
@@ -241,7 +277,7 @@ export async function appendUnoMatchProgress(
   }
 }
 
-export async function abandonUnoMatch(
+export async function abandonGameMatch(
   db: DbExecutor,
   input: {
     matchId: string;
