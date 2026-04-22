@@ -199,6 +199,7 @@ describe('game matches', () => {
     mockGuestIdentity();
     const {
       createPokerMatchUseCase,
+      getPokerMatchRealtimeUseCase,
       getPokerMatchSnapshotUseCase,
       getPokerReplayUseCase,
       listPokerMatchesUseCase,
@@ -247,6 +248,33 @@ describe('game matches', () => {
     expect(submitted.data.lastSequence).toBeGreaterThan(
       created.data.lastSequence,
     );
+
+    const pokerUpdates = await getPokerMatchRealtimeUseCase(
+      null,
+      created.data.matchId,
+      {
+        afterSequence: created.data.lastSequence,
+        sinceUpdatedAt: created.data.updatedAt,
+      },
+    );
+
+    expect(pokerUpdates).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        hasChanges: true,
+        snapshot: expect.objectContaining({
+          gameId: 'texas-holdem',
+          lastSequence: submitted.data.lastSequence,
+        }),
+        events: expect.arrayContaining([
+          expect.objectContaining({
+            type: 'move.accepted',
+            gameId: 'texas-holdem',
+            matchId: created.data.matchId,
+          }),
+        ]),
+      }),
+    });
 
     const db = getDb();
     const [match] = await db
@@ -398,9 +426,304 @@ describe('game matches', () => {
     expect(ownerParticipant?.accountId).toBe(accountUser!.id);
   });
 
+  it('aggregates completed account match history by player and game with replay links', async () => {
+    const [accountUser] = await getDb()
+      .select()
+      .from(users)
+      .where(eq(users.email, 'user@example.com'))
+      .limit(1);
+    const accountId = accountUser!.id;
+    const startedAt = new Date('2026-04-22T10:00:00.000Z');
+    const finishedAt = new Date('2026-04-22T10:08:00.000Z');
+
+    await getDb().insert(gameMatches).values([
+      {
+        id: 'history-uno-win',
+        gameId: 'uno-style',
+        status: 'completed',
+        executionMode: 'server-authoritative',
+        replayFormatVersion: 2,
+        startedAt,
+        finishedAt,
+        updatedAt: finishedAt,
+        createdAt: startedAt,
+        createdByKind: 'account',
+        createdByAccountId: accountId,
+        createdByGuestId: null,
+        initialStateJson: {
+          matchId: 'history-uno-win',
+          gameId: 'uno-style',
+          players: [
+            { playerId: 'p-account', displayName: 'Account Player', seat: 1 },
+            { playerId: 'p-bot', displayName: 'Bot', seat: 2 },
+          ],
+          activePlayerId: 'p-account',
+          turn: 1,
+          executionMode: 'server-authoritative',
+          state: { seed: 'history-uno-win' },
+        },
+        latestStateJson: {
+          matchId: 'history-uno-win',
+          gameId: 'uno-style',
+          players: [
+            { playerId: 'p-account', displayName: 'Account Player', seat: 1 },
+            { playerId: 'p-bot', displayName: 'Bot', seat: 2 },
+          ],
+          activePlayerId: 'p-account',
+          turn: 5,
+          executionMode: 'server-authoritative',
+          state: { seed: 'history-uno-win' },
+        },
+        resultJson: {
+          matchId: 'history-uno-win',
+          gameId: 'uno-style',
+          winnerIds: ['p-account'],
+          rankings: [
+            { playerId: 'p-account', position: 1, score: 10 },
+            { playerId: 'p-bot', position: 2, score: 0 },
+          ],
+          finishedAt: finishedAt.toISOString(),
+          executionMode: 'server-authoritative',
+        },
+        analysisJson: {
+          generic: {
+            matchId: 'history-uno-win',
+            gameId: 'uno-style',
+            executionMode: 'server-authoritative',
+            startedAt: startedAt.toISOString(),
+            finishedAt: finishedAt.toISOString(),
+            durationMs: 480000,
+            acceptedMoveCount: 6,
+            turnsCompleted: 4,
+            winnerIds: ['p-account'],
+            players: [
+              { playerId: 'p-account', displayName: 'Account Player', movesAccepted: 3 },
+              { playerId: 'p-bot', displayName: 'Bot', movesAccepted: 3 },
+            ],
+            moveKinds: [{ kind: 'play-card', count: 6 }],
+          },
+        },
+        lastSequence: 6,
+      },
+      {
+        id: 'history-poker-loss',
+        gameId: 'texas-holdem',
+        status: 'completed',
+        executionMode: 'server-authoritative',
+        replayFormatVersion: 2,
+        startedAt: new Date('2026-04-22T11:00:00.000Z'),
+        finishedAt: new Date('2026-04-22T11:05:00.000Z'),
+        updatedAt: new Date('2026-04-22T11:05:00.000Z'),
+        createdAt: new Date('2026-04-22T11:00:00.000Z'),
+        createdByKind: 'account',
+        createdByAccountId: accountId,
+        createdByGuestId: null,
+        initialStateJson: {
+          matchId: 'history-poker-loss',
+          gameId: 'texas-holdem',
+          players: [
+            { playerId: 'p-account', displayName: 'Account Player', seat: 1 },
+            { playerId: 'p-bot', displayName: 'Caller Bot', seat: 2 },
+          ],
+          activePlayerId: 'p-account',
+          turn: 1,
+          executionMode: 'server-authoritative',
+          state: { seed: 'history-poker-loss' },
+        },
+        latestStateJson: {
+          matchId: 'history-poker-loss',
+          gameId: 'texas-holdem',
+          players: [
+            { playerId: 'p-account', displayName: 'Account Player', seat: 1 },
+            { playerId: 'p-bot', displayName: 'Caller Bot', seat: 2 },
+          ],
+          activePlayerId: 'p-bot',
+          turn: 4,
+          executionMode: 'server-authoritative',
+          state: { seed: 'history-poker-loss' },
+        },
+        resultJson: {
+          matchId: 'history-poker-loss',
+          gameId: 'texas-holdem',
+          winnerIds: ['p-bot'],
+          rankings: [
+            { playerId: 'p-bot', position: 1, score: 20 },
+            { playerId: 'p-account', position: 2, score: 0 },
+          ],
+          finishedAt: '2026-04-22T11:05:00.000Z',
+          executionMode: 'server-authoritative',
+        },
+        analysisJson: {
+          generic: {
+            matchId: 'history-poker-loss',
+            gameId: 'texas-holdem',
+            executionMode: 'server-authoritative',
+            startedAt: '2026-04-22T11:00:00.000Z',
+            finishedAt: '2026-04-22T11:05:00.000Z',
+            durationMs: 300000,
+            acceptedMoveCount: 4,
+            turnsCompleted: 3,
+            winnerIds: ['p-bot'],
+            players: [
+              { playerId: 'p-account', displayName: 'Account Player', movesAccepted: 2 },
+              { playerId: 'p-bot', displayName: 'Caller Bot', movesAccepted: 2 },
+            ],
+            moveKinds: [{ kind: 'call', count: 4 }],
+          },
+        },
+        lastSequence: 4,
+      },
+      {
+        id: 'history-active-excluded',
+        gameId: 'uno-style',
+        status: 'active',
+        executionMode: 'server-authoritative',
+        replayFormatVersion: 2,
+        startedAt: new Date('2026-04-22T12:00:00.000Z'),
+        finishedAt: null,
+        updatedAt: new Date('2026-04-22T12:00:00.000Z'),
+        createdAt: new Date('2026-04-22T12:00:00.000Z'),
+        createdByKind: 'account',
+        createdByAccountId: accountId,
+        createdByGuestId: null,
+        initialStateJson: {
+          matchId: 'history-active-excluded',
+          gameId: 'uno-style',
+          players: [{ playerId: 'p-account', displayName: 'Account Player', seat: 1 }],
+          activePlayerId: 'p-account',
+          turn: 1,
+          executionMode: 'server-authoritative',
+          state: { seed: 'history-active-excluded' },
+        },
+        latestStateJson: {
+          matchId: 'history-active-excluded',
+          gameId: 'uno-style',
+          players: [{ playerId: 'p-account', displayName: 'Account Player', seat: 1 }],
+          activePlayerId: 'p-account',
+          turn: 1,
+          executionMode: 'server-authoritative',
+          state: { seed: 'history-active-excluded' },
+        },
+        resultJson: null,
+        analysisJson: null,
+        lastSequence: 0,
+      },
+    ]);
+
+    await getDb().insert(gameMatchParticipants).values([
+      {
+        matchId: 'history-uno-win',
+        playerId: 'p-account',
+        seat: 1,
+        displayName: 'Account Player',
+        identityKind: 'account',
+        accountId,
+        guestId: null,
+        isBot: false,
+      },
+      {
+        matchId: 'history-uno-win',
+        playerId: 'p-bot',
+        seat: 2,
+        displayName: 'Bot',
+        identityKind: 'bot',
+        accountId: null,
+        guestId: null,
+        isBot: true,
+      },
+      {
+        matchId: 'history-poker-loss',
+        playerId: 'p-account',
+        seat: 1,
+        displayName: 'Account Player',
+        identityKind: 'account',
+        accountId,
+        guestId: null,
+        isBot: false,
+      },
+      {
+        matchId: 'history-poker-loss',
+        playerId: 'p-bot',
+        seat: 2,
+        displayName: 'Caller Bot',
+        identityKind: 'bot',
+        accountId: null,
+        guestId: null,
+        isBot: true,
+      },
+      {
+        matchId: 'history-active-excluded',
+        playerId: 'p-account',
+        seat: 1,
+        displayName: 'Account Player',
+        identityKind: 'account',
+        accountId,
+        guestId: null,
+        isBot: false,
+      },
+    ]);
+
+    const { getPlayerGameHistoryUseCase } =
+      await import('@/src/domain/game-matches/use-cases');
+
+    const history = await getPlayerGameHistoryUseCase(accountId);
+
+    expect(history).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        accountId,
+        totals: {
+          matches: 2,
+          wins: 1,
+          losses: 1,
+          draws: 0,
+          abandoned: 0,
+        },
+        byGame: expect.arrayContaining([
+          expect.objectContaining({
+            gameId: 'uno-style',
+            matches: 1,
+            wins: 1,
+            losses: 0,
+          }),
+          expect.objectContaining({
+            gameId: 'texas-holdem',
+            matches: 1,
+            wins: 0,
+            losses: 1,
+          }),
+        ]),
+        recent: expect.arrayContaining([
+          expect.objectContaining({
+            matchId: 'history-uno-win',
+            gameId: 'uno-style',
+            gameName: 'UNO-style',
+            outcome: 'win',
+            replayHref: '/past-games/history-uno-win',
+            acceptedMoveCount: 6,
+            playerMovesAccepted: 3,
+          }),
+          expect.objectContaining({
+            matchId: 'history-poker-loss',
+            gameId: 'texas-holdem',
+            gameName: "Texas Hold'em",
+            outcome: 'loss',
+            replayHref: '/api/games/poker/matches/history-poker-loss/replay',
+            acceptedMoveCount: 4,
+            playerMovesAccepted: 2,
+          }),
+        ]),
+      }),
+    });
+  });
+
   it('submits a legal move, appends moves, and updates materialized state plus analysis', async () => {
     mockGuestIdentity();
-    const { createUnoMatchUseCase, submitUnoMoveUseCase } =
+    const {
+      createUnoMatchUseCase,
+      getUnoMatchRealtimeUseCase,
+      submitUnoMoveUseCase,
+    } =
       await import('@/src/domain/game-matches/use-cases');
 
     const created = await createUnoMatchUseCase(null, {
@@ -443,6 +766,74 @@ describe('game matches', () => {
     expect(match?.latestStateJson.turn).toBeGreaterThan(
       created.data.match.turn,
     );
+
+    const updates = await getUnoMatchRealtimeUseCase(
+      null,
+      created.data.matchId,
+      {
+        afterSequence: created.data.lastSequence,
+        sinceUpdatedAt: created.data.updatedAt,
+      },
+    );
+
+    expect(updates).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        cursor: {
+          lastSequence: submitted.data.lastSequence,
+          updatedAt: submitted.data.updatedAt,
+        },
+        hasChanges: true,
+        snapshot: expect.objectContaining({
+          lastSequence: submitted.data.lastSequence,
+        }),
+        events: expect.arrayContaining([
+          expect.objectContaining({
+            type: 'match.updated',
+            matchId: created.data.matchId,
+            lastSequence: submitted.data.lastSequence,
+          }),
+          expect.objectContaining({
+            type: 'move.accepted',
+            matchId: created.data.matchId,
+            sequence: expect.any(Number),
+          }),
+        ]),
+      }),
+    });
+
+    const unchanged = await getUnoMatchRealtimeUseCase(
+      null,
+      created.data.matchId,
+      {
+        afterSequence: submitted.data.lastSequence,
+        sinceUpdatedAt: submitted.data.updatedAt,
+      },
+    );
+
+    expect(unchanged).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        hasChanges: false,
+        events: [],
+      }),
+    });
+
+    const unchangedBySequenceOnly = await getUnoMatchRealtimeUseCase(
+      null,
+      created.data.matchId,
+      {
+        afterSequence: submitted.data.lastSequence,
+      },
+    );
+
+    expect(unchangedBySequenceOnly).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        hasChanges: false,
+        events: [],
+      }),
+    });
   });
 
   it('rejects stale match progress appends with an optimistic concurrency error', async () => {

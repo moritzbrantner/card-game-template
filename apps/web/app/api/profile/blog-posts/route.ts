@@ -1,3 +1,6 @@
+import { revalidatePath } from 'next/cache';
+
+import { routing } from '@/i18n/routing';
 import { blogPostCreateSchema, type CreateBlogPostResponse } from '@/src/domain/blog/contracts';
 import { createBlogPostUseCase } from '@/src/domain/blog/use-cases';
 import { createApiRoute } from '@/src/http/route';
@@ -22,6 +25,10 @@ export const POST = createApiRoute({
       title: result.data.title,
       contentMarkdown: result.data.contentMarkdown,
     };
+
+    for (const locale of routing.locales) {
+      revalidatePath(`/${locale}/profile/blog`);
+    }
 
     return response;
   },

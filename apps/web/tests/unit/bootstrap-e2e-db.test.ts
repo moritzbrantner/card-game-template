@@ -11,6 +11,88 @@ function writeExecutable(filePath: string, contents: string) {
 }
 
 describe('bootstrap-e2e-db.sh', () => {
+  it('reuses the default test database when it is already reachable', () => {
+    const testFileDir = path.dirname(fileURLToPath(import.meta.url));
+    const appRoot = path.resolve(testFileDir, '../..');
+    const scriptPath = path.join(appRoot, 'scripts/ci/bootstrap-e2e-db.sh');
+    const testDir = mkdtempSync(path.join(tmpdir(), 'bootstrap-e2e-db-reuse-'));
+    const binDir = path.join(testDir, 'bin');
+    const dockerLogPath = path.join(testDir, 'docker.log');
+    const bunLogPath = path.join(testDir, 'bun.log');
+
+    try {
+      mkdirSync(binDir, { recursive: true });
+
+      writeExecutable(
+        path.join(binDir, 'docker'),
+        `#!/usr/bin/env bash
+set -euo pipefail
+
+printf '%s\\n' "$*" >> "$FAKE_DOCKER_LOG"
+exit 1
+`,
+      );
+
+      writeExecutable(
+        path.join(binDir, 'bun'),
+        `#!/usr/bin/env bash
+set -euo pipefail
+
+printf '%s\\n' "$*" >> "$FAKE_BUN_LOG"
+
+if [[ "\${1:-}" == "--eval" ]]; then
+  exit 0
+fi
+
+exit 0
+`,
+      );
+
+      writeExecutable(
+        path.join(binDir, 'curl'),
+        `#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+`,
+      );
+
+      const spawnEnv = { ...process.env };
+      delete spawnEnv.DATABASE_URL;
+      delete spawnEnv.POSTGRES_PORT;
+      delete spawnEnv.TEST_POSTGRES_PORT;
+
+      const result = spawnSync('bash', [scriptPath], {
+        cwd: appRoot,
+        encoding: 'utf8',
+        env: {
+          ...spawnEnv,
+          FAKE_DOCKER_LOG: dockerLogPath,
+          FAKE_BUN_LOG: bunLogPath,
+          E2E_MANAGED_DATABASE: '1',
+          PATH: `${binDir}:${process.env.PATH ?? ''}`,
+          PROFILE_IMAGE_STORAGE_ENDPOINT: 'http://127.0.0.1:65535',
+          TMPDIR: testDir,
+        },
+      });
+
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(result.stdout).toContain('DATABASE_URL was not set; defaulting to');
+      expect(result.stdout).toContain('Reusing already-reachable Postgres instance from DATABASE_URL.');
+
+      const bunLog = readFileSync(bunLogPath, 'utf8');
+      expect(bunLog).toContain('run db:migrate');
+      expect(bunLog).toContain('run db:seed:test-users');
+
+      let dockerLog = '';
+      try {
+        dockerLog = readFileSync(dockerLogPath, 'utf8');
+      } catch {}
+      expect(dockerLog).toBe('');
+    } finally {
+      rmSync(testDir, { force: true, recursive: true });
+    }
+  });
+
   it('pins docker compose to the app compose file and uses the managed e2e database service', () => {
     const testFileDir = path.dirname(fileURLToPath(import.meta.url));
     const appRoot = path.resolve(testFileDir, '../..');
@@ -127,10 +209,13 @@ if [[ "\${1:-}" == "--eval" ]]; then
       exit 1
       ;;
     2)
+      exit 1
+      ;;
+    3)
       echo "Postgres is ready."
       exit 0
       ;;
-    3)
+    4)
       echo "Mailpit is ready."
       exit 0
       ;;

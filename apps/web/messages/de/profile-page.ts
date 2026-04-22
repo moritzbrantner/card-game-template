@@ -31,6 +31,28 @@ export const profilePage = {
       PRIVATE: 'Privat',
     },
   },
+  gameHistory: {
+    title: 'Spielbilanz',
+    description: 'Letzte Online-Partien, Replay-Links und Ergebnisse nach Spiel.',
+    matches: 'Partien',
+    record: 'Bilanz',
+    recordValue: '{wins}-{losses}',
+    draws: 'Remis',
+    winRate: 'Siegquote',
+    winRateValue: '{value}%',
+    byGame: 'Nach Spiel',
+    gameRecord: '{wins} Siege, {losses} Niederlagen, {draws} Remis',
+    recent: 'Letzte Partien',
+    replay: 'Replay',
+    empty: 'Noch keine abgeschlossenen Online-Partien.',
+    matchNote: '{moves} akzeptierte Zuege, {turns} Runden',
+    outcomes: {
+      win: 'Sieg',
+      loss: 'Niederlage',
+      draw: 'Remis',
+      abandoned: 'Abgebrochen',
+    },
+  },
   form: {
     displayName: {
       label: 'Anzeigename',

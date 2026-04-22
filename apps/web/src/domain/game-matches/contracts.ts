@@ -26,6 +26,7 @@ import type {
   UnoSetup,
   UnoState,
 } from '@repo/game-uno';
+import type { RealtimeMatchEvent } from '@repo/multiplayer-contract';
 
 export type MatchOwnerIdentity = Extract<
   PlayerIdentityRef,
@@ -110,6 +111,48 @@ export type PersistedGameMatchSummaryDto<
   lastSequence: number;
 };
 
+export type PlayerGameOutcome = 'win' | 'loss' | 'draw' | 'abandoned';
+
+export type PlayerGameHistoryTotalsDto = {
+  matches: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  abandoned: number;
+};
+
+export type PlayerGameStatsByGameDto = PlayerGameHistoryTotalsDto & {
+  gameId: GameId;
+  gameName: string;
+};
+
+export type PlayerRecentGameMatchDto = {
+  matchId: string;
+  gameId: GameId;
+  gameName: string;
+  status: Exclude<PersistedMatchStatus, 'active'>;
+  startedAt: string;
+  finishedAt: string | null;
+  updatedAt: string;
+  playerId: string;
+  playerDisplayName: string;
+  outcome: PlayerGameOutcome;
+  replayHref: string | null;
+  acceptedMoveCount: number;
+  turnsCompleted: number;
+  durationMs: number | null;
+  playerMovesAccepted: number;
+  winnerDisplayNames: readonly string[];
+  participants: readonly PersistedGameMatchParticipantRecord[];
+};
+
+export type PlayerGameHistoryDto = {
+  accountId: string;
+  totals: PlayerGameHistoryTotalsDto;
+  byGame: readonly PlayerGameStatsByGameDto[];
+  recent: readonly PlayerRecentGameMatchDto[];
+};
+
 export type PersistedUnoMatchSummaryDto = PersistedGameMatchSummaryDto<
   'uno-style',
   GameMatchAnalysisRecord
@@ -136,6 +179,29 @@ export type PersistedPokerMatchSnapshotDto = PersistedPokerMatchSummaryDto & {
   selectedActorPlayerId: string | null;
   view: PokerPlayerView;
 };
+
+export type GameMatchRealtimeCursor = {
+  lastSequence: number;
+  updatedAt: string;
+};
+
+export type GameMatchRealtimeInput = {
+  afterSequence?: number | null;
+  sinceUpdatedAt?: string | null;
+};
+
+export type PersistedGameMatchRealtimeDto<TSnapshot> = {
+  snapshot: TSnapshot;
+  cursor: GameMatchRealtimeCursor;
+  events: readonly RealtimeMatchEvent[];
+  hasChanges: boolean;
+};
+
+export type PersistedUnoMatchRealtimeDto =
+  PersistedGameMatchRealtimeDto<PersistedUnoMatchSnapshotDto>;
+
+export type PersistedPokerMatchRealtimeDto =
+  PersistedGameMatchRealtimeDto<PersistedPokerMatchSnapshotDto>;
 
 export type PersistedUnoReplayDto = {
   summary: PersistedUnoMatchSummaryDto;

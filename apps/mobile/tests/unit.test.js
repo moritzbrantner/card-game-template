@@ -100,6 +100,24 @@ test('mobile has dedicated poker and TCG screens with local session state', () =
   assert.match(tabsSource, /name="tcg"/);
 });
 
+test('mobile exposes a typed online game client adapter', () => {
+  const source = fs.readFileSync(
+    path.resolve(__dirname, '../lib/online-game-client.ts'),
+    'utf8',
+  );
+
+  assert.match(source, /createOnlineGameApiClient/);
+  assert.match(source, /defineOnlineMatchApi/);
+  assert.match(source, /mobileUnoMatchApi/);
+  assert.match(source, /mobilePokerMatchApi/);
+  assert.match(source, /kind: 'session-cookie'/);
+  assert.match(source, /authenticate\(auth: MobileOnlineAuthProvider\)/);
+  assert.match(source, /submitUnoMove: \(matchId: string, move: UnoMove\)/);
+  assert.match(source, /submitPokerMove: \(matchId: string, move: PokerMove\)/);
+  assert.match(source, /setRoomReady/);
+  assert.match(source, /startRoom/);
+});
+
 test('mobile home links to own and dummy profile pages', () => {
   const source = fs.readFileSync(
     path.resolve(__dirname, '../app/(tabs)/index.tsx'),

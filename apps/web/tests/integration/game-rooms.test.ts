@@ -128,6 +128,59 @@ describe('game rooms', () => {
 
     vi.resetModules();
     mockGuestIdentity('guest-host', 'Host Player');
+    const { getGameRoomRealtimeUseCase } = await import(
+      '@/src/domain/game-rooms/use-cases'
+    );
+    const roomUpdates = await getGameRoomRealtimeUseCase(
+      null,
+      created.data.roomId,
+      {
+        sinceUpdatedAt: '2000-01-01T00:00:00.000Z',
+      },
+    );
+
+    expect(roomUpdates).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        hasChanges: true,
+        events: [
+          expect.objectContaining({
+            type: 'room.updated',
+            roomId: created.data.roomId,
+          }),
+        ],
+        room: expect.objectContaining({
+          canStart: true,
+          seats: expect.arrayContaining([
+            expect.objectContaining({
+              displayName: 'Bob',
+              ready: true,
+            }),
+          ]),
+        }),
+      }),
+    });
+
+    if (roomUpdates.ok) {
+      const unchanged = await getGameRoomRealtimeUseCase(
+        null,
+        created.data.roomId,
+        {
+          sinceUpdatedAt: roomUpdates.data.cursor.updatedAt,
+        },
+      );
+
+      expect(unchanged).toEqual({
+        ok: true,
+        data: expect.objectContaining({
+          hasChanges: false,
+          events: [],
+        }),
+      });
+    }
+
+    vi.resetModules();
+    mockGuestIdentity('guest-host', 'Host Player');
     const { startGameRoomUseCase: startAsHost } = await import(
       '@/src/domain/game-rooms/use-cases'
     );

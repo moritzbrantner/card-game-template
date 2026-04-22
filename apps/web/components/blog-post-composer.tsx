@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 
 import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
@@ -120,9 +120,7 @@ export function BlogPostComposer({ userId, locale, labels }: BlogPostComposerPro
       const result = await flushBlogPublishOutbox({ userId: currentUserId });
 
       if (result.publishedDraftIds.length > 0) {
-        startTransition(() => {
-          router.refresh();
-        });
+        router.refresh();
       }
 
       return result;

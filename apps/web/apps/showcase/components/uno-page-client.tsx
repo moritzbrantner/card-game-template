@@ -7,6 +7,7 @@ import { defaultGameCatalog } from '@repo/game-catalog';
 
 import type {
   ListUnoMatchesResult,
+  PersistedUnoMatchRealtimeDto,
   PersistedUnoMatchSnapshotDto,
 } from '@/src/domain/game-matches/contracts';
 import { readProblemDetail } from '@/src/http/problem-client';
@@ -77,6 +78,26 @@ async function loadMatchSnapshot(matchId: string) {
   return readJson<PersistedUnoMatchSnapshotDto>(response);
 }
 
+async function loadMatchUpdates(match: PersistedUnoMatchSnapshotDto) {
+  const params = new URLSearchParams({
+    afterSequence: String(match.lastSequence),
+    sinceUpdatedAt: match.updatedAt,
+  });
+  const response = await fetch(
+    `/api/games/uno/matches/${match.matchId}/events?${params.toString()}`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    },
+  );
+
+  if (!response.ok) {
+    throw await readProblemDetail(response, 'Unable to load match updates.');
+  }
+
+  return readJson<PersistedUnoMatchRealtimeDto>(response);
+}
+
 function winnerLabel(match: ListUnoMatchesResult['recent'][number]) {
   const winnerId = match.result?.winnerIds[0];
   return match.participants.find((participant) => participant.playerId === winnerId)?.displayName ?? 'No winner yet';
@@ -135,6 +156,47 @@ export function UnoPageClient({
       });
     });
   }, []);
+
+  useEffect(() => {
+    if (!currentMatch) {
+      return;
+    }
+
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const updates = await loadMatchUpdates(currentMatch);
+
+        if (cancelled || !updates.hasChanges) {
+          return;
+        }
+
+        setCurrentMatch(updates.snapshot);
+        if (updates.snapshot.status !== currentMatch.status) {
+          const nextMatches = await loadMatchList();
+          if (!cancelled) {
+            setMatches(nextMatches);
+          }
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setState({
+            error: error instanceof Error ? error.message : 'Unable to load match updates.',
+          });
+        }
+      }
+    };
+    const intervalId = window.setInterval(() => {
+      void poll();
+    }, 2500);
+
+    void poll();
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [currentMatch]);
 
   async function handleCreateMatch() {
     setPending(true);

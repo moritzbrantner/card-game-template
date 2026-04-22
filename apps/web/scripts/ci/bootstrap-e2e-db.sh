@@ -141,10 +141,10 @@ fi
 
 trap cleanup_on_error EXIT
 
-if [[ "$DATABASE_URL_WAS_SET" -eq 0 || "$E2E_MANAGED_DATABASE" == "1" ]]; then
-  STARTED_SERVICES+=("postgres-test")
-elif can_reach_database; then
+if can_reach_database; then
   echo "ℹ️ Reusing already-reachable Postgres instance from DATABASE_URL."
+elif [[ "$DATABASE_URL_WAS_SET" -eq 0 || "$E2E_MANAGED_DATABASE" == "1" ]]; then
+  STARTED_SERVICES+=("postgres-test")
 else
   STARTED_SERVICES+=("postgres")
 fi

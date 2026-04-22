@@ -6,6 +6,7 @@ import type {
 } from '@repo/game-contracts';
 import type {
   PlayerConnectionStatus,
+  RealtimeRoomEvent,
   RoomId,
   RoomVisibility,
 } from '@repo/multiplayer-contract';
@@ -66,6 +67,21 @@ export type GameRoomDto = {
   viewerPlayerId: PlayerId;
   viewerIsHost: boolean;
   canStart: boolean;
+};
+
+export type GameRoomRealtimeCursor = {
+  updatedAt: string;
+};
+
+export type GameRoomRealtimeDto = {
+  room: GameRoomDto;
+  cursor: GameRoomRealtimeCursor;
+  events: readonly RealtimeRoomEvent[];
+  hasChanges: boolean;
+};
+
+export type GameRoomRealtimeInput = {
+  sinceUpdatedAt?: string | null;
 };
 
 export type CreatePrivateGameRoomInput = {

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, ne } from 'drizzle-orm';
 import { createReplayMetadata } from '@repo/game-engine';
 import type { GameId, GameMove, MatchState } from '@repo/game-contracts';
 
@@ -149,6 +149,68 @@ export async function listOwnedGameMatches<TRecord extends PersistedGameMatchRec
       .from(gameMatchParticipants)
       .where(inArray(gameMatchParticipants.matchId, ownedMatchIds)),
   ]);
+
+  const participantsByMatchId = new Map<string, typeof participants>();
+
+  for (const participant of participants) {
+    const existing = participantsByMatchId.get(participant.matchId) ?? [];
+    existing.push(participant);
+    participantsByMatchId.set(participant.matchId, existing);
+  }
+
+  return matches.map((match) =>
+    mapMatchRecord<TRecord>({
+      match,
+      participants: participantsByMatchId.get(match.id) ?? [],
+      moves: [],
+    }),
+  );
+}
+
+export async function listAccountGameHistoryMatches<
+  TRecord extends PersistedGameMatchRecord = PersistedGameMatchRecord,
+>(
+  db: DbExecutor,
+  accountId: string,
+  options: {
+    gameId?: GameId;
+  } = {},
+) {
+  const accountMatchRows = await db
+    .selectDistinct({ matchId: gameMatchParticipants.matchId })
+    .from(gameMatchParticipants)
+    .where(and(eq(gameMatchParticipants.accountId, accountId), eq(gameMatchParticipants.isBot, false)));
+
+  const accountMatchIds = accountMatchRows.map((row) => row.matchId);
+
+  if (accountMatchIds.length === 0) {
+    return [];
+  }
+
+  const matchFilter = options.gameId
+    ? and(
+        eq(gameMatches.gameId, options.gameId),
+        inArray(gameMatches.id, accountMatchIds),
+        ne(gameMatches.status, 'active'),
+      )
+    : and(inArray(gameMatches.id, accountMatchIds), ne(gameMatches.status, 'active'));
+
+  const matches = await db
+    .select()
+    .from(gameMatches)
+    .where(matchFilter)
+    .orderBy(desc(gameMatches.updatedAt));
+
+  const historyMatchIds = matches.map((match) => match.id);
+
+  if (historyMatchIds.length === 0) {
+    return [];
+  }
+
+  const participants = await db
+    .select()
+    .from(gameMatchParticipants)
+    .where(inArray(gameMatchParticipants.matchId, historyMatchIds));
 
   const participantsByMatchId = new Map<string, typeof participants>();
 

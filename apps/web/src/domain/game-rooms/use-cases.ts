@@ -19,6 +19,8 @@ import {
 import type {
   CreatePrivateGameRoomInput,
   GameRoomDto,
+  GameRoomRealtimeDto,
+  GameRoomRealtimeInput,
   JoinPrivateGameRoomInput,
   PersistedGameRoomRecord,
   SetGameRoomReadyInput,
@@ -43,6 +45,14 @@ type GameRoomUseCaseError = {
 
 function isoNow() {
   return new Date().toISOString();
+}
+
+function isNewerTimestamp(current: string, previous?: string | null) {
+  if (!previous) {
+    return true;
+  }
+
+  return new Date(current).getTime() > new Date(previous).getTime();
 }
 
 function mapMissingIdentity() {
@@ -121,6 +131,32 @@ function buildGameRoomDto(
     viewerPlayerId: viewer.playerId,
     viewerIsHost: viewer.playerId === room.hostPlayerId,
     canStart: roomCanStart(room),
+  };
+}
+
+function buildGameRoomRealtimeDto(input: {
+  room: PersistedGameRoomRecord;
+  identity: MatchOwnerIdentity;
+  sinceUpdatedAt?: string | null;
+}): GameRoomRealtimeDto {
+  const room = buildGameRoomDto(input.room, input.identity);
+  const hasChanges = isNewerTimestamp(room.updatedAt, input.sinceUpdatedAt);
+
+  return {
+    room,
+    cursor: {
+      updatedAt: room.updatedAt,
+    },
+    events: hasChanges
+      ? [
+          {
+            type: 'room.updated',
+            roomId: room.roomId,
+            occurredAt: room.updatedAt,
+          },
+        ]
+      : [],
+    hasChanges,
   };
 }
 
@@ -297,6 +333,36 @@ export async function getGameRoomUseCase(
 
   return success(
     buildGameRoomDto(room, resolvedIdentity.identity as MatchOwnerIdentity),
+  );
+}
+
+export async function getGameRoomRealtimeUseCase(
+  session: AppSession | null,
+  roomId: string,
+  input: GameRoomRealtimeInput = {},
+): Promise<ServiceResult<GameRoomRealtimeDto, GameRoomUseCaseError>> {
+  const resolvedIdentity = await resolveRoomIdentity(session, false);
+
+  if (!resolvedIdentity.identity) {
+    return mapMissingIdentity();
+  }
+
+  const room = await loadParticipatingGameRoom(
+    getDb(),
+    resolvedIdentity.identity as MatchOwnerIdentity,
+    roomId,
+  );
+
+  if (!room) {
+    return mapMissingIdentity();
+  }
+
+  return success(
+    buildGameRoomRealtimeDto({
+      room,
+      identity: resolvedIdentity.identity as MatchOwnerIdentity,
+      sinceUpdatedAt: input.sinceUpdatedAt,
+    }),
   );
 }
 

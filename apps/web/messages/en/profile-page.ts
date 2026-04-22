@@ -31,6 +31,28 @@ export const profilePage = {
       PRIVATE: 'Private',
     },
   },
+  gameHistory: {
+    title: 'Game record',
+    description: 'Recent online matches, replay links, and results by game.',
+    matches: 'Matches',
+    record: 'Record',
+    recordValue: '{wins}-{losses}',
+    draws: 'Draws',
+    winRate: 'Win rate',
+    winRateValue: '{value}%',
+    byGame: 'By game',
+    gameRecord: '{wins} wins, {losses} losses, {draws} draws',
+    recent: 'Recent matches',
+    replay: 'Replay',
+    empty: 'No completed online matches yet.',
+    matchNote: '{moves} accepted moves, {turns} turns',
+    outcomes: {
+      win: 'Win',
+      loss: 'Loss',
+      draw: 'Draw',
+      abandoned: 'Abandoned',
+    },
+  },
   form: {
     displayName: {
       label: 'Display name',

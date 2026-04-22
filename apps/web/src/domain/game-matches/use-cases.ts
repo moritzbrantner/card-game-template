@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { IllegalMoveError } from '@repo/game-engine';
+import { defaultGameCatalog } from '@repo/game-catalog';
 import {
   createPokerAdapter,
   type PokerMove,
@@ -24,14 +25,23 @@ import {
 import type {
   CreatePokerMatchInput,
   CreateUnoMatchInput,
+  GameMatchRealtimeInput,
   ListPokerMatchesResult,
   ListUnoMatchesResult,
   MatchOwnerIdentity,
   PersistedGameMatchRecord,
+  PersistedGameMatchRealtimeDto,
+  PlayerGameHistoryDto,
+  PlayerGameHistoryTotalsDto,
+  PlayerGameOutcome,
+  PlayerGameStatsByGameDto,
+  PlayerRecentGameMatchDto,
   PersistedPokerMatchRecord,
+  PersistedPokerMatchRealtimeDto,
   PersistedPokerMatchSnapshotDto,
   PersistedPokerReplayDto,
   PersistedUnoMatchRecord,
+  PersistedUnoMatchRealtimeDto,
   PersistedUnoMatchSnapshotDto,
   PersistedUnoReplayDto,
   SubmitPokerMoveInput,
@@ -45,6 +55,7 @@ import {
   abandonGameMatch,
   appendGameMatchProgress,
   createGameMatch,
+  listAccountGameHistoryMatches,
   listOwnedGameMatches,
   loadOwnedGameMatch,
   StaleMatchProgressError,
@@ -74,6 +85,14 @@ type PokerServerSession = ServerGameSession<PokerState, PokerMove>;
 
 function isoNow() {
   return new Date().toISOString();
+}
+
+function isNewerTimestamp(current: string, previous?: string | null) {
+  if (!previous) {
+    return true;
+  }
+
+  return new Date(current).getTime() > new Date(previous).getTime();
 }
 
 function mapMissingIdentity() {
@@ -106,6 +125,151 @@ function splitPokerSummaries(
     recent: matches
       .filter((match) => match.status !== 'active')
       .map(buildPersistedPokerMatchSummaryDto),
+  };
+}
+
+function createEmptyHistoryTotals(): PlayerGameHistoryTotalsDto {
+  return {
+    matches: 0,
+    wins: 0,
+    losses: 0,
+    draws: 0,
+    abandoned: 0,
+  };
+}
+
+function incrementHistoryTotals(
+  totals: PlayerGameHistoryTotalsDto,
+  outcome: PlayerGameOutcome,
+) {
+  totals.matches += 1;
+
+  if (outcome === 'win') {
+    totals.wins += 1;
+  } else if (outcome === 'loss') {
+    totals.losses += 1;
+  } else if (outcome === 'draw') {
+    totals.draws += 1;
+  } else {
+    totals.abandoned += 1;
+  }
+}
+
+function resolveGameName(gameId: string) {
+  return defaultGameCatalog.get(gameId)?.definition.name ?? gameId;
+}
+
+function resolveReplayHref(match: PersistedGameMatchRecord) {
+  if (match.gameId === 'uno-style') {
+    return `/past-games/${match.matchId}`;
+  }
+
+  if (match.gameId === 'texas-holdem') {
+    return `/api/games/poker/matches/${match.matchId}/replay`;
+  }
+
+  return null;
+}
+
+function resolvePlayerOutcome(
+  match: PersistedGameMatchRecord,
+  playerId: string,
+): PlayerGameOutcome {
+  if (match.status === 'abandoned') {
+    return 'abandoned';
+  }
+
+  if (!match.result || match.result.winnerIds.length === 0) {
+    return 'draw';
+  }
+
+  return match.result.winnerIds.includes(playerId) ? 'win' : 'loss';
+}
+
+function buildPlayerRecentMatch(
+  match: PersistedGameMatchRecord,
+  accountId: string,
+): PlayerRecentGameMatchDto | null {
+  const participant = match.participants.find(
+    (candidate) =>
+      !candidate.isBot &&
+      candidate.identity.kind === 'account' &&
+      candidate.identity.accountId === accountId,
+  );
+
+  if (!participant || match.status === 'active') {
+    return null;
+  }
+
+  const outcome = resolvePlayerOutcome(match, participant.playerId);
+  const playerAnalysis = match.analysis?.generic.players.find(
+    (summary) => summary.playerId === participant.playerId,
+  );
+  const winnerDisplayNames =
+    match.result?.winnerIds
+      .map(
+        (winnerId) =>
+          match.participants.find((candidate) => candidate.playerId === winnerId)
+            ?.displayName ?? winnerId,
+      ) ?? [];
+
+  return {
+    matchId: match.matchId,
+    gameId: match.gameId,
+    gameName: resolveGameName(match.gameId),
+    status: match.status,
+    startedAt: match.startedAt,
+    finishedAt: match.finishedAt,
+    updatedAt: match.updatedAt,
+    playerId: participant.playerId,
+    playerDisplayName: participant.displayName,
+    outcome,
+    replayHref: resolveReplayHref(match),
+    acceptedMoveCount: match.analysis?.generic.acceptedMoveCount ?? match.lastSequence,
+    turnsCompleted: match.analysis?.generic.turnsCompleted ?? 0,
+    durationMs: match.analysis?.generic.durationMs ?? null,
+    playerMovesAccepted: playerAnalysis?.movesAccepted ?? 0,
+    winnerDisplayNames,
+    participants: match.participants,
+  };
+}
+
+function buildPlayerGameHistory(
+  accountId: string,
+  matches: readonly PersistedGameMatchRecord[],
+): PlayerGameHistoryDto {
+  const totals = createEmptyHistoryTotals();
+  const byGame = new Map<string, PlayerGameStatsByGameDto>();
+  const recent: PlayerRecentGameMatchDto[] = [];
+
+  for (const match of matches) {
+    const recentMatch = buildPlayerRecentMatch(match, accountId);
+
+    if (!recentMatch) {
+      continue;
+    }
+
+    recent.push(recentMatch);
+    incrementHistoryTotals(totals, recentMatch.outcome);
+
+    const gameTotals =
+      byGame.get(recentMatch.gameId) ?? {
+        ...createEmptyHistoryTotals(),
+        gameId: recentMatch.gameId,
+        gameName: recentMatch.gameName,
+      };
+    incrementHistoryTotals(gameTotals, recentMatch.outcome);
+    byGame.set(recentMatch.gameId, gameTotals);
+  }
+
+  return {
+    accountId,
+    totals,
+    byGame: [...byGame.values()].sort(
+      (left, right) =>
+        right.matches - left.matches || left.gameName.localeCompare(right.gameName),
+    ),
+    recent: recent.slice(0, 10),
   };
 }
 
@@ -175,6 +339,66 @@ function buildParticipantRows(match: PersistedGameMatchRecord) {
         : null,
     isBot: participant.isBot,
   }));
+}
+
+function buildMatchRealtimeDto<TSnapshot>(input: {
+  match: PersistedGameMatchRecord;
+  snapshot: TSnapshot;
+  realtimeInput?: GameMatchRealtimeInput;
+}): PersistedGameMatchRealtimeDto<TSnapshot> {
+  const afterSequence = Math.max(input.realtimeInput?.afterSequence ?? 0, 0);
+  const hasCursor =
+    input.realtimeInput?.afterSequence != null ||
+    input.realtimeInput?.sinceUpdatedAt != null;
+  const hasSequenceChanges = input.match.lastSequence > afterSequence;
+  const hasTimestampChanges =
+    input.realtimeInput?.sinceUpdatedAt != null
+      ? isNewerTimestamp(input.match.updatedAt, input.realtimeInput.sinceUpdatedAt)
+      : false;
+  const hasChanges = !hasCursor || hasSequenceChanges || hasTimestampChanges;
+  const moveEvents = input.match.acceptedMoves
+    .filter((acceptedMove) => acceptedMove.sequence > afterSequence)
+    .map((acceptedMove) => ({
+      type: 'move.accepted' as const,
+      matchId: input.match.matchId,
+      gameId: input.match.gameId,
+      occurredAt: acceptedMove.acceptedAt,
+      sequence: acceptedMove.sequence,
+      playerId: acceptedMove.move.playerId,
+      moveKind: acceptedMove.move.kind,
+    }));
+
+  return {
+    snapshot: input.snapshot,
+    cursor: {
+      lastSequence: input.match.lastSequence,
+      updatedAt: input.match.updatedAt,
+    },
+    events: hasChanges
+      ? [
+          {
+            type: 'match.updated',
+            matchId: input.match.matchId,
+            gameId: input.match.gameId,
+            occurredAt: input.match.updatedAt,
+            lastSequence: input.match.lastSequence,
+          },
+          ...moveEvents,
+          ...(input.match.status !== 'active'
+            ? [
+                {
+                  type: 'match.finished' as const,
+                  matchId: input.match.matchId,
+                  gameId: input.match.gameId,
+                  occurredAt: input.match.finishedAt ?? input.match.updatedAt,
+                  winnerIds: input.match.result?.winnerIds ?? [],
+                },
+              ]
+            : []),
+        ]
+      : [],
+    hasChanges,
+  };
 }
 
 function createResumedSession(
@@ -255,6 +479,13 @@ export async function listPokerMatchesUseCase(
   return success(splitPokerSummaries(matches));
 }
 
+export async function getPlayerGameHistoryUseCase(
+  accountId: string,
+): Promise<ServiceResult<PlayerGameHistoryDto, never>> {
+  const matches = await listAccountGameHistoryMatches(getDb(), accountId);
+  return success(buildPlayerGameHistory(accountId, matches));
+}
+
 export async function createPokerMatchUseCase(
   session: AppSession | null,
   input: CreatePokerMatchInput,
@@ -327,6 +558,40 @@ export async function getPokerMatchSnapshotUseCase(
       match,
       resolvedIdentity.identity as MatchOwnerIdentity,
     ),
+  );
+}
+
+export async function getPokerMatchRealtimeUseCase(
+  session: AppSession | null,
+  matchId: string,
+  input: GameMatchRealtimeInput = {},
+): Promise<ServiceResult<PersistedPokerMatchRealtimeDto, MatchUseCaseError>> {
+  const resolvedIdentity = await resolveOwnedIdentity(session, false);
+
+  if (!resolvedIdentity.identity) {
+    return mapMissingIdentity();
+  }
+
+  const match = await loadOwnedGameMatch<PersistedPokerMatchRecord>(
+    getDb(),
+    resolvedIdentity.identity as MatchOwnerIdentity,
+    matchId,
+    { gameId: 'texas-holdem' },
+  );
+
+  if (!match) {
+    return mapMissingIdentity();
+  }
+
+  return success(
+    buildMatchRealtimeDto({
+      match,
+      snapshot: buildPersistedPokerMatchSnapshotDto(
+        match,
+        resolvedIdentity.identity as MatchOwnerIdentity,
+      ),
+      realtimeInput: input,
+    }),
   );
 }
 
@@ -581,6 +846,40 @@ export async function getUnoMatchSnapshotUseCase(
       match,
       resolvedIdentity.identity as MatchOwnerIdentity,
     ),
+  );
+}
+
+export async function getUnoMatchRealtimeUseCase(
+  session: AppSession | null,
+  matchId: string,
+  input: GameMatchRealtimeInput = {},
+): Promise<ServiceResult<PersistedUnoMatchRealtimeDto, MatchUseCaseError>> {
+  const resolvedIdentity = await resolveOwnedIdentity(session, false);
+
+  if (!resolvedIdentity.identity) {
+    return mapMissingIdentity();
+  }
+
+  const match = await loadOwnedGameMatch<PersistedUnoMatchRecord>(
+    getDb(),
+    resolvedIdentity.identity as MatchOwnerIdentity,
+    matchId,
+    { gameId: 'uno-style' },
+  );
+
+  if (!match) {
+    return mapMissingIdentity();
+  }
+
+  return success(
+    buildMatchRealtimeDto({
+      match,
+      snapshot: buildPersistedUnoMatchSnapshotDto(
+        match,
+        resolvedIdentity.identity as MatchOwnerIdentity,
+      ),
+      realtimeInput: input,
+    }),
   );
 }
 

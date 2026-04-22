@@ -54,3 +54,24 @@ test('desktop navbar component provides app navigation links including documents
   assert.match(source, /#\/settings/);
   assert.match(source, /is-active/);
 });
+
+test('desktop exposes a typed online game client adapter', () => {
+  const source = fs.readFileSync(
+    path.resolve(
+      __dirname,
+      '../src/platform/online/online-game-client.ts',
+    ),
+    'utf8',
+  );
+
+  assert.match(source, /createOnlineGameApiClient/);
+  assert.match(source, /defineOnlineMatchApi/);
+  assert.match(source, /desktopUnoMatchApi/);
+  assert.match(source, /desktopPokerMatchApi/);
+  assert.match(source, /kind: 'session-cookie'/);
+  assert.match(source, /authenticate\(auth: DesktopOnlineAuthProvider\)/);
+  assert.match(source, /submitUnoMove: \(matchId: string, move: UnoMove\)/);
+  assert.match(source, /submitPokerMove: \(matchId: string, move: PokerMove\)/);
+  assert.match(source, /setRoomReady/);
+  assert.match(source, /startRoom/);
+});

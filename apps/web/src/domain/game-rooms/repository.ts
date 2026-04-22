@@ -25,6 +25,12 @@ function toIsoString(value: Date) {
   return value.toISOString();
 }
 
+function latestDate(dates: readonly Date[]) {
+  return dates.reduce((latest, candidate) =>
+    candidate.getTime() > latest.getTime() ? candidate : latest,
+  );
+}
+
 function mapSeatRow(row: typeof gameRoomSeats.$inferSelect): GameRoomParticipantRecord {
   return {
     roomId: row.roomId,
@@ -47,6 +53,11 @@ function mapRoomRecord(input: {
   room: typeof gameRooms.$inferSelect;
   seats: readonly typeof gameRoomSeats.$inferSelect[];
 }): PersistedGameRoomRecord {
+  const updatedAt = latestDate([
+    input.room.updatedAt,
+    ...input.seats.map((seat) => seat.updatedAt),
+  ]);
+
   return {
     roomId: input.room.id,
     roomName: input.room.roomName,
@@ -59,7 +70,7 @@ function mapRoomRecord(input: {
     hostPlayerId: input.room.hostPlayerId,
     activeMatchId: input.room.activeMatchId,
     createdAt: toIsoString(input.room.createdAt),
-    updatedAt: toIsoString(input.room.updatedAt),
+    updatedAt: toIsoString(updatedAt),
     createdBy:
       input.room.createdByKind === 'account'
         ? {
@@ -192,6 +203,10 @@ export async function addGameRoomSeat(
   input: typeof gameRoomSeats.$inferInsert,
 ) {
   await db.insert(gameRoomSeats).values(input);
+  await db
+    .update(gameRooms)
+    .set({ updatedAt: input.updatedAt })
+    .where(eq(gameRooms.id, input.roomId));
 }
 
 export async function updateGameRoomSeatReady(
@@ -216,6 +231,10 @@ export async function updateGameRoomSeatReady(
         eq(gameRoomSeats.playerId, input.playerId),
       ),
     );
+  await db
+    .update(gameRooms)
+    .set({ updatedAt: input.updatedAt })
+    .where(eq(gameRooms.id, input.roomId));
 }
 
 export async function startPersistedGameRoom(
