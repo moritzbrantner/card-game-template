@@ -273,6 +273,9 @@ describe('admin report exports', () => {
   });
 
   it('exports filtered navigation journeys as CSV', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-16T12:00:00.000Z'));
+
     const exported = await exportAdminReportUseCase(
       'navigationJourneys',
       '7d',

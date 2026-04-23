@@ -1,0 +1,15 @@
+{
+  "name": "build",
+  "command": "bun run build",
+  "createdAt": "2026-04-23T08:46:38.708Z",
+  "gitCommit": "cf59fe0",
+  "durationMs": 1663,
+  "status": "passed",
+  "environment": {
+    "bun": "1.3.13",
+    "node": "v24.3.0",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "threshold": null
+}

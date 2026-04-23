@@ -5,6 +5,7 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "passThroughEnv": ["AUTH_SECRET", "DATABASE_URL"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**", "out/**", ".expo/**", "!.expo/cache/**", ".vite/**"]
     },
     "lint": {

@@ -652,7 +652,7 @@ export const engineFixtureCases = [
       initialDigest: {
         activePlayerId: 'p1',
         battlefieldCounts: { p1: 0, p2: 0 },
-        deckCounts: { p1: 8, p2: 8 },
+        deckCounts: { p1: 56, p2: 56 },
         exhaustedUnitIds: [],
         graveyardIds: { p1: [], p2: [] },
         handCounts: { p1: 4, p2: 4 },

@@ -72,7 +72,7 @@ docker_compose() {
 }
 
 docker_compose_services() {
-  COMPOSE_PROFILES=dev,test docker_compose config --services
+  env -u COMPOSE_FILE COMPOSE_PROFILES=dev,test docker compose -f "$COMPOSE_FILE_PATH" --project-directory "$APP_ROOT" config --services
 }
 
 can_reach_mailpit() {

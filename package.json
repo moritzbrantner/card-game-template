@@ -2,7 +2,7 @@
   "name": "monorepo",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
+    "build": "AUTH_SECRET=\"${AUTH_SECRET:-local-build-secret-local-build-secret}\" DATABASE_URL=\"${DATABASE_URL:-postgresql://postgres:postgres@127.0.0.1:55435/next_template?schema=public}\" turbo run build",
     "dev": "turbo run dev",
     "start": "turbo run start",
     "setup:promotion-branches": "bash ./scripts/setup-promotion-branches.sh",
@@ -15,7 +15,7 @@
     "test:unit": "./scripts/run-with-node.sh --test ./tests/unit/*.test.mjs && turbo run test:unit",
     "test:integration": "bash ./scripts/run-integration-tests.sh",
     "test:e2e": "turbo run test:e2e --concurrency=1",
-    "benchmark": "bun run build",
+    "benchmark": "bun scripts/run-build-benchmark.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
   },

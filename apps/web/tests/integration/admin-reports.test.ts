@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AppRole } from '@/lib/authorization';
 import { exportAdminReportUseCase, getAdminReportDetailUseCase } from '@/src/domain/admin-reports/use-cases';
@@ -64,7 +64,13 @@ function createApiMocks(session: { user?: { id: string; role: AppRole } } | null
   }));
 }
 
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-04-16T12:00:00.000Z'));
+});
+
 afterEach(() => {
+  vi.useRealTimers();
   vi.resetModules();
   vi.clearAllMocks();
   vi.doUnmock('@/src/foundation/features/runtime');
