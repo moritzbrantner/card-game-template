@@ -141,6 +141,7 @@ export function PastGameReplayPageClient({
           <div className="mt-6">
             <input
               type="range"
+              aria-label="Replay step"
               min={0}
               max={Math.max(steps.length - 1, 0)}
               value={stepIndex}

@@ -466,7 +466,7 @@ export function UnoPageClient({
                   {labels.legalActionsTitle}
                 </h3>
                 {currentMatch.view.legalActions.length > 0 ? (
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-3" role="group" aria-label={labels.legalActionsTitle}>
                     {currentMatch.view.legalActions.map((action) => (
                       <button
                         key={action.id}
