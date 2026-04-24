@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-import { getSeededUser, gotoAndWaitForHydration, loginWithCredentials } from '@/tests/e2e/helpers';
+import {
+  getSeededUser,
+  gotoAndWaitForHydration,
+  loginWithCredentials,
+} from '@/tests/e2e/helpers';
 
 const adminUser = getSeededUser('admin@example.com');
 
@@ -9,7 +13,9 @@ function createToken() {
 }
 
 test.describe('admin content', () => {
-  test('creates, edits, publishes, and archives an announcement', async ({ page }) => {
+  test('creates, edits, publishes, and archives an announcement', async ({
+    page,
+  }) => {
     const token = createToken();
     const updatedToken = `${token}-edited`;
 
@@ -20,16 +26,26 @@ test.describe('admin content', () => {
     await page.getByLabel('Body').fill(`Operational update ${token}`);
     await page.getByLabel('Destination link').fill('/status');
     await page.getByLabel('Status').selectOption('scheduled');
-    await page.getByLabel('Publish at', { exact: true }).fill('2026-04-20T09:00');
-    await page.getByLabel('Unpublish at', { exact: true }).fill('2026-04-21T09:00');
+    await page
+      .getByLabel('Publish at', { exact: true })
+      .fill('2026-04-20T09:00');
+    await page
+      .getByLabel('Unpublish at', { exact: true })
+      .fill('2026-04-21T09:00');
     await page.getByRole('button', { name: 'Create announcement' }).click();
 
     await expect(page).toHaveURL(/announcementId=/);
-    await expect(page.getByText(`Scheduled maintenance ${token}`)).toBeVisible();
+    await expect(
+      page.getByText(`Scheduled maintenance ${token}`),
+    ).toBeVisible();
 
-    await page.getByLabel('Title').fill(`Scheduled maintenance ${updatedToken}`);
+    await page
+      .getByLabel('Title')
+      .fill(`Scheduled maintenance ${updatedToken}`);
     await page.getByRole('button', { name: 'Update announcement' }).click();
-    await expect(page.getByText(`Scheduled maintenance ${updatedToken}`)).toBeVisible();
+    await expect(
+      page.getByText(`Scheduled maintenance ${updatedToken}`),
+    ).toBeVisible();
 
     const announcementCard = page.locator('div.rounded-2xl').filter({
       has: page.getByRole('button', { name: 'Publish now' }),

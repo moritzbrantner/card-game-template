@@ -17,15 +17,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function isLayoutEntryArray<ItemId extends string>(
   value: unknown,
 ): value is AdminOverviewLayoutEntry<ItemId>[] {
-  return Array.isArray(value)
-    && value.every(
+  return (
+    Array.isArray(value) &&
+    value.every(
       (entry) =>
-        isRecord(entry)
-        && typeof entry.slot === 'string'
-        && entry.slot.length > 0
-        && typeof entry.item === 'string'
-        && entry.item.length > 0,
-    );
+        isRecord(entry) &&
+        typeof entry.slot === 'string' &&
+        entry.slot.length > 0 &&
+        typeof entry.item === 'string' &&
+        entry.item.length > 0,
+    )
+  );
 }
 
 export function buildDefaultAdminOverviewLayout<ItemId extends string>(
@@ -56,7 +58,11 @@ export function normalizeAdminOverviewLayout<ItemId extends string>(
   }
 
   for (const itemId of itemIds) {
-    if (!slotIds.has(itemId) || !itemSet.has(itemId) || !expectedEntries.has(itemId)) {
+    if (
+      !slotIds.has(itemId) ||
+      !itemSet.has(itemId) ||
+      !expectedEntries.has(itemId)
+    ) {
       return defaultLayout;
     }
   }
@@ -101,9 +107,10 @@ export function areAdminOverviewLayoutsEqual<ItemId extends string>(
   right: readonly AdminOverviewLayoutEntry<ItemId>[],
 ): boolean {
   return (
-    left.length === right.length
-    && left.every(
-      (entry, index) => entry.slot === right[index]?.slot && entry.item === right[index]?.item,
+    left.length === right.length &&
+    left.every(
+      (entry, index) =>
+        entry.slot === right[index]?.slot && entry.item === right[index]?.item,
     )
   );
 }

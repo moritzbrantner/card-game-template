@@ -4,7 +4,11 @@ import { eq, inArray } from 'drizzle-orm';
 import { getEnv } from '@/src/config/env';
 import { getDb } from '@/src/db/client';
 import { featureFlags, siteAnnouncements, siteSettings } from '@/src/db/schema';
-import { failure, success, type ServiceResult } from '@/src/domain/shared/result';
+import {
+  failure,
+  success,
+  type ServiceResult,
+} from '@/src/domain/shared/result';
 import { getLogger } from '@/src/observability/logger';
 import type { AppLocale } from '@/i18n/routing';
 import type {
@@ -14,10 +18,19 @@ import type {
   PublicSiteSettingKey,
   SiteSettingKey,
 } from '@/src/site-config/contracts';
-import { analyticsSiteSettingKeys, featureFlagKeys, publicSiteSettingKeys } from '@/src/site-config/contracts';
+import {
+  analyticsSiteSettingKeys,
+  featureFlagKeys,
+  publicSiteSettingKeys,
+} from '@/src/site-config/contracts';
 import type { AdminReportWindow } from '@/src/domain/admin-reports/use-cases';
 
-export const siteAnnouncementStatuses = ['draft', 'scheduled', 'published', 'archived'] as const;
+export const siteAnnouncementStatuses = [
+  'draft',
+  'scheduled',
+  'published',
+  'archived',
+] as const;
 export type SiteAnnouncementStatus = (typeof siteAnnouncementStatuses)[number];
 
 export type SiteAnnouncementRecord = {
@@ -44,20 +57,25 @@ export type SiteAnnouncementInput = {
   unpublishAt?: Date | null;
 };
 
-export type SiteAnnouncementValidationErrors = Partial<Record<'title' | 'body' | 'status' | 'publishAt' | 'unpublishAt', string>>;
+export type SiteAnnouncementValidationErrors = Partial<
+  Record<'title' | 'body' | 'status' | 'publishAt' | 'unpublishAt', string>
+>;
 
 export type SiteAnnouncementError = {
   message: string;
   fieldErrors: SiteAnnouncementValidationErrors;
 };
 
-export type SaveAnnouncementResult = ServiceResult<{
-  id: string;
-  locale: AppLocale;
-  status: SiteAnnouncementStatus;
-  publishAt: Date | null;
-  unpublishAt: Date | null;
-}, SiteAnnouncementError>;
+export type SaveAnnouncementResult = ServiceResult<
+  {
+    id: string;
+    locale: AppLocale;
+    status: SiteAnnouncementStatus;
+    publishAt: Date | null;
+    unpublishAt: Date | null;
+  },
+  SiteAnnouncementError
+>;
 
 export type AdminAnalyticsSettings = {
   pageVisitRetentionDays: number;
@@ -69,9 +87,15 @@ export type AnalyticsPruneStatus = {
   lastSuccessfulRunAt: string | null;
 };
 
-type SiteSettingsRows = Awaited<ReturnType<ReturnType<typeof getDb>['query']['siteSettings']['findMany']>>;
-type FeatureFlagRows = Awaited<ReturnType<ReturnType<typeof getDb>['query']['featureFlags']['findMany']>>;
-type SiteAnnouncementRows = Awaited<ReturnType<ReturnType<typeof getDb>['query']['siteAnnouncements']['findMany']>>;
+type SiteSettingsRows = Awaited<
+  ReturnType<ReturnType<typeof getDb>['query']['siteSettings']['findMany']>
+>;
+type FeatureFlagRows = Awaited<
+  ReturnType<ReturnType<typeof getDb>['query']['featureFlags']['findMany']>
+>;
+type SiteAnnouncementRows = Awaited<
+  ReturnType<ReturnType<typeof getDb>['query']['siteAnnouncements']['findMany']>
+>;
 
 const CACHE_TTL_MS = 60_000;
 const SITE_CONFIG_TAG = 'site-config';
@@ -82,7 +106,8 @@ const siteConfigDefaults: Record<SiteSettingKey, string> = {
   'site.url': getEnv().site.url,
   'seo.defaultTitle': 'Next Template',
   'seo.titleSuffix': ' | Next Template',
-  'seo.defaultDescription': 'Next.js application with auth, admin examples, and Drizzle/Postgres persistence.',
+  'seo.defaultDescription':
+    'Next.js application with auth, admin examples, and Drizzle/Postgres persistence.',
   'seo.defaultOgImage': '',
   'contact.supportEmail': 'support@example.com',
   'analytics.pageVisitRetentionDays': '365',
@@ -154,8 +179,14 @@ export function shouldUseDatabaseReadFallback(error: unknown): boolean {
   while (current && typeof current === 'object' && !visited.has(current)) {
     visited.add(current);
 
-    const code = 'code' in current && typeof current.code === 'string' ? current.code : undefined;
-    const message = 'message' in current && typeof current.message === 'string' ? current.message : undefined;
+    const code =
+      'code' in current && typeof current.code === 'string'
+        ? current.code
+        : undefined;
+    const message =
+      'message' in current && typeof current.message === 'string'
+        ? current.message
+        : undefined;
 
     if (code && databaseReadFallbackErrorCodes.has(code)) {
       return true;
@@ -211,7 +242,8 @@ export async function listSiteSettings() {
 
   return publicSiteSettingKeys.map((key) => ({
     key,
-    value: rows.find((row) => row.key === key)?.value ?? siteConfigDefaults[key],
+    value:
+      rows.find((row) => row.key === key)?.value ?? siteConfigDefaults[key],
   }));
 }
 
@@ -257,12 +289,19 @@ export async function listFeatureFlags() {
 
   return featureFlagKeys.map((key) => ({
     key,
-    enabled: rows.find((row) => row.key === key)?.enabled === 1 ? true : featureFlagDefaults[key],
+    enabled:
+      rows.find((row) => row.key === key)?.enabled === 1
+        ? true
+        : featureFlagDefaults[key],
     description: rows.find((row) => row.key === key)?.description ?? null,
   }));
 }
 
-export async function upsertFeatureFlag(key: FeatureFlagKey, enabled: boolean, description?: string) {
+export async function upsertFeatureFlag(
+  key: FeatureFlagKey,
+  enabled: boolean,
+  description?: string,
+) {
   await getDb()
     .insert(featureFlags)
     .values({
@@ -305,11 +344,21 @@ async function loadPublicSiteConfig(): Promise<PublicSiteConfig> {
       ]);
 
       const settings = Object.fromEntries(
-        publicSiteSettingKeys.map((key) => [key, settingRows.find((row) => row.key === key)?.value ?? siteConfigDefaults[key]]),
+        publicSiteSettingKeys.map((key) => [
+          key,
+          settingRows.find((row) => row.key === key)?.value ??
+            siteConfigDefaults[key],
+        ]),
       ) as Record<PublicSiteSettingKey, string>;
 
       const flags = Object.fromEntries(
-        featureFlagKeys.map((key) => [key, normalizeBoolean(flagRows.find((row) => row.key === key)?.enabled ?? (featureFlagDefaults[key] ? 1 : 0))]),
+        featureFlagKeys.map((key) => [
+          key,
+          normalizeBoolean(
+            flagRows.find((row) => row.key === key)?.enabled ??
+              (featureFlagDefaults[key] ? 1 : 0),
+          ),
+        ]),
       ) as Record<FeatureFlagKey, boolean>;
 
       value = {
@@ -343,10 +392,14 @@ async function loadPublicSiteConfig(): Promise<PublicSiteConfig> {
   return value;
 }
 
-const getCachedPublicSiteConfig = unstable_cache(loadPublicSiteConfig, ['public-site-config'], {
-  revalidate: CACHE_TTL_MS / 1000,
-  tags: [SITE_CONFIG_TAG],
-});
+const getCachedPublicSiteConfig = unstable_cache(
+  loadPublicSiteConfig,
+  ['public-site-config'],
+  {
+    revalidate: CACHE_TTL_MS / 1000,
+    tags: [SITE_CONFIG_TAG],
+  },
+);
 
 export async function getPublicSiteConfig(): Promise<PublicSiteConfig> {
   return getCachedPublicSiteConfig();
@@ -374,7 +427,8 @@ async function listSiteSettingsByKeys(keys: readonly SiteSettingKey[]) {
   } else {
     try {
       rows = await getDb().query.siteSettings.findMany({
-        where: (table, { inArray: innerInArray }) => innerInArray(table.key, [...keys]),
+        where: (table, { inArray: innerInArray }) =>
+          innerInArray(table.key, [...keys]),
         orderBy: (table, { asc }) => [asc(table.key)],
       });
     } catch (error) {
@@ -389,7 +443,8 @@ async function listSiteSettingsByKeys(keys: readonly SiteSettingKey[]) {
 
   return keys.map((key) => ({
     key,
-    value: rows.find((row) => row.key === key)?.value ?? siteConfigDefaults[key],
+    value:
+      rows.find((row) => row.key === key)?.value ?? siteConfigDefaults[key],
   }));
 }
 
@@ -399,14 +454,21 @@ export async function listAnalyticsSettings() {
 
 export async function getAdminAnalyticsSettings(): Promise<AdminAnalyticsSettings> {
   const settings = await listAnalyticsSettings();
-  const values = Object.fromEntries(settings.map((setting) => [setting.key, setting.value])) as Record<AnalyticsSiteSettingKey, string>;
+  const values = Object.fromEntries(
+    settings.map((setting) => [setting.key, setting.value]),
+  ) as Record<AnalyticsSiteSettingKey, string>;
 
   return {
     pageVisitRetentionDays: parsePositiveInteger(
       values['analytics.pageVisitRetentionDays'],
-      parsePositiveInteger(siteConfigDefaults['analytics.pageVisitRetentionDays'], 365),
+      parsePositiveInteger(
+        siteConfigDefaults['analytics.pageVisitRetentionDays'],
+        365,
+      ),
     ),
-    defaultAdminReportWindow: parseAdminReportWindow(values['analytics.defaultAdminReportWindow']),
+    defaultAdminReportWindow: parseAdminReportWindow(
+      values['analytics.defaultAdminReportWindow'],
+    ),
   };
 }
 
@@ -423,7 +485,10 @@ export async function getAnalyticsPruneStatus(): Promise<AnalyticsPruneStatus> {
   try {
     const [latestRun] = await getDb().query.jobOutbox.findMany({
       where: (table, { and: innerAnd, eq: innerEq }) =>
-        innerAnd(innerEq(table.jobName, 'pruneAnalytics'), innerEq(table.status, 'completed')),
+        innerAnd(
+          innerEq(table.jobName, 'pruneAnalytics'),
+          innerEq(table.status, 'completed'),
+        ),
       orderBy: (table, { desc }) => [desc(table.updatedAt)],
       limit: 1,
       columns: {
@@ -448,7 +513,9 @@ export async function getAnalyticsPruneStatus(): Promise<AnalyticsPruneStatus> {
   }
 }
 
-export async function listAnnouncements(locale?: AppLocale): Promise<SiteAnnouncementRecord[]> {
+export async function listAnnouncements(
+  locale?: AppLocale,
+): Promise<SiteAnnouncementRecord[]> {
   let rows: SiteAnnouncementRows;
 
   if (hasActiveDatabaseReadFallback()) {
@@ -522,10 +589,14 @@ async function loadActiveAnnouncements(locale: AppLocale) {
   }));
 }
 
-const getCachedActiveAnnouncements = unstable_cache(loadActiveAnnouncements, ['active-announcements'], {
-  revalidate: CACHE_TTL_MS / 1000,
-  tags: [ACTIVE_ANNOUNCEMENTS_TAG],
-});
+const getCachedActiveAnnouncements = unstable_cache(
+  loadActiveAnnouncements,
+  ['active-announcements'],
+  {
+    revalidate: CACHE_TTL_MS / 1000,
+    tags: [ACTIVE_ANNOUNCEMENTS_TAG],
+  },
+);
 
 export async function getActiveAnnouncements(locale: AppLocale) {
   return getCachedActiveAnnouncements(locale);
@@ -567,14 +638,19 @@ export async function getAnnouncementById(id: string) {
   };
 }
 
-export function validateAnnouncementInput(input: SiteAnnouncementInput): ServiceResult<{
-  title: string;
-  body: string;
-  href: string | null;
-  status: SiteAnnouncementStatus;
-  publishAt: Date | null;
-  unpublishAt: Date | null;
-}, SiteAnnouncementError> {
+export function validateAnnouncementInput(
+  input: SiteAnnouncementInput,
+): ServiceResult<
+  {
+    title: string;
+    body: string;
+    href: string | null;
+    status: SiteAnnouncementStatus;
+    publishAt: Date | null;
+    unpublishAt: Date | null;
+  },
+  SiteAnnouncementError
+> {
   const title = input.title.trim();
   const body = input.body.trim();
   const href = input.href?.trim() || null;
@@ -603,10 +679,15 @@ export function validateAnnouncementInput(input: SiteAnnouncementInput): Service
   }
 
   if (unpublishAt && !publishAt && input.status !== 'published') {
-    fieldErrors.unpublishAt = 'Choose a publish time before scheduling an unpublish time.';
+    fieldErrors.unpublishAt =
+      'Choose a publish time before scheduling an unpublish time.';
   }
 
-  if (publishAt && unpublishAt && unpublishAt.getTime() <= publishAt.getTime()) {
+  if (
+    publishAt &&
+    unpublishAt &&
+    unpublishAt.getTime() <= publishAt.getTime()
+  ) {
     fieldErrors.unpublishAt = 'Unpublish time must be later than publish time.';
   }
 
@@ -627,7 +708,9 @@ export function validateAnnouncementInput(input: SiteAnnouncementInput): Service
   });
 }
 
-export async function saveAnnouncement(input: SiteAnnouncementInput): Promise<SaveAnnouncementResult> {
+export async function saveAnnouncement(
+  input: SiteAnnouncementInput,
+): Promise<SaveAnnouncementResult> {
   const validated = validateAnnouncementInput(input);
 
   if (!validated.ok) {

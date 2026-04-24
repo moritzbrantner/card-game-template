@@ -24,7 +24,9 @@ function mapRoomProblem(
         : code === 'FORBIDDEN'
           ? 403
           : 409;
-  return new ProblemError(problem('/problems/game-room', title, status, detail));
+  return new ProblemError(
+    problem('/problems/game-room', title, status, detail),
+  );
 }
 
 export const GET = createApiRoute({

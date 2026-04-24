@@ -183,7 +183,10 @@ export function createMobileOnlineGameClient(
       apiClient.getMatchSnapshot(mobileUnoMatchApi, matchId),
     getUnoMatchEvents: (
       matchId: string,
-      cursor?: { afterSequence?: number | null; sinceUpdatedAt?: string | null },
+      cursor?: {
+        afterSequence?: number | null;
+        sinceUpdatedAt?: string | null;
+      },
     ) => apiClient.getMatchEvents(mobileUnoMatchApi, matchId, cursor),
     submitUnoMove: (matchId: string, move: UnoMove) =>
       apiClient.submitMove(mobileUnoMatchApi, matchId, move),
@@ -196,7 +199,10 @@ export function createMobileOnlineGameClient(
       apiClient.getMatchSnapshot(mobilePokerMatchApi, matchId),
     getPokerMatchEvents: (
       matchId: string,
-      cursor?: { afterSequence?: number | null; sinceUpdatedAt?: string | null },
+      cursor?: {
+        afterSequence?: number | null;
+        sinceUpdatedAt?: string | null;
+      },
     ) => apiClient.getMatchEvents(mobilePokerMatchApi, matchId, cursor),
     submitPokerMove: (matchId: string, move: PokerMove) =>
       apiClient.submitMove(mobilePokerMatchApi, matchId, move),

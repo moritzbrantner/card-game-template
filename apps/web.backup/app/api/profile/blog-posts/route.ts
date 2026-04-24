@@ -1,4 +1,7 @@
-import { blogPostCreateSchema, type CreateBlogPostResponse } from '@/src/domain/blog/contracts';
+import {
+  blogPostCreateSchema,
+  type CreateBlogPostResponse,
+} from '@/src/domain/blog/contracts';
 import { createBlogPostUseCase } from '@/src/domain/blog/use-cases';
 import { createApiRoute } from '@/src/http/route';
 

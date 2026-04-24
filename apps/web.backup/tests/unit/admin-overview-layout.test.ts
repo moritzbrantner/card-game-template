@@ -25,7 +25,12 @@ describe('admin overview layout helpers', () => {
       { slot: 'users', item: 'reports' },
     ];
 
-    expect(parseAdminOverviewLayout(serializeAdminOverviewLayout(savedLayout), itemIds)).toEqual(savedLayout);
+    expect(
+      parseAdminOverviewLayout(
+        serializeAdminOverviewLayout(savedLayout),
+        itemIds,
+      ),
+    ).toEqual(savedLayout);
   });
 
   it('falls back to the default layout when the saved arrangement is stale or malformed', () => {
@@ -38,7 +43,9 @@ describe('admin overview layout helpers', () => {
       ],
     });
 
-    expect(parseAdminOverviewLayout(malformedLayout, itemIds)).toEqual(buildDefaultAdminOverviewLayout(itemIds));
+    expect(parseAdminOverviewLayout(malformedLayout, itemIds)).toEqual(
+      buildDefaultAdminOverviewLayout(itemIds),
+    );
   });
 
   it('compares layouts by slot and item order', () => {

@@ -3,7 +3,7 @@ import { hasPermissionForRole } from '@/src/domain/authorization/service';
 import { isSiteFeatureEnabled } from '@/src/foundation/features/access';
 
 export async function GET(request: Request) {
-  if (!await isSiteFeatureEnabled('admin.reports')) {
+  if (!(await isSiteFeatureEnabled('admin.reports'))) {
     return new Response('Not found', { status: 404 });
   }
 
@@ -19,6 +19,9 @@ export async function GET(request: Request) {
 
   return guard.json({
     action: 'viewReports',
-    allowed: await hasPermissionForRole(guard.session!.user.role, 'admin.reports.read'),
+    allowed: await hasPermissionForRole(
+      guard.session!.user.role,
+      'admin.reports.read',
+    ),
   });
 }

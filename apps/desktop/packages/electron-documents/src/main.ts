@@ -1,11 +1,20 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
-import type { BrowserWindow, IpcMain, IpcMainInvokeEvent, WebContents } from 'electron';
+import type {
+  BrowserWindow,
+  IpcMain,
+  IpcMainInvokeEvent,
+  WebContents,
+} from 'electron';
 
 import type { JsonStore } from '@moritzbrantner/electron-json-store/main';
 
-import { documentsChannels, type DocumentState, type RecentDocument } from './shared.ts';
+import {
+  documentsChannels,
+  type DocumentState,
+  type RecentDocument,
+} from './shared.ts';
 
 function cloneValue<TValue>(value: TValue): TValue {
   return structuredClone(value);
@@ -40,7 +49,9 @@ export interface DocumentDialogAdapter {
     canceled: boolean;
     filePath?: string;
   }>;
-  showUnsavedChangesDialog(browserWindow: BrowserWindow): Promise<'cancel' | 'discard' | 'save'>;
+  showUnsavedChangesDialog(
+    browserWindow: BrowserWindow,
+  ): Promise<'cancel' | 'discard' | 'save'>;
 }
 
 export interface DocumentsServiceOptions {
@@ -70,7 +81,8 @@ function deriveDisplayName(filePathValue: string | null) {
 
 export function createDocumentsService(options: DocumentsServiceOptions) {
   const defaultContent = options.defaultContent ?? '';
-  const initialFileName = options.initialFileName ?? `Untitled.${options.serializer.extension}`;
+  const initialFileName =
+    options.initialFileName ?? `Untitled.${options.serializer.extension}`;
 
   let state: InternalDocumentState = {
     content: defaultContent,
@@ -113,7 +125,9 @@ export function createDocumentsService(options: DocumentsServiceOptions) {
         lastOpenedAt: timestamp,
         name: path.basename(filePathValue),
       };
-      const remainingItems = current.items.filter((item) => item.filePath !== filePathValue);
+      const remainingItems = current.items.filter(
+        (item) => item.filePath !== filePathValue,
+      );
 
       return {
         items: [nextItem].concat(remainingItems).slice(0, 8),
@@ -140,12 +154,15 @@ export function createDocumentsService(options: DocumentsServiceOptions) {
     await broadcast();
   }
 
-  async function maybeConfirmLosingChanges(browserWindow: BrowserWindow | null) {
+  async function maybeConfirmLosingChanges(
+    browserWindow: BrowserWindow | null,
+  ) {
     if (!browserWindow || state.content === state.lastSavedContent) {
       return true;
     }
 
-    const decision = await options.dialogAdapter.showUnsavedChangesDialog(browserWindow);
+    const decision =
+      await options.dialogAdapter.showUnsavedChangesDialog(browserWindow);
 
     if (decision === 'cancel') {
       state = {
@@ -230,7 +247,10 @@ export function createDocumentsService(options: DocumentsServiceOptions) {
     await loadFile(result.filePaths[0]);
   }
 
-  async function openRecent(filePathValue: string, browserWindow: BrowserWindow | null) {
+  async function openRecent(
+    filePathValue: string,
+    browserWindow: BrowserWindow | null,
+  ) {
     const canContinue = await maybeConfirmLosingChanges(browserWindow);
 
     if (!canContinue) {
@@ -277,7 +297,9 @@ export function createDocumentsService(options: DocumentsServiceOptions) {
       ...state,
       content,
       statusMessage:
-        content === state.lastSavedContent ? 'All changes saved' : 'Unsaved changes',
+        content === state.lastSavedContent
+          ? 'All changes saved'
+          : 'Unsaved changes',
     };
     await broadcast();
   }
@@ -315,18 +337,24 @@ export function createDocumentsService(options: DocumentsServiceOptions) {
     ipcMain.handle(documentsChannels.open, async (event) => {
       await open(await getWindowForEvent(event));
     });
-    ipcMain.handle(documentsChannels.openRecent, async (event, filePathValue: string) => {
-      await openRecent(filePathValue, await getWindowForEvent(event));
-    });
+    ipcMain.handle(
+      documentsChannels.openRecent,
+      async (event, filePathValue: string) => {
+        await openRecent(filePathValue, await getWindowForEvent(event));
+      },
+    );
     ipcMain.handle(documentsChannels.save, async (event) => {
       await save(await getWindowForEvent(event));
     });
     ipcMain.handle(documentsChannels.saveAs, async (event) => {
       await saveAs(await getWindowForEvent(event));
     });
-    ipcMain.handle(documentsChannels.updateDraft, async (_event, content: string) => {
-      await updateDraft(content);
-    });
+    ipcMain.handle(
+      documentsChannels.updateDraft,
+      async (_event, content: string) => {
+        await updateDraft(content);
+      },
+    );
 
     return () => {
       ipcMain.removeHandler(documentsChannels.getState);

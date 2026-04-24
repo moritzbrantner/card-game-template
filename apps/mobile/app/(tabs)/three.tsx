@@ -19,27 +19,48 @@ export default function ThreeScreen() {
           <ThemedView style={styles.header}>
             <ThemedText type="title">Three.js</ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
-              A dedicated mobile destination for 3D ideas, visual prototypes, and future scene
-              work.
+              A dedicated mobile destination for 3D ideas, visual prototypes,
+              and future scene work.
             </ThemedText>
           </ThemedView>
 
           <ThemedView
             style={[styles.stage, { borderColor }]}
             lightColor={Colors.light.surface}
-            darkColor={Colors.dark.surface}>
-            <View style={[styles.layer, styles.layerBack, { borderColor, backgroundColor: accentSurface }]} />
-            <View style={[styles.layer, styles.layerMid, { borderColor, backgroundColor: accentSurface }]} />
-            <View style={[styles.layer, styles.layerFront, { borderColor, backgroundColor: accentColor }]} />
+            darkColor={Colors.dark.surface}
+          >
+            <View
+              style={[
+                styles.layer,
+                styles.layerBack,
+                { borderColor, backgroundColor: accentSurface },
+              ]}
+            />
+            <View
+              style={[
+                styles.layer,
+                styles.layerMid,
+                { borderColor, backgroundColor: accentSurface },
+              ]}
+            />
+            <View
+              style={[
+                styles.layer,
+                styles.layerFront,
+                { borderColor, backgroundColor: accentColor },
+              ]}
+            />
           </ThemedView>
 
           <ThemedView
             style={[styles.card, { borderColor }]}
             lightColor={Colors.light.surface}
-            darkColor={Colors.dark.surface}>
+            darkColor={Colors.dark.surface}
+          >
             <ThemedText type="subtitle">Why it is here</ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
-              Users can now open a dedicated Three.js screen directly from the navigation menu.
+              Users can now open a dedicated Three.js screen directly from the
+              navigation menu.
             </ThemedText>
           </ThemedView>
         </ScrollView>
@@ -80,7 +101,12 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   layerBack: {
-    transform: [{ rotate: '-18deg' }, { translateX: -34 }, { translateY: -30 }, { scale: 0.92 }],
+    transform: [
+      { rotate: '-18deg' },
+      { translateX: -34 },
+      { translateY: -30 },
+      { scale: 0.92 },
+    ],
     opacity: 0.48,
   },
   layerMid: {

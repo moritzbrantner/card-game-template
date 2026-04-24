@@ -18,7 +18,12 @@ export default async function SettingsPage({
   const locale = resolveLocale(rawLocale);
   const session = await requireAuth(locale);
   const consent = await getConsentState();
-  const [visibilityResult, followerVisibilityResult, blockedProfilesResult, permissionSet] = await Promise.all([
+  const [
+    visibilityResult,
+    followerVisibilityResult,
+    blockedProfilesResult,
+    permissionSet,
+  ] = await Promise.all([
     getProfileSearchVisibilityUseCase(session.user.id),
     getProfileFollowerVisibilityUseCase(session.user.id),
     listBlockedProfilesUseCase(session.user.id),
@@ -31,9 +36,17 @@ export default async function SettingsPage({
       session={session}
       consent={consent.state}
       currentPermissions={[...permissionSet]}
-      initialSearchVisibility={visibilityResult.ok ? visibilityResult.data.isSearchable : true}
-      initialFollowerVisibility={followerVisibilityResult.ok ? followerVisibilityResult.data.followerVisibility : 'PUBLIC'}
-      initialBlockedProfiles={blockedProfilesResult.ok ? blockedProfilesResult.data.profiles : []}
+      initialSearchVisibility={
+        visibilityResult.ok ? visibilityResult.data.isSearchable : true
+      }
+      initialFollowerVisibility={
+        followerVisibilityResult.ok
+          ? followerVisibilityResult.data.followerVisibility
+          : 'PUBLIC'
+      }
+      initialBlockedProfiles={
+        blockedProfilesResult.ok ? blockedProfilesResult.data.profiles : []
+      }
     />
   );
 }

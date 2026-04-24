@@ -19,14 +19,20 @@ export function resolveEnabledPublicRoute(
     return null;
   }
 
-  if (resolvedRoute.page.featureKey && !isFeatureEnabled(resolvedRoute.page.featureKey, manifest)) {
+  if (
+    resolvedRoute.page.featureKey &&
+    !isFeatureEnabled(resolvedRoute.page.featureKey, manifest)
+  ) {
     return null;
   }
 
   return resolvedRoute;
 }
 
-export function generatePublicRouteParams(locales: readonly string[], manifest: AppManifest) {
+export function generatePublicRouteParams(
+  locales: readonly string[],
+  manifest: AppManifest,
+) {
   return generatePublicRouteParamsBase(locales, manifest).filter((entry) => {
     const resolvedRoute = resolveEnabledPublicRoute(manifest, entry.publicSlug);
     return Boolean(resolvedRoute);

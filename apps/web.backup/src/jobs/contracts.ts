@@ -1,6 +1,12 @@
 import type { SendEmailRequest } from '@/src/email/service';
 
-export const jobNames = ['sendEmail', 'fanoutNotification', 'publishAnnouncement', 'archiveAnnouncement', 'pruneAnalytics'] as const;
+export const jobNames = [
+  'sendEmail',
+  'fanoutNotification',
+  'publishAnnouncement',
+  'archiveAnnouncement',
+  'pruneAnalytics',
+] as const;
 
 export type JobName = (typeof jobNames)[number];
 

@@ -35,7 +35,11 @@ type ResetPasswordFormProps = {
 
 const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{10,}$/;
 
-export function ResetPasswordForm({ locale, token, labels }: ResetPasswordFormProps) {
+export function ResetPasswordForm({
+  locale,
+  token,
+  labels,
+}: ResetPasswordFormProps) {
   const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState(false);
   const {
@@ -88,7 +92,10 @@ export function ResetPasswordForm({ locale, token, labels }: ResetPasswordFormPr
         });
       }
 
-      if (problem.formMessage || Object.keys(problem.fieldErrors).length === 0) {
+      if (
+        problem.formMessage ||
+        Object.keys(problem.fieldErrors).length === 0
+      ) {
         setError('root', {
           type: 'server',
           message: problem.formMessage ?? problem.message,
@@ -106,7 +113,10 @@ export function ResetPasswordForm({ locale, token, labels }: ResetPasswordFormPr
   if (success) {
     return (
       <div className="space-y-4">
-        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
+        <p
+          role="status"
+          className="text-sm text-emerald-700 dark:text-emerald-400"
+        >
           {labels.success}
         </p>
         <Link
@@ -137,7 +147,11 @@ export function ResetPasswordForm({ locale, token, labels }: ResetPasswordFormPr
             },
           })}
         />
-        {errors.password ? <p className="text-sm text-red-600 dark:text-red-400">{errors.password.message}</p> : null}
+        {errors.password ? (
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {errors.password.message}
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -153,11 +167,17 @@ export function ResetPasswordForm({ locale, token, labels }: ResetPasswordFormPr
           })}
         />
         {errors.confirmPassword ? (
-          <p className="text-sm text-red-600 dark:text-red-400">{errors.confirmPassword.message}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {errors.confirmPassword.message}
+          </p>
         ) : null}
       </div>
 
-      {errors.root?.message ? <p className="text-sm text-red-600 dark:text-red-400">{errors.root.message}</p> : null}
+      {errors.root?.message ? (
+        <p className="text-sm text-red-600 dark:text-red-400">
+          {errors.root.message}
+        </p>
+      ) : null}
 
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? labels.submitting : labels.submit}

@@ -1,6 +1,9 @@
 import { secureRoute } from '@/src/api/route-security';
 import { signInSession } from '@/src/auth.server';
-import { updateAccountEmailUseCase, type AccountError } from '@/src/domain/account/use-cases';
+import {
+  updateAccountEmailUseCase,
+  type AccountError,
+} from '@/src/domain/account/use-cases';
 
 function statusForAccountError(error: AccountError) {
   switch (error.code) {
@@ -32,13 +35,20 @@ export async function POST(request: Request) {
   const rawEmail = formData.get('email');
   const rawCurrentPassword = formData.get('currentPassword');
   const email = typeof rawEmail === 'string' ? rawEmail : '';
-  const currentPassword = typeof rawCurrentPassword === 'string' ? rawCurrentPassword : '';
+  const currentPassword =
+    typeof rawCurrentPassword === 'string' ? rawCurrentPassword : '';
 
   try {
-    const result = await updateAccountEmailUseCase(userId, { email, currentPassword });
+    const result = await updateAccountEmailUseCase(userId, {
+      email,
+      currentPassword,
+    });
 
     if (!result.ok) {
-      return guard.json({ error: result.error.message }, { status: statusForAccountError(result.error) });
+      return guard.json(
+        { error: result.error.message },
+        { status: statusForAccountError(result.error) },
+      );
     }
 
     await signInSession({
@@ -48,6 +58,12 @@ export async function POST(request: Request) {
 
     return guard.json({ ok: true });
   } catch {
-    return guard.json({ error: 'Unable to update your email address right now. Please try again.' }, { status: 500 });
+    return guard.json(
+      {
+        error:
+          'Unable to update your email address right now. Please try again.',
+      },
+      { status: 500 },
+    );
   }
 }

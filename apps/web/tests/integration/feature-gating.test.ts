@@ -4,14 +4,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 function createFeatureMock(disabledKeys: string[]) {
   return {
-    isFeatureEnabled: (featureKey: string) => !disabledKeys.includes(featureKey),
+    isFeatureEnabled: (featureKey: string) =>
+      !disabledKeys.includes(featureKey),
   };
 }
 
 function createApiMocks() {
   vi.doMock('@/src/api/security', () => ({
     auditAction: vi.fn().mockResolvedValue(undefined),
-    enforceRateLimit: vi.fn().mockResolvedValue({ ok: true, remaining: 10, resetAt: 0 }),
+    enforceRateLimit: vi
+      .fn()
+      .mockResolvedValue({ ok: true, remaining: 10, resetAt: 0 }),
     getRateLimitKey: vi.fn().mockReturnValue('test'),
   }));
   vi.doMock('@/src/auth.server', () => ({
@@ -26,9 +29,13 @@ function createApiMocks() {
     }),
   }));
   vi.doMock('@/src/observability/request-context', () => ({
-    createRequestContext: vi.fn().mockReturnValue({ requestId: 'test-request' }),
+    createRequestContext: vi
+      .fn()
+      .mockReturnValue({ requestId: 'test-request' }),
     setRequestActorId: vi.fn(),
-    withRequestContext: vi.fn(async (_context, callback: () => Promise<Response>) => callback()),
+    withRequestContext: vi.fn(
+      async (_context, callback: () => Promise<Response>) => callback(),
+    ),
   }));
 }
 
@@ -72,14 +79,19 @@ afterEach(() => {
 describe('feature gating', () => {
   it('returns 404 for the signup endpoint and page when registration is disabled', async () => {
     createApiMocks();
-    vi.doMock('@/src/foundation/features/runtime', () => createFeatureMock(['account.register']));
+    vi.doMock('@/src/foundation/features/runtime', () =>
+      createFeatureMock(['account.register']),
+    );
 
     const { POST } = await import('@/app/api/account/signup/route');
     const response = await POST(
       new Request('http://localhost/api/account/signup', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: 'person@example.com', password: 'VerySecure123' }),
+        body: JSON.stringify({
+          email: 'person@example.com',
+          password: 'VerySecure123',
+        }),
       }),
     );
 
@@ -97,12 +109,16 @@ describe('feature gating', () => {
     }));
 
     const registerPage = await import('@/app/[locale]/(guest)/register/page');
-    await expect(registerPage.default({ params: Promise.resolve({ locale: 'en' }) })).rejects.toThrow('NOT_FOUND');
+    await expect(
+      registerPage.default({ params: Promise.resolve({ locale: 'en' }) }),
+    ).rejects.toThrow('NOT_FOUND');
   });
 
   it('removes follow behavior from the public profile surface and follow API when the feature is disabled', async () => {
     createApiMocks();
-    vi.doMock('@/src/foundation/features/runtime', () => createFeatureMock(['profiles.follow']));
+    vi.doMock('@/src/foundation/features/runtime', () =>
+      createFeatureMock(['profiles.follow']),
+    );
 
     const { POST } = await import('@/app/api/profile/follow/route');
     const response = await POST(
@@ -137,33 +153,46 @@ describe('feature gating', () => {
       getAuthSession: vi.fn().mockResolvedValue({ user: { id: 'user_1' } }),
     }));
 
-    const profilePage = await import('@/app/[locale]/(public)/profile/[userId]/page');
+    const profilePage =
+      await import('@/app/[locale]/(public)/profile/[userId]/page');
     const rendered = await profilePage.default({
       params: Promise.resolve({ locale: 'en', userId: '@person' }),
     });
-    const followPanel = findElementByType(rendered, 'mock-follow-panel') as ReactElement<{ canManageFollowState: boolean }> | null;
+    const followPanel = findElementByType(
+      rendered,
+      'mock-follow-panel',
+    ) as ReactElement<{ canManageFollowState: boolean }> | null;
 
     expect(followPanel?.props.canManageFollowState).toBe(false);
   });
 
   it('returns 404 for disabled showcase pages and example APIs', async () => {
-    vi.doMock('@/src/foundation/features/runtime', () => createFeatureMock(['showcase.forms', 'showcase.employeeTable']));
+    vi.doMock('@/src/foundation/features/runtime', () =>
+      createFeatureMock(['showcase.forms', 'showcase.employeeTable']),
+    );
 
     const notFound = vi.fn(() => {
       throw new Error('NOT_FOUND');
     });
     vi.doMock('next/navigation', async () => {
-      const actual = await vi.importActual<typeof import('next/navigation')>('next/navigation');
+      const actual =
+        await vi.importActual<typeof import('next/navigation')>(
+          'next/navigation',
+        );
       return {
         ...actual,
         notFound,
       };
     });
 
-    const publicResolver = await import('@/app/[locale]/(public)/[[...publicSlug]]/page');
+    const publicResolver =
+      await import('@/app/[locale]/(public)/[[...publicSlug]]/page');
     await expect(
       publicResolver.default({
-        params: Promise.resolve({ locale: 'en', publicSlug: ['examples', 'forms'] }),
+        params: Promise.resolve({
+          locale: 'en',
+          publicSlug: ['examples', 'forms'],
+        }),
       }),
     ).rejects.toThrow('NOT_FOUND');
 
@@ -178,27 +207,34 @@ describe('feature gating', () => {
 
   it('returns 404 for disabled admin pages and APIs', async () => {
     createApiMocks();
-    vi.doMock('@/src/foundation/features/runtime', () => createFeatureMock(['admin.reports', 'admin.users', 'admin.dataStudio']));
+    vi.doMock('@/src/foundation/features/runtime', () =>
+      createFeatureMock(['admin.reports', 'admin.users', 'admin.dataStudio']),
+    );
 
     const notFound = vi.fn(() => {
       throw new Error('NOT_FOUND');
     });
     vi.doMock('next/navigation', async () => {
-      const actual = await vi.importActual<typeof import('next/navigation')>('next/navigation');
+      const actual =
+        await vi.importActual<typeof import('next/navigation')>(
+          'next/navigation',
+        );
       return {
         ...actual,
         notFound,
       };
     });
 
-    const reportsPage = await import('@/app/[locale]/(admin)/admin/reports/page');
+    const reportsPage =
+      await import('@/app/[locale]/(admin)/admin/reports/page');
     await expect(
       reportsPage.default({
         params: Promise.resolve({ locale: 'en' }),
       }),
     ).rejects.toThrow('NOT_FOUND');
 
-    const notificationsRoute = await import('@/app/api/admin/notifications/route');
+    const notificationsRoute =
+      await import('@/app/api/admin/notifications/route');
     const notificationResponse = await notificationsRoute.POST(
       new Request('http://localhost/api/admin/notifications', {
         method: 'POST',
@@ -207,7 +243,8 @@ describe('feature gating', () => {
     );
     expect(notificationResponse.status).toBe(404);
 
-    const dataStudioRoute = await import('@/app/api/admin/data-studio/records/route');
+    const dataStudioRoute =
+      await import('@/app/api/admin/data-studio/records/route');
     const dataStudioResponse = await dataStudioRoute.POST(
       new Request('http://localhost/api/admin/data-studio/records', {
         method: 'POST',

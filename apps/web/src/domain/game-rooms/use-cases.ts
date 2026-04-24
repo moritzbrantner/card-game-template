@@ -62,7 +62,10 @@ function mapMissingIdentity() {
   });
 }
 
-async function resolveRoomIdentity(session: AppSession | null, createGuest: boolean) {
+async function resolveRoomIdentity(
+  session: AppSession | null,
+  createGuest: boolean,
+) {
   return createGuest
     ? resolveOrCreateMatchOwnerIdentity(session)
     : resolveExistingMatchOwnerIdentity(session);
@@ -189,7 +192,9 @@ function assertValidRoomInput(input: CreatePrivateGameRoomInput) {
 }
 
 function getNextOpenSeat(room: PersistedGameRoomRecord) {
-  const occupiedSeats = new Set(room.participants.map((participant) => participant.seat));
+  const occupiedSeats = new Set(
+    room.participants.map((participant) => participant.seat),
+  );
 
   return Array.from({ length: room.maxPlayers }, (_, index) => index + 1).find(
     (seat) => !occupiedSeats.has(seat),
@@ -269,13 +274,8 @@ export async function createPrivateGameRoomUseCase(
           updatedAt: new Date(createdAt),
           createdByKind: identity.kind,
           createdByAccountId:
-            identity.kind === 'account'
-              ? identity.accountId
-              : null,
-          createdByGuestId:
-            identity.kind === 'guest'
-              ? identity.guestId
-              : null,
+            identity.kind === 'account' ? identity.accountId : null,
+          createdByGuestId: identity.kind === 'guest' ? identity.guestId : null,
         },
         seats: [
           buildSeatInsert({
@@ -295,10 +295,7 @@ export async function createPrivateGameRoomUseCase(
         throw new Error('Unable to load the created room.');
       }
 
-      return buildGameRoomDto(
-        room,
-        identity,
-      );
+      return buildGameRoomDto(room, identity);
     });
 
     return success(created);
@@ -575,7 +572,8 @@ export async function startGameRoomUseCase(
       if (!roomCanStart(room)) {
         throw failure<GameRoomUseCaseError>({
           code: 'CONFLICT',
-          message: 'Every occupied seat must be ready before the room can start.',
+          message:
+            'Every occupied seat must be ready before the room can start.',
         });
       }
 

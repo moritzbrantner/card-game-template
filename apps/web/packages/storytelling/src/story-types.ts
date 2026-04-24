@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType, ReactNode } from 'react';
 
 export type StorySceneDefinition = {
   id: string;
@@ -17,7 +17,7 @@ export type StorySceneProps = {
   className?: string;
 };
 
-export type StorySceneMeta = Omit<StorySceneProps, "children" | "className">;
+export type StorySceneMeta = Omit<StorySceneProps, 'children' | 'className'>;
 
 export type StoryNodeData = Record<string, unknown>;
 

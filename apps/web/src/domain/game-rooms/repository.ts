@@ -31,7 +31,9 @@ function latestDate(dates: readonly Date[]) {
   );
 }
 
-function mapSeatRow(row: typeof gameRoomSeats.$inferSelect): GameRoomParticipantRecord {
+function mapSeatRow(
+  row: typeof gameRoomSeats.$inferSelect,
+): GameRoomParticipantRecord {
   return {
     roomId: row.roomId,
     playerId: row.playerId,
@@ -51,7 +53,7 @@ function mapSeatRow(row: typeof gameRoomSeats.$inferSelect): GameRoomParticipant
 
 function mapRoomRecord(input: {
   room: typeof gameRooms.$inferSelect;
-  seats: readonly typeof gameRoomSeats.$inferSelect[];
+  seats: readonly (typeof gameRoomSeats.$inferSelect)[];
 }): PersistedGameRoomRecord {
   const updatedAt = latestDate([
     input.room.updatedAt,
@@ -64,8 +66,8 @@ function mapRoomRecord(input: {
     gameId: input.room.gameId,
     status: input.room.status as PersistedGameRoomRecord['status'],
     visibility: input.room.visibility as PersistedGameRoomRecord['visibility'],
-    executionMode:
-      input.room.executionMode as PersistedGameRoomRecord['executionMode'],
+    executionMode: input.room
+      .executionMode as PersistedGameRoomRecord['executionMode'],
     maxPlayers: input.room.maxPlayers,
     hostPlayerId: input.room.hostPlayerId,
     activeMatchId: input.room.activeMatchId,
@@ -129,7 +131,10 @@ export async function listParticipatingGameRooms(
       .from(gameRooms)
       .where(inArray(gameRooms.id, roomIds))
       .orderBy(desc(gameRooms.updatedAt)),
-    db.select().from(gameRoomSeats).where(inArray(gameRoomSeats.roomId, roomIds)),
+    db
+      .select()
+      .from(gameRoomSeats)
+      .where(inArray(gameRoomSeats.roomId, roomIds)),
   ]);
   const seatsByRoomId = new Map<string, typeof seats>();
 
@@ -174,7 +179,9 @@ export async function loadParticipatingGameRoom(
   const [owned] = await db
     .select({ roomId: gameRoomSeats.roomId })
     .from(gameRoomSeats)
-    .where(and(eq(gameRoomSeats.roomId, roomId), getSeatIdentityFilter(identity)))
+    .where(
+      and(eq(gameRoomSeats.roomId, roomId), getSeatIdentityFilter(identity)),
+    )
     .limit(1);
 
   if (!owned) {
@@ -188,7 +195,7 @@ export async function createGameRoom(
   db: DbExecutor,
   input: {
     room: typeof gameRooms.$inferInsert;
-    seats: readonly typeof gameRoomSeats.$inferInsert[];
+    seats: readonly (typeof gameRoomSeats.$inferInsert)[];
   },
 ) {
   await db.insert(gameRooms).values(input.room);

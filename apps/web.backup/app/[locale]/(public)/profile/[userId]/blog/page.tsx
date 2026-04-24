@@ -2,13 +2,25 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
 import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { LocalizedLink } from '@/i18n/server-link';
 import { getAuthSession } from '@/src/auth.server';
 import { createTranslator } from '@/src/i18n/messages';
 import { getUserBlogByTagUseCase } from '@/src/domain/blog/use-cases';
-import { buildPublicProfilePath, parseProfileTagSegment } from '@/src/profile/tags';
-import { notFoundUnlessFeatureEnabled, resolveLocale } from '@/src/server/page-guards';
+import {
+  buildPublicProfilePath,
+  parseProfileTagSegment,
+} from '@/src/profile/tags';
+import {
+  notFoundUnlessFeatureEnabled,
+  resolveLocale,
+} from '@/src/server/page-guards';
 
 function formatBlogDate(locale: string, date: Date) {
   return new Intl.DateTimeFormat(locale, {
@@ -33,7 +45,10 @@ export default async function PublicUserBlogPage({
 
   const t = createTranslator(locale, 'BlogPage');
   const session = await getAuthSession();
-  const result = await getUserBlogByTagUseCase(profileTag, session?.user.id ?? null);
+  const result = await getUserBlogByTagUseCase(
+    profileTag,
+    session?.user.id ?? null,
+  );
 
   if (!result.ok) {
     notFound();
@@ -51,7 +66,14 @@ export default async function PublicUserBlogPage({
             <div className="flex items-end gap-4">
               <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-zinc-100 text-3xl font-semibold text-zinc-700 shadow-sm dark:border-zinc-950 dark:bg-zinc-800 dark:text-zinc-100">
                 {blog.imageUrl ? (
-                  <Image src={blog.imageUrl} alt={blog.displayName} fill sizes="96px" unoptimized className="object-cover" />
+                  <Image
+                    src={blog.imageUrl}
+                    alt={blog.displayName}
+                    fill
+                    sizes="96px"
+                    unoptimized
+                    className="object-cover"
+                  />
                 ) : (
                   <span>{blog.displayName.charAt(0).toUpperCase() || 'U'}</span>
                 )}
@@ -61,7 +83,9 @@ export default async function PublicUserBlogPage({
                 <p className="text-sm font-medium uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
                   {t('publicPage.eyebrow')}
                 </p>
-                <h1 className="text-3xl font-semibold tracking-tight">{blog.displayName}</h1>
+                <h1 className="text-3xl font-semibold tracking-tight">
+                  {blog.displayName}
+                </h1>
                 <CardDescription>{t('publicPage.description')}</CardDescription>
               </div>
             </div>
@@ -82,14 +106,25 @@ export default async function PublicUserBlogPage({
           blog.posts.map((post) => {
             const createdLabel = formatBlogDate(locale, post.createdAt);
             const updatedLabel = formatBlogDate(locale, post.updatedAt);
-            const wasUpdated = post.updatedAt.getTime() !== post.createdAt.getTime();
+            const wasUpdated =
+              post.updatedAt.getTime() !== post.createdAt.getTime();
 
             return (
-              <Card key={post.id} id={`post-${post.id}`} className="scroll-mt-24">
+              <Card
+                key={post.id}
+                id={`post-${post.id}`}
+                className="scroll-mt-24"
+              >
                 <CardHeader>
                   <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-600 dark:text-zinc-400">
-                    <span>{t('posts.publishedAt', { date: createdLabel })}</span>
-                    {wasUpdated ? <span>{t('posts.updatedAt', { date: updatedLabel })}</span> : null}
+                    <span>
+                      {t('posts.publishedAt', { date: createdLabel })}
+                    </span>
+                    {wasUpdated ? (
+                      <span>
+                        {t('posts.updatedAt', { date: updatedLabel })}
+                      </span>
+                    ) : null}
                   </div>
                   <CardTitle className="pt-1">{post.title}</CardTitle>
                 </CardHeader>
@@ -105,7 +140,9 @@ export default async function PublicUserBlogPage({
         ) : (
           <Card>
             <CardContent className="p-6">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">{t('posts.empty')}</p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                {t('posts.empty')}
+              </p>
             </CardContent>
           </Card>
         )}

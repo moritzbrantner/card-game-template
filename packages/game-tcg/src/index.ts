@@ -5,20 +5,17 @@ import type {
   MatchState,
   PlayerId,
   PlayerProfile,
-} from "@repo/game-contracts";
-import {
-  areMovesEquivalent,
-  shuffleWithSeed,
-  type GameAdapter,
-} from "@repo/game-engine";
+} from '@repo/game-contracts';
+import { shuffleWithSeed } from '@repo/card-kit';
+import { areMovesEquivalent, type GameAdapter } from '@repo/game-engine';
 import type {
   LocalGameSessionBot,
   LocalGameSessionProjectViewInput,
   SessionParticipant,
-} from "@repo/game-session";
+} from '@repo/game-session';
 
-export type TcgCardKind = "creature" | "spell";
-export type TcgSpellEffect = "deal-2" | "heal-2";
+export type TcgCardKind = 'creature' | 'spell';
+export type TcgSpellEffect = 'deal-2' | 'heal-2';
 
 export type TcgCard = {
   attack?: number;
@@ -83,17 +80,17 @@ export type TcgPlayCardMove = GameMove<{
   targetPlayerId?: PlayerId;
   targetUnitId?: string;
 }> & {
-  kind: "play-card";
+  kind: 'play-card';
 };
 export type TcgAttackMove = GameMove<{
   attackerUnitId: string;
   targetPlayerId?: PlayerId;
   targetUnitId?: string;
 }> & {
-  kind: "attack";
+  kind: 'attack';
 };
 export type TcgEndTurnMove = GameMove<Record<string, never>> & {
-  kind: "end-turn";
+  kind: 'end-turn';
 };
 export type TcgMove = TcgPlayCardMove | TcgAttackMove | TcgEndTurnMove;
 
@@ -107,7 +104,7 @@ export type TcgPlayerView = {
   matchResultBanner: string | null;
   players: ReadonlyArray<{
     battlefield: readonly TcgUnit[];
-    controller: SessionParticipant["controller"];
+    controller: SessionParticipant['controller'];
     deckCount: number;
     displayName: string;
     handCount: number;
@@ -123,7 +120,7 @@ export type TcgPlayerView = {
   viewerPlayerId: PlayerId | null;
 };
 
-export type TcgExamplePresetId = "duel" | "bot-rival";
+export type TcgExamplePresetId = 'duel' | 'bot-rival';
 export type TcgExamplePreset = {
   hotseat: boolean;
   id: TcgExamplePresetId;
@@ -133,7 +130,7 @@ export type TcgExamplePreset = {
 
 export type TcgCatalogMetadata = {
   presets: readonly TcgExamplePreset[];
-  route: "/tcg";
+  route: '/tcg';
   supportsBots: true;
 };
 
@@ -150,13 +147,13 @@ export const defaultTcgRules: TcgRules = {
 };
 
 export const tcgDefinition: GameDefinition = {
-  gameId: "arcane-duel",
-  name: "Arcane Duel",
+  gameId: 'arcane-duel',
+  name: 'Arcane Duel',
   minPlayers: 2,
   maxPlayers: 2,
   supportsLocal: true,
   supportsOnline: false,
-  tags: ["card-game", "trading-card-game", "local"],
+  tags: ['card-game', 'trading-card-game', 'local'],
 };
 
 export const TCG_DECK_SIZE = 60;
@@ -164,92 +161,92 @@ export const TCG_MAX_COPIES_PER_CARD = 3;
 
 const CARD_REALMS = [
   {
-    id: "ember",
-    label: "Ember",
+    id: 'ember',
+    label: 'Ember',
     attackBonus: 1,
     healthBonus: 0,
-    effect: "deal-2",
+    effect: 'deal-2',
   },
   {
-    id: "tide",
-    label: "Tide",
+    id: 'tide',
+    label: 'Tide',
     attackBonus: 0,
     healthBonus: 1,
-    effect: "heal-2",
+    effect: 'heal-2',
   },
   {
-    id: "grove",
-    label: "Grove",
+    id: 'grove',
+    label: 'Grove',
     attackBonus: 0,
     healthBonus: 2,
-    effect: "heal-2",
+    effect: 'heal-2',
   },
   {
-    id: "storm",
-    label: "Storm",
+    id: 'storm',
+    label: 'Storm',
     attackBonus: 1,
     healthBonus: 0,
-    effect: "deal-2",
+    effect: 'deal-2',
   },
-  { id: "sun", label: "Sun", attackBonus: 0, healthBonus: 1, effect: "heal-2" },
+  { id: 'sun', label: 'Sun', attackBonus: 0, healthBonus: 1, effect: 'heal-2' },
   {
-    id: "moon",
-    label: "Moon",
+    id: 'moon',
+    label: 'Moon',
     attackBonus: 1,
     healthBonus: 1,
-    effect: "deal-2",
+    effect: 'deal-2',
   },
   {
-    id: "iron",
-    label: "Iron",
+    id: 'iron',
+    label: 'Iron',
     attackBonus: 0,
     healthBonus: 2,
-    effect: "heal-2",
+    effect: 'heal-2',
   },
   {
-    id: "thorn",
-    label: "Thorn",
+    id: 'thorn',
+    label: 'Thorn',
     attackBonus: 1,
     healthBonus: 0,
-    effect: "deal-2",
+    effect: 'deal-2',
   },
   {
-    id: "frost",
-    label: "Frost",
+    id: 'frost',
+    label: 'Frost',
     attackBonus: 0,
     healthBonus: 1,
-    effect: "heal-2",
+    effect: 'heal-2',
   },
   {
-    id: "void",
-    label: "Void",
+    id: 'void',
+    label: 'Void',
     attackBonus: 1,
     healthBonus: 0,
-    effect: "deal-2",
+    effect: 'deal-2',
   },
 ] as const;
 
 const CREATURE_ARCHETYPES = [
-  { id: "scout", label: "Scout", cost: 1, attack: 1, health: 2 },
-  { id: "adept", label: "Adept", cost: 1, attack: 2, health: 1 },
-  { id: "guard", label: "Guard", cost: 2, attack: 1, health: 4 },
-  { id: "raider", label: "Raider", cost: 2, attack: 3, health: 2 },
-  { id: "mystic", label: "Mystic", cost: 3, attack: 3, health: 3 },
-  { id: "warden", label: "Warden", cost: 4, attack: 4, health: 5 },
-  { id: "colossus", label: "Colossus", cost: 6, attack: 6, health: 7 },
+  { id: 'scout', label: 'Scout', cost: 1, attack: 1, health: 2 },
+  { id: 'adept', label: 'Adept', cost: 1, attack: 2, health: 1 },
+  { id: 'guard', label: 'Guard', cost: 2, attack: 1, health: 4 },
+  { id: 'raider', label: 'Raider', cost: 2, attack: 3, health: 2 },
+  { id: 'mystic', label: 'Mystic', cost: 3, attack: 3, health: 3 },
+  { id: 'warden', label: 'Warden', cost: 4, attack: 4, health: 5 },
+  { id: 'colossus', label: 'Colossus', cost: 6, attack: 6, health: 7 },
 ] as const;
 
 const SPELL_ARCHETYPES = [
-  { id: "spark", label: "Spark", cost: 1 },
-  { id: "surge", label: "Surge", cost: 2 },
-  { id: "rite", label: "Rite", cost: 3 },
+  { id: 'spark', label: 'Spark', cost: 1 },
+  { id: 'surge', label: 'Surge', cost: 2 },
+  { id: 'rite', label: 'Rite', cost: 3 },
 ] as const;
 
 export const tcgCardCatalog: readonly TcgCard[] = [
   ...CARD_REALMS.flatMap((realm) =>
     CREATURE_ARCHETYPES.map((archetype) => ({
       id: `${realm.id}-${archetype.id}`,
-      kind: "creature" as const,
+      kind: 'creature' as const,
       label: `${realm.label} ${archetype.label}`,
       cost: archetype.cost,
       attack: archetype.attack + realm.attackBonus,
@@ -259,7 +256,7 @@ export const tcgCardCatalog: readonly TcgCard[] = [
   ...CARD_REALMS.flatMap((realm) =>
     SPELL_ARCHETYPES.map((archetype) => ({
       id: `${realm.id}-${archetype.id}`,
-      kind: "spell" as const,
+      kind: 'spell' as const,
       label: `${realm.label} ${archetype.label}`,
       cost: archetype.cost,
       effect: realm.effect as TcgSpellEffect,
@@ -322,7 +319,7 @@ export function validateTcgDeck(
   }
 
   if (unknownCardIds.length > 0) {
-    errors.push(`Unknown TCG card ids: ${unknownCardIds.join(", ")}.`);
+    errors.push(`Unknown TCG card ids: ${unknownCardIds.join(', ')}.`);
   }
 
   return {
@@ -360,26 +357,26 @@ export function createTcgDeckFromList(
 
 export function createStarterTcgDeckList(): TcgDeckList {
   const cardIds = [
-    "ember-scout",
-    "ember-adept",
-    "ember-spark",
-    "ember-surge",
-    "tide-scout",
-    "tide-adept",
-    "tide-spark",
-    "tide-surge",
-    "grove-scout",
-    "grove-guard",
-    "grove-spark",
-    "grove-surge",
-    "storm-scout",
-    "storm-raider",
-    "storm-spark",
-    "storm-surge",
-    "sun-scout",
-    "sun-guard",
-    "sun-spark",
-    "sun-surge",
+    'ember-scout',
+    'ember-adept',
+    'ember-spark',
+    'ember-surge',
+    'tide-scout',
+    'tide-adept',
+    'tide-spark',
+    'tide-surge',
+    'grove-scout',
+    'grove-guard',
+    'grove-spark',
+    'grove-surge',
+    'storm-scout',
+    'storm-raider',
+    'storm-spark',
+    'storm-surge',
+    'sun-scout',
+    'sun-guard',
+    'sun-spark',
+    'sun-surge',
   ];
 
   return cardIds.flatMap((cardId) => [cardId, cardId, cardId]);
@@ -564,15 +561,15 @@ function legalMovesForPlayer(
       continue;
     }
 
-    if (card.kind === "creature") {
+    if (card.kind === 'creature') {
       if (battlefield.length >= state.state.rules.maxBattlefieldSize) {
         continue;
       }
 
       moves.push({
         playerId,
-        kind: "play-card",
-        createdAt: "2026-04-21T12:00:00.000Z",
+        kind: 'play-card',
+        createdAt: '2026-04-21T12:00:00.000Z',
         payload: {
           cardId: card.id,
         },
@@ -580,11 +577,11 @@ function legalMovesForPlayer(
       continue;
     }
 
-    if (card.effect === "deal-2") {
+    if (card.effect === 'deal-2') {
       moves.push({
         playerId,
-        kind: "play-card",
-        createdAt: "2026-04-21T12:00:00.000Z",
+        kind: 'play-card',
+        createdAt: '2026-04-21T12:00:00.000Z',
         payload: {
           cardId: card.id,
           targetPlayerId: opponentId,
@@ -594,8 +591,8 @@ function legalMovesForPlayer(
       for (const unit of state.state.battlefield[opponentId] ?? []) {
         moves.push({
           playerId,
-          kind: "play-card",
-          createdAt: "2026-04-21T12:00:00.000Z",
+          kind: 'play-card',
+          createdAt: '2026-04-21T12:00:00.000Z',
           payload: {
             cardId: card.id,
             targetUnitId: unit.id,
@@ -604,11 +601,11 @@ function legalMovesForPlayer(
       }
     }
 
-    if (card.effect === "heal-2") {
+    if (card.effect === 'heal-2') {
       moves.push({
         playerId,
-        kind: "play-card",
-        createdAt: "2026-04-21T12:00:00.000Z",
+        kind: 'play-card',
+        createdAt: '2026-04-21T12:00:00.000Z',
         payload: {
           cardId: card.id,
           targetPlayerId: playerId,
@@ -624,8 +621,8 @@ function legalMovesForPlayer(
 
     moves.push({
       playerId,
-      kind: "attack",
-      createdAt: "2026-04-21T12:00:00.000Z",
+      kind: 'attack',
+      createdAt: '2026-04-21T12:00:00.000Z',
       payload: {
         attackerUnitId: unit.id,
         targetPlayerId: opponentId,
@@ -635,8 +632,8 @@ function legalMovesForPlayer(
     for (const target of state.state.battlefield[opponentId] ?? []) {
       moves.push({
         playerId,
-        kind: "attack",
-        createdAt: "2026-04-21T12:00:00.000Z",
+        kind: 'attack',
+        createdAt: '2026-04-21T12:00:00.000Z',
         payload: {
           attackerUnitId: unit.id,
           targetUnitId: target.id,
@@ -647,8 +644,8 @@ function legalMovesForPlayer(
 
   moves.push({
     playerId,
-    kind: "end-turn",
-    createdAt: "2026-04-21T12:00:00.000Z",
+    kind: 'end-turn',
+    createdAt: '2026-04-21T12:00:00.000Z',
     payload: {},
   });
 
@@ -676,14 +673,14 @@ export function createTcgAdapter(): GameAdapter<TcgSetup, TcgState, TcgMove> {
       setup,
     }): MatchState<TcgState> {
       if (players.length !== 2) {
-        throw new Error("Arcane Duel MVP supports exactly 2 seats.");
+        throw new Error('Arcane Duel MVP supports exactly 2 seats.');
       }
 
       const rules = {
         ...defaultTcgRules,
         ...setup.rules,
       };
-      const seed = setup.seed ?? "arcane-duel";
+      const seed = setup.seed ?? 'arcane-duel';
       const decks: Record<PlayerId, readonly TcgCard[]> = {};
       const hands: Record<PlayerId, readonly TcgCard[]> = {};
 
@@ -696,7 +693,7 @@ export function createTcgAdapter(): GameAdapter<TcgSetup, TcgState, TcgMove> {
 
         if (!validation.valid) {
           throw new Error(
-            `Invalid TCG deck for ${player.playerId}: ${validation.errors.join(" ")}`,
+            `Invalid TCG deck for ${player.playerId}: ${validation.errors.join(' ')}`,
           );
         }
 
@@ -730,7 +727,7 @@ export function createTcgAdapter(): GameAdapter<TcgSetup, TcgState, TcgMove> {
             [secondPlayerId]: [],
           },
           hands,
-          lastEvent: "Arcane Duel started",
+          lastEvent: 'Arcane Duel started',
           life: {
             [firstPlayerId]: rules.startingLife,
             [secondPlayerId]: rules.startingLife,
@@ -769,7 +766,7 @@ export function createTcgAdapter(): GameAdapter<TcgSetup, TcgState, TcgMove> {
         maxMana: { ...state.state.maxMana },
       };
 
-      if (move.kind === "end-turn") {
+      if (move.kind === 'end-turn') {
         const nextPlayerId = opponentOf(state.players, move.playerId);
         const nextMaxMana = Math.min(
           (nextState.maxMana[nextPlayerId] ?? 0) + 1,
@@ -807,7 +804,7 @@ export function createTcgAdapter(): GameAdapter<TcgSetup, TcgState, TcgMove> {
         };
       }
 
-      if (move.kind === "play-card") {
+      if (move.kind === 'play-card') {
         const removed = removeCardFromHand(
           nextState,
           move.playerId,
@@ -824,7 +821,7 @@ export function createTcgAdapter(): GameAdapter<TcgSetup, TcgState, TcgMove> {
         nextState.mana[move.playerId] =
           (nextState.mana[move.playerId] ?? 0) - removed.card.cost;
 
-        if (removed.card.kind === "creature") {
+        if (removed.card.kind === 'creature') {
           const unit = createUnit(removed.card, move.playerId, state.turn);
           nextState.battlefield[move.playerId] = [
             ...(nextState.battlefield[move.playerId] ?? []),
@@ -838,13 +835,13 @@ export function createTcgAdapter(): GameAdapter<TcgSetup, TcgState, TcgMove> {
             removed.card,
           ];
 
-          if (removed.card.effect === "deal-2" && move.payload.targetPlayerId) {
+          if (removed.card.effect === 'deal-2' && move.payload.targetPlayerId) {
             nextState.life[move.payload.targetPlayerId] =
               (nextState.life[move.payload.targetPlayerId] ?? 0) - 2;
             nextState.lastEvent = `${move.playerId} cast ${removed.card.label}`;
           }
 
-          if (removed.card.effect === "deal-2" && move.payload.targetUnitId) {
+          if (removed.card.effect === 'deal-2' && move.payload.targetUnitId) {
             const targetUnit = resolveTargetUnit(
               nextState,
               move.payload.targetUnitId,
@@ -856,7 +853,7 @@ export function createTcgAdapter(): GameAdapter<TcgSetup, TcgState, TcgMove> {
             }
           }
 
-          if (removed.card.effect === "heal-2" && move.payload.targetPlayerId) {
+          if (removed.card.effect === 'heal-2' && move.payload.targetPlayerId) {
             nextState.life[move.payload.targetPlayerId] = Math.min(
               nextState.rules.startingLife,
               (nextState.life[move.payload.targetPlayerId] ?? 0) + 2,
@@ -866,7 +863,7 @@ export function createTcgAdapter(): GameAdapter<TcgSetup, TcgState, TcgMove> {
         }
       }
 
-      if (move.kind === "attack") {
+      if (move.kind === 'attack') {
         const attacker = (nextState.battlefield[move.playerId] ?? []).find(
           (unit) => unit.id === move.payload.attackerUnitId,
         );
@@ -931,7 +928,7 @@ export function createTcgAdapter(): GameAdapter<TcgSetup, TcgState, TcgMove> {
             score: state.state.life[player.playerId] ?? 0,
           }))
           .sort((left, right) => left.position - right.position),
-        finishedAt: "2026-04-21T12:00:01.000Z",
+        finishedAt: '2026-04-21T12:00:01.000Z',
         executionMode: state.executionMode,
       };
     },
@@ -939,11 +936,11 @@ export function createTcgAdapter(): GameAdapter<TcgSetup, TcgState, TcgMove> {
 }
 
 function describeMove(move: TcgMove, state: TcgState): string {
-  if (move.kind === "end-turn") {
-    return "End turn";
+  if (move.kind === 'end-turn') {
+    return 'End turn';
   }
 
-  if (move.kind === "attack") {
+  if (move.kind === 'attack') {
     const attacker = resolveTargetUnit(state, move.payload.attackerUnitId);
     return `Attack with ${attacker?.card.label ?? move.payload.attackerUnitId}`;
   }
@@ -994,15 +991,15 @@ export function projectTcgPlayerView(
 }
 
 function moveScore(move: TcgMove, state: TcgState): number {
-  if (move.kind === "attack") {
+  if (move.kind === 'attack') {
     return move.payload.targetPlayerId ? 400 : 300;
   }
 
-  if (move.kind === "play-card") {
+  if (move.kind === 'play-card') {
     const card = state.hands[move.playerId]?.find(
       (candidate) => candidate.id === move.payload.cardId,
     );
-    return card?.kind === "creature"
+    return card?.kind === 'creature'
       ? 200 + card.cost
       : 250 + (card?.cost ?? 0);
   }
@@ -1015,7 +1012,7 @@ export function createTcgBots(
 ): Partial<Record<PlayerId, LocalGameSessionBot<TcgState, TcgMove>>> {
   return Object.fromEntries(
     participants
-      .filter((participant) => participant.controller === "bot")
+      .filter((participant) => participant.controller === 'bot')
       .map((participant) => {
         const bot: LocalGameSessionBot<TcgState, TcgMove> = {
           chooseMove({ legalMoves, playerId, state }) {
@@ -1023,7 +1020,7 @@ export function createTcgBots(
               (move) => move.playerId === playerId,
             );
             const proactiveMoves = ownMoves.filter(
-              (move) => move.kind !== "end-turn",
+              (move) => move.kind !== 'end-turn',
             );
 
             if (proactiveMoves.length > 0) {
@@ -1036,7 +1033,7 @@ export function createTcgBots(
               );
             }
 
-            return ownMoves.find((move) => move.kind === "end-turn") ?? null;
+            return ownMoves.find((move) => move.kind === 'end-turn') ?? null;
           },
         };
 
@@ -1047,36 +1044,36 @@ export function createTcgBots(
 
 export const tcgExamplePresets: readonly TcgExamplePreset[] = [
   {
-    id: "duel",
-    label: "Hotseat duel",
+    id: 'duel',
+    label: 'Hotseat duel',
     hotseat: true,
     seats: [
       {
-        playerId: "p1",
-        displayName: "Player One",
+        playerId: 'p1',
+        displayName: 'Player One',
         seat: 1,
-        controller: "human",
+        controller: 'human',
       },
       {
-        playerId: "p2",
-        displayName: "Player Two",
+        playerId: 'p2',
+        displayName: 'Player Two',
         seat: 2,
-        controller: "human",
+        controller: 'human',
       },
     ],
   },
   {
-    id: "bot-rival",
-    label: "Bot rival",
+    id: 'bot-rival',
+    label: 'Bot rival',
     hotseat: false,
     seats: [
       {
-        playerId: "p1",
-        displayName: "Player One",
+        playerId: 'p1',
+        displayName: 'Player One',
         seat: 1,
-        controller: "human",
+        controller: 'human',
       },
-      { playerId: "p2", displayName: "Arcane Bot", seat: 2, controller: "bot" },
+      { playerId: 'p2', displayName: 'Arcane Bot', seat: 2, controller: 'bot' },
     ],
   },
 ] as const;
@@ -1094,7 +1091,7 @@ export const tcgCatalogEntry: TcgCatalogEntry = {
   definition: tcgDefinition,
   metadata: {
     presets: tcgExamplePresets,
-    route: "/tcg",
+    route: '/tcg',
     supportsBots: true,
   },
 };

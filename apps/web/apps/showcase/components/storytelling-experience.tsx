@@ -51,7 +51,9 @@ function toAlphaColor(hexColor: string, alpha: number) {
   return `rgba(${rgb.red}, ${rgb.green}, ${rgb.blue}, ${alpha})`;
 }
 
-export function StorytellingExperience({ scenes }: StorytellingExperienceProps) {
+export function StorytellingExperience({
+  scenes,
+}: StorytellingExperienceProps) {
   return (
     <StoryContainer
       title="Package-powered story sequence"
@@ -92,7 +94,8 @@ export function StorytellingExperience({ scenes }: StorytellingExperienceProps) 
                     style={{ backgroundColor: scene.color }}
                     aria-hidden="true"
                   />
-                  Internal Progression {scene.progressionStart}-{scene.progressionEnd}
+                  Internal Progression {scene.progressionStart}-
+                  {scene.progressionEnd}
                 </div>
 
                 <p>{scene.description}</p>
@@ -108,7 +111,9 @@ export function StorytellingExperience({ scenes }: StorytellingExperienceProps) 
                     <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
                       Focus Vector
                     </p>
-                    <p className="mt-2 font-mono text-sm text-foreground">{formatPosition(scene.position)}</p>
+                    <p className="mt-2 font-mono text-sm text-foreground">
+                      {formatPosition(scene.position)}
+                    </p>
                   </div>
 
                   <div
@@ -121,7 +126,9 @@ export function StorytellingExperience({ scenes }: StorytellingExperienceProps) 
                     <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
                       Scene Scale
                     </p>
-                    <p className="mt-2 text-sm text-foreground">{(scene.scale ?? 1).toFixed(2)}x</p>
+                    <p className="mt-2 text-sm text-foreground">
+                      {(scene.scale ?? 1).toFixed(2)}x
+                    </p>
                   </div>
                 </div>
               </div>

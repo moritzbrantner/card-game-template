@@ -100,7 +100,10 @@ async function loadMatchUpdates(match: PersistedUnoMatchSnapshotDto) {
 
 function winnerLabel(match: ListUnoMatchesResult['recent'][number]) {
   const winnerId = match.result?.winnerIds[0];
-  return match.participants.find((participant) => participant.playerId === winnerId)?.displayName ?? 'No winner yet';
+  return (
+    match.participants.find((participant) => participant.playerId === winnerId)
+      ?.displayName ?? 'No winner yet'
+  );
 }
 
 export function UnoPageClient({
@@ -110,19 +113,31 @@ export function UnoPageClient({
   labels: UnoPageLabels;
   pastGamesHref: string;
 }) {
-  const [matches, setMatches] = useState<ListUnoMatchesResult>({ active: [], recent: [] });
-  const [currentMatch, setCurrentMatch] = useState<PersistedUnoMatchSnapshotDto | null>(null);
+  const [matches, setMatches] = useState<ListUnoMatchesResult>({
+    active: [],
+    recent: [],
+  });
+  const [currentMatch, setCurrentMatch] =
+    useState<PersistedUnoMatchSnapshotDto | null>(null);
   const [draftName, setDraftName] = useState('');
-  const [presetId, setPresetId] = useState<'hotseat-duo' | 'mixed-table' | 'bot-duel'>('bot-duel');
+  const [presetId, setPresetId] = useState<
+    'hotseat-duo' | 'mixed-table' | 'bot-duel'
+  >('bot-duel');
   const [pending, setPending] = useState(false);
-  const [state, setState] = useState<{ announcement?: string; error?: string }>({});
+  const [state, setState] = useState<{ announcement?: string; error?: string }>(
+    {},
+  );
   const catalogEntry = defaultGameCatalog.get('uno-style');
 
   async function refresh(matchId?: string) {
     const nextMatches = await loadMatchList();
     setMatches(nextMatches);
 
-    const targetMatchId = matchId ?? currentMatch?.matchId ?? nextMatches.active[0]?.matchId ?? null;
+    const targetMatchId =
+      matchId ??
+      currentMatch?.matchId ??
+      nextMatches.active[0]?.matchId ??
+      null;
 
     if (!targetMatchId) {
       setCurrentMatch(null);
@@ -151,7 +166,8 @@ export function UnoPageClient({
     startTransition(() => {
       void bootstrap().catch((error) => {
         setState({
-          error: error instanceof Error ? error.message : 'Unable to load matches.',
+          error:
+            error instanceof Error ? error.message : 'Unable to load matches.',
         });
       });
     });
@@ -181,7 +197,10 @@ export function UnoPageClient({
       } catch (error) {
         if (!cancelled) {
           setState({
-            error: error instanceof Error ? error.message : 'Unable to load match updates.',
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Unable to load match updates.',
           });
         }
       }
@@ -214,7 +233,10 @@ export function UnoPageClient({
     });
 
     if (!response.ok) {
-      const problem = await readProblemDetail(response, 'Unable to create a match.');
+      const problem = await readProblemDetail(
+        response,
+        'Unable to create a match.',
+      );
       setState({ error: problem.message });
       setPending(false);
       return;
@@ -235,13 +257,18 @@ export function UnoPageClient({
       const snapshot = await loadMatchSnapshot(matchId);
       setCurrentMatch(snapshot);
     } catch (error) {
-      setState({ error: error instanceof Error ? error.message : 'Unable to resume match.' });
+      setState({
+        error:
+          error instanceof Error ? error.message : 'Unable to resume match.',
+      });
     } finally {
       setPending(false);
     }
   }
 
-  async function handleSubmitMove(move: PersistedUnoMatchSnapshotDto['view']['legalActions'][number]['move']) {
+  async function handleSubmitMove(
+    move: PersistedUnoMatchSnapshotDto['view']['legalActions'][number]['move'],
+  ) {
     if (!currentMatch) {
       return;
     }
@@ -249,16 +276,22 @@ export function UnoPageClient({
     setPending(true);
     setState({});
 
-    const response = await fetch(`/api/games/uno/matches/${currentMatch.matchId}/moves`, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
+    const response = await fetch(
+      `/api/games/uno/matches/${currentMatch.matchId}/moves`,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ move }),
       },
-      body: JSON.stringify({ move }),
-    });
+    );
 
     if (!response.ok) {
-      const problem = await readProblemDetail(response, 'Unable to submit move.');
+      const problem = await readProblemDetail(
+        response,
+        'Unable to submit move.',
+      );
       setState({ error: problem.message });
       setPending(false);
       return;
@@ -278,12 +311,18 @@ export function UnoPageClient({
     setPending(true);
     setState({});
 
-    const response = await fetch(`/api/games/uno/matches/${currentMatch.matchId}/abandon`, {
-      method: 'POST',
-    });
+    const response = await fetch(
+      `/api/games/uno/matches/${currentMatch.matchId}/abandon`,
+      {
+        method: 'POST',
+      },
+    );
 
     if (!response.ok) {
-      const problem = await readProblemDetail(response, 'Unable to abandon match.');
+      const problem = await readProblemDetail(
+        response,
+        'Unable to abandon match.',
+      );
       setState({ error: problem.message });
       setPending(false);
       return;
@@ -303,12 +342,19 @@ export function UnoPageClient({
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">
             {catalogEntry?.definition.name ?? 'UNO-style'}
           </p>
-          <h1 className="text-4xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">{labels.title}</h1>
-          <p className="max-w-3xl text-base leading-7 text-zinc-700 dark:text-zinc-300">{labels.description}</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+            {labels.title}
+          </h1>
+          <p className="max-w-3xl text-base leading-7 text-zinc-700 dark:text-zinc-300">
+            {labels.description}
+          </p>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <a href={pastGamesHref} className={buttonVariants({ variant: 'default' })}>
+          <a
+            href={pastGamesHref}
+            className={buttonVariants({ variant: 'default' })}
+          >
             {labels.pastGamesCta}
           </a>
           <button
@@ -317,7 +363,12 @@ export function UnoPageClient({
             disabled={pending}
             onClick={() => {
               void refresh().catch((error) => {
-                setState({ error: error instanceof Error ? error.message : 'Unable to reload matches.' });
+                setState({
+                  error:
+                    error instanceof Error
+                      ? error.message
+                      : 'Unable to reload matches.',
+                });
               });
             }}
           >
@@ -329,8 +380,12 @@ export function UnoPageClient({
       <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <article className="rounded-[1.75rem] border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">{labels.createTitle}</h2>
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">{labels.createHint}</p>
+            <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
+              {labels.createTitle}
+            </h2>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+              {labels.createHint}
+            </p>
           </div>
 
           <label className="mt-6 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
@@ -383,7 +438,9 @@ export function UnoPageClient({
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="font-medium text-zinc-950 dark:text-zinc-50">
-                        {match.participants.map((participant) => participant.displayName).join(', ')}
+                        {match.participants
+                          .map((participant) => participant.displayName)
+                          .join(', ')}
                       </p>
                       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
                         {new Date(match.updatedAt).toLocaleString()}
@@ -403,13 +460,21 @@ export function UnoPageClient({
                 </div>
               ))
             ) : (
-              <p className="text-sm text-zinc-600 dark:text-zinc-300">{labels.noActiveMatch}</p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                {labels.noActiveMatch}
+              </p>
             )}
           </div>
 
-          {state.error ? <p className="mt-6 text-sm text-red-600 dark:text-red-400">{state.error}</p> : null}
+          {state.error ? (
+            <p className="mt-6 text-sm text-red-600 dark:text-red-400">
+              {state.error}
+            </p>
+          ) : null}
           {state.announcement ? (
-            <p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">{state.announcement}</p>
+            <p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">
+              {state.announcement}
+            </p>
           ) : null}
         </article>
 
@@ -418,8 +483,12 @@ export function UnoPageClient({
             <div className="space-y-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">{labels.activeMatchTitle}</h2>
-                  <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">{labels.activeMatchDescription}</p>
+                  <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
+                    {labels.activeMatchTitle}
+                  </h2>
+                  <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                    {labels.activeMatchDescription}
+                  </p>
                 </div>
                 <span className="rounded-full border border-zinc-300 px-4 py-2 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
                   {currentMatch.status}
@@ -427,7 +496,9 @@ export function UnoPageClient({
               </div>
 
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{currentMatch.view.status}</p>
+                <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  {currentMatch.view.status}
+                </p>
                 {currentMatch.view.matchResultBanner ? (
                   <p className="mt-2 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
                     {currentMatch.view.matchResultBanner}
@@ -442,8 +513,12 @@ export function UnoPageClient({
                     className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <p className="font-medium text-zinc-950 dark:text-zinc-50">{player.displayName}</p>
-                      <span className="text-sm text-zinc-600 dark:text-zinc-300">{player.handCount} cards</span>
+                      <p className="font-medium text-zinc-950 dark:text-zinc-50">
+                        {player.displayName}
+                      </p>
+                      <span className="text-sm text-zinc-600 dark:text-zinc-300">
+                        {player.handCount} cards
+                      </span>
                     </div>
                     {player.visibleCards.length > 0 ? (
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -466,7 +541,11 @@ export function UnoPageClient({
                   {labels.legalActionsTitle}
                 </h3>
                 {currentMatch.view.legalActions.length > 0 ? (
-                  <div className="flex flex-wrap gap-3" role="group" aria-label={labels.legalActionsTitle}>
+                  <div
+                    className="flex flex-wrap gap-3"
+                    role="group"
+                    aria-label={labels.legalActionsTitle}
+                  >
                     {currentMatch.view.legalActions.map((action) => (
                       <button
                         key={action.id}
@@ -482,7 +561,9 @@ export function UnoPageClient({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300">{labels.waitingForPlayers}</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                    {labels.waitingForPlayers}
+                  </p>
                 )}
               </div>
 
@@ -492,10 +573,12 @@ export function UnoPageClient({
                     {labels.analysisTitle}
                   </h3>
                   <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-200">
-                    {currentMatch.analysis?.generic.acceptedMoveCount ?? 0} accepted moves
+                    {currentMatch.analysis?.generic.acceptedMoveCount ?? 0}{' '}
+                    accepted moves
                   </p>
                   <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-200">
-                    {currentMatch.analysis?.generic.turnsCompleted ?? 0} turns completed
+                    {currentMatch.analysis?.generic.turnsCompleted ?? 0} turns
+                    completed
                   </p>
                 </div>
 
@@ -508,7 +591,9 @@ export function UnoPageClient({
                       Last winner: {winnerLabel(matches.recent[0])}
                     </p>
                   ) : (
-                    <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">{labels.emptyRecentMatches}</p>
+                    <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">
+                      {labels.emptyRecentMatches}
+                    </p>
                   )}
                 </div>
               </div>
@@ -528,15 +613,21 @@ export function UnoPageClient({
             </div>
           ) : (
             <div className="space-y-4">
-              <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">{labels.lobbyReadyTitle}</h2>
-              <p className="text-sm text-zinc-600 dark:text-zinc-300">{labels.noActiveMatch}</p>
+              <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
+                {labels.lobbyReadyTitle}
+              </h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                {labels.noActiveMatch}
+              </p>
             </div>
           )}
         </article>
       </div>
 
       <article className="rounded-[1.75rem] border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-        <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">{labels.recentMatchesTitle}</h2>
+        <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
+          {labels.recentMatchesTitle}
+        </h2>
         <div className="mt-6 grid gap-4">
           {matches.recent.length > 0 ? (
             matches.recent.map((match) => (
@@ -548,9 +639,13 @@ export function UnoPageClient({
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="font-medium text-zinc-950 dark:text-zinc-50">
-                      {match.participants.map((participant) => participant.displayName).join(', ')}
+                      {match.participants
+                        .map((participant) => participant.displayName)
+                        .join(', ')}
                     </p>
-                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{winnerLabel(match)}</p>
+                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                      {winnerLabel(match)}
+                    </p>
                   </div>
                   <span className="text-sm text-zinc-600 dark:text-zinc-300">
                     {new Date(match.updatedAt).toLocaleString()}
@@ -559,7 +654,9 @@ export function UnoPageClient({
               </a>
             ))
           ) : (
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">{labels.emptyRecentMatches}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+              {labels.emptyRecentMatches}
+            </p>
           )}
         </div>
       </article>

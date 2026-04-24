@@ -8,9 +8,14 @@ describe('content roots', () => {
   it('loads content from the active app roots', async () => {
     const roots = getConfiguredContentRoots('blog');
 
-    expect(roots[0]).toContain(path.join('apps', 'showcase', 'content', 'blog'));
+    expect(roots[0]).toContain(
+      path.join('apps', 'showcase', 'content', 'blog'),
+    );
 
     const posts = await listBlogPosts('en');
-    expect(posts.map((post) => post.slug)).toEqual(['hybrid-sites', 'template-launch']);
+    expect(posts.map((post) => post.slug)).toEqual([
+      'hybrid-sites',
+      'template-launch',
+    ]);
   });
 });

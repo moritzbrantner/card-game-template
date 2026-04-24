@@ -1,14 +1,24 @@
 import type { AppLocale } from '@/i18n/routing';
 
-import { StorytellingExperience, type StoryScene } from '@/apps/showcase/components/storytelling-experience';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  StorytellingExperience,
+  type StoryScene,
+} from '@/apps/showcase/components/storytelling-experience';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { createTranslator } from '@/src/i18n/messages';
 
 const storyScenes: StoryScene[] = [
   {
     id: 'foundation',
     title: 'Foundation',
-    description: 'Start with a broad system view before narrowing the camera onto the first interaction.',
+    description:
+      'Start with a broad system view before narrowing the camera onto the first interaction.',
     progressionStart: 0,
     progressionEnd: 100,
     color: '#38bdf8',
@@ -17,7 +27,8 @@ const storyScenes: StoryScene[] = [
   {
     id: 'handoff',
     title: 'Handoff',
-    description: 'Transition between narrative beats with enough motion to show continuity without losing context.',
+    description:
+      'Transition between narrative beats with enough motion to show continuity without losing context.',
     progressionStart: 100,
     progressionEnd: 200,
     color: '#34d399',
@@ -26,7 +37,8 @@ const storyScenes: StoryScene[] = [
   {
     id: 'resolution',
     title: 'Resolution',
-    description: 'Land the final scene with a calmer pace so the content can carry the end of the sequence.',
+    description:
+      'Land the final scene with a calmer pace so the content can carry the end of the sequence.',
     progressionStart: 200,
     progressionEnd: 300,
     color: '#f97316',
@@ -45,7 +57,9 @@ export default async function StoryPage({ locale }: { locale: AppLocale }) {
           <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">{t('note')}</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {t('note')}
+          </p>
         </CardContent>
       </Card>
 

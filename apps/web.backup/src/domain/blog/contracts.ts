@@ -20,14 +20,19 @@ export type CreateBlogPostResponse = {
   contentMarkdown: string;
 };
 
-export function normalizeBlogPostCreateInput(input: Pick<CreateBlogPostRequest, 'title' | 'contentMarkdown'>) {
+export function normalizeBlogPostCreateInput(
+  input: Pick<CreateBlogPostRequest, 'title' | 'contentMarkdown'>,
+) {
   return {
     title: input.title.trim(),
     contentMarkdown: input.contentMarkdown.trim(),
   };
 }
 
-export function validateNormalizedBlogPostCreateInput(input: { title: string; contentMarkdown: string }) {
+export function validateNormalizedBlogPostCreateInput(input: {
+  title: string;
+  contentMarkdown: string;
+}) {
   if (input.title.length < BLOG_POST_TITLE_MIN_LENGTH) {
     return `Title must be at least ${BLOG_POST_TITLE_MIN_LENGTH} characters.`;
   }

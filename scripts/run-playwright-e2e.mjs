@@ -10,7 +10,9 @@ const hasPlaywright =
   }).status === 0;
 
 if (!hasPlaywright) {
-  console.log(`[test:e2e] Playwright is not installed in this environment. Skipping ${workspace} e2e run.`);
+  console.log(
+    `[test:e2e] Playwright is not installed in this environment. Skipping ${workspace} e2e run.`,
+  );
   process.exit(0);
 }
 
@@ -30,9 +32,13 @@ if ((install.status ?? 1) !== 0) {
   process.exit(0);
 }
 
-const result = spawnSync('bunx', ['playwright', 'test', '--config', 'playwright.config.ts'], {
-  stdio: 'inherit',
-  shell: process.platform === 'win32',
-});
+const result = spawnSync(
+  'bunx',
+  ['playwright', 'test', '--config', 'playwright.config.ts'],
+  {
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  },
+);
 
 process.exit(result.status ?? 1);

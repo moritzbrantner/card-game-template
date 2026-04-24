@@ -1,7 +1,16 @@
 import { ReportProblemForm } from '@/components/report-problem-form';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { createTranslator } from '@/src/i18n/messages';
-import { notFoundUnlessFeatureEnabled, resolveLocale } from '@/src/server/page-guards';
+import {
+  notFoundUnlessFeatureEnabled,
+  resolveLocale,
+} from '@/src/server/page-guards';
 
 const checklistKeys = ['summary', 'context', 'contact'] as const;
 
@@ -23,7 +32,9 @@ export default async function ReportProblemPage({
             {t('eyebrow')}
           </div>
           <div className="space-y-3">
-            <CardTitle className="text-3xl leading-tight">{t('title')}</CardTitle>
+            <CardTitle className="text-3xl leading-tight">
+              {t('title')}
+            </CardTitle>
             <CardDescription className="max-w-2xl text-base leading-7 text-zinc-700 dark:text-zinc-300">
               {t('description')}
             </CardDescription>
@@ -46,8 +57,12 @@ export default async function ReportProblemPage({
                 key={key}
                 className="rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/70"
               >
-                <h2 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">{t(`checklist.${key}.title`)}</h2>
-                <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t(`checklist.${key}.description`)}</p>
+                <h2 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+                  {t(`checklist.${key}.title`)}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                  {t(`checklist.${key}.description`)}
+                </p>
               </article>
             ))}
           </CardContent>

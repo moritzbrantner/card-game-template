@@ -1,6 +1,7 @@
 # DECISIONS.md
 
 ## DEC-0001: TanStack Start is the canonical application runtime
+
 - **Date:** 2026-04-06
 - **Status:** accepted
 
@@ -21,6 +22,7 @@ Standardize the generated application on TanStack Start, TanStack Router, Vite, 
   - Older Next.js-oriented references are intentionally removed
 
 ## DEC-0002: `src/` is the only canonical application namespace
+
 - **Date:** 2026-04-06
 - **Status:** accepted
 
@@ -41,6 +43,7 @@ Keep `src/` as the sole canonical application namespace. Deprecated roots are re
   - Historical migration shims are no longer available
 
 ## DEC-0003: Example features live under explicit example routes
+
 - **Date:** 2026-04-06
 - **Status:** accepted
 

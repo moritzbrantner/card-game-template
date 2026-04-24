@@ -9,23 +9,25 @@ import {
   stripLocalePrefix,
 } from '@/src/domain/admin-reports/use-cases';
 
-function createVisit(overrides: Partial<{
-  id: string;
-  userId: string | null;
-  trackingVersion: number;
-  visitorId: string;
-  sessionId: string;
-  pathname: string;
-  href: string;
-  canonicalPath: string;
-  routeGroup: string;
-  isAuthenticated: boolean;
-  previousPathname: string | null;
-  previousCanonicalPath: string | null;
-  referrerType: string;
-  referrerHost: string | null;
-  visitedAt: Date;
-}> = {}) {
+function createVisit(
+  overrides: Partial<{
+    id: string;
+    userId: string | null;
+    trackingVersion: number;
+    visitorId: string;
+    sessionId: string;
+    pathname: string;
+    href: string;
+    canonicalPath: string;
+    routeGroup: string;
+    isAuthenticated: boolean;
+    previousPathname: string | null;
+    previousCanonicalPath: string | null;
+    referrerType: string;
+    referrerHost: string | null;
+    visitedAt: Date;
+  }> = {},
+) {
   return {
     id: 'visit_1',
     userId: 'admin_1',
@@ -72,7 +74,9 @@ afterEach(() => {
 
 describe('admin report exports', () => {
   it('normalizes localized admin paths into workspace keys', () => {
-    expect(stripLocalePrefix('/en/admin/reports?window=7d')).toBe('/admin/reports?window=7d');
+    expect(stripLocalePrefix('/en/admin/reports?window=7d')).toBe(
+      '/admin/reports?window=7d',
+    );
     expect(getAdminWorkspaceKey('/en/admin/reports')).toBe('reports');
     expect(getAdminWorkspaceKey('/de/admin/users/123')).toBe('users');
     expect(getAdminWorkspaceKey('/en/admin')).toBe('overview');
@@ -84,10 +88,17 @@ describe('admin report exports', () => {
   });
 
   it('serializes CSV rows with stable headers', async () => {
-    const exported = await exportAdminReportUseCase('auditActivity', '7d', 'csv', fakeDeps);
+    const exported = await exportAdminReportUseCase(
+      'auditActivity',
+      '7d',
+      'csv',
+      fakeDeps,
+    );
 
     expect(exported.filename).toBe('auditActivity-7d.csv');
-    expect(exported.body.split('\n')[0]).toBe('Timestamp,Action,Outcome,Status,Actor');
+    expect(exported.body.split('\n')[0]).toBe(
+      'Timestamp,Action,Outcome,Status,Actor',
+    );
   });
 
   it('escapes CSV content correctly', () => {
@@ -107,10 +118,15 @@ describe('admin report exports', () => {
     const summary = await getAdminReportSummaryUseCase(
       '7d',
       Promise.resolve({
-        listUsers: async () => [{ id: 'admin_1', role: 'ADMIN' as const, lockoutUntil: null }],
+        listUsers: async () => [
+          { id: 'admin_1', role: 'ADMIN' as const, lockoutUntil: null },
+        ],
         listAuditLogsSince: async () => [],
         listPageVisitsSince: async () => [
-          createVisit({ id: 'visit_current_1', visitedAt: new Date('2026-04-11T08:00:00.000Z') }),
+          createVisit({
+            id: 'visit_current_1',
+            visitedAt: new Date('2026-04-11T08:00:00.000Z'),
+          }),
           createVisit({
             id: 'visit_current_2',
             userId: 'admin_2',
@@ -133,7 +149,9 @@ describe('admin report exports', () => {
       }),
     );
 
-    const adminVisitsMetric = summary.metrics.find((metric) => metric.id === 'adminVisits');
+    const adminVisitsMetric = summary.metrics.find(
+      (metric) => metric.id === 'adminVisits',
+    );
 
     expect(summary.status).toBe('live');
     expect(adminVisitsMetric?.value).toBe('2');
@@ -155,7 +173,9 @@ describe('admin report exports', () => {
     );
 
     expect(summary.status).toBe('degraded');
-    expect(summary.metrics.every((metric) => metric.value === 'Data unavailable')).toBe(true);
+    expect(
+      summary.metrics.every((metric) => metric.value === 'Data unavailable'),
+    ).toBe(true);
   });
 
   it('aggregates navigation journeys and scopes transitions by filters', async () => {
@@ -266,13 +286,27 @@ describe('admin report exports', () => {
       },
     );
 
-    expect(detail.cards.find((card) => card.id === 'uniqueVisitors')?.value).toBe('1');
-    expect(detail.cards.find((card) => card.id === 'sessions')?.value).toBe('1');
-    expect(detail.table.rows).toContainEqual(['/blog', '/login', '1', '100%', '1', '0%']);
+    expect(
+      detail.cards.find((card) => card.id === 'uniqueVisitors')?.value,
+    ).toBe('1');
+    expect(detail.cards.find((card) => card.id === 'sessions')?.value).toBe(
+      '1',
+    );
+    expect(detail.table.rows).toContainEqual([
+      '/blog',
+      '/login',
+      '1',
+      '100%',
+      '1',
+      '0%',
+    ]);
     expect(detail.filters?.path).toBe('/blog');
   });
 
   it('exports filtered navigation journeys as CSV', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-16T12:00:00.000Z'));
+
     const exported = await exportAdminReportUseCase(
       'navigationJourneys',
       '7d',
@@ -317,7 +351,9 @@ describe('admin report exports', () => {
       },
     );
 
-    expect(exported.body.split('\n')[0]).toBe('From,To,Transitions,Transition share,From page views,Exit rate after from');
+    expect(exported.body.split('\n')[0]).toBe(
+      'From,To,Transitions,Transition share,From page views,Exit rate after from',
+    );
     expect(exported.body).toContain('/,/blog,1,100%,1,0%');
   });
 });

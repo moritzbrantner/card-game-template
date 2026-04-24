@@ -12,7 +12,7 @@ on:
       promote_to:
         required: false
         type: string
-        default: ""
+        default: ''
       promote:
         required: false
         type: boolean
@@ -43,7 +43,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: '24'
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -80,11 +80,13 @@ jobs:
         run: |
           desktop_status=0
           web_status=0
+          mobile_status=0
 
           xvfb-run -a env DEBUG=pw:browser,pw:api ELECTRON_ENABLE_LOGGING=1 bun run --filter desktop test:e2e || desktop_status=$?
           env DEBUG=pw:api,pw:webserver bun run --filter next-template test:e2e || web_status=$?
+          env DEBUG=pw:api,pw:webserver bun run --filter mobile test:e2e || mobile_status=$?
 
-          if [ "${desktop_status}" -ne 0 ] || [ "${web_status}" -ne 0 ]; then
+          if [ "${desktop_status}" -ne 0 ] || [ "${web_status}" -ne 0 ] || [ "${mobile_status}" -ne 0 ]; then
             exit 1
           fi
 
@@ -106,6 +108,16 @@ jobs:
           path: |
             apps/web/playwright-report
             apps/web/test-results
+          if-no-files-found: ignore
+
+      - name: Upload mobile Playwright report
+        if: always() && inputs.stage == 'beta'
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-mobile
+          path: |
+            apps/mobile/playwright-report
+            apps/mobile/test-results
           if-no-files-found: ignore
 
       - name: Run staging suite

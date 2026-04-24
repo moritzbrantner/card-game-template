@@ -9,8 +9,8 @@
     ".": "./src/index.ts"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
-    "access": "restricted"
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
     "build": "tsc --project tsconfig.json",

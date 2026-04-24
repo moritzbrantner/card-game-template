@@ -1,4 +1,7 @@
-import { getComposeDatabaseUrl, getComposePostgresPort } from '@/tests/environment';
+import {
+  getComposeDatabaseUrl,
+  getComposePostgresPort,
+} from '@/tests/environment';
 
 const DEFAULT_E2E_BASE_URL = 'http://127.0.0.1:3006';
 const DEFAULT_AUTH_SECRET = 'e2e-auth-secret-0123456789abcdef';
@@ -18,11 +21,13 @@ export function getE2EBaseURL() {
 
 export function createE2EEnvironment(baseURL = getE2EBaseURL()) {
   const minioApiPort = process.env.MINIO_API_PORT ?? DEFAULT_MINIO_API_PORT;
-  const storageBucket = process.env.MINIO_BUCKET ?? DEFAULT_PROFILE_IMAGE_STORAGE_BUCKET;
+  const storageBucket =
+    process.env.MINIO_BUCKET ?? DEFAULT_PROFILE_IMAGE_STORAGE_BUCKET;
   const storageEndpoint = `http://${DEFAULT_MINIO_HOST}:${minioApiPort}`;
   const storagePublicBaseUrl = `${storageEndpoint}/${storageBucket}`;
   const minioRootUser = process.env.MINIO_ROOT_USER ?? DEFAULT_MINIO_ROOT_USER;
-  const minioRootPassword = process.env.MINIO_ROOT_PASSWORD ?? DEFAULT_MINIO_ROOT_PASSWORD;
+  const minioRootPassword =
+    process.env.MINIO_ROOT_PASSWORD ?? DEFAULT_MINIO_ROOT_PASSWORD;
 
   return {
     ...process.env,
@@ -38,7 +43,8 @@ export function createE2EEnvironment(baseURL = getE2EBaseURL()) {
     E2E_MANAGED_DATABASE: process.env.E2E_MANAGED_DATABASE ?? '1',
     POSTGRES_PORT: process.env.POSTGRES_PORT ?? getComposePostgresPort(),
     MINIO_API_PORT: minioApiPort,
-    MINIO_CONSOLE_PORT: process.env.MINIO_CONSOLE_PORT ?? DEFAULT_MINIO_CONSOLE_PORT,
+    MINIO_CONSOLE_PORT:
+      process.env.MINIO_CONSOLE_PORT ?? DEFAULT_MINIO_CONSOLE_PORT,
     MINIO_ROOT_USER: minioRootUser,
     MINIO_ROOT_PASSWORD: minioRootPassword,
     MINIO_BUCKET: storageBucket,

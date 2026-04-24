@@ -1,18 +1,17 @@
-import {
-  AbsoluteFill,
-  Sequence,
-  interpolate,
-  useCurrentFrame,
-} from "remotion";
+import { AbsoluteFill, Sequence, interpolate, useCurrentFrame } from 'remotion';
 
-import { buildStoryTimeline, getStoryNode, isStoryEnding } from "./interactive-story";
+import {
+  buildStoryTimeline,
+  getStoryNode,
+  isStoryEnding,
+} from './interactive-story';
 import type {
   InteractiveStoryDefinition,
   StoryNodeData,
   StoryRemotionSceneProps,
-} from "./story-types";
+} from './story-types';
 
-export { buildStoryTimeline } from "./interactive-story";
+export { buildStoryTimeline } from './interactive-story';
 
 export type StoryRemotionCompositionProps<
   TData extends StoryNodeData = StoryNodeData,
@@ -34,13 +33,13 @@ export function DefaultStoryRemotionScene<
     frame,
     [0, durationInFrames * 0.12, durationInFrames * 0.88, durationInFrames],
     [0, 1, 1, 0],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
   );
   const translateY = interpolate(
     frame,
     [0, durationInFrames * 0.15, durationInFrames],
     [40, 0, -28],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
   );
   const hue = (currentIndex * 57) % 360;
 
@@ -49,20 +48,34 @@ export function DefaultStoryRemotionScene<
       style={{
         opacity,
         transform: `translateY(${translateY}px)`,
-        justifyContent: "space-between",
+        justifyContent: 'space-between',
         padding: 64,
         background: `radial-gradient(circle at top, hsla(${hue}, 75%, 62%, 0.35), transparent 36%), linear-gradient(180deg, rgba(10, 15, 25, 0.95), rgba(4, 8, 14, 1))`,
-        color: "white",
-        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+        color: 'white',
+        fontFamily: 'ui-sans-serif, system-ui, sans-serif',
       }}
     >
       <div>
         {node.eyebrow ? (
-          <p style={{ fontSize: 18, letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.72 }}>
+          <p
+            style={{
+              fontSize: 18,
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase',
+              opacity: 0.72,
+            }}
+          >
             {node.eyebrow}
           </p>
         ) : null}
-        <h2 style={{ marginTop: 20, fontSize: 62, lineHeight: 1.05, maxWidth: 980 }}>
+        <h2
+          style={{
+            marginTop: 20,
+            fontSize: 62,
+            lineHeight: 1.05,
+            maxWidth: 980,
+          }}
+        >
           {node.title}
         </h2>
         {node.body ? (
@@ -80,12 +93,12 @@ export function DefaultStoryRemotionScene<
         ) : null}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <div
           style={{
             width: 420,
             borderRadius: 999,
-            background: "rgba(255,255,255,0.12)",
+            background: 'rgba(255,255,255,0.12)',
             padding: 6,
           }}
         >
@@ -94,11 +107,18 @@ export function DefaultStoryRemotionScene<
               height: 10,
               width: `${Math.max(progress * 100, 10)}%`,
               borderRadius: 999,
-              background: "white",
+              background: 'white',
             }}
           />
         </div>
-        <span style={{ fontSize: 16, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.75 }}>
+        <span
+          style={{
+            fontSize: 16,
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            opacity: 0.75,
+          }}
+        >
           Scene {currentIndex + 1}
         </span>
       </div>
@@ -108,10 +128,7 @@ export function DefaultStoryRemotionScene<
 
 export function StoryRemotionComposition<
   TData extends StoryNodeData = StoryNodeData,
->({
-  story,
-  choiceIds = [],
-}: StoryRemotionCompositionProps<TData>) {
+>({ story, choiceIds = [] }: StoryRemotionCompositionProps<TData>) {
   const frame = useCurrentFrame();
   const timeline = buildStoryTimeline(story, choiceIds);
 

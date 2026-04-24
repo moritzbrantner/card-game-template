@@ -77,7 +77,10 @@ function isObjectStorageConfigured() {
 }
 
 function isLocalProfileImageKey(keyOrUrl: string) {
-  return keyOrUrl.startsWith(LOCAL_PROFILE_IMAGE_PREFIX) || keyOrUrl.startsWith(`/${LOCAL_PROFILE_IMAGE_PREFIX}`);
+  return (
+    keyOrUrl.startsWith(LOCAL_PROFILE_IMAGE_PREFIX) ||
+    keyOrUrl.startsWith(`/${LOCAL_PROFILE_IMAGE_PREFIX}`)
+  );
 }
 
 function getLocalProfileImagePath(keyOrUrl: string) {
@@ -122,7 +125,10 @@ export function buildProfileImageUrl(keyOrUrl: string | null | undefined) {
   return baseUrl ? `${baseUrl}/${keyOrUrl}` : null;
 }
 
-async function uploadProfileImageToLocalDisk(userId: string, image: ValidatedImageUpload): Promise<StoredProfileImage> {
+async function uploadProfileImageToLocalDisk(
+  userId: string,
+  image: ValidatedImageUpload,
+): Promise<StoredProfileImage> {
   const key = `${LOCAL_PROFILE_IMAGE_PREFIX}${userId}/${Date.now()}-${crypto.randomUUID()}.${extensionForMime(image.mimeType)}`;
   const filePath = getLocalProfileImagePath(key);
 
@@ -135,7 +141,10 @@ async function uploadProfileImageToLocalDisk(userId: string, image: ValidatedIma
   };
 }
 
-export async function uploadProfileImage(userId: string, image: ValidatedImageUpload): Promise<StoredProfileImage> {
+export async function uploadProfileImage(
+  userId: string,
+  image: ValidatedImageUpload,
+): Promise<StoredProfileImage> {
   if (!isObjectStorageConfigured()) {
     return uploadProfileImageToLocalDisk(userId, image);
   }
@@ -185,7 +194,10 @@ export async function deleteProfileImage(keyOrUrl: string | null | undefined) {
 
   const { DeleteObjectCommand } = await loadS3Module();
   const baseUrl = getPublicBaseUrl();
-  const key = baseUrl && keyOrUrl.startsWith(`${baseUrl}/`) ? keyOrUrl.replace(`${baseUrl}/`, '') : keyOrUrl;
+  const key =
+    baseUrl && keyOrUrl.startsWith(`${baseUrl}/`)
+      ? keyOrUrl.replace(`${baseUrl}/`, '')
+      : keyOrUrl;
   const client = await getClient();
 
   await client.send(

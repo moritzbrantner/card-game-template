@@ -12,7 +12,9 @@ import {
 const seededUser = getSeededUser('user@example.com');
 
 test.describe('authentication', () => {
-  test('shows client-side validation errors on the registration form', async ({ page }) => {
+  test('shows client-side validation errors on the registration form', async ({
+    page,
+  }) => {
     await gotoAndWaitForHydration(page, '/en/register');
 
     await page.getByRole('button', { name: 'Create account' }).click();
@@ -29,17 +31,25 @@ test.describe('authentication', () => {
     await page.getByLabel('Password').fill('wrong-password');
     await page.getByRole('button', { name: 'Log in' }).click();
 
-    await expect(page.getByText('Email or password is incorrect.')).toBeVisible();
+    await expect(
+      page.getByText('Email or password is incorrect.'),
+    ).toBeVisible();
     await expect(page).toHaveURL('/en/login');
   });
 
-  test('registers a new account and lands on the profile page', async ({ page }) => {
+  test('registers a new account and lands on the profile page', async ({
+    page,
+  }) => {
     const email = `playwright-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
     const password = 'StrongPass123';
 
     await gotoAndWaitForHydration(page, '/en/register');
 
-    await expect(page.getByRole('heading', { name: 'Start with a secure account and get into the app immediately.' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: 'Start with a secure account and get into the app immediately.',
+      }),
+    ).toBeVisible();
 
     await page.getByLabel('Display name').fill('Playwright User');
     await page.getByLabel('Email', { exact: true }).fill(email);
@@ -57,14 +67,20 @@ test.describe('authentication', () => {
     const verificationUrl = extractFirstUrl(verificationMessage.raw);
 
     await gotoAndWaitForHydration(page, verificationUrl);
-    await expect(page.getByText('Your email is verified. You can continue using your account.')).toBeVisible();
+    await expect(
+      page.getByText(
+        'Your email is verified. You can continue using your account.',
+      ),
+    ).toBeVisible();
 
     await gotoAndWaitForHydration(page, '/en/profile');
     await logoutFromProfileMenu(page);
     await expect(page.getByRole('link', { name: 'Register' })).toBeVisible();
   });
 
-  test('requests a password reset from the register page and signs in with the new password', async ({ page }) => {
+  test('requests a password reset from the register page and signs in with the new password', async ({
+    page,
+  }) => {
     const email = `reset-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
     const password = 'StrongPass123';
     const nextPassword = 'EvenStronger123';
@@ -85,7 +101,9 @@ test.describe('authentication', () => {
     await page.getByLabel('Account email').fill(email);
     await page.getByRole('button', { name: 'Send reset link' }).click();
 
-    await expect(page.getByRole('status')).toContainText('If that account exists, a reset link is on its way.');
+    await expect(page.getByRole('status')).toContainText(
+      'If that account exists, a reset link is on its way.',
+    );
 
     const resetMessage = await waitForMailpitMessage({
       to: email,
@@ -95,16 +113,22 @@ test.describe('authentication', () => {
 
     await gotoAndWaitForHydration(page, resetUrl);
     await page.getByLabel('New password', { exact: true }).fill(nextPassword);
-    await page.getByLabel('Confirm new password', { exact: true }).fill(nextPassword);
+    await page
+      .getByLabel('Confirm new password', { exact: true })
+      .fill(nextPassword);
     await page.getByRole('button', { name: 'Update password' }).click();
 
-    await expect(page.getByRole('status')).toContainText('Your password has been updated. You can sign in now.');
+    await expect(page.getByRole('status')).toContainText(
+      'Your password has been updated. You can sign in now.',
+    );
 
     await loginWithCredentials(page, email, nextPassword);
     await logoutFromProfileMenu(page);
   });
 
-  test('rejects duplicate account creation on the registration page', async ({ page }) => {
+  test('rejects duplicate account creation on the registration page', async ({
+    page,
+  }) => {
     await gotoAndWaitForHydration(page, '/en/register');
 
     await page.getByLabel('Display name').fill('Existing User');
@@ -113,11 +137,15 @@ test.describe('authentication', () => {
     await page.getByLabel('Confirm password').fill('StrongPass123');
     await page.getByRole('button', { name: 'Create account' }).click();
 
-    await expect(page.getByText('An account already exists for this email.')).toBeVisible();
+    await expect(
+      page.getByText('An account already exists for this email.'),
+    ).toBeVisible();
     await expect(page).toHaveURL('/en/register');
   });
 
-  test('redirects authenticated users away from login and register pages', async ({ page }) => {
+  test('redirects authenticated users away from login and register pages', async ({
+    page,
+  }) => {
     await loginWithCredentials(page, seededUser.email, seededUser.password);
 
     await page.goto('/en/login');
@@ -126,7 +154,9 @@ test.describe('authentication', () => {
     await expect(page).toHaveURL('/en/profile');
   });
 
-  test('logs in through the custom page, logs out, and loses access to protected pages', async ({ page }) => {
+  test('logs in through the custom page, logs out, and loses access to protected pages', async ({
+    page,
+  }) => {
     await loginWithCredentials(page, seededUser.email, seededUser.password);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
 

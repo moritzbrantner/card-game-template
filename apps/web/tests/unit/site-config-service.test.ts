@@ -15,7 +15,9 @@ describe('site-config database fallback', () => {
   });
 
   it('still treats missing DATABASE_URL as a fallback condition', () => {
-    expect(shouldUseDatabaseReadFallback(new Error('DATABASE_URL is not set'))).toBe(true);
+    expect(
+      shouldUseDatabaseReadFallback(new Error('DATABASE_URL is not set')),
+    ).toBe(true);
   });
 
   it('does not swallow unrelated database errors', () => {

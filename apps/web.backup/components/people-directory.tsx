@@ -5,7 +5,13 @@ import { useDeferredValue, useEffect, useState } from 'react';
 
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import type { ProfileDirectoryEntry } from '@/src/domain/profile/use-cases';
 import { readProblemDetail } from '@/src/http/problem-client';
@@ -23,7 +29,9 @@ export function PeopleDirectory({ initialFollowing }: PeopleDirectoryProps) {
   const [followingProfiles, setFollowingProfiles] = useState(initialFollowing);
   const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query);
-  const [searchResults, setSearchResults] = useState<ProfileDirectoryEntry[]>([]);
+  const [searchResults, setSearchResults] = useState<ProfileDirectoryEntry[]>(
+    [],
+  );
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -47,9 +55,12 @@ export function PeopleDirectory({ initialFollowing }: PeopleDirectoryProps) {
       setSearchError(null);
 
       try {
-        const response = await fetch(`/api/profile/search?query=${encodeURIComponent(normalizedQuery)}`, {
-          signal: abortController.signal,
-        });
+        const response = await fetch(
+          `/api/profile/search?query=${encodeURIComponent(normalizedQuery)}`,
+          {
+            signal: abortController.signal,
+          },
+        );
 
         if (!response.ok) {
           const problem = await readProblemDetail(response, searchErrorMessage);
@@ -58,7 +69,9 @@ export function PeopleDirectory({ initialFollowing }: PeopleDirectoryProps) {
           return;
         }
 
-        const payload = (await response.json()) as { profiles?: ProfileDirectoryEntry[] };
+        const payload = (await response.json()) as {
+          profiles?: ProfileDirectoryEntry[];
+        };
         setSearchResults(payload.profiles ?? []);
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
@@ -89,7 +102,10 @@ export function PeopleDirectory({ initialFollowing }: PeopleDirectoryProps) {
     });
   }
 
-  async function updateFollowState(profile: ProfileDirectoryEntry, shouldFollow: boolean) {
+  async function updateFollowState(
+    profile: ProfileDirectoryEntry,
+    shouldFollow: boolean,
+  ) {
     markPendingUser(profile.userId, true);
     setActionError(null);
 
@@ -110,10 +126,18 @@ export function PeopleDirectory({ initialFollowing }: PeopleDirectoryProps) {
 
       if (shouldFollow) {
         setFollowingProfiles((current) =>
-          current.some((currentProfile) => currentProfile.userId === profile.userId) ? current : [profile, ...current],
+          current.some(
+            (currentProfile) => currentProfile.userId === profile.userId,
+          )
+            ? current
+            : [profile, ...current],
         );
       } else {
-        setFollowingProfiles((current) => current.filter((currentProfile) => currentProfile.userId !== profile.userId));
+        setFollowingProfiles((current) =>
+          current.filter(
+            (currentProfile) => currentProfile.userId !== profile.userId,
+          ),
+        );
       }
 
       setRefreshKey((current) => current + 1);
@@ -143,8 +167,16 @@ export function PeopleDirectory({ initialFollowing }: PeopleDirectoryProps) {
         return;
       }
 
-      setFollowingProfiles((current) => current.filter((currentProfile) => currentProfile.userId !== profile.userId));
-      setSearchResults((current) => current.filter((currentProfile) => currentProfile.userId !== profile.userId));
+      setFollowingProfiles((current) =>
+        current.filter(
+          (currentProfile) => currentProfile.userId !== profile.userId,
+        ),
+      );
+      setSearchResults((current) =>
+        current.filter(
+          (currentProfile) => currentProfile.userId !== profile.userId,
+        ),
+      );
       setRefreshKey((current) => current + 1);
     } catch {
       setActionError(blockErrorMessage);
@@ -168,9 +200,21 @@ export function PeopleDirectory({ initialFollowing }: PeopleDirectoryProps) {
             aria-label={t('search.placeholder')}
           />
 
-          {isSearching ? <p className="text-sm text-zinc-600 dark:text-zinc-300">{t('search.loading')}</p> : null}
-          {searchError ? <p className="text-sm text-red-600 dark:text-red-400">{searchError}</p> : null}
-          {actionError ? <p className="text-sm text-red-600 dark:text-red-400">{actionError}</p> : null}
+          {isSearching ? (
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+              {t('search.loading')}
+            </p>
+          ) : null}
+          {searchError ? (
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {searchError}
+            </p>
+          ) : null}
+          {actionError ? (
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {actionError}
+            </p>
+          ) : null}
 
           {!deferredQuery.trim() ? (
             <div className="rounded-2xl border border-dashed border-zinc-300 p-5 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
@@ -178,7 +222,10 @@ export function PeopleDirectory({ initialFollowing }: PeopleDirectoryProps) {
             </div>
           ) : null}
 
-          {deferredQuery.trim() && !isSearching && !searchError && searchResults.length === 0 ? (
+          {deferredQuery.trim() &&
+          !isSearching &&
+          !searchError &&
+          searchResults.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-zinc-300 p-5 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
               {t('search.empty')}
             </div>
@@ -267,21 +314,38 @@ function ProfileRow({
       <div className="flex min-w-0 items-center gap-3">
         <Avatar imageUrl={profile.imageUrl} displayName={profile.displayName} />
         <div className="min-w-0">
-          <Link href={`/profile/@${profile.tag}`} className="block truncate font-medium hover:underline">
+          <Link
+            href={`/profile/@${profile.tag}`}
+            className="block truncate font-medium hover:underline"
+          >
             {profile.displayName}
           </Link>
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">/@{profile.tag}</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">
+            /@{profile.tag}
+          </p>
         </div>
       </div>
 
       <div className="flex items-center gap-2">
         {secondaryActionLabel && onSecondaryAction ? (
-          <Button type="button" variant="ghost" size="sm" disabled={isPending} onClick={onSecondaryAction}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={isPending}
+            onClick={onSecondaryAction}
+          >
             {isPending ? secondaryPendingLabel : secondaryActionLabel}
           </Button>
         ) : null}
 
-        <Button type="button" variant={actionVariant} size="sm" disabled={isPending} onClick={onAction}>
+        <Button
+          type="button"
+          variant={actionVariant}
+          size="sm"
+          disabled={isPending}
+          onClick={onAction}
+        >
           {isPending ? pendingLabel : actionLabel}
         </Button>
       </div>
@@ -289,11 +353,24 @@ function ProfileRow({
   );
 }
 
-function Avatar({ imageUrl, displayName }: { imageUrl: string | null; displayName: string }) {
+function Avatar({
+  imageUrl,
+  displayName,
+}: {
+  imageUrl: string | null;
+  displayName: string;
+}) {
   return (
     <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-100 text-sm font-semibold text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
       {imageUrl ? (
-        <Image src={imageUrl} alt={displayName} fill sizes="48px" unoptimized className="object-cover" />
+        <Image
+          src={imageUrl}
+          alt={displayName}
+          fill
+          sizes="48px"
+          unoptimized
+          className="object-cover"
+        />
       ) : (
         <span>{displayName.charAt(0).toUpperCase() || 'U'}</span>
       )}

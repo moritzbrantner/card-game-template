@@ -2,7 +2,10 @@ import { sql } from 'drizzle-orm';
 
 import { getEnv } from '@/src/config/env';
 import { getDb } from '@/src/db/client';
-import type { HealthCheck, HealthCheckResult } from '@/src/observability/contracts';
+import type {
+  HealthCheck,
+  HealthCheckResult,
+} from '@/src/observability/contracts';
 
 export async function runHealthChecks(checks: HealthCheck[]) {
   const results = await Promise.all(checks.map((check) => check.check()));
@@ -80,7 +83,10 @@ export function getReadinessChecks(): HealthCheck[] {
           return {
             name: 'postgres',
             status: 'fail',
-            detail: error instanceof Error ? error.message : 'Database connection failed.',
+            detail:
+              error instanceof Error
+                ? error.message
+                : 'Database connection failed.',
           };
         }
       },

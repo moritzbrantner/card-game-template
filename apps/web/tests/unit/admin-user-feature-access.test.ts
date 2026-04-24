@@ -70,7 +70,8 @@ describe('admin user feature access', () => {
       ok: false,
       error: {
         code: 'CONFLICT',
-        message: 'Per-user functionality controls are only available for non-admin accounts.',
+        message:
+          'Per-user functionality controls are only available for non-admin accounts.',
       },
     });
   });
@@ -103,7 +104,8 @@ describe('admin user feature access', () => {
       ok: false,
       error: {
         code: 'VALIDATION_ERROR',
-        message: 'This functionality cannot be overridden for individual users.',
+        message:
+          'This functionality cannot be overridden for individual users.',
       },
     });
   });

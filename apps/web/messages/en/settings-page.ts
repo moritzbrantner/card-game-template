@@ -1,6 +1,7 @@
 export const settingsPage = {
   title: 'Settings',
-  description: 'Tune appearance, date behavior, notification preferences, privacy, hotkey visibility, and profile controls in one place.',
+  description:
+    'Tune appearance, date behavior, notification preferences, privacy, hotkey visibility, and profile controls in one place.',
   saveState: 'Settings save automatically',
   tabs: {
     appearance: 'Appearance',
@@ -18,7 +19,8 @@ export const settingsPage = {
   },
   rbac: {
     title: 'Role-based access',
-    description: 'Authorization now uses a Better Auth access-control matrix instead of one-off role checks.',
+    description:
+      'Authorization now uses a Better Auth access-control matrix instead of one-off role checks.',
     allowed: 'Allowed',
     denied: 'Not allowed',
     permissions: {
@@ -31,11 +33,14 @@ export const settingsPage = {
   },
   appearance: {
     title: 'Appearance controls',
-    description: 'Adjust the shell atmosphere and how dense the interface feels.',
+    description:
+      'Adjust the shell atmosphere and how dense the interface feels.',
     compactSpacing: 'Compact spacing',
-    compactSpacingDescription: 'Reduce padding and tighten the main workspace layout.',
+    compactSpacingDescription:
+      'Reduce padding and tighten the main workspace layout.',
     reducedMotion: 'Reduce motion',
-    reducedMotionDescription: 'Lower non-essential movement and animation across the shell.',
+    reducedMotionDescription:
+      'Lower non-essential movement and animation across the shell.',
     backgrounds: {
       paper: {
         title: 'Paper',
@@ -57,11 +62,13 @@ export const settingsPage = {
   },
   dates: {
     title: 'Date and picker behavior',
-    description: 'Choose how dates are formatted and how calendars should behave.',
+    description:
+      'Choose how dates are formatted and how calendars should behave.',
     formatLabel: 'Date format',
     weekStartsLabel: 'Week starts on',
     showOutsideDays: 'Show outside days',
-    showOutsideDaysDescription: 'Display the previous and next month’s trailing days in the calendar grid.',
+    showOutsideDaysDescription:
+      'Display the previous and next month’s trailing days in the calendar grid.',
     previewLabel: 'Preview',
     formats: {
       localized: 'Localized medium',
@@ -75,18 +82,23 @@ export const settingsPage = {
   },
   workflow: {
     title: 'Workflow and navigation',
-    description: 'Decide how much guidance the app should show while you move between routes.',
+    description:
+      'Decide how much guidance the app should show while you move between routes.',
     hotkeyHints: 'Show hotkey hints',
-    hotkeyHintsDescription: 'Display the hotkeys launcher and inline shortcut badges in navigation.',
-    hotkeySummary: 'Use `Alt` plus a letter to jump between pages, or press `?` to open the full shortcut list.',
+    hotkeyHintsDescription:
+      'Display the hotkeys launcher and inline shortcut badges in navigation.',
+    hotkeySummary:
+      'Use `Alt` plus a letter to jump between pages, or press `?` to open the full shortcut list.',
   },
   notifications: {
     title: 'Notification preferences',
-    description: 'Control whether personal notifications are active and how they should be categorized.',
+    description:
+      'Control whether personal notifications are active and how they should be categorized.',
     enabled: 'Enable notifications',
     enabledDescription: 'Turn your personal in-app notifications on or off.',
     typeLabel: 'Notification type',
-    typeDescription: 'Set any string value such as `instant`, `digest`, or a team-specific label.',
+    typeDescription:
+      'Set any string value such as `instant`, `digest`, or a team-specific label.',
     typePlaceholder: 'instant',
     types: {
       instant: 'Instant',
@@ -96,7 +108,8 @@ export const settingsPage = {
   },
   privacy: {
     title: 'Privacy controls',
-    description: 'Decide whether other people can find your profile and how your profile activity is exposed.',
+    description:
+      'Decide whether other people can find your profile and how your profile activity is exposed.',
   },
   account: {
     email: {
@@ -108,27 +121,34 @@ export const settingsPage = {
       save: 'Update email',
       saving: 'Updating…',
       success: 'Email address updated.',
-      genericError: 'Unable to update your email address right now. Please try again.',
+      genericError:
+        'Unable to update your email address right now. Please try again.',
     },
     deletion: {
       title: 'Delete account',
       badge: 'Danger zone',
-      description: 'Permanently delete your account and remove your access to this workspace.',
-      warning: 'This action cannot be undone. Your profile, sessions, and related account data will be removed.',
+      description:
+        'Permanently delete your account and remove your access to this workspace.',
+      warning:
+        'This action cannot be undone. Your profile, sessions, and related account data will be removed.',
       currentPassword: 'Current password',
       remove: 'Delete account',
       removing: 'Deleting…',
       redirecting: 'Account deleted. Redirecting…',
-      genericError: 'Unable to delete your account right now. Please try again.',
+      genericError:
+        'Unable to delete your account right now. Please try again.',
     },
   },
   profilePictureTitle: 'Profile picture',
-  profilePictureDescription: 'Upload a new profile picture or remove your current one.',
+  profilePictureDescription:
+    'Upload a new profile picture or remove your current one.',
   profileDiscovery: {
     title: 'Search and discovery',
-    description: 'Control whether your profile appears when other people look for users to follow.',
+    description:
+      'Control whether your profile appears when other people look for users to follow.',
     toggleTitle: 'Allow people to find me',
-    toggleDescription: 'When enabled, other signed-in users can find your profile from the People page and similar search surfaces.',
+    toggleDescription:
+      'When enabled, other signed-in users can find your profile from the People page and similar search surfaces.',
     saving: 'Saving search visibility…',
     successEnabled: 'Your profile can now be found in search.',
     successDisabled: 'Your profile has been removed from search results.',
@@ -136,7 +156,8 @@ export const settingsPage = {
   },
   followerVisibility: {
     title: 'Follower visibility',
-    description: 'Choose who can see you when you appear in another user’s follower list.',
+    description:
+      'Choose who can see you when you appear in another user’s follower list.',
     saving: 'Saving follower visibility…',
     success: 'Follower visibility updated.',
     error: 'Unable to update follower visibility right now. Please try again.',
@@ -151,13 +172,15 @@ export const settingsPage = {
       },
       PRIVATE: {
         title: 'Private',
-        description: 'Only you and the profile owner can see you in followers lists.',
+        description:
+          'Only you and the profile owner can see you in followers lists.',
       },
     },
   },
   blockedUsers: {
     title: 'Blocked users',
-    description: 'Manage the people you have blocked. Blocking removes follow relationships in both directions.',
+    description:
+      'Manage the people you have blocked. Blocking removes follow relationships in both directions.',
     empty: 'You have not blocked anyone.',
     unblock: 'Unblock',
     unblocking: 'Unblocking…',
@@ -174,7 +197,8 @@ export const settingsPage = {
     empty: 'No image',
     alt: 'Profile picture',
     cropTitle: 'Crop your picture',
-    cropDescription: 'Drag to reposition and use zoom to fit your avatar before upload.',
+    cropDescription:
+      'Drag to reposition and use zoom to fit your avatar before upload.',
     cropZoom: 'Zoom',
     cropCancel: 'Cancel crop',
     cropApply: 'Use crop',

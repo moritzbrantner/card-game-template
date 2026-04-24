@@ -25,7 +25,8 @@ describe('architecture: app-pack ui imports', () => {
 
     const violations = files.flatMap((filePath) => {
       const source = readFileSync(filePath, 'utf8');
-      return source.includes("@/components/ui/") || source.includes('@/components/ui/')
+      return source.includes('@/components/ui/') ||
+        source.includes('@/components/ui/')
         ? [filePath]
         : [];
     });

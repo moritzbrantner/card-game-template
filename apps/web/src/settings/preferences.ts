@@ -39,11 +39,17 @@ export const defaultAppSettings: AppSettings = {
 };
 
 function isBackgroundOption(value: unknown): value is BackgroundOption {
-  return typeof value === 'string' && backgroundOptions.includes(value as BackgroundOption);
+  return (
+    typeof value === 'string' &&
+    backgroundOptions.includes(value as BackgroundOption)
+  );
 }
 
 function isDateFormatOption(value: unknown): value is DateFormatOption {
-  return typeof value === 'string' && dateFormatOptions.includes(value as DateFormatOption);
+  return (
+    typeof value === 'string' &&
+    dateFormatOptions.includes(value as DateFormatOption)
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -55,27 +61,50 @@ export function normalizeAppSettings(value: unknown): AppSettings {
     return defaultAppSettings;
   }
 
-  const notifications = isRecord(value.notifications) ? value.notifications : null;
+  const notifications = isRecord(value.notifications)
+    ? value.notifications
+    : null;
 
   return {
-    background: isBackgroundOption(value.background) ? value.background : defaultAppSettings.background,
-    dateFormat: isDateFormatOption(value.dateFormat) ? value.dateFormat : defaultAppSettings.dateFormat,
+    background: isBackgroundOption(value.background)
+      ? value.background
+      : defaultAppSettings.background,
+    dateFormat: isDateFormatOption(value.dateFormat)
+      ? value.dateFormat
+      : defaultAppSettings.dateFormat,
     weekStartsOn: value.weekStartsOn === 0 ? 0 : 1,
-    showOutsideDays: typeof value.showOutsideDays === 'boolean' ? value.showOutsideDays : defaultAppSettings.showOutsideDays,
-    compactSpacing: typeof value.compactSpacing === 'boolean' ? value.compactSpacing : defaultAppSettings.compactSpacing,
-    reducedMotion: typeof value.reducedMotion === 'boolean' ? value.reducedMotion : defaultAppSettings.reducedMotion,
-    showHotkeyHints: typeof value.showHotkeyHints === 'boolean' ? value.showHotkeyHints : defaultAppSettings.showHotkeyHints,
+    showOutsideDays:
+      typeof value.showOutsideDays === 'boolean'
+        ? value.showOutsideDays
+        : defaultAppSettings.showOutsideDays,
+    compactSpacing:
+      typeof value.compactSpacing === 'boolean'
+        ? value.compactSpacing
+        : defaultAppSettings.compactSpacing,
+    reducedMotion:
+      typeof value.reducedMotion === 'boolean'
+        ? value.reducedMotion
+        : defaultAppSettings.reducedMotion,
+    showHotkeyHints:
+      typeof value.showHotkeyHints === 'boolean'
+        ? value.showHotkeyHints
+        : defaultAppSettings.showHotkeyHints,
     notifications: {
       enabled:
         typeof notifications?.enabled === 'boolean'
           ? notifications.enabled
           : defaultAppSettings.notifications.enabled,
-      type: typeof notifications?.type === 'string' ? notifications.type : defaultAppSettings.notifications.type,
+      type:
+        typeof notifications?.type === 'string'
+          ? notifications.type
+          : defaultAppSettings.notifications.type,
     },
   };
 }
 
-export function parseAppSettings(value: string | null | undefined): AppSettings {
+export function parseAppSettings(
+  value: string | null | undefined,
+): AppSettings {
   if (!value) {
     return defaultAppSettings;
   }
@@ -92,7 +121,9 @@ export function parseAppSettings(value: string | null | undefined): AppSettings 
   }
 }
 
-export function parseAppSettingsFromCookieHeader(cookieHeader: string | null | undefined): AppSettings {
+export function parseAppSettingsFromCookieHeader(
+  cookieHeader: string | null | undefined,
+): AppSettings {
   if (!cookieHeader) {
     return defaultAppSettings;
   }
@@ -116,12 +147,22 @@ export function buildAppSettingsCookie(settings: AppSettings): string {
 
 export function applyAppSettingsToDocument(settings: AppSettings) {
   document.documentElement.dataset.background = settings.background;
-  document.documentElement.dataset.density = settings.compactSpacing ? 'compact' : 'comfortable';
-  document.documentElement.dataset.motion = settings.reducedMotion ? 'reduced' : 'full';
-  document.documentElement.dataset.hotkeyHints = settings.showHotkeyHints ? 'visible' : 'hidden';
+  document.documentElement.dataset.density = settings.compactSpacing
+    ? 'compact'
+    : 'comfortable';
+  document.documentElement.dataset.motion = settings.reducedMotion
+    ? 'reduced'
+    : 'full';
+  document.documentElement.dataset.hotkeyHints = settings.showHotkeyHints
+    ? 'visible'
+    : 'hidden';
 }
 
-export function formatDatePreview(date: Date, settings: AppSettings, locale: string): string {
+export function formatDatePreview(
+  date: Date,
+  settings: AppSettings,
+  locale: string,
+): string {
   if (settings.dateFormat === 'iso') {
     return date.toISOString().slice(0, 10);
   }

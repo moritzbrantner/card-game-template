@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   useCallback,
@@ -8,15 +8,15 @@ import {
   useState,
   type KeyboardEvent,
   type ReactElement,
-} from "react";
+} from 'react';
 
-import { useMotionValue } from "motion/react";
+import { useMotionValue } from 'motion/react';
 
-import { Button, cn } from "@moritzbrantner/ui";
+import { Button, cn } from '@moritzbrantner/ui';
 
-import { StoryProvider } from "./story-context";
-import { buildSceneMeta } from "./story-introspection";
-import { StoryMinimap } from "./story-minimap";
+import { StoryProvider } from './story-context';
+import { buildSceneMeta } from './story-introspection';
+import { StoryMinimap } from './story-minimap';
 
 export type StoryContainerProps = {
   title: string;
@@ -28,7 +28,7 @@ export type StoryContainerProps = {
 };
 
 const DEFAULT_INSTRUCTIONS =
-  "Use the story panel scroll, minimap, reset button, or arrow keys to move through the story.";
+  'Use the story panel scroll, minimap, reset button, or arrow keys to move through the story.';
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
@@ -39,9 +39,9 @@ function isTextInputTarget(target: EventTarget | null) {
   const tagName = target.tagName.toLowerCase();
 
   return (
-    tagName === "input" ||
-    tagName === "textarea" ||
-    tagName === "select" ||
+    tagName === 'input' ||
+    tagName === 'textarea' ||
+    tagName === 'select' ||
     target.isContentEditable
   );
 }
@@ -66,9 +66,12 @@ export function StoryContainer({
     sceneProgress.set(clamp(sceneProgress.get(), 0, maxSceneIndex));
   }, [maxSceneIndex, sceneProgress]);
 
-  const registerScrollToScene = useCallback((callback: (index: number) => void) => {
-    scrollToSceneRef.current = callback;
-  }, []);
+  const registerScrollToScene = useCallback(
+    (callback: (index: number) => void) => {
+      scrollToSceneRef.current = callback;
+    },
+    [],
+  );
 
   const scrollToScene = useCallback(
     (index: number) => {
@@ -84,31 +87,31 @@ export function StoryContainer({
   }, [sceneProgress, scrollToScene]);
 
   const progressLabel =
-    sceneCount > 0 ? `${activeIndex + 1} / ${sceneCount}` : "0 / 0";
+    sceneCount > 0 ? `${activeIndex + 1} / ${sceneCount}` : '0 / 0';
   const showMenu = sceneCount > 1;
 
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (isTextInputTarget(event.target)) return;
 
     switch (event.key) {
-      case "ArrowDown":
-      case "ArrowRight": {
+      case 'ArrowDown':
+      case 'ArrowRight': {
         event.preventDefault();
         scrollToScene(activeIndex + 1);
         return;
       }
-      case "ArrowUp":
-      case "ArrowLeft": {
+      case 'ArrowUp':
+      case 'ArrowLeft': {
         event.preventDefault();
         scrollToScene(activeIndex - 1);
         return;
       }
-      case "Home": {
+      case 'Home': {
         event.preventDefault();
         scrollToScene(0);
         return;
       }
-      case "End": {
+      case 'End': {
         event.preventDefault();
         scrollToScene(maxSceneIndex);
         return;
@@ -144,7 +147,7 @@ export function StoryContainer({
     <StoryProvider value={contextValue}>
       <section
         className={cn(
-          "min-h-[70vh] rounded-2xl border bg-card/40 p-6 md:p-10",
+          'min-h-[70vh] rounded-2xl border bg-card/40 p-6 md:p-10',
           className,
         )}
         onKeyDown={handleKeyDown}
@@ -179,17 +182,15 @@ export function StoryContainer({
 
         <div
           className={cn(
-            "mx-auto mt-10 max-w-5xl",
+            'mx-auto mt-10 max-w-5xl',
             showMenu
-              ? "grid gap-6 md:grid-cols-[220px_1fr] md:items-stretch"
-              : "",
+              ? 'grid gap-6 md:grid-cols-[220px_1fr] md:items-stretch'
+              : '',
           )}
         >
-          {showMenu ? (
-            <StoryMinimap className="order-2 md:order-1" />
-          ) : null}
+          {showMenu ? <StoryMinimap className="order-2 md:order-1" /> : null}
 
-          <div className={cn(showMenu ? "order-1 md:order-2" : "")}>
+          <div className={cn(showMenu ? 'order-1 md:order-2' : '')}>
             {children}
           </div>
         </div>

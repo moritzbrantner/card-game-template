@@ -1,15 +1,17 @@
 import type { MatchReplay, MatchState, PlayerId } from '@repo/game-contracts';
-import { projectUnoPlayerView, type UnoMove, type UnoState } from '@repo/game-uno';
+import {
+  projectUnoPlayerView,
+  type UnoMove,
+  type UnoState,
+} from '@repo/game-uno';
 import type { SessionParticipant } from '@repo/game-session';
 
 type UnoReplayAdapter = {
   listLegalMoves(state: MatchState<UnoState>): readonly UnoMove[];
-  selectActor?(
-    input: {
-      legalMoves: readonly UnoMove[];
-      state: MatchState<UnoState>;
-    },
-  ): PlayerId | null;
+  selectActor?(input: {
+    legalMoves: readonly UnoMove[];
+    state: MatchState<UnoState>;
+  }): PlayerId | null;
 };
 
 export type UnoReplayPerspective = {
@@ -43,7 +45,9 @@ export type UnoReplayInspectionStep = {
   views: Readonly<Record<string, UnoReplayInspectionView>>;
 };
 
-export function buildUnoReplayPerspectives(participants: readonly SessionParticipant[]): readonly UnoReplayPerspective[] {
+export function buildUnoReplayPerspectives(
+  participants: readonly SessionParticipant[],
+): readonly UnoReplayPerspective[] {
   return [
     {
       id: 'bird-eye',
@@ -69,7 +73,8 @@ export function buildUnoReplayInspectionSteps(input: {
 }): readonly UnoReplayInspectionStep[] {
   return input.history.map((state, index) => {
     const allLegalMoves =
-      index < input.replay.acceptedMoves.length && index !== input.history.length - 1
+      index < input.replay.acceptedMoves.length &&
+      index !== input.history.length - 1
         ? input.adapter.listLegalMoves(state)
         : [];
     const selectedActorPlayerId =
@@ -86,7 +91,8 @@ export function buildUnoReplayInspectionSteps(input: {
     for (const perspective of input.perspectives) {
       const projected = projectUnoPlayerView({
         legalMoves,
-        matchResult: index === input.history.length - 1 ? input.replay.result : null,
+        matchResult:
+          index === input.history.length - 1 ? input.replay.result : null,
         participants: input.participants,
         pendingHotseatPlayerId: null,
         selectedActorPlayerId,

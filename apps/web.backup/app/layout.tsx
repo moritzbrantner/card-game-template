@@ -22,7 +22,9 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: siteConfig.seo.defaultTitle,
       description: siteConfig.seo.defaultDescription,
-      images: siteConfig.seo.defaultOgImage ? [siteConfig.seo.defaultOgImage] : undefined,
+      images: siteConfig.seo.defaultOgImage
+        ? [siteConfig.seo.defaultOgImage]
+        : undefined,
     },
   };
 }
@@ -39,9 +41,13 @@ export default async function RootLayout({
       lang="en"
       className={documentContext.theme}
       data-background={documentContext.settings.background}
-      data-density={documentContext.settings.compactSpacing ? 'compact' : 'comfortable'}
+      data-density={
+        documentContext.settings.compactSpacing ? 'compact' : 'comfortable'
+      }
       data-motion={documentContext.settings.reducedMotion ? 'reduced' : 'full'}
-      data-hotkey-hints={documentContext.settings.showHotkeyHints ? 'visible' : 'hidden'}
+      data-hotkey-hints={
+        documentContext.settings.showHotkeyHints ? 'visible' : 'hidden'
+      }
       suppressHydrationWarning
     >
       <body className="antialiased">

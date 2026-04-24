@@ -5,4 +5,8 @@ export {
   markNotificationReadUseCase,
 } from './shared';
 
-export type { NotificationFeedItem, NotificationPreview, NotificationsPageData } from './shared';
+export type {
+  NotificationFeedItem,
+  NotificationPreview,
+  NotificationsPageData,
+} from './shared';

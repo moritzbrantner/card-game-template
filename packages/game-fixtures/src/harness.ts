@@ -62,10 +62,11 @@ export const standardFourPlayerProfiles: readonly PlayerProfile[] = [
   { playerId: 'p4', displayName: 'Dana', seat: 4 },
 ] as const;
 
-export const standardParticipants: readonly SessionParticipant[] = standardFourPlayerProfiles.map((player, index) => ({
-  ...player,
-  controller: index % 2 === 0 ? 'human' : 'bot',
-}));
+export const standardParticipants: readonly SessionParticipant[] =
+  standardFourPlayerProfiles.map((player, index) => ({
+    ...player,
+    controller: index % 2 === 0 ? 'human' : 'bot',
+  }));
 
 function stableStringify(value: unknown): string {
   return JSON.stringify(value, (_key, item) => {
@@ -73,27 +74,40 @@ function stableStringify(value: unknown): string {
       return item;
     }
 
-    return Object.fromEntries(Object.entries(item).sort(([left], [right]) => left.localeCompare(right)));
+    return Object.fromEntries(
+      Object.entries(item).sort(([left], [right]) => left.localeCompare(right)),
+    );
   });
 }
 
 function assertDeepEqual(actual: unknown, expected: unknown, message: string) {
   if (stableStringify(actual) !== stableStringify(expected)) {
-    throw new Error(`${message}\nExpected: ${stableStringify(expected)}\nActual: ${stableStringify(actual)}`);
+    throw new Error(
+      `${message}\nExpected: ${stableStringify(expected)}\nActual: ${stableStringify(actual)}`,
+    );
   }
 }
 
-function normalizeMatchId<TState>(state: MatchState<TState>): MatchState<TState> {
+function normalizeMatchId<TState>(
+  state: MatchState<TState>,
+): MatchState<TState> {
   return {
     ...state,
     matchId: '<match-id>',
   };
 }
 
-function assertMovesAreSerializable<TMove extends GameMove>(fixtureId: string, moves: readonly TMove[]) {
+function assertMovesAreSerializable<TMove extends GameMove>(
+  fixtureId: string,
+  moves: readonly TMove[],
+) {
   for (const move of moves) {
     const roundTripped = JSON.parse(JSON.stringify(move)) as TMove;
-    assertDeepEqual(roundTripped, move, `${fixtureId} legal move must be JSON-serializable`);
+    assertDeepEqual(
+      roundTripped,
+      move,
+      `${fixtureId} legal move must be JSON-serializable`,
+    );
   }
 }
 
@@ -103,7 +117,9 @@ function assertRejectsWrongActor<TSetup, TState, TMove extends GameMove>(
   move: TMove,
 ) {
   const engine = createGameEngine(fixture.adapter);
-  const wrongPlayer = fixture.players.find((player) => player.playerId !== move.playerId);
+  const wrongPlayer = fixture.players.find(
+    (player) => player.playerId !== move.playerId,
+  );
 
   if (!wrongPlayer) {
     return;
@@ -158,7 +174,7 @@ export function runEngineFixtureCase<TSetup, TState, TMove extends GameMove>(
   const submittedMoves: TMove[] = [];
 
   for (const step of fixture.steps) {
-    const legalMoves = fixture.adapter.listLegalMoves(currentState);
+    const legalMoves = engine.inspect(currentState).legalMoves;
     assertMovesAreSerializable(fixture.id, legalMoves);
 
     const chosenMove = step.chooseMove({
@@ -166,22 +182,36 @@ export function runEngineFixtureCase<TSetup, TState, TMove extends GameMove>(
       legalMoves,
     });
 
-    if (!legalMoves.some((candidate) => areMovesEquivalent(candidate, chosenMove))) {
-      throw new Error(`${fixture.id} step "${step.label}" chose a move that was not listed as legal`);
+    if (
+      !legalMoves.some((candidate) => areMovesEquivalent(candidate, chosenMove))
+    ) {
+      throw new Error(
+        `${fixture.id} step "${step.label}" chose a move that was not listed as legal`,
+      );
     }
 
     const roundTrippedMove = JSON.parse(JSON.stringify(chosenMove)) as TMove;
 
     if (!fixture.adapter.isLegalMove(currentState, roundTrippedMove)) {
-      throw new Error(`${fixture.id} step "${step.label}" round-tripped move is not legal`);
+      throw new Error(
+        `${fixture.id} step "${step.label}" round-tripped move is not legal`,
+      );
     }
 
     assertRejectsWrongActor(fixture, currentState, roundTrippedMove);
 
     const previousState = structuredClone(currentState);
-    currentState = engine.submitMove(currentState, roundTrippedMove);
-    assertDeepEqual(currentState === previousState, false, `${fixture.id} must return a new state object`);
-    assertDeepEqual(states[states.length - 1], previousState, `${fixture.id} mutated the previous state`);
+    currentState = engine.submitMove(currentState, roundTrippedMove).nextState;
+    assertDeepEqual(
+      currentState === previousState,
+      false,
+      `${fixture.id} must return a new state object`,
+    );
+    assertDeepEqual(
+      states[states.length - 1],
+      previousState,
+      `${fixture.id} mutated the previous state`,
+    );
 
     states.push(structuredClone(currentState));
     submittedMoves.push(roundTrippedMove);
@@ -195,7 +225,7 @@ export function runEngineFixtureCase<TSetup, TState, TMove extends GameMove>(
     );
   }
 
-  const result = engine.finalizeMatch(currentState);
+  const result = engine.finalize(currentState);
 
   if (fixture.expected.result) {
     if (!result) {

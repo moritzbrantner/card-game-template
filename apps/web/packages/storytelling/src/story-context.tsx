@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   createContext,
@@ -6,11 +6,11 @@ import {
   type Dispatch,
   type ReactNode,
   type SetStateAction,
-} from "react";
+} from 'react';
 
-import type { MotionValue } from "motion/react";
+import type { MotionValue } from 'motion/react';
 
-import type { StorySceneMeta } from "./story-types";
+import type { StorySceneMeta } from './story-types';
 
 type StoryContextValue = {
   sceneMeta: StorySceneMeta[];

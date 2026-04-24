@@ -2,7 +2,11 @@
 
 import { useState, useSyncExternalStore } from 'react';
 
-import { CONSENT_COOKIE_NAME, defaultConsentState, type ConsentState } from '@/src/privacy/contracts';
+import {
+  CONSENT_COOKIE_NAME,
+  defaultConsentState,
+  type ConsentState,
+} from '@/src/privacy/contracts';
 
 const CONSENT_CHANGE_EVENT = 'consentchange';
 
@@ -19,7 +23,9 @@ async function saveConsent(state: ConsentState) {
 }
 
 function hasStoredConsent() {
-  return document.cookie.split('; ').some((cookie) => cookie.startsWith(`${CONSENT_COOKIE_NAME}=`));
+  return document.cookie
+    .split('; ')
+    .some((cookie) => cookie.startsWith(`${CONSENT_COOKIE_NAME}=`));
 }
 
 function subscribeToConsent(onStoreChange: () => void) {
@@ -31,7 +37,11 @@ function subscribeToConsent(onStoreChange: () => void) {
 }
 
 export function ConsentBanner() {
-  const hasConsent = useSyncExternalStore(subscribeToConsent, hasStoredConsent, () => true);
+  const hasConsent = useSyncExternalStore(
+    subscribeToConsent,
+    hasStoredConsent,
+    () => true,
+  );
   const [isDismissed, setIsDismissed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -45,7 +55,10 @@ export function ConsentBanner() {
         <div>
           <p className="font-semibold">Privacy controls</p>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            Analytics stays off until you opt in. If enabled, page navigation is measured with pseudonymous visitor and session ids, external referrers are reduced to hostnames, and sensitive query params stay redacted.
+            Analytics stays off until you opt in. If enabled, page navigation is
+            measured with pseudonymous visitor and session ids, external
+            referrers are reduced to hostnames, and sensitive query params stay
+            redacted.
           </p>
         </div>
 
@@ -56,7 +69,11 @@ export function ConsentBanner() {
             className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium dark:border-zinc-700"
             onClick={async () => {
               setIsSaving(true);
-              await saveConsent({ necessary: true, analytics: false, marketing: false });
+              await saveConsent({
+                necessary: true,
+                analytics: false,
+                marketing: false,
+              });
               setIsSaving(false);
               setIsDismissed(true);
             }}
@@ -69,7 +86,12 @@ export function ConsentBanner() {
             className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-950"
             onClick={async () => {
               setIsSaving(true);
-              await saveConsent({ ...defaultConsentState, necessary: true, analytics: true, marketing: true });
+              await saveConsent({
+                ...defaultConsentState,
+                necessary: true,
+                analytics: true,
+                marketing: true,
+              });
               setIsSaving(false);
               setIsDismissed(true);
             }}

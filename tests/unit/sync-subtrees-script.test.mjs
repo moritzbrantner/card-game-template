@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -123,9 +130,15 @@ test('sync-subtrees pulls selected app and package mappings from config', () => 
     const log = readFileSync(logPath, 'utf8');
 
     assert.match(log, /^fetch app-web main$/m);
-    assert.match(log, /^subtree pull --prefix=apps\/web app-web main --squash$/m);
+    assert.match(
+      log,
+      /^subtree pull --prefix=apps\/web app-web main --squash$/m,
+    );
     assert.match(log, /^fetch package-ui stable$/m);
-    assert.match(log, /^subtree pull --prefix=packages\/ui package-ui stable --squash$/m);
+    assert.match(
+      log,
+      /^subtree pull --prefix=packages\/ui package-ui stable --squash$/m,
+    );
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
@@ -224,23 +237,33 @@ test('sync-subtrees filters selected mappings by prefix', () => {
   );
 
   try {
-    execFileSync(scriptPath, ['--apps', '--prefix', 'apps/mobile', '--config', configPath], {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        GIT_BIN: gitPath,
-        MOCK_GIT_LOG: logPath,
-        MOCK_REPO_ROOT: repoRoot,
+    execFileSync(
+      scriptPath,
+      ['--apps', '--prefix', 'apps/mobile', '--config', configPath],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          GIT_BIN: gitPath,
+          MOCK_GIT_LOG: logPath,
+          MOCK_REPO_ROOT: repoRoot,
+        },
+        encoding: 'utf8',
       },
-      encoding: 'utf8',
-    });
+    );
 
     const log = readFileSync(logPath, 'utf8');
 
     assert.match(log, /^fetch app-mobile main$/m);
-    assert.match(log, /^subtree pull --prefix=apps\/mobile app-mobile main --squash$/m);
+    assert.match(
+      log,
+      /^subtree pull --prefix=apps\/mobile app-mobile main --squash$/m,
+    );
     assert.doesNotMatch(log, /^fetch app-web main$/m);
-    assert.doesNotMatch(log, /^subtree pull --prefix=apps\/web app-web main --squash$/m);
+    assert.doesNotMatch(
+      log,
+      /^subtree pull --prefix=apps\/web app-web main --squash$/m,
+    );
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
@@ -263,18 +286,25 @@ test('sync-subtrees rejects unknown prefixes', () => {
   );
 
   try {
-    const result = spawnSync(scriptPath, ['--apps', '--prefix', 'apps/mobile', '--config', configPath], {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        GIT_BIN: gitPath,
-        MOCK_REPO_ROOT: repoRoot,
+    const result = spawnSync(
+      scriptPath,
+      ['--apps', '--prefix', 'apps/mobile', '--config', configPath],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          GIT_BIN: gitPath,
+          MOCK_REPO_ROOT: repoRoot,
+        },
+        encoding: 'utf8',
       },
-      encoding: 'utf8',
-    });
+    );
 
     assert.equal(result.status, 1);
-    assert.match(result.stderr, /requested prefix is not configured: apps\/mobile/);
+    assert.match(
+      result.stderr,
+      /requested prefix is not configured: apps\/mobile/,
+    );
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
@@ -315,8 +345,14 @@ test('setup-subtree-remotes adds missing remotes from config', () => {
     const addedUrl = readFileSync(addedUrlPath, 'utf8').trim();
 
     assert.match(output, /Adding remote missing-app-web/);
-    assert.match(log, /^remote add missing-app-web https:\/\/github.com\/moritzbrantner\/next-template\.git$/m);
-    assert.equal(addedUrl, 'https://github.com/moritzbrantner/next-template.git');
+    assert.match(
+      log,
+      /^remote add missing-app-web https:\/\/github.com\/moritzbrantner\/next-template\.git$/m,
+    );
+    assert.equal(
+      addedUrl,
+      'https://github.com/moritzbrantner/next-template.git',
+    );
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
@@ -358,8 +394,14 @@ test('setup-subtree-remotes updates mismatched remote URLs', () => {
     const updatedUrl = readFileSync(updatedUrlPath, 'utf8').trim();
 
     assert.match(output, /Updating remote app-web/);
-    assert.match(log, /^remote set-url app-web https:\/\/github.com\/moritzbrantner\/next-template\.git$/m);
-    assert.equal(updatedUrl, 'https://github.com/moritzbrantner/next-template.git');
+    assert.match(
+      log,
+      /^remote set-url app-web https:\/\/github.com\/moritzbrantner\/next-template\.git$/m,
+    );
+    assert.equal(
+      updatedUrl,
+      'https://github.com/moritzbrantner/next-template.git',
+    );
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
@@ -385,16 +427,20 @@ test('setup-subtree-remotes respects scope selection', () => {
   );
 
   try {
-    const output = execFileSync(setupScriptPath, ['--packages', '--config', configPath], {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        GIT_BIN: gitPath,
-        MOCK_GIT_LOG: logPath,
-        MOCK_REPO_ROOT: repoRoot,
+    const output = execFileSync(
+      setupScriptPath,
+      ['--packages', '--config', configPath],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          GIT_BIN: gitPath,
+          MOCK_GIT_LOG: logPath,
+          MOCK_REPO_ROOT: repoRoot,
+        },
+        encoding: 'utf8',
       },
-      encoding: 'utf8',
-    });
+    );
 
     const log = readFileSync(logPath, 'utf8');
 
@@ -436,8 +482,15 @@ test('setup-subtree-remotes is idempotent when remotes already match config', ()
       encoding: 'utf8',
     });
 
-    assert.match(output, /Remote app-web already matches https:\/\/example\.com\/app-web\.git/);
-    assert.equal(existsSync(logPath), false, 'expected no git remote mutations');
+    assert.match(
+      output,
+      /Remote app-web already matches https:\/\/example\.com\/app-web\.git/,
+    );
+    assert.equal(
+      existsSync(logPath),
+      false,
+      'expected no git remote mutations',
+    );
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }

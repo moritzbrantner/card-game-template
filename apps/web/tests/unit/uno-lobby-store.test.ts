@@ -48,7 +48,10 @@ describe('uno lobby store', () => {
     });
 
     const lobby = findUnoLobby(joinedStore, created.roomId);
-    expect(lobby?.players.map((player) => player.displayName)).toEqual(['Alice', 'Bob']);
+    expect(lobby?.players.map((player) => player.displayName)).toEqual([
+      'Alice',
+      'Bob',
+    ]);
     expect(getUnoSeatFillLabel(lobby!)).toBe('2 / 4 seats filled');
     expect(canStartUnoLobby(lobby!)).toBe(true);
   });
@@ -150,6 +153,8 @@ describe('uno lobby store', () => {
 
     expect(findUnoLobby(finishedStore, created.roomId)).toBeNull();
     expect(finishedStore.archivedMatches[0]?.status).toBe('completed');
-    expect(finishedStore.archivedMatches[0]?.result?.winnerIds).toEqual(['alice']);
+    expect(finishedStore.archivedMatches[0]?.result?.winnerIds).toEqual([
+      'alice',
+    ]);
   });
 });

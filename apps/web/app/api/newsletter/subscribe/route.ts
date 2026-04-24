@@ -16,7 +16,14 @@ export const POST = createApiRoute({
     const result = await subscribeToNewsletter(body);
 
     if (!result.ok) {
-      throw new ProblemError(problem('/problems/newsletter-subscription', 'Unable to subscribe', 400, result.error));
+      throw new ProblemError(
+        problem(
+          '/problems/newsletter-subscription',
+          'Unable to subscribe',
+          400,
+          result.error,
+        ),
+      );
     }
 
     return { ok: true };

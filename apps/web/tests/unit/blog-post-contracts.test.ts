@@ -9,12 +9,14 @@ describe('blog post contracts', () => {
   it('normalizes valid markdown input before publishing', () => {
     const normalized = normalizeBlogPostCreateInput({
       title: '  My title  ',
-      contentMarkdown: '  This body has enough content to pass the minimum validation.  ',
+      contentMarkdown:
+        '  This body has enough content to pass the minimum validation.  ',
     });
 
     expect(normalized).toEqual({
       title: 'My title',
-      contentMarkdown: 'This body has enough content to pass the minimum validation.',
+      contentMarkdown:
+        'This body has enough content to pass the minimum validation.',
     });
     expect(validateNormalizedBlogPostCreateInput(normalized)).toBeNull();
   });
@@ -25,6 +27,8 @@ describe('blog post contracts', () => {
       contentMarkdown: 'Too short',
     });
 
-    expect(validateNormalizedBlogPostCreateInput(normalized)).toBe('Title must be at least 4 characters.');
+    expect(validateNormalizedBlogPostCreateInput(normalized)).toBe(
+      'Title must be at least 4 characters.',
+    );
   });
 });

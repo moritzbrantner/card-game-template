@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { canApplyUserFeatureOverrides, resolveFeatureEnabledState } from '@/src/foundation/features/access';
+import {
+  canApplyUserFeatureOverrides,
+  resolveFeatureEnabledState,
+} from '@/src/foundation/features/access';
 
 describe('foundation feature access', () => {
   it('never enables functionality that is disabled in the active build manifest', () => {

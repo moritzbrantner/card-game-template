@@ -5,7 +5,12 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from '@/i18n/navigation';
 import { readProblemDetail } from '@/src/http/problem-client';
-import { buildPublicProfilePath, formatProfileTag, PROFILE_TAG_MAX_LENGTH, PROFILE_TAG_MIN_LENGTH } from '@/src/profile/tags';
+import {
+  buildPublicProfilePath,
+  formatProfileTag,
+  PROFILE_TAG_MAX_LENGTH,
+  PROFILE_TAG_MIN_LENGTH,
+} from '@/src/profile/tags';
 
 type ProfileTagFormProps = {
   currentTag: string;
@@ -39,7 +44,10 @@ export function ProfileTagForm({ currentTag, labels }: ProfileTagFormProps) {
     });
 
     if (!response.ok) {
-      const problem = await readProblemDetail(response, 'Unable to update your tag right now. Please try again.');
+      const problem = await readProblemDetail(
+        response,
+        'Unable to update your tag right now. Please try again.',
+      );
       setState({ error: problem.message });
       setPending(false);
       return;
@@ -61,7 +69,9 @@ export function ProfileTagForm({ currentTag, labels }: ProfileTagFormProps) {
           {labels.label}
         </label>
         <div className="flex items-center rounded-md border border-zinc-300 dark:border-zinc-700">
-          <span className="px-3 text-sm text-zinc-500 dark:text-zinc-400">@</span>
+          <span className="px-3 text-sm text-zinc-500 dark:text-zinc-400">
+            @
+          </span>
           <input
             id="tag"
             name="tag"
@@ -78,15 +88,23 @@ export function ProfileTagForm({ currentTag, labels }: ProfileTagFormProps) {
         <p className="text-xs text-zinc-600 dark:text-zinc-400">
           {labels.hint} <span className="font-mono">{previewPath}</span>
         </p>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">{formatProfileTag(previewTag)}</p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          {formatProfileTag(previewTag)}
+        </p>
       </div>
 
       <Button type="submit" disabled={pending}>
         {pending ? labels.saving : labels.save}
       </Button>
 
-      {state.error ? <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p> : null}
-      {state.success ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{labels.success}</p> : null}
+      {state.error ? (
+        <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>
+      ) : null}
+      {state.success ? (
+        <p className="text-sm text-emerald-600 dark:text-emerald-400">
+          {labels.success}
+        </p>
+      ) : null}
     </form>
   );
 }

@@ -4,7 +4,13 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import { createSwapy, utils, type SlotItemMapArray, type Swapy } from 'swapy';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import {
@@ -36,7 +42,8 @@ export function AdminOverviewGrid({ pages }: AdminOverviewGridProps) {
   const swapyRef = useRef<Swapy | null>(null);
   const pageIds = pages.map((page) => page.key);
   const defaultLayout = buildDefaultAdminOverviewLayout(pageIds);
-  const [draftLayout, setDraftLayout] = useState<AdminOverviewLayoutEntry[]>(defaultLayout);
+  const [draftLayout, setDraftLayout] =
+    useState<AdminOverviewLayoutEntry[]>(defaultLayout);
   const [isEditing, setIsEditing] = useState(false);
   const savedLayoutSnapshot = useSyncExternalStore(
     (onStoreChange) => {
@@ -89,10 +96,19 @@ export function AdminOverviewGrid({ pages }: AdminOverviewGridProps) {
       return;
     }
 
-    utils.dynamicSwapy(swapyRef.current, pages, 'key', draftLayout, setDraftLayout);
+    utils.dynamicSwapy(
+      swapyRef.current,
+      pages,
+      'key',
+      draftLayout,
+      setDraftLayout,
+    );
   }, [draftLayout, isEditing, pages]);
 
-  const hasUnsavedChanges = !areAdminOverviewLayoutsEqual(savedLayout, draftLayout);
+  const hasUnsavedChanges = !areAdminOverviewLayoutsEqual(
+    savedLayout,
+    draftLayout,
+  );
   const layout = isEditing ? draftLayout : savedLayout;
   const slottedPages = utils.toSlottedItems(pages, 'key', layout);
 
@@ -125,9 +141,13 @@ export function AdminOverviewGrid({ pages }: AdminOverviewGridProps) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3 rounded-3xl border border-zinc-200 bg-white/70 p-4 dark:border-zinc-800 dark:bg-zinc-950/60">
         <div className="space-y-1">
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{t('overview.layoutTitle')}</p>
+          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+            {t('overview.layoutTitle')}
+          </p>
           <p className="max-w-2xl text-sm text-zinc-600 dark:text-zinc-300">
-            {isEditing ? t('overview.editHint') : t('overview.layoutDescription')}
+            {isEditing
+              ? t('overview.editHint')
+              : t('overview.layoutDescription')}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -139,7 +159,11 @@ export function AdminOverviewGrid({ pages }: AdminOverviewGridProps) {
               <Button type="button" variant="outline" onClick={handleCancel}>
                 {t('overview.cancelEditing')}
               </Button>
-              <Button type="button" onClick={handleSave} disabled={!hasUnsavedChanges}>
+              <Button
+                type="button"
+                onClick={handleSave}
+                disabled={!hasUnsavedChanges}
+              >
                 {t('overview.saveLayout')}
               </Button>
             </>
@@ -173,7 +197,13 @@ export function AdminOverviewGrid({ pages }: AdminOverviewGridProps) {
                   isEditing ? 'cursor-grab active:cursor-grabbing' : '',
                 ].join(' ')}
               >
-                <Card className={isEditing ? 'h-full border-emerald-200 dark:border-emerald-900' : 'h-full'}>
+                <Card
+                  className={
+                    isEditing
+                      ? 'h-full border-emerald-200 dark:border-emerald-900'
+                      : 'h-full'
+                  }
+                >
                   <CardHeader className="space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-2">

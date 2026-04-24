@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
-import { describe, expect, test } from "vitest";
+import { render, screen } from '@testing-library/react';
+import { describe, expect, test } from 'vitest';
 
 import {
   Button,
@@ -14,40 +14,40 @@ import {
   CardHeader,
   CardTitle,
   cn,
-} from "../src";
+} from '../src';
 
 const calendarIcsData = [
-  "vcalendar",
+  'vcalendar',
   [
-    ["version", {}, "text", "2.0"],
-    ["prodid", {}, "text", "-//platform-packages//Calendar Test//EN"],
+    ['version', {}, 'text', '2.0'],
+    ['prodid', {}, 'text', '-//platform-packages//Calendar Test//EN'],
   ],
   [
     [
-      "vevent",
+      'vevent',
       [
-        ["uid", {}, "text", "design-sync"],
-        ["summary", {}, "text", "Design sync"],
-        ["dtstart", {}, "date-time", "2026-04-15T09:00:00Z"],
-        ["dtend", {}, "date-time", "2026-04-15T09:30:00Z"],
+        ['uid', {}, 'text', 'design-sync'],
+        ['summary', {}, 'text', 'Design sync'],
+        ['dtstart', {}, 'date-time', '2026-04-15T09:00:00Z'],
+        ['dtend', {}, 'date-time', '2026-04-15T09:30:00Z'],
       ],
       [],
     ],
     [
-      "vevent",
+      'vevent',
       [
-        ["uid", {}, "text", "release-window"],
-        ["summary", {}, "text", "Release window"],
-        ["dtstart", {}, "date", "2026-04-18"],
-        ["dtend", {}, "date", "2026-04-20"],
+        ['uid', {}, 'text', 'release-window'],
+        ['summary', {}, 'text', 'Release window'],
+        ['dtstart', {}, 'date', '2026-04-18'],
+        ['dtend', {}, 'date', '2026-04-20'],
       ],
       [],
     ],
   ],
 ] as const satisfies CalendarIcsData;
 
-describe("@moritzbrantner/ui", () => {
-  test("renders shared primitives in jsdom", () => {
+describe('@moritzbrantner/ui', () => {
+  test('renders shared primitives in jsdom', () => {
     render(
       <Card>
         <CardHeader>
@@ -59,15 +59,15 @@ describe("@moritzbrantner/ui", () => {
       </Card>,
     );
 
-    expect(screen.getByRole("button", { name: "Press" })).toBeTruthy();
-    expect(screen.getByText("Shared UI")).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Press' })).toBeTruthy();
+    expect(screen.getByText('Shared UI')).toBeTruthy();
   });
 
-  test("merges class names", () => {
-    expect(cn("px-4", "px-2", "font-semibold")).toBe("px-2 font-semibold");
+  test('merges class names', () => {
+    expect(cn('px-4', 'px-2', 'font-semibold')).toBe('px-2 font-semibold');
   });
 
-  test("renders a custom calendar cell component", () => {
+  test('renders a custom calendar cell component', () => {
     function CustomCell({
       children,
       events = [],
@@ -77,7 +77,7 @@ describe("@moritzbrantner/ui", () => {
         <CalendarDayButton {...props}>
           {children}
           <span data-testid={`cell-${props.day.date.getDate()}`}>marker</span>
-          {events.some((event) => event.summary === "Design sync") ? (
+          {events.some((event) => event.summary === 'Design sync') ? (
             <span data-testid="design-sync-event">event</span>
           ) : null}
         </CalendarDayButton>
@@ -94,11 +94,11 @@ describe("@moritzbrantner/ui", () => {
       />,
     );
 
-    expect(screen.getByTestId("cell-15")).toBeTruthy();
-    expect(screen.getByTestId("design-sync-event")).toBeTruthy();
+    expect(screen.getByTestId('cell-15')).toBeTruthy();
+    expect(screen.getByTestId('design-sync-event')).toBeTruthy();
   });
 
-  test("renders event summaries from jcal data", () => {
+  test('renders event summaries from jcal data', () => {
     render(
       <Calendar
         defaultMonth={new Date(2026, 3, 1)}
@@ -109,6 +109,6 @@ describe("@moritzbrantner/ui", () => {
     );
 
     expect(screen.getAllByText(/Design sync/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Release window").length).toBeGreaterThan(1);
+    expect(screen.getAllByText('Release window').length).toBeGreaterThan(1);
   });
 });

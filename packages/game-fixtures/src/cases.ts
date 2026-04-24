@@ -1,4 +1,9 @@
-import type { GameMove, MatchState, PlayerId, PlayerProfile } from '@repo/game-contracts';
+import type {
+  GameMove,
+  MatchState,
+  PlayerId,
+  PlayerProfile,
+} from '@repo/game-contracts';
 import type { GameAdapter } from '@repo/game-engine';
 import {
   createPokerAdapter,
@@ -8,6 +13,12 @@ import {
   type PokerMove,
   type PokerState,
 } from '@repo/game-poker';
+import {
+  createTicTacToeAdapter,
+  type TicTacToeMove,
+  type TicTacToeSetup,
+  type TicTacToeState,
+} from '@repo/game-tic-tac-toe';
 import {
   createTcgAdapter,
   defaultTcgRules,
@@ -40,6 +51,36 @@ type TcgSetup = {
   seed?: number | string;
 };
 
+type CardGameFixtureCase =
+  | EngineFixtureCase<UnoSetup, UnoState, UnoMove>
+  | EngineFixtureCase<PokerSetup, PokerState, PokerMove>
+  | EngineFixtureCase<TicTacToeSetup, TicTacToeState, TicTacToeMove>
+  | EngineFixtureCase<TcgSetup, TcgState, TcgMove>;
+
+function defineUnoFixture(
+  fixture: EngineFixtureCase<UnoSetup, UnoState, UnoMove>,
+): EngineFixtureCase<UnoSetup, UnoState, UnoMove> {
+  return fixture;
+}
+
+function definePokerFixture(
+  fixture: EngineFixtureCase<PokerSetup, PokerState, PokerMove>,
+): EngineFixtureCase<PokerSetup, PokerState, PokerMove> {
+  return fixture;
+}
+
+function defineTcgFixture(
+  fixture: EngineFixtureCase<TcgSetup, TcgState, TcgMove>,
+): EngineFixtureCase<TcgSetup, TcgState, TcgMove> {
+  return fixture;
+}
+
+function defineTicTacToeFixture(
+  fixture: EngineFixtureCase<TicTacToeSetup, TicTacToeState, TicTacToeMove>,
+): EngineFixtureCase<TicTacToeSetup, TicTacToeState, TicTacToeMove> {
+  return fixture;
+}
+
 function uniqueKinds(moves: readonly GameMove[]): readonly string[] {
   return [...new Set(moves.map((move) => move.kind))].sort();
 }
@@ -48,7 +89,12 @@ function countsByPlayer<TValue>(
   players: readonly PlayerProfile[],
   values: Record<PlayerId, readonly TValue[]>,
 ): Record<PlayerId, number> {
-  return Object.fromEntries(players.map((player) => [player.playerId, values[player.playerId]?.length ?? 0]));
+  return Object.fromEntries(
+    players.map((player) => [
+      player.playerId,
+      values[player.playerId]?.length ?? 0,
+    ]),
+  );
 }
 
 function cardIdsByPlayer<TValue extends { id: string }>(
@@ -56,11 +102,19 @@ function cardIdsByPlayer<TValue extends { id: string }>(
   values: Record<PlayerId, readonly TValue[]>,
 ): Record<PlayerId, readonly string[]> {
   return Object.fromEntries(
-    players.map((player) => [player.playerId, values[player.playerId]?.map((value) => value.id) ?? []]),
+    players.map((player) => [
+      player.playerId,
+      values[player.playerId]?.map((value) => value.id) ?? [],
+    ]),
   );
 }
 
-function unoCard(color: UnoCard['color'], kind: UnoCard['kind'], id: string, value?: number): UnoCard {
+function unoCard(
+  color: UnoCard['color'],
+  kind: UnoCard['kind'],
+  id: string,
+  value?: number,
+): UnoCard {
   return {
     color,
     id,
@@ -70,7 +124,10 @@ function unoCard(color: UnoCard['color'], kind: UnoCard['kind'], id: string, val
   };
 }
 
-function pokerCard(rank: PokerCard['rank'], suit: PokerCard['suit']): PokerCard {
+function pokerCard(
+  rank: PokerCard['rank'],
+  suit: PokerCard['suit'],
+): PokerCard {
   return {
     id: `${rank.toLowerCase()}-${suit}`,
     label: `${rank} ${suit}`,
@@ -103,7 +160,11 @@ const spark: TcgCard = {
   effect: 'deal-2',
 };
 
-function tcgUnit(card: TcgCard, ownerPlayerId: PlayerId, id = `${ownerPlayerId}:${card.id}:fixture`): TcgUnit {
+function tcgUnit(
+  card: TcgCard,
+  ownerPlayerId: PlayerId,
+  id = `${ownerPlayerId}:${card.id}:fixture`,
+): TcgUnit {
   return {
     card,
     damage: 0,
@@ -116,19 +177,6 @@ function withUnoInitialState(
   override: (state: MatchState<UnoState>) => MatchState<UnoState>,
 ): GameAdapter<UnoSetup, UnoState, UnoMove> {
   const adapter = createUnoAdapter();
-
-  return {
-    ...adapter,
-    createInitialState(input) {
-      return override(adapter.createInitialState(input));
-    },
-  };
-}
-
-function withPokerInitialState(
-  override: (state: MatchState<PokerState>) => MatchState<PokerState>,
-): GameAdapter<PokerSetup, PokerState, PokerMove> {
-  const adapter = createPokerAdapter();
 
   return {
     ...adapter,
@@ -151,11 +199,15 @@ function withTcgInitialState(
   };
 }
 
-function digestUno(adapter: GameAdapter<UnoSetup, UnoState, UnoMove>, state: MatchState<UnoState>) {
+function digestUno(
+  adapter: GameAdapter<UnoSetup, UnoState, UnoMove>,
+  state: MatchState<UnoState>,
+) {
   return {
     activePlayerId: state.activePlayerId,
     currentColor: state.state.currentColor,
-    discardTopId: state.state.discardPile[state.state.discardPile.length - 1]?.id ?? null,
+    discardTopId:
+      state.state.discardPile[state.state.discardPile.length - 1]?.id ?? null,
     drawPileCount: state.state.drawPile.length,
     drawnCardThisTurnId: state.state.drawnCardThisTurnId,
     handCounts: countsByPlayer(state.players, state.state.hands),
@@ -166,7 +218,10 @@ function digestUno(adapter: GameAdapter<UnoSetup, UnoState, UnoMove>, state: Mat
   };
 }
 
-function digestPoker(adapter: GameAdapter<PokerSetup, PokerState, PokerMove>, state: MatchState<PokerState>) {
+function digestPoker(
+  adapter: GameAdapter<PokerSetup, PokerState, PokerMove>,
+  state: MatchState<PokerState>,
+) {
   return {
     activePlayerId: state.activePlayerId,
     communityCount: state.state.communityCards.length,
@@ -183,7 +238,10 @@ function digestPoker(adapter: GameAdapter<PokerSetup, PokerState, PokerMove>, st
   };
 }
 
-function digestTcg(adapter: GameAdapter<TcgSetup, TcgState, TcgMove>, state: MatchState<TcgState>) {
+function digestTcg(
+  adapter: GameAdapter<TcgSetup, TcgState, TcgMove>,
+  state: MatchState<TcgState>,
+) {
   return {
     activePlayerId: state.activePlayerId,
     battlefieldCounts: countsByPlayer(state.players, state.state.battlefield),
@@ -200,6 +258,20 @@ function digestTcg(adapter: GameAdapter<TcgSetup, TcgState, TcgMove>, state: Mat
   };
 }
 
+function digestTicTacToe(
+  adapter: GameAdapter<TicTacToeSetup, TicTacToeState, TicTacToeMove>,
+  state: MatchState<TicTacToeState>,
+) {
+  return {
+    activePlayerId: state.activePlayerId,
+    board: state.state.board,
+    legalMoveKinds: uniqueKinds(adapter.listLegalMoves(state)),
+    turn: state.turn,
+    winnerPlayerId: state.state.winnerPlayerId,
+    winningLine: state.state.winningLine,
+  };
+}
+
 const unoInitialAdapter = createUnoAdapter();
 const unoCompleteAdapter = withUnoInitialState((state) => ({
   ...state,
@@ -208,7 +280,10 @@ const unoCompleteAdapter = withUnoInitialState((state) => ({
     ...state.state,
     currentColor: 'red',
     discardPile: [unoCard('red', 'number', 'discard-red-5', 5)],
-    drawPile: [unoCard('green', 'number', 'draw-green-1', 1), unoCard('blue', 'number', 'draw-blue-2', 2)],
+    drawPile: [
+      unoCard('green', 'number', 'draw-green-1', 1),
+      unoCard('blue', 'number', 'draw-blue-2', 2),
+    ],
     drawnCardThisTurnId: null,
     hands: {
       p1: [unoCard('red', 'number', 'red-win', 9)],
@@ -228,7 +303,10 @@ const unoDrawPassAdapter = withUnoInitialState((state) => ({
     ...state.state,
     currentColor: 'red',
     discardPile: [unoCard('red', 'number', 'discard-red-5', 5)],
-    drawPile: [unoCard('red', 'number', 'draw-red-9', 9), unoCard('green', 'number', 'draw-green-2', 2)],
+    drawPile: [
+      unoCard('red', 'number', 'draw-red-9', 9),
+      unoCard('green', 'number', 'draw-green-2', 2),
+    ],
     drawnCardThisTurnId: null,
     hands: {
       p1: [unoCard('blue', 'number', 'blue-1', 1)],
@@ -265,6 +343,7 @@ const unoReplayAdapter = withUnoInitialState((state) => ({
 const pokerInitialAdapter = createPokerAdapter();
 const pokerBetCallAdapter = createPokerAdapter();
 const pokerFoldAdapter = createPokerAdapter();
+const ticTacToeOpeningAdapter = createTicTacToeAdapter();
 
 const tcgInitialAdapter = createTcgAdapter();
 const tcgPlayCreatureAdapter = withTcgInitialState((state) => ({
@@ -336,8 +415,80 @@ const tcgLethalAdapter = withTcgInitialState((state) => ({
   },
 }));
 
-export const engineFixtureCases = [
-  {
+export const engineFixtureCases: readonly CardGameFixtureCase[] = [
+  defineTicTacToeFixture({
+    id: 'tic-tac-toe/opening-win',
+    gameId: 'tic-tac-toe',
+    adapter: ticTacToeOpeningAdapter,
+    players: standardTwoPlayerProfiles,
+    setup: {},
+    steps: [
+      {
+        label: 'p1 opens top-left',
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.payload.cellIndex === 0)!,
+      },
+      {
+        label: 'p2 answers middle-left',
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.payload.cellIndex === 3)!,
+      },
+      {
+        label: 'p1 takes top-middle',
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.payload.cellIndex === 1)!,
+      },
+      {
+        label: 'p2 answers center',
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.payload.cellIndex === 4)!,
+      },
+      {
+        label: 'p1 completes the top row',
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.payload.cellIndex === 2)!,
+      },
+    ],
+    digestState: (state) => digestTicTacToe(ticTacToeOpeningAdapter, state),
+    expected: {
+      initialDigest: {
+        activePlayerId: 'p1',
+        board: [null, null, null, null, null, null, null, null, null],
+        legalMoveKinds: ['place-mark'],
+        turn: 1,
+        winnerPlayerId: null,
+        winningLine: null,
+      },
+      finalDigest: {
+        activePlayerId: 'p1',
+        board: ['X', 'X', 'X', 'O', 'O', null, null, null, null],
+        legalMoveKinds: [],
+        turn: 6,
+        winnerPlayerId: 'p1',
+        winningLine: [0, 1, 2],
+      },
+      result: {
+        gameId: 'tic-tac-toe',
+        winnerIds: ['p1'],
+        rankings: [
+          { playerId: 'p1', position: 1 },
+          { playerId: 'p2', position: 2 },
+        ],
+      },
+      replay: {
+        acceptedMoveCount: 5,
+        moveKinds: [
+          'place-mark',
+          'place-mark',
+          'place-mark',
+          'place-mark',
+          'place-mark',
+        ],
+        winnerIds: ['p1'],
+      },
+    },
+  }),
+  defineUnoFixture({
     id: 'uno/initial-seed',
     gameId: 'uno-style',
     adapter: unoInitialAdapter,
@@ -359,8 +510,8 @@ export const engineFixtureCases = [
         winnerPlayerId: null,
       },
     },
-  },
-  {
+  }),
+  defineUnoFixture({
     id: 'uno/complete-single-play',
     gameId: 'uno-style',
     adapter: unoCompleteAdapter,
@@ -369,7 +520,8 @@ export const engineFixtureCases = [
     steps: [
       {
         label: 'p1 plays the final red card',
-        chooseMove: ({ legalMoves }) => legalMoves.find((move) => move.kind === 'play-card')!,
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.kind === 'play-card')!,
       },
     ],
     digestState: (state) => digestUno(unoCompleteAdapter, state),
@@ -409,8 +561,8 @@ export const engineFixtureCases = [
         winnerIds: ['p1'],
       },
     },
-  },
-  {
+  }),
+  defineUnoFixture({
     id: 'uno/draw-then-pass',
     gameId: 'uno-style',
     adapter: unoDrawPassAdapter,
@@ -419,11 +571,13 @@ export const engineFixtureCases = [
     steps: [
       {
         label: 'p1 draws a playable card',
-        chooseMove: ({ legalMoves }) => legalMoves.find((move) => move.kind === 'draw-card')!,
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.kind === 'draw-card')!,
       },
       {
         label: 'p1 passes instead of playing the drawn card',
-        chooseMove: ({ legalMoves }) => legalMoves.find((move) => move.kind === 'pass')!,
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.kind === 'pass')!,
       },
     ],
     digestState: (state) => digestUno(unoDrawPassAdapter, state),
@@ -453,8 +607,8 @@ export const engineFixtureCases = [
         winnerPlayerId: null,
       },
     },
-  },
-  {
+  }),
+  defineUnoFixture({
     id: 'uno/replay-summary',
     gameId: 'uno-style',
     adapter: unoReplayAdapter,
@@ -463,7 +617,8 @@ export const engineFixtureCases = [
     steps: [
       {
         label: 'p1 completes a replayable hand',
-        chooseMove: ({ legalMoves }) => legalMoves.find((move) => move.kind === 'play-card')!,
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.kind === 'play-card')!,
       },
     ],
     digestState: (state) => digestUno(unoReplayAdapter, state),
@@ -503,8 +658,8 @@ export const engineFixtureCases = [
         winnerIds: ['p1'],
       },
     },
-  },
-  {
+  }),
+  definePokerFixture({
     id: 'poker/initial-seed',
     gameId: 'texas-holdem',
     adapter: pokerInitialAdapter,
@@ -528,8 +683,8 @@ export const engineFixtureCases = [
         winnerIds: [],
       },
     },
-  },
-  {
+  }),
+  definePokerFixture({
     id: 'poker/bet-call-flop',
     gameId: 'texas-holdem',
     adapter: pokerBetCallAdapter,
@@ -539,11 +694,14 @@ export const engineFixtureCases = [
       {
         label: 'p1 bets 20',
         chooseMove: ({ legalMoves }) =>
-          legalMoves.find((move) => move.kind === 'bet' && move.payload.amount === 20)!,
+          legalMoves.find(
+            (move) => move.kind === 'bet' && move.payload.amount === 20,
+          )!,
       },
       {
         label: 'p2 calls',
-        chooseMove: ({ legalMoves }) => legalMoves.find((move) => move.kind === 'call')!,
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.kind === 'call')!,
       },
     ],
     digestState: (state) => digestPoker(pokerBetCallAdapter, state),
@@ -577,8 +735,8 @@ export const engineFixtureCases = [
         winnerIds: [],
       },
     },
-  },
-  {
+  }),
+  definePokerFixture({
     id: 'poker/fold-complete',
     gameId: 'texas-holdem',
     adapter: pokerFoldAdapter,
@@ -588,11 +746,14 @@ export const engineFixtureCases = [
       {
         label: 'p1 bets 10',
         chooseMove: ({ legalMoves }) =>
-          legalMoves.find((move) => move.kind === 'bet' && move.payload.amount === 10)!,
+          legalMoves.find(
+            (move) => move.kind === 'bet' && move.payload.amount === 10,
+          )!,
       },
       {
         label: 'p2 folds',
-        chooseMove: ({ legalMoves }) => legalMoves.find((move) => move.kind === 'fold')!,
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.kind === 'fold')!,
       },
     ],
     digestState: (state) => digestPoker(pokerFoldAdapter, state),
@@ -639,8 +800,8 @@ export const engineFixtureCases = [
         winnerIds: ['p1'],
       },
     },
-  },
-  {
+  }),
+  defineTcgFixture({
     id: 'tcg/initial-seed',
     gameId: 'arcane-duel',
     adapter: tcgInitialAdapter,
@@ -664,8 +825,8 @@ export const engineFixtureCases = [
         winnerPlayerId: null,
       },
     },
-  },
-  {
+  }),
+  defineTcgFixture({
     id: 'tcg/play-creature',
     gameId: 'arcane-duel',
     adapter: tcgPlayCreatureAdapter,
@@ -674,7 +835,8 @@ export const engineFixtureCases = [
     steps: [
       {
         label: 'p1 plays ember',
-        chooseMove: ({ legalMoves }) => legalMoves.find((move) => move.kind === 'play-card')!,
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.kind === 'play-card')!,
       },
     ],
     digestState: (state) => digestTcg(tcgPlayCreatureAdapter, state),
@@ -708,8 +870,8 @@ export const engineFixtureCases = [
         winnerPlayerId: null,
       },
     },
-  },
-  {
+  }),
+  defineTcgFixture({
     id: 'tcg/end-turn-attack',
     gameId: 'arcane-duel',
     adapter: tcgEndTurnAttackAdapter,
@@ -718,20 +880,26 @@ export const engineFixtureCases = [
     steps: [
       {
         label: 'p1 plays ember',
-        chooseMove: ({ legalMoves }) => legalMoves.find((move) => move.kind === 'play-card')!,
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.kind === 'play-card')!,
       },
       {
         label: 'p1 ends turn',
-        chooseMove: ({ legalMoves }) => legalMoves.find((move) => move.kind === 'end-turn')!,
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.kind === 'end-turn')!,
       },
       {
         label: 'p2 ends turn',
-        chooseMove: ({ legalMoves }) => legalMoves.find((move) => move.kind === 'end-turn')!,
+        chooseMove: ({ legalMoves }) =>
+          legalMoves.find((move) => move.kind === 'end-turn')!,
       },
       {
         label: 'p1 attacks p2',
         chooseMove: ({ legalMoves }) =>
-          legalMoves.find((move) => move.kind === 'attack' && move.payload.targetPlayerId === 'p2')!,
+          legalMoves.find(
+            (move) =>
+              move.kind === 'attack' && move.payload.targetPlayerId === 'p2',
+          )!,
       },
     ],
     digestState: (state) => digestTcg(tcgEndTurnAttackAdapter, state),
@@ -765,8 +933,8 @@ export const engineFixtureCases = [
         winnerPlayerId: null,
       },
     },
-  },
-  {
+  }),
+  defineTcgFixture({
     id: 'tcg/spell-destroy',
     gameId: 'arcane-duel',
     adapter: tcgSpellDestroyAdapter,
@@ -776,7 +944,11 @@ export const engineFixtureCases = [
       {
         label: 'p1 destroys target ember',
         chooseMove: ({ legalMoves }) =>
-          legalMoves.find((move) => move.kind === 'play-card' && move.payload.targetUnitId === 'target-ember')!,
+          legalMoves.find(
+            (move) =>
+              move.kind === 'play-card' &&
+              move.payload.targetUnitId === 'target-ember',
+          )!,
       },
     ],
     digestState: (state) => digestTcg(tcgSpellDestroyAdapter, state),
@@ -810,8 +982,8 @@ export const engineFixtureCases = [
         winnerPlayerId: null,
       },
     },
-  },
-  {
+  }),
+  defineTcgFixture({
     id: 'tcg/lethal-complete',
     gameId: 'arcane-duel',
     adapter: tcgLethalAdapter,
@@ -821,7 +993,10 @@ export const engineFixtureCases = [
       {
         label: 'p1 attacks for lethal',
         chooseMove: ({ legalMoves }) =>
-          legalMoves.find((move) => move.kind === 'attack' && move.payload.targetPlayerId === 'p2')!,
+          legalMoves.find(
+            (move) =>
+              move.kind === 'attack' && move.payload.targetPlayerId === 'p2',
+          )!,
       },
     ],
     digestState: (state) => digestTcg(tcgLethalAdapter, state),
@@ -868,8 +1043,8 @@ export const engineFixtureCases = [
         winnerIds: ['p1'],
       },
     },
-  },
-] satisfies readonly EngineFixtureCase<any, any, any>[];
+  }),
+];
 
 export const pokerShowdownRankCases: readonly {
   cards: readonly PokerCard[];

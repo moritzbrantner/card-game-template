@@ -23,43 +23,51 @@ type NotificationBellAction =
   | { type: 'mark-read'; notificationId: string }
   | { type: 'mark-all-read' };
 
-export function NotificationBell({ items, unreadCount }: NotificationBellProps) {
+export function NotificationBell({
+  items,
+  unreadCount,
+}: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const navigationT = useTranslations('NavigationBar');
-  const [state, applyOptimisticUpdate] = useOptimistic<NotificationBellState, NotificationBellAction>(
-    { items, unreadCount },
-    (currentState, action) => {
-      switch (action.type) {
-        case 'mark-read': {
-          const target = currentState.items.find((item) => item.id === action.notificationId);
+  const [state, applyOptimisticUpdate] = useOptimistic<
+    NotificationBellState,
+    NotificationBellAction
+  >({ items, unreadCount }, (currentState, action) => {
+    switch (action.type) {
+      case 'mark-read': {
+        const target = currentState.items.find(
+          (item) => item.id === action.notificationId,
+        );
 
-          if (!target || target.status === 'read') {
-            return currentState;
-          }
-
-          return {
-            items: currentState.items.map((item) =>
-              item.id === action.notificationId ? { ...item, status: 'read' } : item,
-            ),
-            unreadCount: Math.max(0, currentState.unreadCount - 1),
-          };
-        }
-        case 'mark-all-read':
-          return {
-            items: currentState.items.map((item) =>
-              item.status === 'unread' ? { ...item, status: 'read' } : item,
-            ),
-            unreadCount: 0,
-          };
-        default:
+        if (!target || target.status === 'read') {
           return currentState;
+        }
+
+        return {
+          items: currentState.items.map((item) =>
+            item.id === action.notificationId
+              ? { ...item, status: 'read' }
+              : item,
+          ),
+          unreadCount: Math.max(0, currentState.unreadCount - 1),
+        };
       }
-    },
-  );
+      case 'mark-all-read':
+        return {
+          items: currentState.items.map((item) =>
+            item.status === 'unread' ? { ...item, status: 'read' } : item,
+          ),
+          unreadCount: 0,
+        };
+      default:
+        return currentState;
+    }
+  });
 
   useEffect(() => {
     function handleMarkRead(event: Event) {
-      const notificationId = (event as CustomEvent<{ notificationId?: string }>).detail?.notificationId;
+      const notificationId = (event as CustomEvent<{ notificationId?: string }>)
+        .detail?.notificationId;
 
       if (notificationId) {
         applyOptimisticUpdate({ type: 'mark-read', notificationId });
@@ -75,7 +83,10 @@ export function NotificationBell({ items, unreadCount }: NotificationBellProps) 
 
     return () => {
       window.removeEventListener('notifications:mark-read', handleMarkRead);
-      window.removeEventListener('notifications:mark-all-read', handleMarkAllRead);
+      window.removeEventListener(
+        'notifications:mark-all-read',
+        handleMarkAllRead,
+      );
     };
   }, [applyOptimisticUpdate]);
 
@@ -91,7 +102,9 @@ export function NotificationBell({ items, unreadCount }: NotificationBellProps) 
       <button
         type="button"
         className="relative flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-        aria-label={navigationT('notifications.button', { count: state.unreadCount })}
+        aria-label={navigationT('notifications.button', {
+          count: state.unreadCount,
+        })}
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((current) => !current)}
@@ -112,7 +125,9 @@ export function NotificationBell({ items, unreadCount }: NotificationBellProps) 
                 {navigationT('notifications.title')}
               </p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                {navigationT('notifications.subtitle', { count: state.unreadCount })}
+                {navigationT('notifications.subtitle', {
+                  count: state.unreadCount,
+                })}
               </p>
             </div>
             {state.unreadCount > 0 ? <Badge>{state.unreadCount}</Badge> : null}
@@ -132,7 +147,9 @@ export function NotificationBell({ items, unreadCount }: NotificationBellProps) 
                           {formatNotificationDate(item.createdAt)}
                         </p>
                       </div>
-                      {item.status === 'unread' ? <span className="mt-1 h-2.5 w-2.5 rounded-full bg-red-500" /> : null}
+                      {item.status === 'unread' ? (
+                        <span className="mt-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+                      ) : null}
                     </div>
                     <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
                       {item.body}
@@ -164,7 +181,10 @@ export function NotificationBell({ items, unreadCount }: NotificationBellProps) 
                         pendingLabel={navigationT('notifications.markingRead')}
                         errorLabel={navigationT('notifications.markReadError')}
                         onSuccess={() => {
-                          applyOptimisticUpdate({ type: 'mark-read', notificationId: item.id });
+                          applyOptimisticUpdate({
+                            type: 'mark-read',
+                            notificationId: item.id,
+                          });
                         }}
                         className="mt-3 px-0 text-xs"
                         errorClassName="text-xs text-red-600 dark:text-red-400"

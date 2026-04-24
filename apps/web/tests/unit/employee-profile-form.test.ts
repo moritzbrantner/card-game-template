@@ -20,6 +20,8 @@ describe('employee profile form configuration', () => {
       department: 'Engineering',
     });
 
-    expect(message).toBe('Jane Doe submitted their profile for the Engineering team.');
+    expect(message).toBe(
+      'Jane Doe submitted their profile for the Engineering team.',
+    );
   });
 });

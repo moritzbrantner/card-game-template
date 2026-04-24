@@ -8,9 +8,19 @@ const roleBodySchema = z.object({
   role: z.enum(['SUPERADMIN', 'ADMIN', 'MANAGER', 'USER']),
 });
 
-function mapRoleManagementProblem(code: 'FORBIDDEN' | 'NOT_FOUND' | 'CONFLICT', detail: string) {
+function mapRoleManagementProblem(
+  code: 'FORBIDDEN' | 'NOT_FOUND' | 'CONFLICT',
+  detail: string,
+) {
   const status = code === 'FORBIDDEN' ? 403 : code === 'NOT_FOUND' ? 404 : 409;
-  return new ProblemError(problem('/problems/admin-user-role', 'Unable to update role', status, detail));
+  return new ProblemError(
+    problem(
+      '/problems/admin-user-role',
+      'Unable to update role',
+      status,
+      detail,
+    ),
+  );
 }
 
 const patchRoute = createApiRoute({

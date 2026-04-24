@@ -62,7 +62,9 @@ const appRoles = {
   }),
 } as const;
 
-type PermissionRequest = Parameters<(typeof appRoles)['SUPERADMIN']['authorize']>[0];
+type PermissionRequest = Parameters<
+  (typeof appRoles)['SUPERADMIN']['authorize']
+>[0];
 
 const actionPermissions: Record<BusinessAction, PermissionRequest> = {
   viewDashboard: {
@@ -91,7 +93,10 @@ const actionPermissions: Record<BusinessAction, PermissionRequest> = {
   },
 };
 
-export function hasRole(currentRole: AppRole | null | undefined, minimumRole: AppRole): boolean {
+export function hasRole(
+  currentRole: AppRole | null | undefined,
+  minimumRole: AppRole,
+): boolean {
   if (!currentRole) {
     return false;
   }
@@ -107,12 +112,17 @@ export function isSuperAdmin(role: AppRole | null | undefined): boolean {
   return hasRole(role, 'SUPERADMIN');
 }
 
-function canPerform(role: AppRole | null | undefined, action: BusinessAction): boolean {
+function canPerform(
+  role: AppRole | null | undefined,
+  action: BusinessAction,
+): boolean {
   if (!role) {
     return false;
   }
 
-  return (appRoles[role] as (typeof appRoles)['SUPERADMIN']).authorize(actionPermissions[action]).success;
+  return (appRoles[role] as (typeof appRoles)['SUPERADMIN']).authorize(
+    actionPermissions[action],
+  ).success;
 }
 
 export function canViewDashboard(role: AppRole | null | undefined): boolean {
@@ -127,7 +137,9 @@ export function canViewReports(role: AppRole | null | undefined): boolean {
   return canPerform(role, 'viewReports');
 }
 
-export function canAccessDataEntryWorkspace(role: AppRole | null | undefined): boolean {
+export function canAccessDataEntryWorkspace(
+  role: AppRole | null | undefined,
+): boolean {
   return canPerform(role, 'accessDataEntryWorkspace');
 }
 
@@ -139,7 +151,9 @@ export function canManageUsers(role: AppRole | null | undefined): boolean {
   return canPerform(role, 'manageUsers');
 }
 
-export function canManageSystemSettings(role: AppRole | null | undefined): boolean {
+export function canManageSystemSettings(
+  role: AppRole | null | undefined,
+): boolean {
   return canPerform(role, 'manageSystemSettings');
 }
 
@@ -147,7 +161,10 @@ export function canManageRoles(role: AppRole | null | undefined): boolean {
   return canPerform(role, 'manageRoles');
 }
 
-export function forbidUnless(condition: unknown, message = 'Forbidden'): asserts condition {
+export function forbidUnless(
+  condition: unknown,
+  message = 'Forbidden',
+): asserts condition {
   if (!condition) {
     const error = new Error(message) as Error & { status: 403 };
     error.name = 'AuthorizationError';

@@ -26,9 +26,13 @@ export async function POST(request: Request) {
   const href = formData.get('href');
 
   const result = await sendAdminNotificationUseCase(guard.session!.user.id, {
-    audience: (typeof audience === 'string' ? audience : 'user') as NotificationAudience,
+    audience: (typeof audience === 'string'
+      ? audience
+      : 'user') as NotificationAudience,
     targetUserId: typeof targetUserId === 'string' ? targetUserId : undefined,
-    targetRole: (typeof targetRole === 'string' ? targetRole : undefined) as NotificationRoleTarget | undefined,
+    targetRole: (typeof targetRole === 'string' ? targetRole : undefined) as
+      | NotificationRoleTarget
+      | undefined,
     title: typeof title === 'string' ? title : '',
     body: typeof body === 'string' ? body : '',
     href: typeof href === 'string' ? href : undefined,

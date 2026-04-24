@@ -1,10 +1,19 @@
-import { profiles, securityAuditLogs, securityRateLimitCounters, users } from '@/src/db/schema';
+import {
+  profiles,
+  securityAuditLogs,
+  securityRateLimitCounters,
+  users,
+} from '@/src/db/schema';
 
 export type WritableTableConfig = {
   name: string;
   label: string;
   description?: string;
-  table: typeof users | typeof profiles | typeof securityAuditLogs | typeof securityRateLimitCounters;
+  table:
+    | typeof users
+    | typeof profiles
+    | typeof securityAuditLogs
+    | typeof securityRateLimitCounters;
   includeFields?: string[];
   excludeFields?: string[];
   includeDefaultedFields?: boolean;
@@ -30,7 +39,15 @@ export const writableTableConfigs: WritableTableConfig[] = [
     label: 'Security Audit Log',
     description: 'Create security audit entries manually.',
     table: securityAuditLogs,
-    includeFields: ['id', 'actorId', 'action', 'outcome', 'statusCode', 'metadata', 'timestamp'],
+    includeFields: [
+      'id',
+      'actorId',
+      'action',
+      'outcome',
+      'statusCode',
+      'metadata',
+      'timestamp',
+    ],
     includeDefaultedFields: true,
   },
   {

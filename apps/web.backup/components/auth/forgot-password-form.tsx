@@ -28,7 +28,10 @@ type ForgotPasswordFormProps = {
   };
 };
 
-export function ForgotPasswordForm({ locale, labels }: ForgotPasswordFormProps) {
+export function ForgotPasswordForm({
+  locale,
+  labels,
+}: ForgotPasswordFormProps) {
   const [pending, setPending] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const {
@@ -67,7 +70,10 @@ export function ForgotPasswordForm({ locale, labels }: ForgotPasswordFormProps) 
         });
       }
 
-      if (problem.formMessage || Object.keys(problem.fieldErrors).length === 0) {
+      if (
+        problem.formMessage ||
+        Object.keys(problem.fieldErrors).length === 0
+      ) {
         setError('root', {
           type: 'server',
           message: problem.formMessage ?? problem.message,
@@ -85,8 +91,12 @@ export function ForgotPasswordForm({ locale, labels }: ForgotPasswordFormProps) 
   return (
     <section className="space-y-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-5 dark:border-zinc-800/80 dark:bg-zinc-950/60">
       <div className="space-y-1">
-        <h3 className="text-base font-semibold text-zinc-950 dark:text-zinc-50">{labels.title}</h3>
-        <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">{labels.description}</p>
+        <h3 className="text-base font-semibold text-zinc-950 dark:text-zinc-50">
+          {labels.title}
+        </h3>
+        <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+          {labels.description}
+        </p>
       </div>
 
       <form className="space-y-4" onSubmit={onSubmit} noValidate>
@@ -105,17 +115,33 @@ export function ForgotPasswordForm({ locale, labels }: ForgotPasswordFormProps) 
               },
             })}
           />
-          {errors.email ? <p className="text-sm text-red-600 dark:text-red-400">{errors.email.message}</p> : null}
+          {errors.email ? (
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {errors.email.message}
+            </p>
+          ) : null}
         </div>
 
-        {errors.root?.message ? <p className="text-sm text-red-600 dark:text-red-400">{errors.root.message}</p> : null}
+        {errors.root?.message ? (
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {errors.root.message}
+          </p>
+        ) : null}
         {successMessage ? (
-          <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
+          <p
+            role="status"
+            className="text-sm text-emerald-700 dark:text-emerald-400"
+          >
             {successMessage}
           </p>
         ) : null}
 
-        <Button type="submit" variant="outline" className="w-full" disabled={pending}>
+        <Button
+          type="submit"
+          variant="outline"
+          className="w-full"
+          disabled={pending}
+        >
           {pending ? labels.submitting : labels.submit}
         </Button>
       </form>

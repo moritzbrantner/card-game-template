@@ -10,7 +10,14 @@ import {
   uploadLifecycle,
   uploadTypeGroups,
 } from '@/src/domain/uploads/template-playbook';
-import { buttonVariants, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@moritzbrantner/ui';
+import {
+  buttonVariants,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@moritzbrantner/ui';
 
 type UploadQueueItem = {
   id: string;
@@ -37,7 +44,10 @@ type UploadPlaygroundProps = {
   };
 };
 
-function buildQueueItems(fileList: FileList | File[], source: string): UploadQueueItem[] {
+function buildQueueItems(
+  fileList: FileList | File[],
+  source: string,
+): UploadQueueItem[] {
   return Array.from(fileList).map((file) => {
     const kind = inferUploadKind(file.name, file.type);
     const management = getUploadManagementHint(kind, file.size);
@@ -64,7 +74,10 @@ export function UploadPlayground({ copy }: UploadPlaygroundProps) {
       return;
     }
 
-    setQueue((currentQueue) => [...buildQueueItems(fileList, source), ...currentQueue]);
+    setQueue((currentQueue) => [
+      ...buildQueueItems(fileList, source),
+      ...currentQueue,
+    ]);
   }
 
   function handleDrop(event: DragEvent<HTMLLabelElement>) {
@@ -94,14 +107,19 @@ export function UploadPlayground({ copy }: UploadPlaygroundProps) {
               Browser intake
             </p>
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">{copy.heroTitle}</h2>
-              <p className="max-w-xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">{copy.heroDescription}</p>
+              <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
+                {copy.heroTitle}
+              </h2>
+              <p className="max-w-xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                {copy.heroDescription}
+              </p>
             </div>
           </div>
 
           <div className="space-y-3">
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Drop files here or use the browser picker. The queue below classifies each item and suggests an upload strategy.
+              Drop files here or use the browser picker. The queue below
+              classifies each item and suggests an upload strategy.
             </p>
             <button
               type="button"
@@ -141,16 +159,21 @@ export function UploadPlayground({ copy }: UploadPlaygroundProps) {
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <h3 className="font-medium text-zinc-950 dark:text-zinc-50">{item.fileName}</h3>
+                        <h3 className="font-medium text-zinc-950 dark:text-zinc-50">
+                          {item.fileName}
+                        </h3>
                         <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                          {item.kind} · {formatFileSize(item.sizeInBytes)} · {item.source}
+                          {item.kind} · {formatFileSize(item.sizeInBytes)} ·{' '}
+                          {item.source}
                         </p>
                       </div>
                       <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-medium text-zinc-50 dark:bg-zinc-100 dark:text-zinc-900">
                         {item.managementLabel}
                       </span>
                     </div>
-                    <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">{item.managementDetail}</p>
+                    <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">
+                      {item.managementDetail}
+                    </p>
                     <p className="mt-2 text-xs uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
                       MIME {item.mimeType}
                     </p>
@@ -177,7 +200,10 @@ export function UploadPlayground({ copy }: UploadPlaygroundProps) {
               <p>{guide.storage}</p>
               <ul className="space-y-2">
                 {guide.notes.map((note) => (
-                  <li key={note} className="rounded-2xl bg-zinc-50 px-3 py-2 dark:bg-zinc-900">
+                  <li
+                    key={note}
+                    className="rounded-2xl bg-zinc-50 px-3 py-2 dark:bg-zinc-900"
+                  >
                     {note}
                   </li>
                 ))}
@@ -194,10 +220,19 @@ export function UploadPlayground({ copy }: UploadPlaygroundProps) {
           </CardHeader>
           <CardContent className="space-y-3">
             {uploadTypeGroups.map((group) => (
-              <article key={group.title} className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                <h3 className="font-medium text-zinc-950 dark:text-zinc-50">{group.title}</h3>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{group.examples}</p>
-                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">{group.handling}</p>
+              <article
+                key={group.title}
+                className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900"
+              >
+                <h3 className="font-medium text-zinc-950 dark:text-zinc-50">
+                  {group.title}
+                </h3>
+                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                  {group.examples}
+                </p>
+                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                  {group.handling}
+                </p>
               </article>
             ))}
           </CardContent>
@@ -209,11 +244,16 @@ export function UploadPlayground({ copy }: UploadPlaygroundProps) {
           </CardHeader>
           <CardContent className="space-y-3">
             {uploadLifecycle.map((step, index) => (
-              <article key={step.title} className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
+              <article
+                key={step.title}
+                className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900"
+              >
                 <h3 className="font-medium text-zinc-950 dark:text-zinc-50">
                   {index + 1}. {step.title}
                 </h3>
-                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">{step.detail}</p>
+                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                  {step.detail}
+                </p>
               </article>
             ))}
           </CardContent>

@@ -10,7 +10,9 @@ if (started) {
 }
 
 const rendererName =
-  typeof MAIN_WINDOW_VITE_NAME !== 'undefined' ? MAIN_WINDOW_VITE_NAME : 'main_window';
+  typeof MAIN_WINDOW_VITE_NAME !== 'undefined'
+    ? MAIN_WINDOW_VITE_NAME
+    : 'main_window';
 const rendererDevServerUrl =
   typeof MAIN_WINDOW_VITE_DEV_SERVER_URL !== 'undefined'
     ? MAIN_WINDOW_VITE_DEV_SERVER_URL
@@ -23,16 +25,20 @@ async function loadRenderer(browserWindow: BrowserWindow) {
   if (rendererDevServerUrl) {
     await browserWindow.loadURL(rendererDevServerUrl);
   } else {
-    await browserWindow.loadFile(path.join(__dirname, `../renderer/${rendererName}/index.html`));
+    await browserWindow.loadFile(
+      path.join(__dirname, `../renderer/${rendererName}/index.html`),
+    );
   }
 }
 
 async function createWindow() {
-  if (!platform) {
+  const activePlatform = platform;
+
+  if (!activePlatform) {
     throw new Error('Desktop platform must be created after app is ready.');
   }
 
-  const persistedState = await platform.windowState.getState('main');
+  const persistedState = await activePlatform.windowState.getState('main');
 
   mainWindow = new BrowserWindow({
     autoHideMenuBar: true,
@@ -45,8 +51,8 @@ async function createWindow() {
     },
   });
 
-  platform.windowState.track('main', mainWindow);
-  platform.commands.attachToWindow(mainWindow);
+  activePlatform.windowState.track('main', mainWindow);
+  activePlatform.commands.attachToWindow(mainWindow);
 
   mainWindow.on('close', (event) => {
     if (!mainWindow) {
@@ -55,15 +61,17 @@ async function createWindow() {
 
     event.preventDefault();
 
-    void platform.documents.confirmBeforeClose(mainWindow).then((shouldClose) => {
-      if (!shouldClose || !mainWindow) {
-        return;
-      }
+    void activePlatform.documents
+      .confirmBeforeClose(mainWindow)
+      .then((shouldClose) => {
+        if (!shouldClose || !mainWindow) {
+          return;
+        }
 
-      const targetWindow = mainWindow;
-      mainWindow = null;
-      targetWindow.destroy();
-    });
+        const targetWindow = mainWindow;
+        mainWindow = null;
+        targetWindow.destroy();
+      });
   });
 
   if (persistedState.isMaximized) {
@@ -75,13 +83,13 @@ async function createWindow() {
   }
 
   await loadRenderer(mainWindow);
-  platform.installMenu();
+  activePlatform.installMenu();
 
-  if (await platform.shouldOpenDevToolsOnLaunch()) {
+  if (await activePlatform.shouldOpenDevToolsOnLaunch()) {
     mainWindow.webContents.openDevTools();
   }
 
-  await platform.maybeReopenLastDocument(mainWindow);
+  await activePlatform.maybeReopenLastDocument(mainWindow);
 }
 
 // This method will be called when Electron has finished

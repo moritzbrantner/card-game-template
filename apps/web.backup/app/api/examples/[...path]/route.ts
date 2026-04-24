@@ -2,7 +2,7 @@ import { loadActiveApp } from '@/src/app-config/load-active-app';
 import { isFeatureEnabled } from '@/src/foundation/features/runtime';
 
 function normalizePath(path: string[] | string | undefined) {
-  return Array.isArray(path) ? path.join('/') : path ?? '';
+  return Array.isArray(path) ? path.join('/') : (path ?? '');
 }
 
 async function handleRequest(
@@ -18,7 +18,10 @@ async function handleRequest(
     return new Response('Not found', { status: 404 });
   }
 
-  if (exampleApi.featureKey && !isFeatureEnabled(exampleApi.featureKey, manifest)) {
+  if (
+    exampleApi.featureKey &&
+    !isFeatureEnabled(exampleApi.featureKey, manifest)
+  ) {
     return new Response('Not found', { status: 404 });
   }
 

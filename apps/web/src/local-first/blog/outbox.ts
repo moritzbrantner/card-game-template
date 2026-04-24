@@ -1,6 +1,9 @@
 import { readProblemDetail } from '@/src/http/problem-client';
 import { getBlogLocalDb } from '@/src/local-first/blog/db';
-import type { BlogPublishJob, BlogDraftStatus } from '@/src/local-first/blog/types';
+import type {
+  BlogPublishJob,
+  BlogDraftStatus,
+} from '@/src/local-first/blog/types';
 
 const BLOG_PUBLISH_LOCK_NAME = 'blog-publish-outbox';
 const NON_RETRYABLE_DELAY_MS = 365 * 24 * 60 * 60 * 1000;
@@ -19,15 +22,31 @@ export function isRetryablePublishStatus(statusCode?: number) {
   return statusCode === undefined || statusCode >= 500 || statusCode === 429;
 }
 
-export function resolveDraftStatusAfterPublishFailure(statusCode?: number): BlogDraftStatus {
-  return isRetryablePublishStatus(statusCode) ? 'queued_publish' : 'publish_failed';
+export function resolveDraftStatusAfterPublishFailure(
+  statusCode?: number,
+): BlogDraftStatus {
+  return isRetryablePublishStatus(statusCode)
+    ? 'queued_publish'
+    : 'publish_failed';
 }
 
-export function getNextPublishAttemptAt(now: Date, retryCount: number, retryable: boolean) {
-  return new Date(now.getTime() + (retryable ? calculatePublishRetryDelayMs(retryCount) : NON_RETRYABLE_DELAY_MS));
+export function getNextPublishAttemptAt(
+  now: Date,
+  retryCount: number,
+  retryable: boolean,
+) {
+  return new Date(
+    now.getTime() +
+      (retryable
+        ? calculatePublishRetryDelayMs(retryCount)
+        : NON_RETRYABLE_DELAY_MS),
+  );
 }
 
-export async function queueBlogDraftForPublish(input: { userId: string; draftId: string }) {
+export async function queueBlogDraftForPublish(input: {
+  userId: string;
+  draftId: string;
+}) {
   const db = getBlogLocalDb();
 
   return db.transaction('rw', db.drafts, db.outbox, async () => {
@@ -48,7 +67,10 @@ export async function queueBlogDraftForPublish(input: { userId: string; draftId:
       title: draft.title,
       contentMarkdown: draft.contentMarkdown,
     };
-    const existingJob = await db.outbox.where('draftId').equals(input.draftId).first();
+    const existingJob = await db.outbox
+      .where('draftId')
+      .equals(input.draftId)
+      .first();
 
     await db.drafts.update(draft.id, {
       publishRequestId,
@@ -81,21 +103,33 @@ async function getNextDuePublishJob(userId: string, now: Date) {
   const jobs = await getBlogLocalDb()
     .outbox.where('userId')
     .equals(userId)
-    .filter((job) => (job.status === 'pending' || job.status === 'failed') && job.nextAttemptAt.getTime() <= now.getTime())
+    .filter(
+      (job) =>
+        (job.status === 'pending' || job.status === 'failed') &&
+        job.nextAttemptAt.getTime() <= now.getTime(),
+    )
     .sortBy('nextAttemptAt');
 
   return jobs[0] ?? null;
 }
 
 async function withPublishOutboxLock<T>(callback: () => Promise<T>) {
-  if (typeof navigator !== 'undefined' && 'locks' in navigator && navigator.locks?.request) {
-    return navigator.locks.request(BLOG_PUBLISH_LOCK_NAME, { ifAvailable: true }, async (lock) => {
-      if (!lock) {
-        return null;
-      }
+  if (
+    typeof navigator !== 'undefined' &&
+    'locks' in navigator &&
+    navigator.locks?.request
+  ) {
+    return navigator.locks.request(
+      BLOG_PUBLISH_LOCK_NAME,
+      { ifAvailable: true },
+      async (lock) => {
+        if (!lock) {
+          return null;
+        }
 
-      return callback();
-    });
+        return callback();
+      },
+    );
   }
 
   return callback();
@@ -109,13 +143,19 @@ async function updateJobFailure(input: {
   const db = getBlogLocalDb();
   const now = new Date();
   const retryable = isRetryablePublishStatus(input.statusCode);
-  const retryCount = retryable ? input.job.retryCount + 1 : input.job.retryCount;
+  const retryCount = retryable
+    ? input.job.retryCount + 1
+    : input.job.retryCount;
 
   await db.transaction('rw', db.drafts, db.outbox, async () => {
     await db.outbox.update(input.job.id, {
       status: 'failed',
       retryCount,
-      nextAttemptAt: getNextPublishAttemptAt(now, input.job.retryCount, retryable),
+      nextAttemptAt: getNextPublishAttemptAt(
+        now,
+        input.job.retryCount,
+        retryable,
+      ),
       updatedAt: now,
       lastError: input.errorMessage,
       lastStatusCode: input.statusCode ?? null,
@@ -158,7 +198,10 @@ async function processBlogPublishJob(job: BlogPublishJob) {
     });
 
     if (!response.ok) {
-      const problem = await readProblemDetail(response, 'Unable to publish your blog post right now. Please try again.');
+      const problem = await readProblemDetail(
+        response,
+        'Unable to publish your blog post right now. Please try again.',
+      );
       const retryable = await updateJobFailure({
         job,
         errorMessage: problem.message,
@@ -167,10 +210,11 @@ async function processBlogPublishJob(job: BlogPublishJob) {
 
       return {
         ok: false as const,
-        blockedReason: (response.status === 401 ? 'unauthenticated' : !retryable ? 'invalid' : undefined) as
-          | 'unauthenticated'
-          | 'invalid'
-          | undefined,
+        blockedReason: (response.status === 401
+          ? 'unauthenticated'
+          : !retryable
+            ? 'invalid'
+            : undefined) as 'unauthenticated' | 'invalid' | undefined,
       };
     }
 
@@ -195,7 +239,8 @@ async function processBlogPublishJob(job: BlogPublishJob) {
   } catch {
     await updateJobFailure({
       job,
-      errorMessage: 'Unable to publish your blog post right now. Please try again.',
+      errorMessage:
+        'Unable to publish your blog post right now. Please try again.',
     });
 
     return {
@@ -204,7 +249,9 @@ async function processBlogPublishJob(job: BlogPublishJob) {
   }
 }
 
-export async function flushBlogPublishOutbox(input: { userId: string }): Promise<FlushBlogPublishOutboxResult> {
+export async function flushBlogPublishOutbox(input: {
+  userId: string;
+}): Promise<FlushBlogPublishOutboxResult> {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     return {
       blockedReason: 'offline',

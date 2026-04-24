@@ -22,7 +22,9 @@ export function parseConsentCookie(value?: string | null): ConsentState {
   }
 
   try {
-    const parsed = JSON.parse(decodeURIComponent(value)) as Partial<ConsentState>;
+    const parsed = JSON.parse(
+      decodeURIComponent(value),
+    ) as Partial<ConsentState>;
 
     return {
       necessary: true,

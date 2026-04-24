@@ -1,6 +1,6 @@
 # Architecture
 
-This repository is intended to become a reusable platform for card games across web, desktop, and mobile.
+This repository is intended to become a reusable platform for deterministic turn-based games across web, desktop, and mobile.
 
 It remains a starter template, so the architecture still needs to preserve the thin-template boundary and the extraction path for long-lived shared packages.
 
@@ -13,7 +13,21 @@ Keep game rules independent from delivery surface so the same game can run:
 
 ## Workspace boundaries
 
-The top-level workspace split is still `apps/*`, `packages/*`, and `templates/platform-packages/*`.
+The repository still uses `apps/*`, `packages/*`, and `templates/platform-packages/*` as its top-level layout, but the default workspace graph is intentionally narrower than the directory tree.
+
+## Workspace classes
+
+### Active apps
+
+`apps/web`, `apps/mobile`, and `apps/desktop` are the active apps. They participate in default root commands and CI, and each one is expected to expose `lint`, `check-types`, `test:unit`, `test:integration`, and `test:e2e`.
+
+### Reference apps
+
+`apps/web.backup` remains on disk as a reference app. It is intentionally excluded from the default root workspace graph so it can evolve or be consulted without affecting the primary validation path.
+
+### App-private modules
+
+`apps/web/packages/*` and `apps/desktop/packages/*` are app-private modules. They should be treated as internal implementation modules owned by their parent app rather than reusable publishable packages.
 
 ### `apps/web`
 
@@ -27,12 +41,21 @@ Mobile client with the same core gameplay features, adapted for touch interactio
 
 Desktop client for larger-screen play, local sessions, and multiplayer access with the same shared domain logic.
 
+#### `apps/web/packages/*`
+
+Internal web-only modules such as app-pack seams and presentation helpers. They are validated like code, but they are not part of the template's publishable package surface.
+
+#### `apps/desktop/packages/*`
+
+Internal Electron platform modules for commands, persistence, documents, preferences, and window state. They are validated through the desktop app rather than promoted into the top-level shared package graph.
+
 ### `packages/*`
 
 Shared packages should carry the reusable platform logic. The intended package split is:
 
 - `game-contracts`: shared types for cards, moves, turns, players, rooms, and results
-- `game-engine`: deterministic rules engine that can run locally or on the server
+- `game-engine`: deterministic serial turn engine that can run locally or on the server
+- `card-kit`: card-specific identities, visibility helpers, stack helpers, and deck utilities layered on top of the generic engine
 - `game-catalog`: registration of supported games and their metadata
 - `multiplayer`: room and synchronization abstractions used by clients and server adapters
 - `auth`: account/session contracts and shared client helpers
@@ -61,9 +84,11 @@ This scaffold remains the extraction path for packages that outgrow this reposit
 
 - game rules must be deterministic for the same starting state and move sequence
 - shared rule evaluation must not depend on UI framework or platform APIs
+- the core engine only accepts one authoritative action at a time from one selected actor at a time
+- simultaneous-action engines are out of scope for this platform
 - account identity must be stable across platforms
 - match results must be attributable to players and games in a normalized way
-- adding a new card game should mostly mean implementing a new rules package plus metadata, not reworking the platform
+- adding a new game should mostly mean implementing a new rules package plus metadata, not reworking the platform
 
 ## Data flow
 

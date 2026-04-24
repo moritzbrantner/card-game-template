@@ -12,12 +12,18 @@ const adminUser = getSeededUser('admin@example.com');
 const recipientUser = getSeededUser('user@example.com');
 
 test.describe('notifications', () => {
-  test('delivers a direct admin notification to the recipient preview and feed', async ({ page }) => {
+  test('delivers a direct admin notification to the recipient preview and feed', async ({
+    page,
+  }) => {
     const token = createNotificationToken();
     const title = `Admin alert ${token}`;
     const body = `Please review your notification center for ${token}.`;
 
-    await loginWithCredentials(page, recipientUser.email, recipientUser.password);
+    await loginWithCredentials(
+      page,
+      recipientUser.email,
+      recipientUser.password,
+    );
     const unreadBefore = await getUnreadNotificationCount(page);
     await logoutFromProfileMenu(page);
 
@@ -31,8 +37,14 @@ test.describe('notifications', () => {
     });
     await logoutFromProfileMenu(page);
 
-    await loginWithCredentials(page, recipientUser.email, recipientUser.password);
-    await expect.poll(() => getUnreadNotificationCount(page)).toBeGreaterThan(unreadBefore);
+    await loginWithCredentials(
+      page,
+      recipientUser.email,
+      recipientUser.password,
+    );
+    await expect
+      .poll(() => getUnreadNotificationCount(page))
+      .toBeGreaterThan(unreadBefore);
 
     await openNotificationBell(page);
     await expect(page.getByText(title)).toBeVisible();
@@ -42,7 +54,10 @@ test.describe('notifications', () => {
     await expect(page).toHaveURL('/en/notifications');
     await waitForAppHydration(page);
 
-    const notificationLink = page.locator('a').filter({ hasText: title }).first();
+    const notificationLink = page
+      .locator('a')
+      .filter({ hasText: title })
+      .first();
     await expect(notificationLink).toContainText('Unread');
     await expect(notificationLink).toContainText(body);
 
@@ -52,7 +67,9 @@ test.describe('notifications', () => {
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
   });
 
-  test('marks received notifications as read from the notifications page', async ({ page }) => {
+  test('marks received notifications as read from the notifications page', async ({
+    page,
+  }) => {
     const token = createNotificationToken();
     const title = `Read check ${token}`;
     const body = `Mark this notification as read for ${token}.`;
@@ -60,18 +77,31 @@ test.describe('notifications', () => {
     await deliverNotificationToRecipient(page, { title, body });
     await gotoAndWaitForHydration(page, '/en/notifications');
 
-    const notificationCard = page.locator('article').filter({ hasText: title }).first();
+    const notificationCard = page
+      .locator('article')
+      .filter({ hasText: title })
+      .first();
     await expect(notificationCard).toContainText('Unread');
-    await expect(getNotificationBell(page)).toHaveAttribute('aria-label', /Open notifications \([1-9]\d* unread\)/);
+    await expect(getNotificationBell(page)).toHaveAttribute(
+      'aria-label',
+      /Open notifications \([1-9]\d* unread\)/,
+    );
 
     await page.getByRole('button', { name: 'Mark all as read' }).click();
 
-    await expect(page.getByRole('button', { name: 'Mark all as read' })).toBeDisabled();
+    await expect(
+      page.getByRole('button', { name: 'Mark all as read' }),
+    ).toBeDisabled();
     await expect(notificationCard).toContainText('Read');
-    await expect(getNotificationBell(page)).toHaveAttribute('aria-label', 'Open notifications (0 unread)');
+    await expect(getNotificationBell(page)).toHaveAttribute(
+      'aria-label',
+      'Open notifications (0 unread)',
+    );
   });
 
-  test('marks a single notification as read from the notifications page', async ({ page }) => {
+  test('marks a single notification as read from the notifications page', async ({
+    page,
+  }) => {
     const token = createNotificationToken();
     const title = `Single page read ${token}`;
     const body = `Mark only this page notification as read for ${token}.`;
@@ -80,16 +110,25 @@ test.describe('notifications', () => {
     await gotoAndWaitForHydration(page, '/en/notifications');
 
     const unreadBefore = await getUnreadNotificationCount(page);
-    const notificationCard = page.locator('article').filter({ hasText: title }).first();
+    const notificationCard = page
+      .locator('article')
+      .filter({ hasText: title })
+      .first();
     await expect(notificationCard).toContainText('Unread');
 
-    await notificationCard.getByRole('button', { name: 'Mark as read' }).click();
+    await notificationCard
+      .getByRole('button', { name: 'Mark as read' })
+      .click();
 
     await expect(notificationCard).toContainText('Read');
-    await expect.poll(() => getUnreadNotificationCount(page)).toBe(Math.max(0, unreadBefore - 1));
+    await expect
+      .poll(() => getUnreadNotificationCount(page))
+      .toBe(Math.max(0, unreadBefore - 1));
   });
 
-  test('marks a single notification as read from the notifications component', async ({ page }) => {
+  test('marks a single notification as read from the notifications component', async ({
+    page,
+  }) => {
     const token = createNotificationToken();
     const title = `Bell read ${token}`;
     const body = `Mark this bell notification as read for ${token}.`;
@@ -99,13 +138,22 @@ test.describe('notifications', () => {
     const unreadBefore = await getUnreadNotificationCount(page);
     await openNotificationBell(page);
 
-    const notificationCard = page.locator('article').filter({ hasText: title }).first();
+    const notificationCard = page
+      .locator('article')
+      .filter({ hasText: title })
+      .first();
     await expect(notificationCard).toContainText(body);
 
-    await notificationCard.getByRole('button', { name: 'Mark as read' }).click();
+    await notificationCard
+      .getByRole('button', { name: 'Mark as read' })
+      .click();
 
-    await expect.poll(() => getUnreadNotificationCount(page)).toBe(Math.max(0, unreadBefore - 1));
-    await expect(notificationCard.getByRole('button', { name: 'Mark as read' })).toHaveCount(0);
+    await expect
+      .poll(() => getUnreadNotificationCount(page))
+      .toBe(Math.max(0, unreadBefore - 1));
+    await expect(
+      notificationCard.getByRole('button', { name: 'Mark as read' }),
+    ).toHaveCount(0);
   });
 });
 
@@ -114,7 +162,9 @@ function createNotificationToken() {
 }
 
 function getNotificationBell(page: Page) {
-  return page.getByRole('button', { name: /Open notifications \(\d+ unread\)/ });
+  return page.getByRole('button', {
+    name: /Open notifications \(\d+ unread\)/,
+  });
 }
 
 async function getUnreadNotificationCount(page: Page) {
@@ -122,7 +172,9 @@ async function getUnreadNotificationCount(page: Page) {
   const match = label?.match(/\((\d+) unread\)/);
 
   if (!match) {
-    throw new Error(`Unable to parse unread notification count from "${label ?? 'missing'}".`);
+    throw new Error(
+      `Unable to parse unread notification count from "${label ?? 'missing'}".`,
+    );
   }
 
   return Number(match[1]);
@@ -130,13 +182,19 @@ async function getUnreadNotificationCount(page: Page) {
 
 async function openNotificationBell(page: Page) {
   await getNotificationBell(page).click();
-  await expect(page.getByRole('link', { name: 'View all notifications' })).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'View all notifications' }),
+  ).toBeVisible();
 }
 
 async function openUsersPageAsAdmin(page: Page) {
   await gotoAndWaitForHydration(page, '/en/admin/users');
-  await expect(page.getByRole('heading', { name: 'User management' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Send notification' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'User management' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Send notification' }),
+  ).toBeVisible();
 }
 
 async function deliverNotificationToRecipient(
@@ -158,7 +216,9 @@ async function deliverNotificationToRecipient(
   await logoutFromProfileMenu(page);
 
   await loginWithCredentials(page, recipientUser.email, recipientUser.password);
-  await expect.poll(() => getUnreadNotificationCount(page)).toBeGreaterThan(unreadBefore);
+  await expect
+    .poll(() => getUnreadNotificationCount(page))
+    .toBeGreaterThan(unreadBefore);
 }
 
 async function sendNotificationFromAdminUsersPage(
@@ -166,11 +226,16 @@ async function sendNotificationFromAdminUsersPage(
   input: { recipientEmail: string; title: string; body: string; href?: string },
 ) {
   const recipientSelect = page.getByLabel('Recipient');
-  const recipientOption = recipientSelect.locator('option').filter({ hasText: input.recipientEmail }).first();
+  const recipientOption = recipientSelect
+    .locator('option')
+    .filter({ hasText: input.recipientEmail })
+    .first();
   const recipientValue = await recipientOption.getAttribute('value');
 
   if (!recipientValue) {
-    throw new Error(`Unable to find admin notification recipient for ${input.recipientEmail}.`);
+    throw new Error(
+      `Unable to find admin notification recipient for ${input.recipientEmail}.`,
+    );
   }
 
   await recipientSelect.selectOption(recipientValue);
@@ -182,7 +247,10 @@ async function sendNotificationFromAdminUsersPage(
   }
 
   const responsePromise = page.waitForResponse((response) => {
-    return response.url().includes('/api/admin/notifications') && response.request().method() === 'POST';
+    return (
+      response.url().includes('/api/admin/notifications') &&
+      response.request().method() === 'POST'
+    );
   });
 
   await page.getByRole('button', { name: 'Send notification' }).click();

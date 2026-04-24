@@ -28,7 +28,9 @@ export const POST = createApiRoute({
     }
 
     try {
-      const occurredAt = body.occurredAt ? new Date(body.occurredAt) : undefined;
+      const occurredAt = body.occurredAt
+        ? new Date(body.occurredAt)
+        : undefined;
 
       if (occurredAt && Number.isNaN(occurredAt.getTime())) {
         throw new Error('Invalid page visit timestamp.');
@@ -44,17 +46,25 @@ export const POST = createApiRoute({
         documentReferrer: body.documentReferrer,
         requestUrl: request.url,
       });
-      return Response.json({ tracked: true, visitId: visit.id }, { status: 201 });
+      return Response.json(
+        { tracked: true, visitId: visit.id },
+        { status: 201 },
+      );
     } catch (error) {
       if (
         error instanceof Error &&
-        (
-          error.message === 'Page visit href is required.' ||
+        (error.message === 'Page visit href is required.' ||
           error.message === 'Invalid page visit href.' ||
-          error.message === 'Invalid page visit timestamp.'
-        )
+          error.message === 'Invalid page visit timestamp.')
       ) {
-        throw new ProblemError(problem('/problems/page-visit', 'Invalid page visit', 400, error.message));
+        throw new ProblemError(
+          problem(
+            '/problems/page-visit',
+            'Invalid page visit',
+            400,
+            error.message,
+          ),
+        );
       }
 
       return Response.json({ tracked: false }, { status: 202 });

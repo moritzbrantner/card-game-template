@@ -111,7 +111,10 @@ export function RegisterForm({ locale, labels }: RegisterFormProps) {
         });
       }
 
-      if (problem.formMessage || Object.keys(problem.fieldErrors).length === 0) {
+      if (
+        problem.formMessage ||
+        Object.keys(problem.fieldErrors).length === 0
+      ) {
         setError('root', {
           type: 'server',
           message: problem.formMessage ?? problem.message,
@@ -142,7 +145,11 @@ export function RegisterForm({ locale, labels }: RegisterFormProps) {
             },
           })}
         />
-        {errors.name ? <p className="text-sm text-red-600 dark:text-red-400">{errors.name.message}</p> : null}
+        {errors.name ? (
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {errors.name.message}
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -160,7 +167,11 @@ export function RegisterForm({ locale, labels }: RegisterFormProps) {
             },
           })}
         />
-        {errors.email ? <p className="text-sm text-red-600 dark:text-red-400">{errors.email.message}</p> : null}
+        {errors.email ? (
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {errors.email.message}
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -178,7 +189,11 @@ export function RegisterForm({ locale, labels }: RegisterFormProps) {
             },
           })}
         />
-        {errors.password ? <p className="text-sm text-red-600 dark:text-red-400">{errors.password.message}</p> : null}
+        {errors.password ? (
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {errors.password.message}
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -194,11 +209,17 @@ export function RegisterForm({ locale, labels }: RegisterFormProps) {
           })}
         />
         {errors.confirmPassword ? (
-          <p className="text-sm text-red-600 dark:text-red-400">{errors.confirmPassword.message}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {errors.confirmPassword.message}
+          </p>
         ) : null}
       </div>
 
-      {errors.root?.message ? <p className="text-sm text-red-600 dark:text-red-400">{errors.root.message}</p> : null}
+      {errors.root?.message ? (
+        <p className="text-sm text-red-600 dark:text-red-400">
+          {errors.root.message}
+        </p>
+      ) : null}
 
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? labels.submitting : labels.submit}
@@ -206,7 +227,10 @@ export function RegisterForm({ locale, labels }: RegisterFormProps) {
 
       <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
         {labels.loginPrompt}{' '}
-        <Link href="/login" className="font-medium text-zinc-900 underline underline-offset-4 dark:text-zinc-50">
+        <Link
+          href="/login"
+          className="font-medium text-zinc-900 underline underline-offset-4 dark:text-zinc-50"
+        >
           {labels.loginCta}
         </Link>
       </p>

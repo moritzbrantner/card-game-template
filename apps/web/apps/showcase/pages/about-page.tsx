@@ -1,5 +1,11 @@
 import type { AppLocale } from '@moritzbrantner/app-pack';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@moritzbrantner/ui';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@moritzbrantner/ui';
 
 import { createTranslator } from '@/src/i18n/messages';
 

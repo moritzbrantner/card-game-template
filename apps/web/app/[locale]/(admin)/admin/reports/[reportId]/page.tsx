@@ -4,8 +4,21 @@ import { AdminPageShell } from '@/components/admin/admin-page-shell';
 import { AdminReportChart } from '@/components/admin/admin-report-chart';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { LocalizedLink } from '@/i18n/server-link';
 import { getAuthorizedAdminPageDefinitions } from '@/src/admin/pages';
 import {
@@ -17,7 +30,11 @@ import {
 } from '@/src/domain/admin-reports/use-cases';
 import { createTranslator } from '@/src/i18n/messages';
 import { getAdminAnalyticsSettings } from '@/src/site-config/service';
-import { notFoundUnlessFeatureEnabled, requirePermission, resolveLocale } from '@/src/server/page-guards';
+import {
+  notFoundUnlessFeatureEnabled,
+  requirePermission,
+  resolveLocale,
+} from '@/src/server/page-guards';
 
 function buildReportSearchParams(input: {
   window: string;
@@ -47,9 +64,17 @@ export default async function AdminReportDetailPage({
   searchParams,
 }: {
   params: Promise<{ locale: string; reportId: string }>;
-  searchParams: Promise<{ window?: string; audience?: string; routeGroup?: string; path?: string }>;
+  searchParams: Promise<{
+    window?: string;
+    audience?: string;
+    routeGroup?: string;
+    path?: string;
+  }>;
 }) {
-  const [{ locale: rawLocale, reportId }, rawSearchParams] = await Promise.all([params, searchParams]);
+  const [{ locale: rawLocale, reportId }, rawSearchParams] = await Promise.all([
+    params,
+    searchParams,
+  ]);
   const locale = resolveLocale(rawLocale);
   await notFoundUnlessFeatureEnabled('admin.reports');
   const session = await requirePermission(locale, 'admin.reports.read');
@@ -60,7 +85,9 @@ export default async function AdminReportDetailPage({
 
   const analyticsSettings = await getAdminAnalyticsSettings();
   const requestedWindow = rawSearchParams.window ?? '';
-  const window = isAdminReportWindow(requestedWindow) ? requestedWindow : analyticsSettings.defaultAdminReportWindow;
+  const window = isAdminReportWindow(requestedWindow)
+    ? requestedWindow
+    : analyticsSettings.defaultAdminReportWindow;
   const navigationFilters = normalizeNavigationReportFilters({
     audience: rawSearchParams.audience,
     routeGroup: rawSearchParams.routeGroup,
@@ -68,7 +95,12 @@ export default async function AdminReportDetailPage({
   });
   const t = createTranslator(locale, 'AdminPage');
   const adminPages = await getAuthorizedAdminPageDefinitions(session.user.role);
-  const detail = await getAdminReportDetailUseCase(reportId, window, undefined, navigationFilters);
+  const detail = await getAdminReportDetailUseCase(
+    reportId,
+    window,
+    undefined,
+    navigationFilters,
+  );
   const currentQuery = buildReportSearchParams({
     window,
     audience: detail.filters?.audience ?? navigationFilters.audience,
@@ -83,12 +115,18 @@ export default async function AdminReportDetailPage({
       adminPages={adminPages}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <LocalizedLink href="/admin/reports" locale={locale} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+        <LocalizedLink
+          href="/admin/reports"
+          locale={locale}
+          className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+        >
           Back to reports
         </LocalizedLink>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{detail.status === 'degraded' ? 'Degraded data' : 'Live data'}</Badge>
+          <Badge variant="secondary">
+            {detail.status === 'degraded' ? 'Degraded data' : 'Live data'}
+          </Badge>
           {adminReportWindows.map((candidateWindow) => (
             <LocalizedLink
               key={candidateWindow}
@@ -118,10 +156,15 @@ export default async function AdminReportDetailPage({
       </div>
 
       {detail.filters ? (
-        <form method="GET" className="grid gap-3 rounded-3xl border border-zinc-200 bg-white/80 p-4 dark:border-zinc-800 dark:bg-zinc-950/50 md:grid-cols-4">
+        <form
+          method="GET"
+          className="grid gap-3 rounded-3xl border border-zinc-200 bg-white/80 p-4 dark:border-zinc-800 dark:bg-zinc-950/50 md:grid-cols-4"
+        >
           <input type="hidden" name="window" value={window} />
           <label className="space-y-1 text-sm">
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">Audience</span>
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+              Audience
+            </span>
             <select
               name="audience"
               defaultValue={detail.filters.audience}
@@ -133,7 +176,9 @@ export default async function AdminReportDetailPage({
             </select>
           </label>
           <label className="space-y-1 text-sm">
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">Route group</span>
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+              Route group
+            </span>
             <select
               name="routeGroup"
               defaultValue={detail.filters.routeGroup}
@@ -149,7 +194,9 @@ export default async function AdminReportDetailPage({
             </select>
           </label>
           <label className="space-y-1 text-sm">
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">Page drill-down</span>
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+              Page drill-down
+            </span>
             <input
               name="path"
               list="navigation-report-paths"
@@ -164,7 +211,12 @@ export default async function AdminReportDetailPage({
             </datalist>
           </label>
           <div className="flex items-end gap-2">
-            <button type="submit" className={buttonVariants({ variant: 'default', size: 'sm' })}>Apply filters</button>
+            <button
+              type="submit"
+              className={buttonVariants({ variant: 'default', size: 'sm' })}
+            >
+              Apply filters
+            </button>
             <LocalizedLink
               href={`/admin/reports/${reportId}?window=${window}`}
               locale={locale}
@@ -181,7 +233,9 @@ export default async function AdminReportDetailPage({
           Generated {detail.generatedAt} for the {detail.window} window.
         </p>
         {detail.message ? (
-          <p className="text-sm font-medium text-amber-700 dark:text-amber-300">{detail.message}</p>
+          <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
+            {detail.message}
+          </p>
         ) : null}
       </div>
 
@@ -194,7 +248,9 @@ export default async function AdminReportDetailPage({
             </CardHeader>
             {card.detail ? (
               <CardContent>
-                <p className="text-sm text-zinc-600 dark:text-zinc-300">{card.detail}</p>
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                  {card.detail}
+                </p>
               </CardContent>
             ) : null}
           </Card>
@@ -236,15 +292,21 @@ export default async function AdminReportDetailPage({
                         <div className="space-y-1">
                           <p className="font-medium">{row.label}</p>
                           {row.detail ? (
-                            <p className="text-sm text-zinc-600 dark:text-zinc-300">{row.detail}</p>
+                            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                              {row.detail}
+                            </p>
                           ) : null}
                         </div>
-                        <p className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">{row.value}</p>
+                        <p className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+                          {row.value}
+                        </p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300">{breakdown.emptyMessage}</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                    {breakdown.emptyMessage}
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -255,7 +317,10 @@ export default async function AdminReportDetailPage({
       <Card>
         <CardHeader>
           <CardTitle>{detail.tableTitle ?? 'Recent events'}</CardTitle>
-          <CardDescription>{detail.tableDescription ?? 'Live operational output for the selected time window.'}</CardDescription>
+          <CardDescription>
+            {detail.tableDescription ??
+              'Live operational output for the selected time window.'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {detail.table.rows.length > 0 ? (
@@ -271,14 +336,18 @@ export default async function AdminReportDetailPage({
                 {detail.table.rows.map((row, rowIndex) => (
                   <TableRow key={`${rowIndex}-${row.join('|')}`}>
                     {row.map((cell, cellIndex) => (
-                      <TableCell key={`${rowIndex}-${cellIndex}`}>{cell}</TableCell>
+                      <TableCell key={`${rowIndex}-${cellIndex}`}>
+                        {cell}
+                      </TableCell>
                     ))}
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           ) : (
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">{detail.table.emptyMessage}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+              {detail.table.emptyMessage}
+            </p>
           )}
         </CardContent>
       </Card>

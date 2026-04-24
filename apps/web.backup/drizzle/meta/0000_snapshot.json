@@ -97,12 +97,8 @@
           "name": "Account_userId_User_id_fk",
           "tableFrom": "Account",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -110,10 +106,7 @@
       "compositePrimaryKeys": {
         "Account_pkey": {
           "name": "Account_pkey",
-          "columns": [
-            "provider",
-            "providerAccountId"
-          ]
+          "columns": ["provider", "providerAccountId"]
         }
       },
       "uniqueConstraints": {},
@@ -192,12 +185,8 @@
           "name": "Profile_userId_User_id_fk",
           "tableFrom": "Profile",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -253,12 +242,8 @@
           "name": "Session_userId_User_id_fk",
           "tableFrom": "Session",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -424,10 +409,7 @@
       "compositePrimaryKeys": {
         "VerificationToken_pkey": {
           "name": "VerificationToken_pkey",
-          "columns": [
-            "identifier",
-            "token"
-          ]
+          "columns": ["identifier", "token"]
         }
       },
       "uniqueConstraints": {},
@@ -440,10 +422,7 @@
     "public.Role": {
       "name": "Role",
       "schema": "public",
-      "values": [
-        "ADMIN",
-        "USER"
-      ]
+      "values": ["ADMIN", "USER"]
     }
   },
   "schemas": {},

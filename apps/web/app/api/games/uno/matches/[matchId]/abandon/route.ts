@@ -14,8 +14,20 @@ export const POST = createApiRoute({
     const result = await abandonUnoMatchUseCase(session, getMatchId(request));
 
     if (!result.ok) {
-      const status = result.error.code === 'NOT_FOUND' ? 404 : result.error.code === 'CONFLICT' ? 409 : 400;
-      throw new ProblemError(problem('/problems/uno-match-abandon', 'Unable to abandon match', status, result.error.message));
+      const status =
+        result.error.code === 'NOT_FOUND'
+          ? 404
+          : result.error.code === 'CONFLICT'
+            ? 409
+            : 400;
+      throw new ProblemError(
+        problem(
+          '/problems/uno-match-abandon',
+          'Unable to abandon match',
+          status,
+          result.error.message,
+        ),
+      );
     }
 
     return result.data;

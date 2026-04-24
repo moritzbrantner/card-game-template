@@ -10,7 +10,14 @@ export const POST = createApiRoute({
     const result = await removeProfileImageUseCase(actorId!);
 
     if (!result.ok) {
-      throw new ProblemError(problem('/problems/profile-image-remove', 'Unable to remove profile image', 400, result.error.message));
+      throw new ProblemError(
+        problem(
+          '/problems/profile-image-remove',
+          'Unable to remove profile image',
+          400,
+          result.error.message,
+        ),
+      );
     }
 
     await signInSession({

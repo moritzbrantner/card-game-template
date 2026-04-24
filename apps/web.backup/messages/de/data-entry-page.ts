@@ -1,6 +1,7 @@
 export const dataEntryPage = {
   title: 'Schema-Dateneingabe',
-  description: 'Erstelle Zeilen für erlaubte Tabellen. Zugriff wird pro Tabelle und Rolle gesteuert.',
+  description:
+    'Erstelle Zeilen für erlaubte Tabellen. Zugriff wird pro Tabelle und Rolle gesteuert.',
   permissions: {
     read: 'Lesen',
     write: 'Schreiben',

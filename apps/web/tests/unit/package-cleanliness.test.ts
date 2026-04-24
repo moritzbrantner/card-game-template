@@ -12,7 +12,11 @@ describe('workspace package cleanliness', () => {
       .filter(Boolean);
 
     const forbiddenTrackedFiles = trackedFiles.filter((filePath) => {
-      return filePath.endsWith('.tgz') || filePath.includes('/dist/') || filePath.includes('/.turbo/');
+      return (
+        filePath.endsWith('.tgz') ||
+        filePath.includes('/dist/') ||
+        filePath.includes('/.turbo/')
+      );
     });
 
     expect(forbiddenTrackedFiles).toEqual([]);

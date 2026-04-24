@@ -1,4 +1,8 @@
-export const followerVisibilityRoles = ['PUBLIC', 'MEMBERS', 'PRIVATE'] as const;
+export const followerVisibilityRoles = [
+  'PUBLIC',
+  'MEMBERS',
+  'PRIVATE',
+] as const;
 
 export type FollowerVisibilityRole = (typeof followerVisibilityRoles)[number];
 
@@ -8,7 +12,10 @@ export function canViewerSeeFollower(input: {
   followerUserId: string;
   followerVisibility: FollowerVisibilityRole;
 }) {
-  if (input.viewerUserId === input.profileOwnerId || input.viewerUserId === input.followerUserId) {
+  if (
+    input.viewerUserId === input.profileOwnerId ||
+    input.viewerUserId === input.followerUserId
+  ) {
     return true;
   }
 

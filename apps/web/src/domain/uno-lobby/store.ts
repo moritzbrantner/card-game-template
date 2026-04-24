@@ -1,5 +1,9 @@
 import type { MatchResult, PlayerProfile } from '@repo/game-contracts';
-import { canStartRoom, createRoomSummary, type RoomVisibility } from '@repo/multiplayer-contract';
+import {
+  canStartRoom,
+  createRoomSummary,
+  type RoomVisibility,
+} from '@repo/multiplayer-contract';
 
 export const UNO_DEMO_GAME_ID = 'uno-style' as const;
 export const UNO_DEMO_MAX_PLAYERS = 4;
@@ -60,11 +64,15 @@ export function createEmptyUnoDemoStore(): UnoDemoStore {
 }
 
 function sortLobbies(lobbies: readonly UnoLobbyRecord[]) {
-  return [...lobbies].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+  return [...lobbies].sort((left, right) =>
+    right.updatedAt.localeCompare(left.updatedAt),
+  );
 }
 
 function sortArchivedMatches(matches: readonly UnoArchivedMatchRecord[]) {
-  return [...matches].sort((left, right) => right.endedAt.localeCompare(left.endedAt));
+  return [...matches].sort((left, right) =>
+    right.endedAt.localeCompare(left.endedAt),
+  );
 }
 
 function sanitizeStore(store: UnoDemoStore): UnoDemoStore {
@@ -75,7 +83,11 @@ function sanitizeStore(store: UnoDemoStore): UnoDemoStore {
 }
 
 export function findUnoLobbyByPlayer(store: UnoDemoStore, playerId: string) {
-  return store.lobbies.find((lobby) => lobby.players.some((player) => player.playerId === playerId)) ?? null;
+  return (
+    store.lobbies.find((lobby) =>
+      lobby.players.some((player) => player.playerId === playerId),
+    ) ?? null
+  );
 }
 
 export function findUnoLobby(store: UnoDemoStore, roomId: string) {
@@ -98,7 +110,11 @@ export function canStartUnoLobby(lobby: UnoLobbyRecord) {
   return lobby.status === 'open' && canStartRoom(buildUnoRoomSummary(lobby));
 }
 
-function updateLobby(store: UnoDemoStore, roomId: string, updater: (lobby: UnoLobbyRecord) => UnoLobbyRecord | null) {
+function updateLobby(
+  store: UnoDemoStore,
+  roomId: string,
+  updater: (lobby: UnoLobbyRecord) => UnoLobbyRecord | null,
+) {
   const nextLobbies: UnoLobbyRecord[] = [];
 
   for (const lobby of store.lobbies) {
@@ -199,7 +215,10 @@ export function joinUnoLobby(
     }
 
     const occupiedSeats = new Set(lobby.players.map((player) => player.seat));
-    const seat = Array.from({ length: lobby.maxPlayers }, (_, index) => index).find((candidate) => !occupiedSeats.has(candidate));
+    const seat = Array.from(
+      { length: lobby.maxPlayers },
+      (_, index) => index,
+    ).find((candidate) => !occupiedSeats.has(candidate));
 
     if (seat === undefined) {
       throw new Error('No free seat is available in this lobby.');
@@ -246,7 +265,9 @@ export function leaveUnoLobby(
   }
 
   return updateLobby(store, input.roomId, (currentLobby) => {
-    const nextPlayers = currentLobby.players.filter((player) => player.playerId !== input.playerId);
+    const nextPlayers = currentLobby.players.filter(
+      (player) => player.playerId !== input.playerId,
+    );
 
     if (nextPlayers.length === currentLobby.players.length) {
       return currentLobby;
@@ -259,7 +280,9 @@ export function leaveUnoLobby(
     return {
       ...currentLobby,
       updatedAt: input.now,
-      hostPlayerId: nextPlayers.some((player) => player.playerId === currentLobby.hostPlayerId)
+      hostPlayerId: nextPlayers.some(
+        (player) => player.playerId === currentLobby.hostPlayerId,
+      )
         ? currentLobby.hostPlayerId
         : nextPlayers[0]!.playerId,
       players: nextPlayers,
@@ -277,7 +300,9 @@ export function startUnoLobbyGame(
 ) {
   return updateLobby(store, input.roomId, (lobby) => {
     if (!canStartUnoLobby(lobby)) {
-      throw new Error('This lobby does not have enough ready players to start.');
+      throw new Error(
+        'This lobby does not have enough ready players to start.',
+      );
     }
 
     return {
@@ -322,7 +347,9 @@ export function finishUnoMatch(
   };
 
   return sanitizeStore({
-    lobbies: store.lobbies.filter((existingLobby) => existingLobby.roomId !== input.roomId),
+    lobbies: store.lobbies.filter(
+      (existingLobby) => existingLobby.roomId !== input.roomId,
+    ),
     archivedMatches: [
       ...store.archivedMatches,
       {
@@ -360,10 +387,14 @@ export function exitUnoMatch(
     return store;
   }
 
-  const exitingPlayer = lobby.players.find((player) => player.playerId === input.playerId);
+  const exitingPlayer = lobby.players.find(
+    (player) => player.playerId === input.playerId,
+  );
 
   return sanitizeStore({
-    lobbies: store.lobbies.filter((existingLobby) => existingLobby.roomId !== input.roomId),
+    lobbies: store.lobbies.filter(
+      (existingLobby) => existingLobby.roomId !== input.roomId,
+    ),
     archivedMatches: [
       ...store.archivedMatches,
       {
@@ -387,6 +418,9 @@ export function getUnoSeatFillLabel(lobby: UnoLobbyRecord) {
   return `${lobby.players.length} / ${lobby.maxPlayers} seats filled`;
 }
 
-export function isUnoLobbyHost(lobby: UnoLobbyRecord, playerId: string | null | undefined) {
+export function isUnoLobbyHost(
+  lobby: UnoLobbyRecord,
+  playerId: string | null | undefined,
+) {
   return !!playerId && lobby.hostPlayerId === playerId;
 }

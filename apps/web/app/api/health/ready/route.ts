@@ -1,5 +1,8 @@
 import { createApiRoute } from '@/src/http/route';
-import { getReadinessChecks, runHealthChecks } from '@/src/observability/health';
+import {
+  getReadinessChecks,
+  runHealthChecks,
+} from '@/src/observability/health';
 
 export const GET = createApiRoute({
   action: 'health.ready',

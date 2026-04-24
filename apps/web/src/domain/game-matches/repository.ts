@@ -3,7 +3,11 @@ import { createReplayMetadata } from '@repo/game-engine';
 import type { GameId, GameMove, MatchState } from '@repo/game-contracts';
 
 import { getDb } from '@/src/db/client';
-import { gameMatchMoves, gameMatchParticipants, gameMatches } from '@/src/db/schema';
+import {
+  gameMatchMoves,
+  gameMatchParticipants,
+  gameMatches,
+} from '@/src/db/schema';
 
 import type {
   GenericGameMatchAnalysisRecord,
@@ -13,7 +17,10 @@ import type {
 } from './contracts';
 import { createRegisteredGameAdapter } from './registry';
 
-type DbExecutor = Pick<ReturnType<typeof getDb>, 'select' | 'selectDistinct' | 'insert' | 'update'>;
+type DbExecutor = Pick<
+  ReturnType<typeof getDb>,
+  'select' | 'selectDistinct' | 'insert' | 'update'
+>;
 
 export class StaleMatchProgressError extends Error {
   constructor(matchId: string) {
@@ -26,7 +33,9 @@ function toIsoString(value: Date | null) {
   return value?.toISOString() ?? null;
 }
 
-function mapParticipantRow(row: typeof gameMatchParticipants.$inferSelect): GameMatchParticipantRecord {
+function mapParticipantRow(
+  row: typeof gameMatchParticipants.$inferSelect,
+): GameMatchParticipantRecord {
   return {
     playerId: row.playerId,
     seat: row.seat,
@@ -60,7 +69,9 @@ function extractReplaySetup(initialState: MatchState<unknown>) {
   return setup;
 }
 
-function deriveReplayMetadata(match: typeof gameMatches.$inferSelect): PersistedGameMatchRecord['replayMetadata'] {
+function deriveReplayMetadata(
+  match: typeof gameMatches.$inferSelect,
+): PersistedGameMatchRecord['replayMetadata'] {
   if (match.replayFormatVersion < 2) {
     return null;
   }
@@ -72,36 +83,44 @@ function deriveReplayMetadata(match: typeof gameMatches.$inferSelect): Persisted
   }
 
   const setup = extractReplaySetup(match.initialStateJson);
-  const validatedSetup = adapter.validateSetup ? adapter.validateSetup(setup) : setup;
+  const validatedSetup = adapter.validateSetup
+    ? adapter.validateSetup(setup)
+    : setup;
 
   return createReplayMetadata(adapter, validatedSetup);
 }
 
-function mapMatchRecord<TRecord extends PersistedGameMatchRecord = PersistedGameMatchRecord>(input: {
+function mapMatchRecord<
+  TRecord extends PersistedGameMatchRecord = PersistedGameMatchRecord,
+>(input: {
   match: typeof gameMatches.$inferSelect;
-  participants: readonly typeof gameMatchParticipants.$inferSelect[];
-  moves: readonly typeof gameMatchMoves.$inferSelect[];
+  participants: readonly (typeof gameMatchParticipants.$inferSelect)[];
+  moves: readonly (typeof gameMatchMoves.$inferSelect)[];
 }): TRecord {
   return {
     matchId: input.match.id,
     gameId: input.match.gameId,
     status: input.match.status as PersistedGameMatchRecord['status'],
     executionMode: 'server-authoritative',
-    replayFormatVersion: input.match.replayFormatVersion as PersistedGameMatchRecord['replayFormatVersion'],
+    replayFormatVersion: input.match
+      .replayFormatVersion as PersistedGameMatchRecord['replayFormatVersion'],
     startedAt: input.match.startedAt.toISOString(),
     finishedAt: toIsoString(input.match.finishedAt),
     updatedAt: input.match.updatedAt.toISOString(),
     createdAt: input.match.createdAt.toISOString(),
-    createdBy: input.match.createdByKind === 'account'
-      ? { kind: 'account', accountId: input.match.createdByAccountId ?? '' }
-      : { kind: 'guest', guestId: input.match.createdByGuestId ?? '' },
+    createdBy:
+      input.match.createdByKind === 'account'
+        ? { kind: 'account', accountId: input.match.createdByAccountId ?? '' }
+        : { kind: 'guest', guestId: input.match.createdByGuestId ?? '' },
     initialState: input.match.initialStateJson,
     latestState: input.match.latestStateJson,
     result: input.match.resultJson,
     analysis: input.match.analysisJson as GenericGameMatchAnalysisRecord | null,
     replayMetadata: deriveReplayMetadata(input.match),
     lastSequence: input.match.lastSequence,
-    participants: [...input.participants].sort((left, right) => left.seat - right.seat).map(mapParticipantRow),
+    participants: [...input.participants]
+      .sort((left, right) => left.seat - right.seat)
+      .map(mapParticipantRow),
     acceptedMoves: [...input.moves]
       .sort((left, right) => left.sequence - right.sequence)
       .map((move) => ({
@@ -114,11 +133,19 @@ function mapMatchRecord<TRecord extends PersistedGameMatchRecord = PersistedGame
 
 function getOwnerParticipantFilter(identity: MatchOwnerIdentity) {
   return identity.kind === 'account'
-    ? and(eq(gameMatchParticipants.accountId, identity.accountId), eq(gameMatchParticipants.isBot, false))
-    : and(eq(gameMatchParticipants.guestId, identity.guestId), eq(gameMatchParticipants.isBot, false));
+    ? and(
+        eq(gameMatchParticipants.accountId, identity.accountId),
+        eq(gameMatchParticipants.isBot, false),
+      )
+    : and(
+        eq(gameMatchParticipants.guestId, identity.guestId),
+        eq(gameMatchParticipants.isBot, false),
+      );
 }
 
-export async function listOwnedGameMatches<TRecord extends PersistedGameMatchRecord = PersistedGameMatchRecord>(
+export async function listOwnedGameMatches<
+  TRecord extends PersistedGameMatchRecord = PersistedGameMatchRecord,
+>(
   db: DbExecutor,
   identity: MatchOwnerIdentity,
   options: {
@@ -140,9 +167,14 @@ export async function listOwnedGameMatches<TRecord extends PersistedGameMatchRec
     db
       .select()
       .from(gameMatches)
-      .where(options.gameId
-        ? and(eq(gameMatches.gameId, options.gameId), inArray(gameMatches.id, ownedMatchIds))
-        : inArray(gameMatches.id, ownedMatchIds))
+      .where(
+        options.gameId
+          ? and(
+              eq(gameMatches.gameId, options.gameId),
+              inArray(gameMatches.id, ownedMatchIds),
+            )
+          : inArray(gameMatches.id, ownedMatchIds),
+      )
       .orderBy(desc(gameMatches.updatedAt)),
     db
       .select()
@@ -179,7 +211,12 @@ export async function listAccountGameHistoryMatches<
   const accountMatchRows = await db
     .selectDistinct({ matchId: gameMatchParticipants.matchId })
     .from(gameMatchParticipants)
-    .where(and(eq(gameMatchParticipants.accountId, accountId), eq(gameMatchParticipants.isBot, false)));
+    .where(
+      and(
+        eq(gameMatchParticipants.accountId, accountId),
+        eq(gameMatchParticipants.isBot, false),
+      ),
+    );
 
   const accountMatchIds = accountMatchRows.map((row) => row.matchId);
 
@@ -193,7 +230,10 @@ export async function listAccountGameHistoryMatches<
         inArray(gameMatches.id, accountMatchIds),
         ne(gameMatches.status, 'active'),
       )
-    : and(inArray(gameMatches.id, accountMatchIds), ne(gameMatches.status, 'active'));
+    : and(
+        inArray(gameMatches.id, accountMatchIds),
+        ne(gameMatches.status, 'active'),
+      );
 
   const matches = await db
     .select()
@@ -229,7 +269,9 @@ export async function listAccountGameHistoryMatches<
   );
 }
 
-export async function loadOwnedGameMatch<TRecord extends PersistedGameMatchRecord = PersistedGameMatchRecord>(
+export async function loadOwnedGameMatch<
+  TRecord extends PersistedGameMatchRecord = PersistedGameMatchRecord,
+>(
   db: DbExecutor,
   identity: MatchOwnerIdentity,
   matchId: string,
@@ -240,7 +282,12 @@ export async function loadOwnedGameMatch<TRecord extends PersistedGameMatchRecor
   const [owned] = await db
     .select({ matchId: gameMatchParticipants.matchId })
     .from(gameMatchParticipants)
-    .where(and(eq(gameMatchParticipants.matchId, matchId), getOwnerParticipantFilter(identity)))
+    .where(
+      and(
+        eq(gameMatchParticipants.matchId, matchId),
+        getOwnerParticipantFilter(identity),
+      ),
+    )
     .limit(1);
 
   if (!owned) {
@@ -250,9 +297,14 @@ export async function loadOwnedGameMatch<TRecord extends PersistedGameMatchRecor
   const [match] = await db
     .select()
     .from(gameMatches)
-    .where(options.gameId
-      ? and(eq(gameMatches.id, matchId), eq(gameMatches.gameId, options.gameId))
-      : eq(gameMatches.id, matchId))
+    .where(
+      options.gameId
+        ? and(
+            eq(gameMatches.id, matchId),
+            eq(gameMatches.gameId, options.gameId),
+          )
+        : eq(gameMatches.id, matchId),
+    )
     .limit(1);
 
   if (!match) {
@@ -282,8 +334,8 @@ export async function createGameMatch(
   db: DbExecutor,
   input: {
     match: typeof gameMatches.$inferInsert;
-    participants: readonly typeof gameMatchParticipants.$inferInsert[];
-    moves: readonly typeof gameMatchMoves.$inferInsert[];
+    participants: readonly (typeof gameMatchParticipants.$inferInsert)[];
+    moves: readonly (typeof gameMatchMoves.$inferInsert)[];
   },
 ) {
   await db.insert(gameMatches).values(input.match);
@@ -301,15 +353,15 @@ export async function appendGameMatchProgress(
   db: DbExecutor,
   input: {
     matchId: string;
-    latestStateJson: typeof gameMatches.$inferInsert['latestStateJson'];
-    resultJson: typeof gameMatches.$inferInsert['resultJson'];
-    analysisJson: typeof gameMatches.$inferInsert['analysisJson'];
-    status: typeof gameMatches.$inferInsert['status'];
+    latestStateJson: (typeof gameMatches.$inferInsert)['latestStateJson'];
+    resultJson: (typeof gameMatches.$inferInsert)['resultJson'];
+    analysisJson: (typeof gameMatches.$inferInsert)['analysisJson'];
+    status: (typeof gameMatches.$inferInsert)['status'];
     finishedAt: Date | null;
     updatedAt: Date;
     lastSequence: number;
     previousLastSequence: number;
-    moves: readonly typeof gameMatchMoves.$inferInsert[];
+    moves: readonly (typeof gameMatchMoves.$inferInsert)[];
   },
 ) {
   const updatedRows = await db
@@ -323,11 +375,13 @@ export async function appendGameMatchProgress(
       updatedAt: input.updatedAt,
       lastSequence: input.lastSequence,
     })
-    .where(and(
-      eq(gameMatches.id, input.matchId),
-      eq(gameMatches.lastSequence, input.previousLastSequence),
-      eq(gameMatches.status, 'active'),
-    ))
+    .where(
+      and(
+        eq(gameMatches.id, input.matchId),
+        eq(gameMatches.lastSequence, input.previousLastSequence),
+        eq(gameMatches.status, 'active'),
+      ),
+    )
     .returning({ id: gameMatches.id });
 
   if (updatedRows.length === 0) {
@@ -345,8 +399,8 @@ export async function abandonGameMatch(
     matchId: string;
     updatedAt: Date;
     finishedAt: Date;
-    analysisJson: typeof gameMatches.$inferInsert['analysisJson'];
-    resultJson: typeof gameMatches.$inferInsert['resultJson'];
+    analysisJson: (typeof gameMatches.$inferInsert)['analysisJson'];
+    resultJson: (typeof gameMatches.$inferInsert)['resultJson'];
   },
 ) {
   await db

@@ -19,22 +19,26 @@ export const remocnPage = {
     terminal: {
       eyebrow: 'UI-Block',
       title: 'TerminalSimulator',
-      description: 'Eine CLI-Vorschau des Installationsablaufs, damit der Registry-Flow konkret statt abstrakt wirkt.',
+      description:
+        'Eine CLI-Vorschau des Installationsablaufs, damit der Registry-Flow konkret statt abstrakt wirkt.',
     },
     blur: {
       eyebrow: 'Typografie',
       title: 'BlurReveal',
-      description: 'Ein starker Unschärfe-zu-Scharf-Textauftritt für Hero-Texte, Intros und Produktnamen.',
+      description:
+        'Ein starker Unschärfe-zu-Scharf-Textauftritt für Hero-Texte, Intros und Produktnamen.',
     },
     matrix: {
       eyebrow: 'Typografie',
       title: 'MatrixDecode',
-      description: 'Ein dekodierender Texteffekt mit technischer Anmutung für Launch-Sequenzen und Statusanzeigen.',
+      description:
+        'Ein dekodierender Texteffekt mit technischer Anmutung für Launch-Sequenzen und Statusanzeigen.',
     },
     spotlight: {
       eyebrow: 'Umgebung & Licht',
       title: 'SpotlightCard',
-      description: 'Ein synthetischer Cursor zieht ein weiches Licht über die Karte und lässt den Rand lebendig wirken.',
+      description:
+        'Ein synthetischer Cursor zieht ein weiches Licht über die Karte und lässt den Rand lebendig wirken.',
     },
   },
   install: {
@@ -44,8 +48,11 @@ export const remocnPage = {
   },
   integration: {
     title: 'Integrationshinweise',
-    pointOne: 'Die Registry-Komponenten selbst kamen über die offizielle shadcn-kompatible CLI ins Projekt.',
-    pointTwo: 'Da dieses Repository eine Website und kein dediziertes Remotion-Projekt ist, laufen die Vorschauen über @remotion/player.',
-    pointThree: 'Die Route bleibt lokalisiert und lebt innerhalb der vorhandenen Navigation statt in einer separaten Demo-App.',
+    pointOne:
+      'Die Registry-Komponenten selbst kamen über die offizielle shadcn-kompatible CLI ins Projekt.',
+    pointTwo:
+      'Da dieses Repository eine Website und kein dediziertes Remotion-Projekt ist, laufen die Vorschauen über @remotion/player.',
+    pointThree:
+      'Die Route bleibt lokalisiert und lebt innerhalb der vorhandenen Navigation statt in einer separaten Demo-App.',
   },
 };

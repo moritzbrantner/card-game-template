@@ -2,16 +2,39 @@ import { AdminPageShell } from '@/components/admin/admin-page-shell';
 import { AdminReportChart } from '@/components/admin/admin-report-chart';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { LocalizedLink } from '@/i18n/server-link';
 import { getAuthorizedAdminPageDefinitions } from '@/src/admin/pages';
 import { getAdminReportSummaryUseCase } from '@/src/domain/admin-reports/use-cases';
 import { createTranslator } from '@/src/i18n/messages';
 import { getAdminAnalyticsSettings } from '@/src/site-config/service';
-import { notFoundUnlessFeatureEnabled, requirePermission, resolveLocale } from '@/src/server/page-guards';
+import {
+  notFoundUnlessFeatureEnabled,
+  requirePermission,
+  resolveLocale,
+} from '@/src/server/page-guards';
 
-const reportCatalogKeys = ['securityAccess', 'auditActivity', 'workspaceAdoption', 'schemaHealth', 'navigationJourneys'] as const;
+const reportCatalogKeys = [
+  'securityAccess',
+  'auditActivity',
+  'workspaceAdoption',
+  'schemaHealth',
+  'navigationJourneys',
+] as const;
 
 export default async function ReportsPage({
   params,
@@ -25,21 +48,34 @@ export default async function ReportsPage({
   const t = createTranslator(locale, 'AdminPage');
   const adminPages = await getAuthorizedAdminPageDefinitions(session.user.role);
   const analyticsSettings = await getAdminAnalyticsSettings();
-  const summary = await getAdminReportSummaryUseCase(analyticsSettings.defaultAdminReportWindow);
+  const summary = await getAdminReportSummaryUseCase(
+    analyticsSettings.defaultAdminReportWindow,
+  );
 
   return (
-    <AdminPageShell title={t('reports.title')} description={t('reports.description')} adminPages={adminPages}>
+    <AdminPageShell
+      title={t('reports.title')}
+      description={t('reports.description')}
+      adminPages={adminPages}
+    >
       <section className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
-            <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">Live summary</h2>
+            <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
+              Live summary
+            </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              {summary.window} vs previous {summary.window}. Refreshed {summary.generatedAt}.
+              {summary.window} vs previous {summary.window}. Refreshed{' '}
+              {summary.generatedAt}.
             </p>
           </div>
           <Badge
             variant="secondary"
-            className={summary.status === 'degraded' ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:text-amber-100' : undefined}
+            className={
+              summary.status === 'degraded'
+                ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:text-amber-100'
+                : undefined
+            }
           >
             {summary.status === 'degraded' ? 'Degraded data' : 'Live data'}
           </Badge>
@@ -60,7 +96,9 @@ export default async function ReportsPage({
                   <CardTitle className="text-3xl">{metric.value}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300">{metric.detail}</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                    {metric.detail}
+                  </p>
                   {metric.change ? (
                     <p className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
                       {metric.change.value} {metric.change.detail}
@@ -96,7 +134,9 @@ export default async function ReportsPage({
                 <TableHead>{t('reports.columns.owner')}</TableHead>
                 <TableHead>{t('reports.columns.cadence')}</TableHead>
                 <TableHead>{t('reports.columns.status')}</TableHead>
-                <TableHead className="text-right">{t('reports.columns.actions')}</TableHead>
+                <TableHead className="text-right">
+                  {t('reports.columns.actions')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -104,25 +144,41 @@ export default async function ReportsPage({
                 <TableRow key={reportKey}>
                   <TableCell>
                     <div className="space-y-1">
-                      <p className="font-medium">{t(`reports.catalog.${reportKey}.title`)}</p>
-                      <p className="text-sm text-zinc-600 dark:text-zinc-300">{t(`reports.catalog.${reportKey}.description`)}</p>
+                      <p className="font-medium">
+                        {t(`reports.catalog.${reportKey}.title`)}
+                      </p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                        {t(`reports.catalog.${reportKey}.description`)}
+                      </p>
                     </div>
                   </TableCell>
-                  <TableCell>{t(`reports.catalog.${reportKey}.owner`)}</TableCell>
-                  <TableCell>{t(`reports.catalog.${reportKey}.cadence`)}</TableCell>
-                  <TableCell><Badge variant="secondary">{t('reports.ready')}</Badge></TableCell>
+                  <TableCell>
+                    {t(`reports.catalog.${reportKey}.owner`)}
+                  </TableCell>
+                  <TableCell>
+                    {t(`reports.catalog.${reportKey}.cadence`)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{t('reports.ready')}</Badge>
+                  </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-2">
                       <LocalizedLink
                         href={`/admin/reports/${reportKey}?window=${analyticsSettings.defaultAdminReportWindow}`}
                         locale={locale}
-                        className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                        className={buttonVariants({
+                          variant: 'outline',
+                          size: 'sm',
+                        })}
                       >
                         {t('reports.actions.open')}
                       </LocalizedLink>
                       <a
                         href={`/api/admin/reports/${reportKey}?window=${analyticsSettings.defaultAdminReportWindow}&format=csv`}
-                        className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+                        className={buttonVariants({
+                          variant: 'ghost',
+                          size: 'sm',
+                        })}
                         download
                       >
                         {t('reports.actions.export')}

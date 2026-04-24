@@ -13,10 +13,20 @@ const REMOVED_NAMESPACE_ROOTS = [
 
 describe('architecture: use-case namespace roots', () => {
   it('keeps profile use-cases in the canonical src/domain root', () => {
-    expect(existsSync(path.resolve(path.join(CANONICAL_NAMESPACE_ROOT, 'profile', 'use-cases.ts')))).toBe(true);
+    expect(
+      existsSync(
+        path.resolve(
+          path.join(CANONICAL_NAMESPACE_ROOT, 'profile', 'use-cases.ts'),
+        ),
+      ),
+    ).toBe(true);
   });
 
   it('removes deprecated namespace roots from the template', () => {
-    expect(REMOVED_NAMESPACE_ROOTS.every((relativePath) => !existsSync(path.resolve(relativePath)))).toBe(true);
+    expect(
+      REMOVED_NAMESPACE_ROOTS.every(
+        (relativePath) => !existsSync(path.resolve(relativePath)),
+      ),
+    ).toBe(true);
   });
 });

@@ -30,7 +30,10 @@ function parseJson<T>(value: string | null): T | null {
 }
 
 export function createUnoDemoId() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
     return crypto.randomUUID();
   }
 
@@ -42,7 +45,9 @@ export function readUnoDemoStore(): UnoDemoStore {
     return createEmptyUnoDemoStore();
   }
 
-  const parsed = parseJson<UnoDemoStore>(window.localStorage.getItem(UNO_DEMO_STORE_KEY));
+  const parsed = parseJson<UnoDemoStore>(
+    window.localStorage.getItem(UNO_DEMO_STORE_KEY),
+  );
   return parsed ?? createEmptyUnoDemoStore();
 }
 
@@ -55,7 +60,9 @@ export function writeUnoDemoStore(store: UnoDemoStore) {
   window.dispatchEvent(new Event(UNO_DEMO_UPDATE_EVENT));
 }
 
-export function updateUnoDemoStore(updater: (store: UnoDemoStore) => UnoDemoStore) {
+export function updateUnoDemoStore(
+  updater: (store: UnoDemoStore) => UnoDemoStore,
+) {
   const currentStore = readUnoDemoStore();
   const nextStore = updater(currentStore);
   writeUnoDemoStore(nextStore);
@@ -87,7 +94,9 @@ export function readUnoViewerSession() {
     return null;
   }
 
-  return parseJson<UnoViewerSession>(window.sessionStorage.getItem(UNO_DEMO_VIEWER_KEY));
+  return parseJson<UnoViewerSession>(
+    window.sessionStorage.getItem(UNO_DEMO_VIEWER_KEY),
+  );
 }
 
 export function writeUnoViewerSession(viewer: UnoViewerSession) {
@@ -103,7 +112,11 @@ export function readUnoDraftName() {
     return '';
   }
 
-  return window.sessionStorage.getItem(UNO_DEMO_DRAFT_NAME_KEY) ?? readUnoViewerSession()?.displayName ?? '';
+  return (
+    window.sessionStorage.getItem(UNO_DEMO_DRAFT_NAME_KEY) ??
+    readUnoViewerSession()?.displayName ??
+    ''
+  );
 }
 
 export function writeUnoDraftName(name: string) {

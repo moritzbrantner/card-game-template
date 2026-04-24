@@ -3,7 +3,10 @@
 import dynamic from 'next/dynamic';
 
 const LanguageSelector = dynamic(
-  () => import('@/components/language-selector').then((mod) => mod.LanguageSelector),
+  () =>
+    import('@/components/language-selector').then(
+      (mod) => mod.LanguageSelector,
+    ),
   {
     loading: () => (
       <div

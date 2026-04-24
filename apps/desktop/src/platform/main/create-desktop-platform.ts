@@ -35,13 +35,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object');
 }
 
-function isStoredRecentDocumentsState(value: unknown): value is StoredRecentDocumentsState {
+function isStoredRecentDocumentsState(
+  value: unknown,
+): value is StoredRecentDocumentsState {
   if (!isRecord(value) || !Array.isArray(value.items)) {
     return false;
   }
 
   return (
-    (value.lastOpenedPath === null || typeof value.lastOpenedPath === 'string') &&
+    (value.lastOpenedPath === null ||
+      typeof value.lastOpenedPath === 'string') &&
     value.items.every((item) => {
       if (!isRecord(item)) {
         return false;
@@ -79,7 +82,10 @@ function getStoragePath(fileName: string) {
   return path.join(app.getPath('userData'), 'moritzbrantner', fileName);
 }
 
-async function navigateToHash(browserWindow: BrowserWindow | null, hash: string) {
+async function navigateToHash(
+  browserWindow: BrowserWindow | null,
+  hash: string,
+) {
   if (!browserWindow || browserWindow.isDestroyed()) {
     return;
   }
@@ -90,7 +96,9 @@ async function navigateToHash(browserWindow: BrowserWindow | null, hash: string)
   );
 }
 
-function createDocumentDialogAdapter(storagePath: string): DocumentDialogAdapter {
+function createDocumentDialogAdapter(
+  storagePath: string,
+): DocumentDialogAdapter {
   const e2eDocumentPath = path.join(storagePath, 'e2e-document.desktop.json');
 
   if (process.env.PLAYWRIGHT_E2E === '1') {
@@ -127,7 +135,9 @@ function createDocumentDialogAdapter(storagePath: string): DocumentDialogAdapter
     },
     showSaveDialog(browserWindow, currentFilePath, suggestedFileName) {
       return dialog.showSaveDialog(browserWindow, {
-        defaultPath: currentFilePath ?? path.join(app.getPath('documents'), suggestedFileName),
+        defaultPath:
+          currentFilePath ??
+          path.join(app.getPath('documents'), suggestedFileName),
         filters: [
           {
             extensions: ['desktop.json'],
@@ -160,7 +170,9 @@ function createDocumentDialogAdapter(storagePath: string): DocumentDialogAdapter
   };
 }
 
-export function createDesktopPlatform(resolveMainWindow: () => BrowserWindow | null) {
+export function createDesktopPlatform(
+  resolveMainWindow: () => BrowserWindow | null,
+) {
   const storageRoot = path.join(app.getPath('userData'), 'moritzbrantner');
   const preferencesStore = createJsonStore<DesktopPreferences>({
     defaultValue: defaultDesktopPreferences,
@@ -190,16 +202,21 @@ export function createDesktopPlatform(resolveMainWindow: () => BrowserWindow | n
   const preferences = createPreferencesService<DesktopPreferences>({
     defaultValue: defaultDesktopPreferences,
     getBroadcastTargets: () =>
-      BrowserWindow.getAllWindows().map((browserWindow) => browserWindow.webContents),
+      BrowserWindow.getAllWindows().map(
+        (browserWindow) => browserWindow.webContents,
+      ),
     store: preferencesStore,
     validate: isDesktopPreferences,
   });
 
   const documents = createDocumentsService({
-    defaultContent: 'Write here. Save with CmdOrCtrl+S and reopen from the recent files list.',
+    defaultContent:
+      'Write here. Save with CmdOrCtrl+S and reopen from the recent files list.',
     dialogAdapter: createDocumentDialogAdapter(storageRoot),
     getBroadcastTargets: () =>
-      BrowserWindow.getAllWindows().map((browserWindow) => browserWindow.webContents),
+      BrowserWindow.getAllWindows().map(
+        (browserWindow) => browserWindow.webContents,
+      ),
     initialFileName: 'Untitled.desktop.json',
     recentStore: recentDocumentsStore,
     serializer: desktopDocumentSerializer,

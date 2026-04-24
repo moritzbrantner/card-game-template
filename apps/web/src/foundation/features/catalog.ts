@@ -16,7 +16,10 @@ export type FoundationFeatureMetadata = {
   supportsUserOverrides: boolean;
 };
 
-export const foundationFeatureMetadata: Record<FoundationFeatureKey, FoundationFeatureMetadata> = {
+export const foundationFeatureMetadata: Record<
+  FoundationFeatureKey,
+  FoundationFeatureMetadata
+> = {
   'account.register': {
     label: 'Account registration',
     description: 'Allow new users to create accounts.',
@@ -175,6 +178,8 @@ export const foundationFeatureMetadata: Record<FoundationFeatureKey, FoundationF
   },
 };
 
-export const userConfigurableFoundationFeatureKeys = Object.entries(foundationFeatureMetadata)
+export const userConfigurableFoundationFeatureKeys = Object.entries(
+  foundationFeatureMetadata,
+)
   .filter(([, metadata]) => metadata.supportsUserOverrides)
   .map(([featureKey]) => featureKey as FoundationFeatureKey);

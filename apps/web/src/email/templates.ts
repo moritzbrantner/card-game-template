@@ -1,4 +1,10 @@
-function renderEmailLayout(title: string, intro: string, ctaLabel: string, ctaUrl: string, footer: string) {
+function renderEmailLayout(
+  title: string,
+  intro: string,
+  ctaLabel: string,
+  ctaUrl: string,
+  footer: string,
+) {
   return [
     '<!doctype html>',
     '<html lang="en">',
@@ -17,7 +23,10 @@ function renderEmailLayout(title: string, intro: string, ctaLabel: string, ctaUr
   ].join('');
 }
 
-export function createVerificationEmail(input: { verificationUrl: string; name?: string | null }) {
+export function createVerificationEmail(input: {
+  verificationUrl: string;
+  name?: string | null;
+}) {
   const greeting = input.name?.trim() ? `Hi ${input.name.trim()},` : 'Hi,';
 
   return {

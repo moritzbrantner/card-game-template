@@ -52,16 +52,24 @@ function fileNameForCrop(name: string, mimeType: string) {
   return `${baseName}-cropped.${extension}`;
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality?: number) {
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality?: number,
+) {
   return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error('Could not export cropped image.'));
-        return;
-      }
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error('Could not export cropped image.'));
+          return;
+        }
 
-      resolve(blob);
-    }, type, quality);
+        resolve(blob);
+      },
+      type,
+      quality,
+    );
   });
 }
 
@@ -77,10 +85,26 @@ function drawCroppedImage(
   const renderedHeight = geometry.height * scale;
   const imageLeft = CROP_FRAME_SIZE_PX / 2 - renderedWidth / 2 + offsetX;
   const imageTop = CROP_FRAME_SIZE_PX / 2 - renderedHeight / 2 + offsetY;
-  const sourceX = clamp((-imageLeft / renderedWidth) * geometry.width, 0, geometry.width);
-  const sourceY = clamp((-imageTop / renderedHeight) * geometry.height, 0, geometry.height);
-  const sourceWidth = clamp((CROP_FRAME_SIZE_PX / renderedWidth) * geometry.width, 1, geometry.width - sourceX);
-  const sourceHeight = clamp((CROP_FRAME_SIZE_PX / renderedHeight) * geometry.height, 1, geometry.height - sourceY);
+  const sourceX = clamp(
+    (-imageLeft / renderedWidth) * geometry.width,
+    0,
+    geometry.width,
+  );
+  const sourceY = clamp(
+    (-imageTop / renderedHeight) * geometry.height,
+    0,
+    geometry.height,
+  );
+  const sourceWidth = clamp(
+    (CROP_FRAME_SIZE_PX / renderedWidth) * geometry.width,
+    1,
+    geometry.width - sourceX,
+  );
+  const sourceHeight = clamp(
+    (CROP_FRAME_SIZE_PX / renderedHeight) * geometry.height,
+    1,
+    geometry.height - sourceY,
+  );
   const canvas = document.createElement('canvas');
 
   canvas.width = OUTPUT_SIZE_PX;
@@ -94,12 +118,27 @@ function drawCroppedImage(
 
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = 'high';
-  context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, OUTPUT_SIZE_PX, OUTPUT_SIZE_PX);
+  context.drawImage(
+    image,
+    sourceX,
+    sourceY,
+    sourceWidth,
+    sourceHeight,
+    0,
+    0,
+    OUTPUT_SIZE_PX,
+    OUTPUT_SIZE_PX,
+  );
 
   return canvas;
 }
 
-export function ProfileImageCropper({ file, labels, onCancel, onApply }: ProfileImageCropperProps) {
+export function ProfileImageCropper({
+  file,
+  labels,
+  onCancel,
+  onApply,
+}: ProfileImageCropperProps) {
   const imageRef = useRef<HTMLImageElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -120,7 +159,10 @@ export function ProfileImageCropper({ file, labels, onCancel, onApply }: Profile
       setGeometry({
         width: image.naturalWidth,
         height: image.naturalHeight,
-        minScale: Math.max(CROP_FRAME_SIZE_PX / image.naturalWidth, CROP_FRAME_SIZE_PX / image.naturalHeight),
+        minScale: Math.max(
+          CROP_FRAME_SIZE_PX / image.naturalWidth,
+          CROP_FRAME_SIZE_PX / image.naturalHeight,
+        ),
       });
       setZoom(1);
       setOffsetX(0);
@@ -177,12 +219,18 @@ export function ProfileImageCropper({ file, labels, onCancel, onApply }: Profile
   }
 
   function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!dragRef.current || dragRef.current.pointerId !== event.pointerId || !renderedDimensions) {
+    if (
+      !dragRef.current ||
+      dragRef.current.pointerId !== event.pointerId ||
+      !renderedDimensions
+    ) {
       return;
     }
 
-    const nextOffsetX = dragRef.current.startOffsetX + (event.clientX - dragRef.current.startX);
-    const nextOffsetY = dragRef.current.startOffsetY + (event.clientY - dragRef.current.startY);
+    const nextOffsetX =
+      dragRef.current.startOffsetX + (event.clientX - dragRef.current.startX);
+    const nextOffsetY =
+      dragRef.current.startOffsetY + (event.clientY - dragRef.current.startY);
 
     setOffsetX(clampOffset(nextOffsetX, renderedDimensions.width));
     setOffsetY(clampOffset(nextOffsetY, renderedDimensions.height));
@@ -206,11 +254,20 @@ export function ProfileImageCropper({ file, labels, onCancel, onApply }: Profile
     setError(null);
 
     try {
-      const croppedCanvas = drawCroppedImage(imageRef.current, geometry, zoom, offsetX, offsetY);
+      const croppedCanvas = drawCroppedImage(
+        imageRef.current,
+        geometry,
+        zoom,
+        offsetX,
+        offsetY,
+      );
       let mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
       let blob = await canvasToBlob(croppedCanvas, mimeType, 0.92);
 
-      if (blob.size > imageConstraints.maxUploadBytes && mimeType === 'image/png') {
+      if (
+        blob.size > imageConstraints.maxUploadBytes &&
+        mimeType === 'image/png'
+      ) {
         const jpegCanvas = document.createElement('canvas');
         jpegCanvas.width = OUTPUT_SIZE_PX;
         jpegCanvas.height = OUTPUT_SIZE_PX;
@@ -229,13 +286,23 @@ export function ProfileImageCropper({ file, labels, onCancel, onApply }: Profile
       }
 
       if (blob.size > imageConstraints.maxUploadBytes) {
-        throw new Error('Cropped image is still too large. Try zooming out a little more.');
+        throw new Error(
+          'Cropped image is still too large. Try zooming out a little more.',
+        );
       }
 
-      const croppedFile = new File([blob], fileNameForCrop(file.name, mimeType), { type: mimeType });
+      const croppedFile = new File(
+        [blob],
+        fileNameForCrop(file.name, mimeType),
+        { type: mimeType },
+      );
       onApply(croppedFile, URL.createObjectURL(blob));
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Could not crop the selected image.');
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'Could not crop the selected image.',
+      );
     } finally {
       setExporting(false);
     }
@@ -245,7 +312,9 @@ export function ProfileImageCropper({ file, labels, onCancel, onApply }: Profile
     <div className="space-y-4 rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-950/60">
       <div className="space-y-1">
         <p className="text-sm font-medium">{labels.title}</p>
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">{labels.description}</p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          {labels.description}
+        </p>
       </div>
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
@@ -280,7 +349,9 @@ export function ProfileImageCropper({ file, labels, onCancel, onApply }: Profile
               </div>
             </div>
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-zinc-400">Loading…</div>
+            <div className="flex h-full items-center justify-center text-sm text-zinc-400">
+              Loading…
+            </div>
           )}
           <div className="pointer-events-none absolute inset-0 rounded-[2rem] border border-white/10" />
           <div className="pointer-events-none absolute inset-4 rounded-full border-2 border-white shadow-[0_0_0_999px_rgba(24,24,27,0.45)]" />
@@ -301,15 +372,26 @@ export function ProfileImageCropper({ file, labels, onCancel, onApply }: Profile
           </label>
 
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="ghost" onClick={onCancel} disabled={exporting}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onCancel}
+              disabled={exporting}
+            >
               {labels.cancel}
             </Button>
-            <Button type="button" onClick={() => void handleApplyCrop()} disabled={!geometry || exporting}>
+            <Button
+              type="button"
+              onClick={() => void handleApplyCrop()}
+              disabled={!geometry || exporting}
+            >
               {labels.apply}
             </Button>
           </div>
 
-          {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
+          {error ? (
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          ) : null}
         </div>
       </div>
     </div>

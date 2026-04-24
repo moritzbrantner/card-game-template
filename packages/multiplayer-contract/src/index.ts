@@ -35,12 +35,11 @@ export type RoomSummary = {
   seats: readonly RoomSeat[];
 };
 
-export type RealtimeRoomEvent =
-  | {
-      type: 'room.joined' | 'room.updated';
-      roomId: RoomId;
-      occurredAt: string;
-    };
+export type RealtimeRoomEvent = {
+  type: 'room.joined' | 'room.updated';
+  roomId: RoomId;
+  occurredAt: string;
+};
 
 export type RealtimeMatchEvent =
   | {
@@ -571,7 +570,10 @@ export function createOnlineGameApiClient(
     });
 
   const matchPath = (
-    descriptor: Pick<OnlineMatchApiDescriptor<never, GameMove, never, never, never, never>, 'routeSegment'>,
+    descriptor: Pick<
+      OnlineMatchApiDescriptor<never, GameMove, never, never, never, never>,
+      'routeSegment'
+    >,
     suffix = '',
   ) => `/api/games/${descriptor.routeSegment}/matches${suffix}`;
 

@@ -127,7 +127,10 @@ test('mobile home links to own and dummy profile pages', () => {
   assert.match(source, /Open my profile/);
   assert.match(source, /getProfileByUsername\('jules'\)/);
   assert.match(source, /href=\{`\/profile\/@\$\{currentUser\.username\}`\}/);
-  assert.match(source, /href=\{`\/profile\/@\$\{teammateProfile\.username\}`\}/);
+  assert.match(
+    source,
+    /href=\{`\/profile\/@\$\{teammateProfile\.username\}`\}/,
+  );
 });
 
 test('mobile has a dedicated profile screen for @username routes', () => {

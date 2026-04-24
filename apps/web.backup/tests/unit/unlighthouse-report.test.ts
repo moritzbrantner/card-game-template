@@ -28,7 +28,10 @@ const report: UnlighthouseExpandedReport = {
         accessibility: { score: 1 },
       },
       metrics: {
-        'largest-contentful-paint': { numericValue: 2100, displayValue: '2.1 s' },
+        'largest-contentful-paint': {
+          numericValue: 2100,
+          displayValue: '2.1 s',
+        },
       },
     },
     {
@@ -39,7 +42,10 @@ const report: UnlighthouseExpandedReport = {
         accessibility: { score: 0.94 },
       },
       metrics: {
-        'largest-contentful-paint': { numericValue: 2860, displayValue: '2.9 s' },
+        'largest-contentful-paint': {
+          numericValue: 2860,
+          displayValue: '2.9 s',
+        },
       },
     },
   ],
@@ -72,7 +78,10 @@ describe('unlighthouse report helpers', () => {
     expect(summary.routeCount).toBe(2);
     expect(summary.bestRoute).toEqual({ path: '/en', score: 0.96 });
     expect(summary.worstRoute).toEqual({ path: '/de/about', score: 0.85 });
-    expect(summary.categories.map((category) => category.title)).toEqual(['Accessibility', 'Performance']);
+    expect(summary.categories.map((category) => category.title)).toEqual([
+      'Accessibility',
+      'Performance',
+    ]);
   });
 
   it('formats scores and metrics for display', () => {

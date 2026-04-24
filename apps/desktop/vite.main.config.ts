@@ -14,7 +14,11 @@ export default defineConfig({
     },
     outDir: '.vite/build',
     rollupOptions: {
-      external: ['electron', ...builtinModules, ...builtinModules.map((module) => `node:${module}`)],
+      external: [
+        'electron',
+        ...builtinModules,
+        ...builtinModules.map((module) => `node:${module}`),
+      ],
       output: {
         entryFileNames: 'main.js',
       },

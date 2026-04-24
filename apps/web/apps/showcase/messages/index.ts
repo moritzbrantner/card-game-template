@@ -9,5 +9,7 @@ const showcaseMessagesByLocale = {
 } as const;
 
 export function loadShowcaseMessages(locale: AppLocale) {
-  return locale === 'de' ? showcaseMessagesByLocale.de : showcaseMessagesByLocale.en;
+  return locale === 'de'
+    ? showcaseMessagesByLocale.de
+    : showcaseMessagesByLocale.en;
 }

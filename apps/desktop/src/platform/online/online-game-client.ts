@@ -183,7 +183,10 @@ export function createDesktopOnlineGameClient(
       apiClient.getMatchSnapshot(desktopUnoMatchApi, matchId),
     getUnoMatchEvents: (
       matchId: string,
-      cursor?: { afterSequence?: number | null; sinceUpdatedAt?: string | null },
+      cursor?: {
+        afterSequence?: number | null;
+        sinceUpdatedAt?: string | null;
+      },
     ) => apiClient.getMatchEvents(desktopUnoMatchApi, matchId, cursor),
     submitUnoMove: (matchId: string, move: UnoMove) =>
       apiClient.submitMove(desktopUnoMatchApi, matchId, move),
@@ -196,7 +199,10 @@ export function createDesktopOnlineGameClient(
       apiClient.getMatchSnapshot(desktopPokerMatchApi, matchId),
     getPokerMatchEvents: (
       matchId: string,
-      cursor?: { afterSequence?: number | null; sinceUpdatedAt?: string | null },
+      cursor?: {
+        afterSequence?: number | null;
+        sinceUpdatedAt?: string | null;
+      },
     ) => apiClient.getMatchEvents(desktopPokerMatchApi, matchId, cursor),
     submitPokerMove: (matchId: string, move: PokerMove) =>
       apiClient.submitMove(desktopPokerMatchApi, matchId, move),

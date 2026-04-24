@@ -5,7 +5,13 @@ import { useForm } from 'react-hook-form';
 
 import type { AppLocale } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { readProblemDetail } from '@/src/http/problem-client';
@@ -71,7 +77,10 @@ export function NewsletterSignup({ locale, labels }: NewsletterSignupProps) {
         });
       }
 
-      if (problem.formMessage || Object.keys(problem.fieldErrors).length === 0) {
+      if (
+        problem.formMessage ||
+        Object.keys(problem.fieldErrors).length === 0
+      ) {
         setError('root', {
           type: 'server',
           message: problem.formMessage ?? problem.message,
@@ -90,7 +99,9 @@ export function NewsletterSignup({ locale, labels }: NewsletterSignupProps) {
   return (
     <Card className="rounded-3xl border-zinc-200/80 bg-linear-to-br from-white via-white to-zinc-50 shadow-xl shadow-zinc-950/5 dark:border-zinc-800/80 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900">
       <CardHeader>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zinc-500 dark:text-zinc-400">{labels.eyebrow}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zinc-500 dark:text-zinc-400">
+          {labels.eyebrow}
+        </p>
         <CardTitle className="text-xl">{labels.title}</CardTitle>
         <CardDescription>{labels.description}</CardDescription>
       </CardHeader>
@@ -111,12 +122,23 @@ export function NewsletterSignup({ locale, labels }: NewsletterSignupProps) {
                 },
               })}
             />
-            {errors.email ? <p className="text-sm text-red-600 dark:text-red-400">{errors.email.message}</p> : null}
+            {errors.email ? (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {errors.email.message}
+              </p>
+            ) : null}
           </div>
 
-          {errors.root?.message ? <p className="text-sm text-red-600 dark:text-red-400">{errors.root.message}</p> : null}
+          {errors.root?.message ? (
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {errors.root.message}
+            </p>
+          ) : null}
           {successMessage ? (
-            <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
+            <p
+              role="status"
+              className="text-sm text-emerald-700 dark:text-emerald-400"
+            >
               {successMessage}
             </p>
           ) : null}

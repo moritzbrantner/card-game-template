@@ -9,7 +9,10 @@ import { useTranslations } from '@/src/i18n';
 import { BlurReveal } from '@/src/components/remocn/blur-reveal';
 import { MatrixDecode } from '@/src/components/remocn/matrix-decode';
 import { SpotlightCard } from '@/src/components/remocn/spotlight-card';
-import { TerminalSimulator, type TerminalLine } from '@/src/components/remocn/terminal-simulator';
+import {
+  TerminalSimulator,
+  type TerminalLine,
+} from '@/src/components/remocn/terminal-simulator';
 
 const docsUrl = 'https://www.remocn.dev/docs/components';
 const installUrl = 'https://www.remocn.dev/docs/getting-started/installation';
@@ -17,11 +20,23 @@ const installCommand =
   'bunx shadcn@latest add @remocn/blur-reveal @remocn/matrix-decode @remocn/spotlight-card @remocn/terminal-simulator';
 
 const terminalLines: TerminalLine[] = [
-  { text: 'bunx shadcn@latest add @remocn/terminal-simulator', type: 'command', delay: 0 },
+  {
+    text: 'bunx shadcn@latest add @remocn/terminal-simulator',
+    type: 'command',
+    delay: 0,
+  },
   { text: 'Checking registry...', type: 'log', delay: 8, pause: 12 },
   { text: 'Installing remotion peer dependencies...', type: 'log', delay: 6 },
-  { text: 'Creating src/components/remocn/terminal-simulator.tsx', type: 'success', delay: 10 },
-  { text: 'Embedding the component with @remotion/player', type: 'success', delay: 10 },
+  {
+    text: 'Creating src/components/remocn/terminal-simulator.tsx',
+    type: 'success',
+    delay: 10,
+  },
+  {
+    text: 'Embedding the component with @remotion/player',
+    type: 'success',
+    delay: 10,
+  },
   { text: 'Showcase ready.', type: 'success', delay: 8 },
 ];
 
@@ -47,7 +62,13 @@ type PreviewCardProps = {
   className?: string;
 };
 
-function PreviewCard({ eyebrow, title, description, children, className }: PreviewCardProps) {
+function PreviewCard({
+  eyebrow,
+  title,
+  description,
+  children,
+  className,
+}: PreviewCardProps) {
   return (
     <article
       className={[
@@ -63,8 +84,12 @@ function PreviewCard({ eyebrow, title, description, children, className }: Previ
             {eyebrow}
           </p>
           <div>
-            <h2 className="text-xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">{title}</h2>
-            <p className="mt-1 max-w-xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">{description}</p>
+            <h2 className="text-xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+              {title}
+            </h2>
+            <p className="mt-1 max-w-xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+              {description}
+            </p>
           </div>
         </div>
       </div>
@@ -82,7 +107,12 @@ export function RemocnShowcase() {
     { value: '100%', label: t('stats.browserPreview') },
   ];
 
-  const importedComponents = ['BlurReveal', 'MatrixDecode', 'SpotlightCard', 'TerminalSimulator'];
+  const importedComponents = [
+    'BlurReveal',
+    'MatrixDecode',
+    'SpotlightCard',
+    'TerminalSimulator',
+  ];
 
   return (
     <section className="space-y-8">
@@ -91,8 +121,13 @@ export function RemocnShowcase() {
         <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,540px)] lg:items-center">
           <div className="space-y-6">
             <div className="flex flex-wrap items-center gap-3">
-              <Badge className="bg-zinc-950 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-950">{t('eyebrow')}</Badge>
-              <Badge variant="outline" className="border-zinc-400/60 bg-white/60 dark:bg-zinc-950/40">
+              <Badge className="bg-zinc-950 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-950">
+                {t('eyebrow')}
+              </Badge>
+              <Badge
+                variant="outline"
+                className="border-zinc-400/60 bg-white/60 dark:bg-zinc-950/40"
+              >
                 {t('subeyebrow')}
               </Badge>
             </div>
@@ -125,7 +160,9 @@ export function RemocnShowcase() {
               </a>
             </div>
 
-            <p className="max-w-2xl text-sm leading-6 text-zinc-600 dark:text-zinc-400">{t('supportingCopy')}</p>
+            <p className="max-w-2xl text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+              {t('supportingCopy')}
+            </p>
           </div>
 
           <div className="overflow-hidden rounded-[1.75rem] border border-zinc-200/80 bg-zinc-950/95 p-3 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.75)] dark:border-zinc-700/80">
@@ -155,8 +192,12 @@ export function RemocnShowcase() {
             key={stat.label}
             className="rounded-[1.5rem] border border-zinc-200 bg-white px-5 py-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
           >
-            <p className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">{stat.value}</p>
-            <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">{stat.label}</p>
+            <p className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+              {stat.value}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+              {stat.label}
+            </p>
           </div>
         ))}
       </div>
@@ -264,7 +305,9 @@ export function RemocnShowcase() {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">
               {t('install.title')}
             </p>
-            <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t('install.description')}</p>
+            <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+              {t('install.description')}
+            </p>
             <pre className="mt-4 overflow-x-auto rounded-2xl bg-zinc-950 p-4 text-xs leading-6 text-zinc-100">
               <code>{installCommand}</code>
             </pre>

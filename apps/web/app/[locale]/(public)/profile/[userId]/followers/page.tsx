@@ -1,14 +1,26 @@
 import { notFound } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { LocalizedLink } from '@/i18n/server-link';
 import { getAuthSession } from '@/src/auth.server';
 import { listProfileFollowersByTagUseCase } from '@/src/domain/profile/use-cases';
 import { isSiteFeatureEnabled } from '@/src/foundation/features/access';
 import { createTranslator } from '@/src/i18n/messages';
-import { buildPublicProfilePath, parseProfileTagSegment } from '@/src/profile/tags';
-import { notFoundUnlessFeatureEnabled, resolveLocale } from '@/src/server/page-guards';
+import {
+  buildPublicProfilePath,
+  parseProfileTagSegment,
+} from '@/src/profile/tags';
+import {
+  notFoundUnlessFeatureEnabled,
+  resolveLocale,
+} from '@/src/server/page-guards';
 
 export default async function PublicProfileFollowersPage({
   params,
@@ -19,7 +31,7 @@ export default async function PublicProfileFollowersPage({
   const locale = resolveLocale(rawLocale);
   await notFoundUnlessFeatureEnabled('profiles.public');
 
-  if (!await isSiteFeatureEnabled('profiles.follow')) {
+  if (!(await isSiteFeatureEnabled('profiles.follow'))) {
     notFound();
   }
 
@@ -32,13 +44,17 @@ export default async function PublicProfileFollowersPage({
   const t = createTranslator(locale, 'ProfilePage');
   const session = await getAuthSession();
   const viewerUserId = session?.user.id ?? null;
-  const result = await listProfileFollowersByTagUseCase(profileTag, viewerUserId);
+  const result = await listProfileFollowersByTagUseCase(
+    profileTag,
+    viewerUserId,
+  );
 
   if (!result.ok) {
     notFound();
   }
 
-  const { profile, followers, totalFollowerCount, hiddenFollowerCount } = result.data;
+  const { profile, followers, totalFollowerCount, hiddenFollowerCount } =
+    result.data;
 
   return (
     <section className="mx-auto max-w-4xl space-y-4">
@@ -83,7 +99,9 @@ export default async function PublicProfileFollowersPage({
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              {totalFollowerCount === 0 ? t('followersPage.empty') : t('followersPage.hiddenEmpty')}
+              {totalFollowerCount === 0
+                ? t('followersPage.empty')
+                : t('followersPage.hiddenEmpty')}
             </p>
           </CardContent>
         </Card>
@@ -100,10 +118,14 @@ export default async function PublicProfileFollowersPage({
                   >
                     {follower.displayName}
                   </LocalizedLink>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300">/@{follower.tag}</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                    /@{follower.tag}
+                  </p>
                 </div>
 
-                <Badge variant="secondary">{t(`followersPage.roles.${follower.visibilityRole}`)}</Badge>
+                <Badge variant="secondary">
+                  {t(`followersPage.roles.${follower.visibilityRole}`)}
+                </Badge>
               </CardContent>
             </Card>
           ))}

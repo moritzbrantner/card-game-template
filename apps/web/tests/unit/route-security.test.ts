@@ -8,7 +8,10 @@ function createDependencies(input?: {
   session?: AppSession | null;
   rateLimitResult?: RateLimitResult;
   audit?: AuditRecord[];
-  hasPermission?: (role: AppSession['user']['role'] | null | undefined, permission: string) => Promise<boolean>;
+  hasPermission?: (
+    role: AppSession['user']['role'] | null | undefined,
+    permission: string,
+  ) => Promise<boolean>;
 }) {
   const audit = input?.audit ?? [];
 
@@ -16,7 +19,8 @@ function createDependencies(input?: {
     audit,
     secure: createRouteSecurity({
       getSession: async () => input?.session ?? null,
-      getRateLimitKey: (_request, actorId) => actorId ? `user:${actorId}` : 'ip:test',
+      getRateLimitKey: (_request, actorId) =>
+        actorId ? `user:${actorId}` : 'ip:test',
       enforceRateLimit: async () =>
         input?.rateLimitResult ?? {
           ok: true,
@@ -26,7 +30,12 @@ function createDependencies(input?: {
       auditAction: async (record) => {
         audit.push(record);
       },
-      hasPermission: async (role, permission) => input?.hasPermission ? input.hasPermission(role, permission) : permission.startsWith('admin.') ? role === 'ADMIN' || role === 'SUPERADMIN' : Boolean(role),
+      hasPermission: async (role, permission) =>
+        input?.hasPermission
+          ? input.hasPermission(role, permission)
+          : permission.startsWith('admin.')
+            ? role === 'ADMIN' || role === 'SUPERADMIN'
+            : Boolean(role),
     }),
   };
 }
@@ -42,7 +51,9 @@ describe('route security helper', () => {
     });
 
     const result = await secure({
-      request: new Request('https://example.com/api/auth/login', { method: 'POST' }),
+      request: new Request('https://example.com/api/auth/login', {
+        method: 'POST',
+      }),
       action: 'auth.login',
     });
 
@@ -66,7 +77,9 @@ describe('route security helper', () => {
     const { secure, audit } = createDependencies();
 
     const result = await secure({
-      request: new Request('https://example.com/api/profile/display-name', { method: 'POST' }),
+      request: new Request('https://example.com/api/profile/display-name', {
+        method: 'POST',
+      }),
       action: 'profile.updateDisplayName',
       requireAuth: true,
     });
@@ -101,7 +114,9 @@ describe('route security helper', () => {
     });
 
     const result = await secure({
-      request: new Request('https://example.com/api/admin/reports/authorization'),
+      request: new Request(
+        'https://example.com/api/admin/reports/authorization',
+      ),
       action: 'admin.reports.authorization',
       allowedRoles: ['ADMIN'],
     });
@@ -134,11 +149,14 @@ describe('route security helper', () => {
           role: 'ADMIN',
         },
       },
-      hasPermission: async (_role, permission) => permission !== 'admin.roles.edit',
+      hasPermission: async (_role, permission) =>
+        permission !== 'admin.roles.edit',
     });
 
     const result = await secure({
-      request: new Request('https://example.com/api/admin/users/user_1/role', { method: 'PATCH' }),
+      request: new Request('https://example.com/api/admin/users/user_1/role', {
+        method: 'PATCH',
+      }),
       action: 'admin.users.updateRole',
       requiredPermission: 'admin.roles.edit',
     });
@@ -176,7 +194,9 @@ describe('route security helper', () => {
     });
 
     const result = await secure({
-      request: new Request('https://example.com/api/admin/reports/authorization'),
+      request: new Request(
+        'https://example.com/api/admin/reports/authorization',
+      ),
       action: 'admin.reports.authorization',
       allowedRoles: ['ADMIN'],
       metadata: { surface: 'admin' },

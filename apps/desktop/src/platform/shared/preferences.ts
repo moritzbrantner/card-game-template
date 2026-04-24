@@ -28,12 +28,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object');
 }
 
-export function isDesktopPreferences(value: unknown): value is DesktopPreferences {
+export function isDesktopPreferences(
+  value: unknown,
+): value is DesktopPreferences {
   if (!isRecord(value)) {
     return false;
   }
 
-  if (!isRecord(value.appearance) || !isRecord(value.developer) || !isRecord(value.documents)) {
+  if (
+    !isRecord(value.appearance) ||
+    !isRecord(value.developer) ||
+    !isRecord(value.documents)
+  ) {
     return false;
   }
 

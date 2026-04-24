@@ -3,10 +3,17 @@
 import LinkBase from 'next/link';
 import { forwardRef, type ComponentProps } from 'react';
 
-import { usePathname as useNextPathname, useRouter as useNextRouter } from 'next/navigation';
+import {
+  usePathname as useNextPathname,
+  useRouter as useNextRouter,
+} from 'next/navigation';
 
 import { useLocale } from '@/src/i18n';
-import { withLocalePath, stripLocaleFromPathname, type AppLocale } from '@/i18n/routing';
+import {
+  withLocalePath,
+  stripLocaleFromPathname,
+  type AppLocale,
+} from '@/i18n/routing';
 
 type LinkProps = Omit<ComponentProps<typeof LinkBase>, 'href'> & {
   href: string;
@@ -38,8 +45,10 @@ export function useRouter() {
   const router = useNextRouter();
 
   return {
-    push: (href: string, locale?: AppLocale) => router.push(withLocalePath(href, locale ?? currentLocale)),
-    replace: (href: string, locale?: AppLocale) => router.replace(withLocalePath(href, locale ?? currentLocale)),
+    push: (href: string, locale?: AppLocale) =>
+      router.push(withLocalePath(href, locale ?? currentLocale)),
+    replace: (href: string, locale?: AppLocale) =>
+      router.replace(withLocalePath(href, locale ?? currentLocale)),
     refresh: () => router.refresh(),
   };
 }

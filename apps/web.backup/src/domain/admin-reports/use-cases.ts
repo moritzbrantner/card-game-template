@@ -1,22 +1,47 @@
 import type { AppRole } from '@/lib/authorization';
 import { stripLocaleFromPathname } from '@/i18n/routing';
-import { classifyNavigationPathname, navigationRouteGroups, type NavigationRouteGroup } from '@/src/analytics/navigation-classification';
+import {
+  classifyNavigationPathname,
+  navigationRouteGroups,
+  type NavigationRouteGroup,
+} from '@/src/analytics/navigation-classification';
 import { getDb } from '@/src/db/client';
 import { shouldUseDatabaseReadFallback } from '@/src/site-config/service';
 
-export const adminReportIds = ['securityAccess', 'auditActivity', 'workspaceAdoption', 'schemaHealth', 'navigationJourneys'] as const;
+export const adminReportIds = [
+  'securityAccess',
+  'auditActivity',
+  'workspaceAdoption',
+  'schemaHealth',
+  'navigationJourneys',
+] as const;
 export type AdminReportId = (typeof adminReportIds)[number];
 
 export const adminReportWindows = ['24h', '7d', '30d'] as const;
 export type AdminReportWindow = (typeof adminReportWindows)[number];
 
 export type AdminReportFormat = 'json' | 'csv';
-export const navigationReportAudiences = ['all', 'anonymous', 'authenticated'] as const;
-export type NavigationReportAudience = (typeof navigationReportAudiences)[number];
-export const navigationReportRouteGroups = ['all', ...navigationRouteGroups] as const;
-export type NavigationReportRouteGroupFilter = (typeof navigationReportRouteGroups)[number];
+export const navigationReportAudiences = [
+  'all',
+  'anonymous',
+  'authenticated',
+] as const;
+export type NavigationReportAudience =
+  (typeof navigationReportAudiences)[number];
+export const navigationReportRouteGroups = [
+  'all',
+  ...navigationRouteGroups,
+] as const;
+export type NavigationReportRouteGroupFilter =
+  (typeof navigationReportRouteGroups)[number];
 
-export type AdminWorkspaceKey = 'overview' | 'content' | 'reports' | 'users' | 'systemSettings' | 'dataStudio';
+export type AdminWorkspaceKey =
+  | 'overview'
+  | 'content'
+  | 'reports'
+  | 'users'
+  | 'systemSettings'
+  | 'dataStudio';
 
 export type AdminReportStatus = 'live' | 'degraded';
 export type AdminReportTone = 'neutral' | 'positive' | 'warning' | 'critical';
@@ -202,7 +227,10 @@ const ADMIN_REPORT_LINKS: Record<AdminReportId, string> = {
   navigationJourneys: '/admin/reports/navigationJourneys',
 };
 
-const ADMIN_WORKSPACE_SEGMENTS: Record<Exclude<AdminWorkspaceKey, 'overview'>, string> = {
+const ADMIN_WORKSPACE_SEGMENTS: Record<
+  Exclude<AdminWorkspaceKey, 'overview'>,
+  string
+> = {
   content: 'content',
   reports: 'reports',
   users: 'users',
@@ -237,12 +265,18 @@ export function isAdminReportWindow(value: string): value is AdminReportWindow {
   return adminReportWindows.includes(value as AdminReportWindow);
 }
 
-export function isNavigationReportAudience(value: string): value is NavigationReportAudience {
+export function isNavigationReportAudience(
+  value: string,
+): value is NavigationReportAudience {
   return navigationReportAudiences.includes(value as NavigationReportAudience);
 }
 
-export function isNavigationReportRouteGroupFilter(value: string): value is NavigationReportRouteGroupFilter {
-  return navigationReportRouteGroups.includes(value as NavigationReportRouteGroupFilter);
+export function isNavigationReportRouteGroupFilter(
+  value: string,
+): value is NavigationReportRouteGroupFilter {
+  return navigationReportRouteGroups.includes(
+    value as NavigationReportRouteGroupFilter,
+  );
 }
 
 export function normalizeNavigationReportFilters(input?: {
@@ -253,10 +287,17 @@ export function normalizeNavigationReportFilters(input?: {
   const trimmedPath = input?.path?.trim() || null;
 
   return {
-    audience: input?.audience && isNavigationReportAudience(input.audience) ? input.audience : 'all',
+    audience:
+      input?.audience && isNavigationReportAudience(input.audience)
+        ? input.audience
+        : 'all',
     routeGroup:
-      input?.routeGroup && isNavigationReportRouteGroupFilter(input.routeGroup) ? input.routeGroup : 'all',
-    path: trimmedPath ? classifyNavigationPathname(trimmedPath).canonicalPath : null,
+      input?.routeGroup && isNavigationReportRouteGroupFilter(input.routeGroup)
+        ? input.routeGroup
+        : 'all',
+    path: trimmedPath
+      ? classifyNavigationPathname(trimmedPath).canonicalPath
+      : null,
   } satisfies {
     audience: NavigationReportAudience;
     routeGroup: NavigationReportRouteGroupFilter;
@@ -311,7 +352,9 @@ export function stripLocalePrefix(pathname: string) {
   return stripLocaleFromPathname(pathname);
 }
 
-export function getAdminWorkspaceKey(pathname: string): AdminWorkspaceKey | null {
+export function getAdminWorkspaceKey(
+  pathname: string,
+): AdminWorkspaceKey | null {
   const normalizedPath = stripLocalePrefix(pathname).split(/[?#]/)[0] || '/';
 
   if (normalizedPath === '/admin' || normalizedPath === '/admin/') {
@@ -322,10 +365,13 @@ export function getAdminWorkspaceKey(pathname: string): AdminWorkspaceKey | null
     return null;
   }
 
-  for (const [workspaceKey, segment] of Object.entries(ADMIN_WORKSPACE_SEGMENTS) as Array<
-    [Exclude<AdminWorkspaceKey, 'overview'>, string]
-  >) {
-    if (normalizedPath === `/admin/${segment}` || normalizedPath.startsWith(`/admin/${segment}/`)) {
+  for (const [workspaceKey, segment] of Object.entries(
+    ADMIN_WORKSPACE_SEGMENTS,
+  ) as Array<[Exclude<AdminWorkspaceKey, 'overview'>, string]>) {
+    if (
+      normalizedPath === `/admin/${segment}` ||
+      normalizedPath.startsWith(`/admin/${segment}/`)
+    ) {
       return workspaceKey;
     }
   }
@@ -339,7 +385,9 @@ function toCsvCell(value: string) {
 }
 
 export function serializeAdminReportCsv(table: AdminReportTable) {
-  return [table.columns, ...table.rows].map((row) => row.map(toCsvCell).join(',')).join('\n');
+  return [table.columns, ...table.rows]
+    .map((row) => row.map(toCsvCell).join(','))
+    .join('\n');
 }
 
 function assertReportId(reportId: string): asserts reportId is AdminReportId {
@@ -367,9 +415,12 @@ async function createDefaultDeps(): Promise<AdminReportDeps> {
 
       return rows.map((row) => ({
         ...row,
-        metadata: row.metadata && typeof row.metadata === 'object' && !Array.isArray(row.metadata)
-          ? (row.metadata as Record<string, unknown>)
-          : {},
+        metadata:
+          row.metadata &&
+          typeof row.metadata === 'object' &&
+          !Array.isArray(row.metadata)
+            ? (row.metadata as Record<string, unknown>)
+            : {},
       }));
     },
     listPageVisitsSince: async (since) => {
@@ -387,7 +438,12 @@ async function createDefaultDeps(): Promise<AdminReportDeps> {
   };
 }
 
-function filterByWindow<T>(records: T[], getDate: (record: T) => Date, start: Date, end: Date) {
+function filterByWindow<T>(
+  records: T[],
+  getDate: (record: T) => Date,
+  start: Date,
+  end: Date,
+) {
   const startTime = start.getTime();
   const endTime = end.getTime();
 
@@ -425,15 +481,18 @@ async function loadReportInputs(
     ? new Date(currentStart.getTime() - getWindowDurationMs(window))
     : currentStart;
 
-  const [usersResult, auditLogsResult, visitsResult, jobsResult] = await Promise.allSettled([
-    deps.listUsers(),
-    deps.listAuditLogsSince(previousStart),
-    deps.listPageVisitsSince(previousStart),
-    deps.listJobsSince(previousStart),
-  ]);
+  const [usersResult, auditLogsResult, visitsResult, jobsResult] =
+    await Promise.allSettled([
+      deps.listUsers(),
+      deps.listAuditLogsSince(previousStart),
+      deps.listPageVisitsSince(previousStart),
+      deps.listJobsSince(previousStart),
+    ]);
 
   const errors = [usersResult, auditLogsResult, visitsResult, jobsResult]
-    .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+    .filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    )
     .map((result) => result.reason);
 
   if (errors.length > 0) {
@@ -449,7 +508,8 @@ async function loadReportInputs(
   }
 
   const users = usersResult.status === 'fulfilled' ? usersResult.value : [];
-  const auditLogs = auditLogsResult.status === 'fulfilled' ? auditLogsResult.value : [];
+  const auditLogs =
+    auditLogsResult.status === 'fulfilled' ? auditLogsResult.value : [];
   const visits = visitsResult.status === 'fulfilled' ? visitsResult.value : [];
   const jobs = jobsResult.status === 'fulfilled' ? jobsResult.value : [];
 
@@ -459,21 +519,55 @@ async function loadReportInputs(
     status: 'live',
     users,
     current: {
-      auditLogs: filterByWindow(auditLogs, (record) => record.timestamp, currentStart, generatedAt),
-      visits: filterByWindow(visits, (record) => record.visitedAt, currentStart, generatedAt),
-      jobs: filterByWindow(jobs, (record) => record.updatedAt, currentStart, generatedAt),
+      auditLogs: filterByWindow(
+        auditLogs,
+        (record) => record.timestamp,
+        currentStart,
+        generatedAt,
+      ),
+      visits: filterByWindow(
+        visits,
+        (record) => record.visitedAt,
+        currentStart,
+        generatedAt,
+      ),
+      jobs: filterByWindow(
+        jobs,
+        (record) => record.updatedAt,
+        currentStart,
+        generatedAt,
+      ),
     },
     previous: includePreviousWindow
       ? {
-          auditLogs: filterByWindow(auditLogs, (record) => record.timestamp, previousStart, currentStart),
-          visits: filterByWindow(visits, (record) => record.visitedAt, previousStart, currentStart),
-          jobs: filterByWindow(jobs, (record) => record.updatedAt, previousStart, currentStart),
+          auditLogs: filterByWindow(
+            auditLogs,
+            (record) => record.timestamp,
+            previousStart,
+            currentStart,
+          ),
+          visits: filterByWindow(
+            visits,
+            (record) => record.visitedAt,
+            previousStart,
+            currentStart,
+          ),
+          jobs: filterByWindow(
+            jobs,
+            (record) => record.updatedAt,
+            previousStart,
+            currentStart,
+          ),
         }
       : emptyWindowData(),
   };
 }
 
-function buildMetricChange(current: number, previous: number, window: AdminReportWindow): AdminReportMetricChange {
+function buildMetricChange(
+  current: number,
+  previous: number,
+  window: AdminReportWindow,
+): AdminReportMetricChange {
   const rawDelta = current - previous;
   const percentChange = previous === 0 ? null : rawDelta / previous;
 
@@ -505,7 +599,11 @@ function createUnavailableMetric(
   };
 }
 
-function createUnavailableCard(id: string, label: string, message: string): AdminReportCard {
+function createUnavailableCard(
+  id: string,
+  label: string,
+  message: string,
+): AdminReportCard {
   return {
     id,
     label,
@@ -520,7 +618,9 @@ function toIsoDay(value: Date) {
 }
 
 function getUtcDayStart(value: Date) {
-  return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()));
+  return new Date(
+    Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()),
+  );
 }
 
 function listUtcDays(start: Date, end: Date) {
@@ -603,33 +703,63 @@ function normalizeAdminVisits(visits: ReportPageVisit[]) {
       return {
         ...visit,
         workspaceKey,
-        normalizedPath: stripLocalePrefix(visit.pathname).split(/[?#]/)[0] || '/',
+        normalizedPath:
+          stripLocalePrefix(visit.pathname).split(/[?#]/)[0] || '/',
       };
     })
     .filter(
       (
         visit,
-      ): visit is ReportPageVisit & { userId: string; workspaceKey: AdminWorkspaceKey; normalizedPath: string } =>
-        Boolean(visit),
+      ): visit is ReportPageVisit & {
+        userId: string;
+        workspaceKey: AdminWorkspaceKey;
+        normalizedPath: string;
+      } => Boolean(visit),
     );
 }
 
 function getMetadataValue(log: ReportAuditLog, key: string) {
   const metadataValue = log.metadata?.[key];
-  return typeof metadataValue === 'string' && metadataValue.length > 0 ? metadataValue : null;
+  return typeof metadataValue === 'string' && metadataValue.length > 0
+    ? metadataValue
+    : null;
 }
 
-function createDegradedSummary(window: AdminReportWindow, generatedAt: Date, message: string): AdminReportSummary {
+function createDegradedSummary(
+  window: AdminReportWindow,
+  generatedAt: Date,
+  message: string,
+): AdminReportSummary {
   return {
     generatedAt: generatedAt.toISOString(),
     window,
     status: 'degraded',
     message,
     metrics: [
-      createUnavailableMetric('deniedAdminActions', 'Denied admin actions', ADMIN_REPORT_LINKS.securityAccess, message),
-      createUnavailableMetric('activeAdminUsers', 'Active admin users', ADMIN_REPORT_LINKS.workspaceAdoption, message),
-      createUnavailableMetric('adminVisits', 'Admin visits', ADMIN_REPORT_LINKS.workspaceAdoption, message),
-      createUnavailableMetric('failedRetryingJobs', 'Failed or retrying jobs', ADMIN_REPORT_LINKS.schemaHealth, message),
+      createUnavailableMetric(
+        'deniedAdminActions',
+        'Denied admin actions',
+        ADMIN_REPORT_LINKS.securityAccess,
+        message,
+      ),
+      createUnavailableMetric(
+        'activeAdminUsers',
+        'Active admin users',
+        ADMIN_REPORT_LINKS.workspaceAdoption,
+        message,
+      ),
+      createUnavailableMetric(
+        'adminVisits',
+        'Admin visits',
+        ADMIN_REPORT_LINKS.workspaceAdoption,
+        message,
+      ),
+      createUnavailableMetric(
+        'failedRetryingJobs',
+        'Failed or retrying jobs',
+        ADMIN_REPORT_LINKS.schemaHealth,
+        message,
+      ),
     ],
     series: [
       {
@@ -639,7 +769,9 @@ function createDegradedSummary(window: AdminReportWindow, generatedAt: Date, mes
         type: 'sparkline',
         xKey: 'label',
         data: [],
-        categories: [{ key: 'visits', label: 'Visits', color: CHART_COLORS.emerald }],
+        categories: [
+          { key: 'visits', label: 'Visits', color: CHART_COLORS.emerald },
+        ],
         emptyMessage: message,
       },
     ],
@@ -669,21 +801,37 @@ function createDegradedDetail(
   };
 }
 
-function buildSecurityAccessDetail(input: LoadedReportInputs): AdminReportDetail {
+function buildSecurityAccessDetail(
+  input: LoadedReportInputs,
+): AdminReportDetail {
   const now = input.generatedAt.getTime();
-  const lockedUsers = input.users.filter((user) => user.lockoutUntil && user.lockoutUntil.getTime() > now);
-  const incidents = input.current.auditLogs.filter(
-    (log) => isAdminAction(log.action) && (log.outcome === 'denied' || log.outcome === 'rate_limited'),
+  const lockedUsers = input.users.filter(
+    (user) => user.lockoutUntil && user.lockoutUntil.getTime() > now,
   );
-  const deniedCount = incidents.filter((log) => log.outcome === 'denied').length;
-  const rateLimitedCount = incidents.filter((log) => log.outcome === 'rate_limited').length;
-  const incidentCountsByDay = new Map<string, { denied: number; rateLimited: number }>();
+  const incidents = input.current.auditLogs.filter(
+    (log) =>
+      isAdminAction(log.action) &&
+      (log.outcome === 'denied' || log.outcome === 'rate_limited'),
+  );
+  const deniedCount = incidents.filter(
+    (log) => log.outcome === 'denied',
+  ).length;
+  const rateLimitedCount = incidents.filter(
+    (log) => log.outcome === 'rate_limited',
+  ).length;
+  const incidentCountsByDay = new Map<
+    string,
+    { denied: number; rateLimited: number }
+  >();
   const actionCounts = new Map<string, number>();
   const actorCounts = new Map<string, number>();
 
   for (const incident of incidents) {
     const day = toIsoDay(incident.timestamp);
-    const bucket = incidentCountsByDay.get(day) ?? { denied: 0, rateLimited: 0 };
+    const bucket = incidentCountsByDay.get(day) ?? {
+      denied: 0,
+      rateLimited: 0,
+    };
 
     if (incident.outcome === 'rate_limited') {
       bucket.rateLimited += 1;
@@ -692,7 +840,10 @@ function buildSecurityAccessDetail(input: LoadedReportInputs): AdminReportDetail
     }
 
     incidentCountsByDay.set(day, bucket);
-    actionCounts.set(incident.action, (actionCounts.get(incident.action) ?? 0) + 1);
+    actionCounts.set(
+      incident.action,
+      (actionCounts.get(incident.action) ?? 0) + 1,
+    );
 
     const actorKey = incident.actorId ?? 'system';
     actorCounts.set(actorKey, (actorCounts.get(actorKey) ?? 0) + 1);
@@ -717,7 +868,9 @@ function buildSecurityAccessDetail(input: LoadedReportInputs): AdminReportDetail
   );
 
   const actionRows = [...actionCounts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .sort(
+      (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
+    )
     .slice(0, 8)
     .map<AdminReportBreakdown['rows'][number]>(([action, count]) => ({
       label: action,
@@ -725,20 +878,24 @@ function buildSecurityAccessDetail(input: LoadedReportInputs): AdminReportDetail
       tone: count >= 5 ? 'critical' : 'warning',
     }));
   const actorRows = [...actorCounts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .sort(
+      (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
+    )
     .slice(0, 8)
     .map<AdminReportBreakdown['rows'][number]>(([actor, count]) => ({
       label: actor,
       value: formatNumber(count),
       tone: count >= 5 ? 'critical' : 'warning',
     }));
-  const rows = incidents.slice(0, 20).map((log) => [
-    formatTimestamp(log.timestamp),
-    log.action,
-    log.outcome,
-    String(log.statusCode),
-    log.actorId ?? 'system',
-  ]);
+  const rows = incidents
+    .slice(0, 20)
+    .map((log) => [
+      formatTimestamp(log.timestamp),
+      log.action,
+      log.outcome,
+      String(log.statusCode),
+      log.actorId ?? 'system',
+    ]);
 
   return {
     reportId: 'securityAccess',
@@ -749,13 +906,18 @@ function buildSecurityAccessDetail(input: LoadedReportInputs): AdminReportDetail
       {
         id: 'adminAccounts',
         label: 'Admin accounts',
-        value: formatNumber(input.users.filter((user) => isPrivilegedAdminRole(user.role)).length),
+        value: formatNumber(
+          input.users.filter((user) => isPrivilegedAdminRole(user.role)).length,
+        ),
       },
       {
         id: 'lockedAccounts',
         label: 'Locked accounts',
         value: formatNumber(lockedUsers.length),
-        detail: lockedUsers.length > 0 ? 'Accounts currently under lockout.' : 'No active lockouts.',
+        detail:
+          lockedUsers.length > 0
+            ? 'Accounts currently under lockout.'
+            : 'No active lockouts.',
         tone: lockedUsers.length > 0 ? 'warning' : 'positive',
       },
       {
@@ -791,32 +953,56 @@ function buildSecurityAccessDetail(input: LoadedReportInputs): AdminReportDetail
     table: {
       columns: ['Timestamp', 'Action', 'Outcome', 'Status', 'Actor'],
       rows,
-      emptyMessage: 'No denied or rate-limited admin actions in the selected window.',
+      emptyMessage:
+        'No denied or rate-limited admin actions in the selected window.',
     },
   };
 }
 
-function buildAuditActivityDetail(input: LoadedReportInputs): AdminReportDetail {
+function buildAuditActivityDetail(
+  input: LoadedReportInputs,
+): AdminReportDetail {
   const auditLogs = input.current.auditLogs;
-  const denialCount = auditLogs.filter((log) => log.outcome === 'denied').length;
+  const denialCount = auditLogs.filter(
+    (log) => log.outcome === 'denied',
+  ).length;
   const errorCount = auditLogs.filter((log) => log.outcome === 'error').length;
-  const rateLimitedCount = auditLogs.filter((log) => log.outcome === 'rate_limited').length;
+  const rateLimitedCount = auditLogs.filter(
+    (log) => log.outcome === 'rate_limited',
+  ).length;
   const riskyActionCounts = new Map<string, number>();
-  const outcomeCountsByDay = new Map<string, Record<'allowed' | 'denied' | 'error' | 'rateLimited', number>>();
+  const outcomeCountsByDay = new Map<
+    string,
+    Record<'allowed' | 'denied' | 'error' | 'rateLimited', number>
+  >();
 
   for (const log of auditLogs) {
     const day = toIsoDay(log.timestamp);
-    const bucket = outcomeCountsByDay.get(day) ?? { allowed: 0, denied: 0, error: 0, rateLimited: 0 };
+    const bucket = outcomeCountsByDay.get(day) ?? {
+      allowed: 0,
+      denied: 0,
+      error: 0,
+      rateLimited: 0,
+    };
 
     if (log.outcome === 'denied') {
       bucket.denied += 1;
-      riskyActionCounts.set(log.action, (riskyActionCounts.get(log.action) ?? 0) + 1);
+      riskyActionCounts.set(
+        log.action,
+        (riskyActionCounts.get(log.action) ?? 0) + 1,
+      );
     } else if (log.outcome === 'error') {
       bucket.error += 1;
-      riskyActionCounts.set(log.action, (riskyActionCounts.get(log.action) ?? 0) + 1);
+      riskyActionCounts.set(
+        log.action,
+        (riskyActionCounts.get(log.action) ?? 0) + 1,
+      );
     } else if (log.outcome === 'rate_limited') {
       bucket.rateLimited += 1;
-      riskyActionCounts.set(log.action, (riskyActionCounts.get(log.action) ?? 0) + 1);
+      riskyActionCounts.set(
+        log.action,
+        (riskyActionCounts.get(log.action) ?? 0) + 1,
+      );
     } else {
       bucket.allowed += 1;
     }
@@ -848,7 +1034,9 @@ function buildAuditActivityDetail(input: LoadedReportInputs): AdminReportDetail 
   );
 
   const riskyRows = [...riskyActionCounts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .sort(
+      (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
+    )
     .slice(0, 8)
     .map<AdminReportBreakdown['rows'][number]>(([action, count]) => ({
       label: action,
@@ -858,7 +1046,8 @@ function buildAuditActivityDetail(input: LoadedReportInputs): AdminReportDetail 
   const shareRows: AdminReportBreakdown['rows'] = [
     {
       label: 'Denied share',
-      value: totalEvents === 0 ? '0%' : formatPercent(denialCount / totalEvents),
+      value:
+        totalEvents === 0 ? '0%' : formatPercent(denialCount / totalEvents),
       detail: `${formatNumber(denialCount)} of ${formatNumber(totalEvents)} events`,
       tone: denialCount > 0 ? 'warning' : 'positive',
     },
@@ -870,18 +1059,23 @@ function buildAuditActivityDetail(input: LoadedReportInputs): AdminReportDetail 
     },
     {
       label: 'Rate-limited share',
-      value: totalEvents === 0 ? '0%' : formatPercent(rateLimitedCount / totalEvents),
+      value:
+        totalEvents === 0
+          ? '0%'
+          : formatPercent(rateLimitedCount / totalEvents),
       detail: `${formatNumber(rateLimitedCount)} of ${formatNumber(totalEvents)} events`,
       tone: rateLimitedCount > 0 ? 'warning' : 'positive',
     },
   ];
-  const rows = auditLogs.slice(0, 25).map((log) => [
-    formatTimestamp(log.timestamp),
-    log.action,
-    log.outcome,
-    String(log.statusCode),
-    log.actorId ?? 'system',
-  ]);
+  const rows = auditLogs
+    .slice(0, 25)
+    .map((log) => [
+      formatTimestamp(log.timestamp),
+      log.action,
+      log.outcome,
+      String(log.statusCode),
+      log.actorId ?? 'system',
+    ]);
 
   return {
     reportId: 'auditActivity',
@@ -897,19 +1091,23 @@ function buildAuditActivityDetail(input: LoadedReportInputs): AdminReportDetail 
       {
         id: 'uniqueActors',
         label: 'Unique actors',
-        value: formatNumber(getUniqueCount(auditLogs.map((log) => log.actorId ?? 'system'))),
+        value: formatNumber(
+          getUniqueCount(auditLogs.map((log) => log.actorId ?? 'system')),
+        ),
       },
       {
         id: 'denialShare',
         label: 'Denial share',
-        value: totalEvents === 0 ? '0%' : formatPercent(denialCount / totalEvents),
+        value:
+          totalEvents === 0 ? '0%' : formatPercent(denialCount / totalEvents),
         detail: `${formatNumber(denialCount)} denied events`,
         tone: denialCount > 0 ? 'warning' : 'positive',
       },
       {
         id: 'errorShare',
         label: 'Error share',
-        value: totalEvents === 0 ? '0%' : formatPercent(errorCount / totalEvents),
+        value:
+          totalEvents === 0 ? '0%' : formatPercent(errorCount / totalEvents),
         detail: `${formatNumber(errorCount)} error events`,
         tone: errorCount > 0 ? 'critical' : 'positive',
       },
@@ -939,14 +1137,25 @@ function buildAuditActivityDetail(input: LoadedReportInputs): AdminReportDetail 
   };
 }
 
-function buildWorkspaceAdoptionDetail(input: LoadedReportInputs): AdminReportDetail {
+function buildWorkspaceAdoptionDetail(
+  input: LoadedReportInputs,
+): AdminReportDetail {
   const adminVisits = normalizeAdminVisits(input.current.visits);
-  const visitsByWorkspace = new Map<AdminWorkspaceKey, { visits: number; users: Set<string> }>();
-  const pathCounts = new Map<string, { visits: number; users: Set<string>; workspace: AdminWorkspaceKey }>();
+  const visitsByWorkspace = new Map<
+    AdminWorkspaceKey,
+    { visits: number; users: Set<string> }
+  >();
+  const pathCounts = new Map<
+    string,
+    { visits: number; users: Set<string>; workspace: AdminWorkspaceKey }
+  >();
   const userVisitCounts = new Map<string, number>();
 
   for (const visit of adminVisits) {
-    const workspaceBucket = visitsByWorkspace.get(visit.workspaceKey) ?? { visits: 0, users: new Set<string>() };
+    const workspaceBucket = visitsByWorkspace.get(visit.workspaceKey) ?? {
+      visits: 0,
+      users: new Set<string>(),
+    };
     workspaceBucket.visits += 1;
     workspaceBucket.users.add(visit.userId);
     visitsByWorkspace.set(visit.workspaceKey, workspaceBucket);
@@ -960,15 +1169,30 @@ function buildWorkspaceAdoptionDetail(input: LoadedReportInputs): AdminReportDet
     pathBucket.users.add(visit.userId);
     pathCounts.set(visit.normalizedPath, pathBucket);
 
-    userVisitCounts.set(visit.userId, (userVisitCounts.get(visit.userId) ?? 0) + 1);
+    userVisitCounts.set(
+      visit.userId,
+      (userVisitCounts.get(visit.userId) ?? 0) + 1,
+    );
   }
 
   const uniqueAdmins = getUniqueCount(adminVisits.map((visit) => visit.userId));
-  const repeatVisitors = [...userVisitCounts.values()].filter((count) => count > 1).length;
-  const repeatVisitorRatio = uniqueAdmins === 0 ? 0 : repeatVisitors / uniqueAdmins;
-  const topWorkspace = [...visitsByWorkspace.entries()].sort((left, right) => right[1].visits - left[1].visits)[0];
+  const repeatVisitors = [...userVisitCounts.values()].filter(
+    (count) => count > 1,
+  ).length;
+  const repeatVisitorRatio =
+    uniqueAdmins === 0 ? 0 : repeatVisitors / uniqueAdmins;
+  const topWorkspace = [...visitsByWorkspace.entries()].sort(
+    (left, right) => right[1].visits - left[1].visits,
+  )[0];
   const workspaceData = (
-    ['overview', 'content', 'reports', 'users', 'systemSettings', 'dataStudio'] as AdminWorkspaceKey[]
+    [
+      'overview',
+      'content',
+      'reports',
+      'users',
+      'systemSettings',
+      'dataStudio',
+    ] as AdminWorkspaceKey[]
   ).map((workspaceKey) => {
     const bucket = visitsByWorkspace.get(workspaceKey);
     return {
@@ -979,21 +1203,31 @@ function buildWorkspaceAdoptionDetail(input: LoadedReportInputs): AdminReportDet
   });
 
   const workspaceRows = [...visitsByWorkspace.entries()]
-    .sort((left, right) => right[1].visits - left[1].visits || left[0].localeCompare(right[0]))
+    .sort(
+      (left, right) =>
+        right[1].visits - left[1].visits || left[0].localeCompare(right[0]),
+    )
     .map<AdminReportBreakdown['rows'][number]>(([workspaceKey, bucket]) => ({
       label: getAdminWorkspaceLabel(workspaceKey),
       value: formatNumber(bucket.visits),
       detail: `${formatNumber(bucket.users.size)} unique admins`,
     }));
   const uniqueUserRows = [...visitsByWorkspace.entries()]
-    .sort((left, right) => right[1].users.size - left[1].users.size || left[0].localeCompare(right[0]))
+    .sort(
+      (left, right) =>
+        right[1].users.size - left[1].users.size ||
+        left[0].localeCompare(right[0]),
+    )
     .map<AdminReportBreakdown['rows'][number]>(([workspaceKey, bucket]) => ({
       label: getAdminWorkspaceLabel(workspaceKey),
       value: formatNumber(bucket.users.size),
       detail: `${formatNumber(bucket.visits)} visits`,
     }));
   const tableRows = [...pathCounts.entries()]
-    .sort((left, right) => right[1].visits - left[1].visits || left[0].localeCompare(right[0]))
+    .sort(
+      (left, right) =>
+        right[1].visits - left[1].visits || left[0].localeCompare(right[0]),
+    )
     .slice(0, 20)
     .map(([path, bucket]) => [
       path,
@@ -1023,26 +1257,38 @@ function buildWorkspaceAdoptionDetail(input: LoadedReportInputs): AdminReportDet
         label: 'Repeat-visitor ratio',
         value: formatPercent(repeatVisitorRatio),
         detail: `${formatNumber(repeatVisitors)} admins visited more than once`,
-        tone: repeatVisitorRatio >= 0.5 ? 'positive' : uniqueAdmins === 0 ? 'neutral' : 'warning',
+        tone:
+          repeatVisitorRatio >= 0.5
+            ? 'positive'
+            : uniqueAdmins === 0
+              ? 'neutral'
+              : 'warning',
       },
       {
         id: 'topWorkspace',
         label: 'Top workspace',
         value: topWorkspace ? getAdminWorkspaceLabel(topWorkspace[0]) : 'N/A',
-        detail: topWorkspace ? `${formatNumber(topWorkspace[1].visits)} visits` : 'No admin visits in the selected window.',
+        detail: topWorkspace
+          ? `${formatNumber(topWorkspace[1].visits)} visits`
+          : 'No admin visits in the selected window.',
       },
     ],
     series: [
       {
         id: 'workspace-adoption',
         title: 'Visits by workspace',
-        description: 'Visits and unique admins grouped by normalized admin workspace.',
+        description:
+          'Visits and unique admins grouped by normalized admin workspace.',
         type: 'bar',
         xKey: 'label',
         data: workspaceData,
         categories: [
           { key: 'visits', label: 'Visits', color: CHART_COLORS.emerald },
-          { key: 'uniqueUsers', label: 'Unique admins', color: CHART_COLORS.blue },
+          {
+            key: 'uniqueUsers',
+            label: 'Unique admins',
+            color: CHART_COLORS.blue,
+          },
         ],
         emptyMessage: 'No admin workspace visits in the selected window.',
       },
@@ -1094,9 +1340,16 @@ function formatNavigationPathLabel(path: string) {
 }
 
 function listNavigationReportPathOptions(visits: ReportPageVisit[]) {
-  return [...new Set(
-    visits.flatMap((visit) => [visit.canonicalPath, visit.previousCanonicalPath ?? null]).filter((value): value is string => Boolean(value)),
-  )].sort((left, right) => left.localeCompare(right));
+  return [
+    ...new Set(
+      visits
+        .flatMap((visit) => [
+          visit.canonicalPath,
+          visit.previousCanonicalPath ?? null,
+        ])
+        .filter((value): value is string => Boolean(value)),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
 }
 
 function matchesNavigationBaseFilters(
@@ -1111,7 +1364,10 @@ function matchesNavigationBaseFilters(
     return false;
   }
 
-  if (filters.routeGroup !== 'all' && toNavigationRouteGroup(visit.routeGroup) !== filters.routeGroup) {
+  if (
+    filters.routeGroup !== 'all' &&
+    toNavigationRouteGroup(visit.routeGroup) !== filters.routeGroup
+  ) {
     return false;
   }
 
@@ -1127,10 +1383,16 @@ function buildNavigationJourneyDetail(
   },
 ): AdminReportDetail {
   const filters = normalizeNavigationReportFilters(rawFilters);
-  const matchingVisits = input.current.visits.filter((visit) => matchesNavigationBaseFilters(visit, filters));
+  const matchingVisits = input.current.visits.filter((visit) =>
+    matchesNavigationBaseFilters(visit, filters),
+  );
   const matchingV2Visits = matchingVisits
     .filter((visit) => visit.trackingVersion === 2)
-    .sort((left, right) => left.visitedAt.getTime() - right.visitedAt.getTime() || left.id.localeCompare(right.id));
+    .sort(
+      (left, right) =>
+        left.visitedAt.getTime() - right.visitedAt.getTime() ||
+        left.id.localeCompare(right.id),
+    );
   const pathOptions = listNavigationReportPathOptions(matchingVisits);
 
   if (matchingVisits.length > 0 && matchingV2Visits.length === 0) {
@@ -1139,22 +1401,41 @@ function buildNavigationJourneyDetail(
       generatedAt: input.generatedAt.toISOString(),
       window: input.window,
       status: 'degraded',
-      message: 'Journey analytics started after the navigation instrumentation rollout. Select a newer window to see session and transition data.',
+      message:
+        'Journey analytics started after the navigation instrumentation rollout. Select a newer window to see session and transition data.',
       cards: [
-        createUnavailableCard('uniqueVisitors', 'Unique visitors', 'Journey analytics is only available for tracking version 2 visits.'),
-        createUnavailableCard('sessions', 'Sessions', 'Journey analytics is only available for tracking version 2 visits.'),
-        createUnavailableCard('pagesPerSession', 'Pages / session', 'Journey analytics is only available for tracking version 2 visits.'),
-        createUnavailableCard('bounceRate', 'Bounce rate', 'Journey analytics is only available for tracking version 2 visits.'),
+        createUnavailableCard(
+          'uniqueVisitors',
+          'Unique visitors',
+          'Journey analytics is only available for tracking version 2 visits.',
+        ),
+        createUnavailableCard(
+          'sessions',
+          'Sessions',
+          'Journey analytics is only available for tracking version 2 visits.',
+        ),
+        createUnavailableCard(
+          'pagesPerSession',
+          'Pages / session',
+          'Journey analytics is only available for tracking version 2 visits.',
+        ),
+        createUnavailableCard(
+          'bounceRate',
+          'Bounce rate',
+          'Journey analytics is only available for tracking version 2 visits.',
+        ),
       ],
       series: [],
       breakdowns: [],
       table: {
         columns: ['Message'],
         rows: [],
-        emptyMessage: 'No version 2 navigation journey data is available for the selected filters.',
+        emptyMessage:
+          'No version 2 navigation journey data is available for the selected filters.',
       },
       tableTitle: 'Journey transitions',
-      tableDescription: 'Navigation transition data becomes available after the version 2 tracker rollout.',
+      tableDescription:
+        'Navigation transition data becomes available after the version 2 tracker rollout.',
       filters: {
         ...filters,
         pathOptions,
@@ -1169,11 +1450,17 @@ function buildNavigationJourneyDetail(
 
     const scopedSessionIds = new Set(
       matchingV2Visits
-        .filter((visit) => visit.canonicalPath === filters.path || visit.previousCanonicalPath === filters.path)
+        .filter(
+          (visit) =>
+            visit.canonicalPath === filters.path ||
+            visit.previousCanonicalPath === filters.path,
+        )
         .map((visit) => visit.sessionId),
     );
 
-    return matchingV2Visits.filter((visit) => scopedSessionIds.has(visit.sessionId));
+    return matchingV2Visits.filter((visit) =>
+      scopedSessionIds.has(visit.sessionId),
+    );
   })();
   const sessions = new Map<string, ReportPageVisit[]>();
   const pageViewsByPath = new Map<string, number>();
@@ -1188,10 +1475,16 @@ function buildNavigationJourneyDetail(
     const sessionVisits = sessions.get(visit.sessionId) ?? [];
     sessionVisits.push(visit);
     sessions.set(visit.sessionId, sessionVisits);
-    pageViewsByPath.set(visit.canonicalPath, (pageViewsByPath.get(visit.canonicalPath) ?? 0) + 1);
+    pageViewsByPath.set(
+      visit.canonicalPath,
+      (pageViewsByPath.get(visit.canonicalPath) ?? 0) + 1,
+    );
 
     if (visit.referrerType === 'external' && visit.referrerHost) {
-      externalReferrerCounts.set(visit.referrerHost, (externalReferrerCounts.get(visit.referrerHost) ?? 0) + 1);
+      externalReferrerCounts.set(
+        visit.referrerHost,
+        (externalReferrerCounts.get(visit.referrerHost) ?? 0) + 1,
+      );
     }
 
     const day = toIsoDay(visit.visitedAt);
@@ -1205,17 +1498,28 @@ function buildNavigationJourneyDetail(
   }
 
   const sessionRows = [...sessions.values()].map((sessionVisits) =>
-    [...sessionVisits].sort((left, right) => left.visitedAt.getTime() - right.visitedAt.getTime() || left.id.localeCompare(right.id)),
+    [...sessionVisits].sort(
+      (left, right) =>
+        left.visitedAt.getTime() - right.visitedAt.getTime() ||
+        left.id.localeCompare(right.id),
+    ),
   );
-  const uniqueVisitors = getUniqueCount(analysisVisits.map((visit) => visit.visitorId));
+  const uniqueVisitors = getUniqueCount(
+    analysisVisits.map((visit) => visit.visitorId),
+  );
   const sessionCount = sessionRows.length;
-  const bounceSessions = sessionRows.filter((sessionVisits) => sessionVisits.length === 1).length;
-  const pagesPerSession = sessionCount === 0 ? 0 : analysisVisits.length / sessionCount;
+  const bounceSessions = sessionRows.filter(
+    (sessionVisits) => sessionVisits.length === 1,
+  ).length;
+  const pagesPerSession =
+    sessionCount === 0 ? 0 : analysisVisits.length / sessionCount;
 
   for (const sessionVisits of sessionRows) {
     const entryPath = sessionVisits[0]?.canonicalPath;
     const exitPath = sessionVisits[sessionVisits.length - 1]?.canonicalPath;
-    const sessionDay = toIsoDay(sessionVisits[0]?.visitedAt ?? input.generatedAt);
+    const sessionDay = toIsoDay(
+      sessionVisits[0]?.visitedAt ?? input.generatedAt,
+    );
     const dayBucket = bounceByDay.get(sessionDay) ?? { bounce: 0, multi: 0 };
 
     if (sessionVisits.length === 1) {
@@ -1235,26 +1539,47 @@ function buildNavigationJourneyDetail(
     }
   }
 
-  const transitionCounts = new Map<string, { from: string; to: string; count: number }>();
+  const transitionCounts = new Map<
+    string,
+    { from: string; to: string; count: number }
+  >();
   const outgoingTransitionCounts = new Map<string, number>();
-  const transitionVisits = analysisVisits.filter((visit) => visit.previousCanonicalPath);
+  const transitionVisits = analysisVisits.filter(
+    (visit) => visit.previousCanonicalPath,
+  );
   const scopedTransitionVisits = filters.path
-    ? transitionVisits.filter((visit) => visit.previousCanonicalPath === filters.path)
+    ? transitionVisits.filter(
+        (visit) => visit.previousCanonicalPath === filters.path,
+      )
     : transitionVisits;
 
   for (const visit of scopedTransitionVisits) {
     const from = visit.previousCanonicalPath!;
     const key = `${from}=>${visit.canonicalPath}`;
-    const current = transitionCounts.get(key) ?? { from, to: visit.canonicalPath, count: 0 };
+    const current = transitionCounts.get(key) ?? {
+      from,
+      to: visit.canonicalPath,
+      count: 0,
+    };
     current.count += 1;
     transitionCounts.set(key, current);
-    outgoingTransitionCounts.set(from, (outgoingTransitionCounts.get(from) ?? 0) + 1);
+    outgoingTransitionCounts.set(
+      from,
+      (outgoingTransitionCounts.get(from) ?? 0) + 1,
+    );
   }
 
-  const sortedEntries = [...entryCounts.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]));
-  const sortedExits = [...exitCounts.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]));
+  const sortedEntries = [...entryCounts.entries()].sort(
+    (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
+  );
+  const sortedExits = [...exitCounts.entries()].sort(
+    (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
+  );
   const sortedTransitions = [...transitionCounts.values()].sort(
-    (left, right) => right.count - left.count || left.from.localeCompare(right.from) || left.to.localeCompare(right.to),
+    (left, right) =>
+      right.count - left.count ||
+      left.from.localeCompare(right.from) ||
+      left.to.localeCompare(right.to),
   );
   const sortedExternalReferrers = [...externalReferrerCounts.entries()].sort(
     (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
@@ -1284,7 +1609,11 @@ function buildNavigationJourneyDetail(
     input.generatedAt,
     [
       { key: 'bounce', label: 'Bounce sessions', color: CHART_COLORS.amber },
-      { key: 'multi', label: 'Multi-page sessions', color: CHART_COLORS.indigo },
+      {
+        key: 'multi',
+        label: 'Multi-page sessions',
+        color: CHART_COLORS.indigo,
+      },
     ],
     'No tracked sessions in the selected window.',
     (row, day) => {
@@ -1305,7 +1634,9 @@ function buildNavigationJourneyDetail(
         id: 'uniqueVisitors',
         label: 'Unique visitors',
         value: formatNumber(uniqueVisitors),
-        detail: filters.path ? `Sessions that included ${filters.path}` : 'Distinct pseudonymous visitors.',
+        detail: filters.path
+          ? `Sessions that included ${filters.path}`
+          : 'Distinct pseudonymous visitors.',
       },
       {
         id: 'sessions',
@@ -1322,7 +1653,10 @@ function buildNavigationJourneyDetail(
       {
         id: 'bounceRate',
         label: 'Bounce rate',
-        value: sessionCount === 0 ? '0%' : formatPercent(bounceSessions / sessionCount, 1),
+        value:
+          sessionCount === 0
+            ? '0%'
+            : formatPercent(bounceSessions / sessionCount, 1),
         detail: `${formatNumber(bounceSessions)} single-page sessions`,
         tone: bounceSessions > 0 ? 'warning' : 'positive',
       },
@@ -1354,13 +1688,22 @@ function buildNavigationJourneyDetail(
       buildRankedBreakdown(
         'navigation-transitions',
         'Top transitions',
-        filters.path ? `Most common next steps from ${filters.path}.` : 'Most common page-to-page transitions.',
+        filters.path
+          ? `Most common next steps from ${filters.path}.`
+          : 'Most common page-to-page transitions.',
         sortedTransitions.slice(0, 8).map((transition) => ({
           label: `${formatNavigationPathLabel(transition.from)} -> ${formatNavigationPathLabel(transition.to)}`,
           value: formatNumber(transition.count),
-          detail: formatPercent(transition.count / (outgoingTransitionCounts.get(transition.from) ?? transition.count), 1),
+          detail: formatPercent(
+            transition.count /
+              (outgoingTransitionCounts.get(transition.from) ??
+                transition.count),
+            1,
+          ),
         })),
-        filters.path ? `No outbound transitions from ${filters.path} in the selected window.` : 'No page transitions in the selected window.',
+        filters.path
+          ? `No outbound transitions from ${filters.path} in the selected window.`
+          : 'No page transitions in the selected window.',
       ),
       buildRankedBreakdown(
         'navigation-external-referrers',
@@ -1374,15 +1717,33 @@ function buildNavigationJourneyDetail(
       ),
     ],
     table: {
-      columns: ['From', 'To', 'Transitions', 'Transition share', 'From page views', 'Exit rate after from'],
-      rows: sortedTransitions.slice(0, 20).map((transition) => [
-        transition.from,
-        transition.to,
-        formatNumber(transition.count),
-        formatPercent(transition.count / (outgoingTransitionCounts.get(transition.from) ?? transition.count), 1),
-        formatNumber(pageViewsByPath.get(transition.from) ?? 0),
-        formatPercent((exitCounts.get(transition.from) ?? 0) / (pageViewsByPath.get(transition.from) ?? 1), 1),
-      ]),
+      columns: [
+        'From',
+        'To',
+        'Transitions',
+        'Transition share',
+        'From page views',
+        'Exit rate after from',
+      ],
+      rows: sortedTransitions
+        .slice(0, 20)
+        .map((transition) => [
+          transition.from,
+          transition.to,
+          formatNumber(transition.count),
+          formatPercent(
+            transition.count /
+              (outgoingTransitionCounts.get(transition.from) ??
+                transition.count),
+            1,
+          ),
+          formatNumber(pageViewsByPath.get(transition.from) ?? 0),
+          formatPercent(
+            (exitCounts.get(transition.from) ?? 0) /
+              (pageViewsByPath.get(transition.from) ?? 1),
+            1,
+          ),
+        ]),
       emptyMessage: filters.path
         ? `No outbound transitions from ${filters.path} in the selected window.`
         : 'No navigation transitions in the selected window.',
@@ -1399,14 +1760,29 @@ function buildNavigationJourneyDetail(
 }
 
 function buildSchemaHealthDetail(input: LoadedReportInputs): AdminReportDetail {
-  const unhealthyJobs = input.current.jobs.filter((job) => job.status === 'failed' || job.status === 'retrying');
+  const unhealthyJobs = input.current.jobs.filter(
+    (job) => job.status === 'failed' || job.status === 'retrying',
+  );
   const failedJobs = unhealthyJobs.filter((job) => job.status === 'failed');
   const retryingJobs = unhealthyJobs.filter((job) => job.status === 'retrying');
   const writeFailures = input.current.auditLogs.filter(
-    (log) => log.action === 'admin.dataStudio.createRecord' && log.outcome !== 'allowed',
+    (log) =>
+      log.action === 'admin.dataStudio.createRecord' &&
+      log.outcome !== 'allowed',
   );
-  const jobsByName = new Map<string, { failed: number; retrying: number; latestError: string | null; latestUpdatedAt: Date | null }>();
-  const writeFailuresByTarget = new Map<string, { count: number; tableName: string; action: string }>();
+  const jobsByName = new Map<
+    string,
+    {
+      failed: number;
+      retrying: number;
+      latestError: string | null;
+      latestUpdatedAt: Date | null;
+    }
+  >();
+  const writeFailuresByTarget = new Map<
+    string,
+    { count: number; tableName: string; action: string }
+  >();
 
   for (const job of unhealthyJobs) {
     const bucket = jobsByName.get(job.jobName) ?? {
@@ -1422,7 +1798,10 @@ function buildSchemaHealthDetail(input: LoadedReportInputs): AdminReportDetail {
       bucket.retrying += 1;
     }
 
-    if (!bucket.latestUpdatedAt || bucket.latestUpdatedAt.getTime() < job.updatedAt.getTime()) {
+    if (
+      !bucket.latestUpdatedAt ||
+      bucket.latestUpdatedAt.getTime() < job.updatedAt.getTime()
+    ) {
       bucket.latestUpdatedAt = job.updatedAt;
       bucket.latestError = job.lastError;
     }
@@ -1431,25 +1810,45 @@ function buildSchemaHealthDetail(input: LoadedReportInputs): AdminReportDetail {
   }
 
   for (const log of writeFailures) {
-    const tableName = getMetadataValue(log, 'tableName') ?? getMetadataValue(log, 'table') ?? 'unknown';
+    const tableName =
+      getMetadataValue(log, 'tableName') ??
+      getMetadataValue(log, 'table') ??
+      'unknown';
     const action = getMetadataValue(log, 'action') ?? log.action;
     const key = `${tableName}:${action}`;
-    const bucket = writeFailuresByTarget.get(key) ?? { count: 0, tableName, action };
+    const bucket = writeFailuresByTarget.get(key) ?? {
+      count: 0,
+      tableName,
+      action,
+    };
     bucket.count += 1;
     writeFailuresByTarget.set(key, bucket);
   }
 
-  const latestFailedJob = failedJobs.sort((left, right) => right.updatedAt.getTime() - left.updatedAt.getTime())[0];
+  const latestFailedJob = failedJobs.sort(
+    (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime(),
+  )[0];
   const jobRows = [...jobsByName.entries()]
-    .sort((left, right) => right[1].failed + right[1].retrying - (left[1].failed + left[1].retrying))
+    .sort(
+      (left, right) =>
+        right[1].failed +
+        right[1].retrying -
+        (left[1].failed + left[1].retrying),
+    )
     .map<AdminReportBreakdown['rows'][number]>(([jobName, bucket]) => ({
       label: jobName,
       value: `${formatNumber(bucket.failed)} failed / ${formatNumber(bucket.retrying)} retrying`,
-      detail: bucket.latestError ? bucket.latestError : `Updated ${formatTimestamp(bucket.latestUpdatedAt)}`,
+      detail: bucket.latestError
+        ? bucket.latestError
+        : `Updated ${formatTimestamp(bucket.latestUpdatedAt)}`,
       tone: bucket.failed > 0 ? 'critical' : 'warning',
     }));
   const writeRows = [...writeFailuresByTarget.values()]
-    .sort((left, right) => right.count - left.count || left.tableName.localeCompare(right.tableName))
+    .sort(
+      (left, right) =>
+        right.count - left.count ||
+        left.tableName.localeCompare(right.tableName),
+    )
     .map<AdminReportBreakdown['rows'][number]>((bucket) => ({
       label: bucket.tableName,
       value: formatNumber(bucket.count),
@@ -1457,22 +1856,28 @@ function buildSchemaHealthDetail(input: LoadedReportInputs): AdminReportDetail {
       tone: bucket.count >= 3 ? 'critical' : 'warning',
     }));
   const tableRows = [
-    ...unhealthyJobs.slice(0, 12).map((job) => [
-      formatTimestamp(job.updatedAt),
-      'job',
-      job.jobName,
-      job.status,
-      `attempts ${job.attempts}`,
-      job.lastError ?? 'N/A',
-    ]),
-    ...writeFailures.slice(0, 12).map((log) => [
-      formatTimestamp(log.timestamp),
-      'write',
-      getMetadataValue(log, 'tableName') ?? getMetadataValue(log, 'table') ?? 'unknown',
-      log.outcome,
-      String(log.statusCode),
-      log.actorId ?? 'system',
-    ]),
+    ...unhealthyJobs
+      .slice(0, 12)
+      .map((job) => [
+        formatTimestamp(job.updatedAt),
+        'job',
+        job.jobName,
+        job.status,
+        `attempts ${job.attempts}`,
+        job.lastError ?? 'N/A',
+      ]),
+    ...writeFailures
+      .slice(0, 12)
+      .map((log) => [
+        formatTimestamp(log.timestamp),
+        'write',
+        getMetadataValue(log, 'tableName') ??
+          getMetadataValue(log, 'table') ??
+          'unknown',
+        log.outcome,
+        String(log.statusCode),
+        log.actorId ?? 'system',
+      ]),
   ].sort((left, right) => right[0].localeCompare(left[0]));
 
   return {
@@ -1543,14 +1948,25 @@ function buildSchemaHealthDetail(input: LoadedReportInputs): AdminReportDetail {
       ),
     ],
     table: {
-      columns: ['Timestamp', 'Source', 'Name', 'Status', 'Detail', 'Actor / Error'],
+      columns: [
+        'Timestamp',
+        'Source',
+        'Name',
+        'Status',
+        'Detail',
+        'Actor / Error',
+      ],
       rows: tableRows,
       emptyMessage: 'No recent schema or job issues in the selected window.',
     },
   };
 }
 
-function buildAdminVisitSparkline(visits: ReturnType<typeof normalizeAdminVisits>, window: AdminReportWindow, generatedAt: Date) {
+function buildAdminVisitSparkline(
+  visits: ReturnType<typeof normalizeAdminVisits>,
+  window: AdminReportWindow,
+  generatedAt: Date,
+) {
   const countsByDay = new Map<string, number>();
 
   for (const visit of visits) {
@@ -1576,15 +1992,27 @@ function buildSummaryMetrics(input: LoadedReportInputs): AdminReportMetric[] {
   const currentAdminVisits = normalizeAdminVisits(input.current.visits);
   const previousAdminVisits = normalizeAdminVisits(input.previous.visits);
   const currentDeniedActions = input.current.auditLogs.filter(
-    (log) => isAdminAction(log.action) && (log.outcome === 'denied' || log.outcome === 'rate_limited'),
+    (log) =>
+      isAdminAction(log.action) &&
+      (log.outcome === 'denied' || log.outcome === 'rate_limited'),
   ).length;
   const previousDeniedActions = input.previous.auditLogs.filter(
-    (log) => isAdminAction(log.action) && (log.outcome === 'denied' || log.outcome === 'rate_limited'),
+    (log) =>
+      isAdminAction(log.action) &&
+      (log.outcome === 'denied' || log.outcome === 'rate_limited'),
   ).length;
-  const currentActiveAdmins = getUniqueCount(currentAdminVisits.map((visit) => visit.userId));
-  const previousActiveAdmins = getUniqueCount(previousAdminVisits.map((visit) => visit.userId));
-  const currentFailedRetryingJobs = input.current.jobs.filter((job) => job.status === 'failed' || job.status === 'retrying').length;
-  const previousFailedRetryingJobs = input.previous.jobs.filter((job) => job.status === 'failed' || job.status === 'retrying').length;
+  const currentActiveAdmins = getUniqueCount(
+    currentAdminVisits.map((visit) => visit.userId),
+  );
+  const previousActiveAdmins = getUniqueCount(
+    previousAdminVisits.map((visit) => visit.userId),
+  );
+  const currentFailedRetryingJobs = input.current.jobs.filter(
+    (job) => job.status === 'failed' || job.status === 'retrying',
+  ).length;
+  const previousFailedRetryingJobs = input.previous.jobs.filter(
+    (job) => job.status === 'failed' || job.status === 'retrying',
+  ).length;
 
   return [
     {
@@ -1593,8 +2021,17 @@ function buildSummaryMetrics(input: LoadedReportInputs): AdminReportMetric[] {
       value: formatNumber(currentDeniedActions),
       detail: 'Denied and rate-limited admin actions in the current window.',
       href: ADMIN_REPORT_LINKS.securityAccess,
-      tone: currentDeniedActions >= 10 ? 'critical' : currentDeniedActions > 0 ? 'warning' : 'positive',
-      change: buildMetricChange(currentDeniedActions, previousDeniedActions, input.window),
+      tone:
+        currentDeniedActions >= 10
+          ? 'critical'
+          : currentDeniedActions > 0
+            ? 'warning'
+            : 'positive',
+      change: buildMetricChange(
+        currentDeniedActions,
+        previousDeniedActions,
+        input.window,
+      ),
     },
     {
       id: 'activeAdminUsers',
@@ -1603,7 +2040,11 @@ function buildSummaryMetrics(input: LoadedReportInputs): AdminReportMetric[] {
       detail: 'Distinct admins who visited a normalized admin workspace.',
       href: ADMIN_REPORT_LINKS.workspaceAdoption,
       tone: currentActiveAdmins === 0 ? 'warning' : 'positive',
-      change: buildMetricChange(currentActiveAdmins, previousActiveAdmins, input.window),
+      change: buildMetricChange(
+        currentActiveAdmins,
+        previousActiveAdmins,
+        input.window,
+      ),
     },
     {
       id: 'adminVisits',
@@ -1612,7 +2053,11 @@ function buildSummaryMetrics(input: LoadedReportInputs): AdminReportMetric[] {
       detail: 'Localized admin visits normalized into workspace traffic.',
       href: ADMIN_REPORT_LINKS.workspaceAdoption,
       tone: currentAdminVisits.length === 0 ? 'warning' : 'positive',
-      change: buildMetricChange(currentAdminVisits.length, previousAdminVisits.length, input.window),
+      change: buildMetricChange(
+        currentAdminVisits.length,
+        previousAdminVisits.length,
+        input.window,
+      ),
     },
     {
       id: 'failedRetryingJobs',
@@ -1620,8 +2065,17 @@ function buildSummaryMetrics(input: LoadedReportInputs): AdminReportMetric[] {
       value: formatNumber(currentFailedRetryingJobs),
       detail: 'Current unhealthy jobs updated within the selected window.',
       href: ADMIN_REPORT_LINKS.schemaHealth,
-      tone: currentFailedRetryingJobs >= 5 ? 'critical' : currentFailedRetryingJobs > 0 ? 'warning' : 'positive',
-      change: buildMetricChange(currentFailedRetryingJobs, previousFailedRetryingJobs, input.window),
+      tone:
+        currentFailedRetryingJobs >= 5
+          ? 'critical'
+          : currentFailedRetryingJobs > 0
+            ? 'warning'
+            : 'positive',
+      change: buildMetricChange(
+        currentFailedRetryingJobs,
+        previousFailedRetryingJobs,
+        input.window,
+      ),
     },
   ];
 }
@@ -1631,10 +2085,16 @@ export async function getAdminReportSummaryUseCase(
   depsPromise: Promise<AdminReportDeps> = createDefaultDeps(),
 ): Promise<AdminReportSummary> {
   const deps = await depsPromise;
-  const input = await loadReportInputs(window, deps, { includePreviousWindow: true });
+  const input = await loadReportInputs(window, deps, {
+    includePreviousWindow: true,
+  });
 
   if (input.status === 'degraded') {
-    return createDegradedSummary(window, input.generatedAt, input.message ?? 'Data unavailable.');
+    return createDegradedSummary(
+      window,
+      input.generatedAt,
+      input.message ?? 'Data unavailable.',
+    );
   }
 
   const currentAdminVisits = normalizeAdminVisits(input.current.visits);
@@ -1644,7 +2104,9 @@ export async function getAdminReportSummaryUseCase(
     window,
     status: 'live',
     metrics: buildSummaryMetrics(input),
-    series: [buildAdminVisitSparkline(currentAdminVisits, window, input.generatedAt)],
+    series: [
+      buildAdminVisitSparkline(currentAdminVisits, window, input.generatedAt),
+    ],
   };
 }
 
@@ -1663,7 +2125,12 @@ export async function getAdminReportDetailUseCase(
   const input = await loadReportInputs(window, deps);
 
   if (input.status === 'degraded') {
-    return createDegradedDetail(reportId, window, input.generatedAt, input.message ?? 'Data unavailable.');
+    return createDegradedDetail(
+      reportId,
+      window,
+      input.generatedAt,
+      input.message ?? 'Data unavailable.',
+    );
   }
 
   switch (reportId) {
@@ -1693,7 +2160,12 @@ export async function exportAdminReportUseCase(
     path?: string | null;
   },
 ): Promise<AdminReportExport> {
-  const detail = await getAdminReportDetailUseCase(reportId, window, depsPromise, filters);
+  const detail = await getAdminReportDetailUseCase(
+    reportId,
+    window,
+    depsPromise,
+    filters,
+  );
   const baseFilename = `${reportId}-${window}`;
 
   if (format === 'json') {

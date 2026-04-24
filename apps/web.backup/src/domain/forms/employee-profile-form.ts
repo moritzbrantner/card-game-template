@@ -33,6 +33,8 @@ export const employeeProfileDefaultValues: EmployeeProfileFormValues = {
   bio: '',
 };
 
-export function buildSubmissionMessage(values: EmployeeProfileFormValues): string {
+export function buildSubmissionMessage(
+  values: EmployeeProfileFormValues,
+): string {
   return `${values.firstName} ${values.lastName} submitted their profile for the ${values.department} team.`;
 }

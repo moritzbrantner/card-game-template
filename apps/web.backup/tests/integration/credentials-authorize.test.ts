@@ -22,7 +22,10 @@ describe('authorizeCredentials', () => {
     const verifyPassword = vi.fn().mockResolvedValue(true);
 
     const result = await authorizeCredentials(
-      { email: '  PERSON@EXAMPLE.COM ', password: 'correct horse battery staple' },
+      {
+        email: '  PERSON@EXAMPLE.COM ',
+        password: 'correct horse battery staple',
+      },
       {
         findUserByEmail,
         verifyPassword,
@@ -32,7 +35,10 @@ describe('authorizeCredentials', () => {
     );
 
     expect(findUserByEmail).toHaveBeenCalledWith('person@example.com');
-    expect(verifyPassword).toHaveBeenCalledWith('correct horse battery staple', 'hashed');
+    expect(verifyPassword).toHaveBeenCalledWith(
+      'correct horse battery staple',
+      'hashed',
+    );
     expect(result).toEqual({
       id: 'user_1',
       email: 'person@example.com',
@@ -50,13 +56,23 @@ describe('authorizeCredentials', () => {
       onAuthenticationFailure: vi.fn(),
       onAuthenticationSuccess: vi.fn(),
     };
-    const request = { headers: new Headers({ 'x-forwarded-for': '192.168.1.1' }) };
+    const request = {
+      headers: new Headers({ 'x-forwarded-for': '192.168.1.1' }),
+    };
 
     for (let i = 0; i < 5; i += 1) {
-      await authorizeCredentials({ email: 'person@example.com', password: 'wrong-password' }, deps, request);
+      await authorizeCredentials(
+        { email: 'person@example.com', password: 'wrong-password' },
+        deps,
+        request,
+      );
     }
 
-    const throttledResult = await authorizeCredentials({ email: 'person@example.com', password: 'wrong-password' }, deps, request);
+    const throttledResult = await authorizeCredentials(
+      { email: 'person@example.com', password: 'wrong-password' },
+      deps,
+      request,
+    );
 
     expect(throttledResult).toBeNull();
     expect(deps.findUserByEmail).toHaveBeenCalledTimes(5);

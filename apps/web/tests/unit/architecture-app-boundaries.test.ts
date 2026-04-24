@@ -32,7 +32,10 @@ function listFiles(...roots: string[]) {
 
 function readImports(filePath: string) {
   const output = readFileSync(filePath, 'utf8');
-  return Array.from(output.matchAll(/from ['"]([^'"]+)['"]/g), (match) => match[1]);
+  return Array.from(
+    output.matchAll(/from ['"]([^'"]+)['"]/g),
+    (match) => match[1],
+  );
 }
 
 function resolveRelativeImport(filePath: string, importPath: string) {
@@ -76,7 +79,9 @@ describe('architecture: app boundaries', () => {
       return readImports(filePath).flatMap((importPath) => {
         if (importPath.startsWith('@/apps/')) {
           const importedApp = importPath.split('/')[2];
-          return importedApp && importedApp !== currentApp ? [`${filePath} -> ${importPath}`] : [];
+          return importedApp && importedApp !== currentApp
+            ? [`${filePath} -> ${importPath}`]
+            : [];
         }
 
         const resolvedImport = resolveRelativeImport(filePath, importPath);
@@ -88,7 +93,9 @@ describe('architecture: app boundaries', () => {
         const appsIndex = normalized.indexOf('apps');
         const importedApp = appsIndex >= 0 ? normalized[appsIndex + 1] : null;
 
-        return importedApp && importedApp !== currentApp ? [`${filePath} -> ${importPath}`] : [];
+        return importedApp && importedApp !== currentApp
+          ? [`${filePath} -> ${importPath}`]
+          : [];
       });
     });
 

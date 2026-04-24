@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveEnabledPublicRoute, resolvePublicRoute } from '@moritzbrantner/app-pack';
+import {
+  resolveEnabledPublicRoute,
+  resolvePublicRoute,
+} from '@moritzbrantner/app-pack';
 
 import showcaseManifest from '@/apps/showcase/manifest';
 
@@ -12,23 +15,36 @@ function slugToSegments(slug: string) {
 
 describe('showcase manifest contract', () => {
   it('keeps navigation entries aligned with declared public pages', () => {
-    const publicPageIds = new Set(showcaseManifest.publicPages.map((page) => page.id));
+    const publicPageIds = new Set(
+      showcaseManifest.publicPages.map((page) => page.id),
+    );
 
-    expect(showcaseManifest.publicNavigation.map((item) => item.pageId).every((pageId) => publicPageIds.has(pageId))).toBe(true);
+    expect(
+      showcaseManifest.publicNavigation
+        .map((item) => item.pageId)
+        .every((pageId) => publicPageIds.has(pageId)),
+    ).toBe(true);
   });
 
   it('resolves each canonical public page slug through the manifest', () => {
     for (const page of showcaseManifest.publicPages) {
-      const resolved = resolvePublicRoute(showcaseManifest, slugToSegments(page.slug));
+      const resolved = resolvePublicRoute(
+        showcaseManifest,
+        slugToSegments(page.slug),
+      );
       expect(resolved?.page.id).toBe(page.id);
     }
   });
 
   it('resolves aliases for enabled pages and blocks them when the feature is disabled', () => {
-    const formsPage = showcaseManifest.publicPages.find((page) => page.id === 'forms');
+    const formsPage = showcaseManifest.publicPages.find(
+      (page) => page.id === 'forms',
+    );
     expect(formsPage?.aliases).toEqual(['forms']);
 
-    expect(resolveEnabledPublicRoute(showcaseManifest, ['forms'])?.page.id).toBe('forms');
+    expect(
+      resolveEnabledPublicRoute(showcaseManifest, ['forms'])?.page.id,
+    ).toBe('forms');
 
     const disabledManifest = {
       ...showcaseManifest,
@@ -43,10 +59,14 @@ describe('showcase manifest contract', () => {
 
   it('provides valid example API route modules', async () => {
     const routeModules = await Promise.all(
-      Object.values(showcaseManifest.exampleApis).map((definition) => definition.loadRouteModule()),
+      Object.values(showcaseManifest.exampleApis).map((definition) =>
+        definition.loadRouteModule(),
+      ),
     );
 
-    expect(routeModules.every((routeModule) => Object.keys(routeModule).length > 0)).toBe(true);
+    expect(
+      routeModules.every((routeModule) => Object.keys(routeModule).length > 0),
+    ).toBe(true);
   });
 
   it('supports every configured locale', () => {

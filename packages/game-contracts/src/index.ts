@@ -4,9 +4,9 @@ export type PlayerId = string;
 export type AccountId = string;
 export type MatchId = string;
 export type GameId = string;
-export type CardId = string;
 export type ReplayFormatVersion = 2;
 export type PersistedMatchStatus = 'active' | 'completed' | 'abandoned';
+export type MatchStatus = 'in_progress' | 'completed';
 
 export type GameReplayMetadata<TSetup = unknown> = {
   engineVersion: number;
@@ -28,14 +28,6 @@ export type PlayerIdentityRef =
   | {
       kind: 'bot';
     };
-
-export type CardDefinition = {
-  id: CardId;
-  label: string;
-  suit?: string;
-  rank?: string | number;
-  metadata?: Record<string, string | number | boolean | null>;
-};
 
 export type PlayerProfile = {
   playerId: PlayerId;
@@ -62,6 +54,10 @@ export type GameMove<TPayload = Record<string, unknown>> = {
   payload: TPayload;
 };
 
+export type EngineActorSelection = {
+  playerId: PlayerId | null;
+};
+
 export type MatchState<TState = Record<string, unknown>> = {
   matchId: MatchId;
   gameId: GameId;
@@ -76,6 +72,12 @@ export type MatchRanking = {
   playerId: PlayerId;
   position: number;
   score?: number;
+};
+
+export type MatchInspection<TMove extends GameMove = GameMove> = {
+  actorPlayerId: PlayerId | null;
+  legalMoves: readonly TMove[];
+  status: MatchStatus;
 };
 
 export type MatchResult = {
@@ -184,17 +186,15 @@ export function createMatchReplay<
   TState,
   TMove extends GameMove,
   TSetup = unknown,
->(
-  input: {
-    startedAt: string;
-    initialState: MatchState<TState>;
-    latestState?: MatchState<TState>;
-    acceptedMoves?: readonly MatchReplayAcceptedMove<TMove>[];
-    finishedAt?: string | null;
-    metadata?: GameReplayMetadata<TSetup> | null;
-    result?: MatchResult | null;
-  },
-): MatchReplay<TState, TMove, TSetup> {
+>(input: {
+  startedAt: string;
+  initialState: MatchState<TState>;
+  latestState?: MatchState<TState>;
+  acceptedMoves?: readonly MatchReplayAcceptedMove<TMove>[];
+  finishedAt?: string | null;
+  metadata?: GameReplayMetadata<TSetup> | null;
+  result?: MatchResult | null;
+}): MatchReplay<TState, TMove, TSetup> {
   const latestState = input.latestState ?? input.initialState;
   const result = input.result ?? null;
 
@@ -228,8 +228,14 @@ export function summarizeMatchReplay<TState, TMove extends GameMove>(
   const moveCountsByKind = new Map<string, number>();
 
   for (const entry of replay.acceptedMoves) {
-    moveCountsByPlayer.set(entry.move.playerId, (moveCountsByPlayer.get(entry.move.playerId) ?? 0) + 1);
-    moveCountsByKind.set(entry.move.kind, (moveCountsByKind.get(entry.move.kind) ?? 0) + 1);
+    moveCountsByPlayer.set(
+      entry.move.playerId,
+      (moveCountsByPlayer.get(entry.move.playerId) ?? 0) + 1,
+    );
+    moveCountsByKind.set(
+      entry.move.kind,
+      (moveCountsByKind.get(entry.move.kind) ?? 0) + 1,
+    );
   }
 
   const startedAt = toTimestamp(replay.startedAt);
@@ -241,14 +247,21 @@ export function summarizeMatchReplay<TState, TMove extends GameMove>(
     executionMode: replay.executionMode,
     startedAt: replay.startedAt,
     finishedAt: replay.finishedAt,
-    durationMs: startedAt !== null && finishedAt !== null ? Math.max(finishedAt - startedAt, 0) : null,
+    durationMs:
+      startedAt !== null && finishedAt !== null
+        ? Math.max(finishedAt - startedAt, 0)
+        : null,
     acceptedMoveCount: replay.acceptedMoves.length,
-    turnsCompleted: Math.max(replay.latestState.turn - replay.initialState.turn, 0),
+    turnsCompleted: Math.max(
+      replay.latestState.turn - replay.initialState.turn,
+      0,
+    ),
     winnerIds: replay.result?.winnerIds ?? [],
     players: [...replay.initialState.players]
       .sort(
         (left, right) =>
-          (moveCountsByPlayer.get(right.playerId) ?? 0) - (moveCountsByPlayer.get(left.playerId) ?? 0) ||
+          (moveCountsByPlayer.get(right.playerId) ?? 0) -
+            (moveCountsByPlayer.get(left.playerId) ?? 0) ||
           left.seat - right.seat,
       )
       .map((player) => ({
@@ -257,7 +270,9 @@ export function summarizeMatchReplay<TState, TMove extends GameMove>(
         movesAccepted: moveCountsByPlayer.get(player.playerId) ?? 0,
       })),
     moveKinds: [...moveCountsByKind.entries()]
-      .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+      .sort(
+        (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
+      )
       .map(([kind, count]) => ({
         kind,
         count,

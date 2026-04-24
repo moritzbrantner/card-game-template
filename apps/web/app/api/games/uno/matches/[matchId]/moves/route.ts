@@ -27,19 +27,37 @@ export const POST = createApiRoute({
         move: parseUnoMove(body.move),
       };
     } catch (error) {
-      throw new ProblemError(problem(
-        '/problems/uno-match-move',
-        'Unable to submit move',
-        400,
-        error instanceof Error ? error.message : 'Invalid UNO move.',
-      ));
+      throw new ProblemError(
+        problem(
+          '/problems/uno-match-move',
+          'Unable to submit move',
+          400,
+          error instanceof Error ? error.message : 'Invalid UNO move.',
+        ),
+      );
     }
 
-    const result = await submitUnoMoveUseCase(session, getMatchId(request), input);
+    const result = await submitUnoMoveUseCase(
+      session,
+      getMatchId(request),
+      input,
+    );
 
     if (!result.ok) {
-      const status = result.error.code === 'NOT_FOUND' ? 404 : result.error.code === 'CONFLICT' ? 409 : 400;
-      throw new ProblemError(problem('/problems/uno-match-move', 'Unable to submit move', status, result.error.message));
+      const status =
+        result.error.code === 'NOT_FOUND'
+          ? 404
+          : result.error.code === 'CONFLICT'
+            ? 409
+            : 400;
+      throw new ProblemError(
+        problem(
+          '/problems/uno-match-move',
+          'Unable to submit move',
+          status,
+          result.error.message,
+        ),
+      );
     }
 
     return result.data;

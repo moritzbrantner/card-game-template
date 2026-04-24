@@ -15,7 +15,13 @@ export class ProblemError extends Error {
   }
 }
 
-export function problem(type: string, title: string, status: number, detail?: string, fieldErrors?: Record<string, string[]>) {
+export function problem(
+  type: string,
+  title: string,
+  status: number,
+  detail?: string,
+  fieldErrors?: Record<string, string[]>,
+) {
   return {
     type,
     title,
@@ -25,7 +31,10 @@ export function problem(type: string, title: string, status: number, detail?: st
   } satisfies ProblemDetail;
 }
 
-export function createProblemResponse(problemDetail: ProblemDetail, init?: ResponseInit) {
+export function createProblemResponse(
+  problemDetail: ProblemDetail,
+  init?: ResponseInit,
+) {
   const headers = new Headers(init?.headers);
   headers.set('content-type', 'application/problem+json; charset=utf-8');
 
@@ -40,20 +49,48 @@ export function zodFieldErrors(error: ZodError) {
   const flattened = error.flatten((issue) => issue.message);
 
   return Object.fromEntries(
-    Object.entries(flattened.fieldErrors).filter((entry): entry is [string, string[]] => Array.isArray(entry[1]) && entry[1].length > 0),
+    Object.entries(flattened.fieldErrors).filter(
+      (entry): entry is [string, string[]] =>
+        Array.isArray(entry[1]) && entry[1].length > 0,
+    ),
   );
 }
 
-export function invalidBodyProblem(detail = 'Request body is invalid.', fieldErrors?: Record<string, string[]>) {
-  return problem('/problems/invalid-body', 'Invalid request body', 400, detail, fieldErrors);
+export function invalidBodyProblem(
+  detail = 'Request body is invalid.',
+  fieldErrors?: Record<string, string[]>,
+) {
+  return problem(
+    '/problems/invalid-body',
+    'Invalid request body',
+    400,
+    detail,
+    fieldErrors,
+  );
 }
 
-export function invalidQueryProblem(detail = 'Request query is invalid.', fieldErrors?: Record<string, string[]>) {
-  return problem('/problems/invalid-query', 'Invalid query parameters', 400, detail, fieldErrors);
+export function invalidQueryProblem(
+  detail = 'Request query is invalid.',
+  fieldErrors?: Record<string, string[]>,
+) {
+  return problem(
+    '/problems/invalid-query',
+    'Invalid query parameters',
+    400,
+    detail,
+    fieldErrors,
+  );
 }
 
-export function authenticationRequiredProblem(detail = 'Authentication required.') {
-  return problem('/problems/authentication-required', 'Authentication required', 401, detail);
+export function authenticationRequiredProblem(
+  detail = 'Authentication required.',
+) {
+  return problem(
+    '/problems/authentication-required',
+    'Authentication required',
+    401,
+    detail,
+  );
 }
 
 export function forbiddenProblem(detail = 'Forbidden.') {
@@ -68,6 +105,13 @@ export function rateLimitedProblem(detail = 'Rate limit exceeded.') {
   return problem('/problems/rate-limited', 'Too many requests', 429, detail);
 }
 
-export function internalServerProblem(detail = 'An unexpected error occurred.') {
-  return problem('/problems/internal-server-error', 'Internal server error', 500, detail);
+export function internalServerProblem(
+  detail = 'An unexpected error occurred.',
+) {
+  return problem(
+    '/problems/internal-server-error',
+    'Internal server error',
+    500,
+    detail,
+  );
 }

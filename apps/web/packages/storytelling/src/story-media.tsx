@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   useEffect,
@@ -6,17 +6,21 @@ import {
   useState,
   type ComponentPropsWithoutRef,
   type ReactNode,
-} from "react";
+} from 'react';
 
-import { cn } from "@moritzbrantner/ui";
+import { cn } from '@moritzbrantner/ui';
 
-import type { StoryNodeData, StoryRenderProps, StoryStageComponent } from "./story-types";
+import type {
+  StoryNodeData,
+  StoryRenderProps,
+  StoryStageComponent,
+} from './story-types';
 
 export type StoryMediaTextTrack = {
   src: string;
   label: string;
   srcLang?: string;
-  kind?: "subtitles" | "captions" | "descriptions" | "chapters" | "metadata";
+  kind?: 'subtitles' | 'captions' | 'descriptions' | 'chapters' | 'metadata';
   default?: boolean;
 };
 
@@ -33,7 +37,7 @@ export type StorySubtitleFileProps = {
   title?: ReactNode;
   description?: ReactNode;
   languageLabel?: ReactNode;
-  format?: "auto" | "srt" | "vtt";
+  format?: 'auto' | 'srt' | 'vtt';
   showTimestamps?: boolean;
   className?: string;
   listClassName?: string;
@@ -43,8 +47,8 @@ export type StorySubtitleFileProps = {
 };
 
 export type StoryAudioFileProps = Omit<
-  ComponentPropsWithoutRef<"audio">,
-  "children"
+  ComponentPropsWithoutRef<'audio'>,
+  'children'
 > & {
   title?: ReactNode;
   description?: ReactNode;
@@ -55,8 +59,8 @@ export type StoryAudioFileProps = Omit<
 };
 
 export type StoryVideoFileProps = Omit<
-  ComponentPropsWithoutRef<"video">,
-  "children"
+  ComponentPropsWithoutRef<'video'>,
+  'children'
 > & {
   title?: ReactNode;
   description?: ReactNode;
@@ -71,31 +75,31 @@ function extractFileName(src?: string) {
   }
 
   const [path] = src.split(/[?#]/, 1);
-  const segments = path.split("/").filter(Boolean);
+  const segments = path.split('/').filter(Boolean);
 
   return segments[segments.length - 1] ?? src;
 }
 
 function inferSubtitleFormat(
   input: string,
-  format: StorySubtitleFileProps["format"],
+  format: StorySubtitleFileProps['format'],
 ) {
-  if (format && format !== "auto") {
+  if (format && format !== 'auto') {
     return format;
   }
 
   const normalized = input.trim().toLowerCase();
 
-  if (normalized.startsWith("webvtt") || normalized.endsWith(".vtt")) {
-    return "vtt";
+  if (normalized.startsWith('webvtt') || normalized.endsWith('.vtt')) {
+    return 'vtt';
   }
 
-  return "srt";
+  return 'srt';
 }
 
 function parseSubtitleTimestamp(input: string) {
-  const normalized = input.trim().replace(",", ".");
-  const segments = normalized.split(":");
+  const normalized = input.trim().replace(',', '.');
+  const segments = normalized.split(':');
 
   if (segments.length < 2 || segments.length > 3) {
     return null;
@@ -118,9 +122,9 @@ function parseSubtitleTimestamp(input: string) {
 
 function parseSubtitleText(
   input: string,
-  format: StorySubtitleFileProps["format"] = "auto",
+  format: StorySubtitleFileProps['format'] = 'auto',
 ) {
-  const normalized = input.replace(/\r\n?/g, "\n").trim();
+  const normalized = input.replace(/\r\n?/g, '\n').trim();
 
   if (!normalized) {
     return [] as StorySubtitleCue[];
@@ -128,8 +132,8 @@ function parseSubtitleText(
 
   const resolvedFormat = inferSubtitleFormat(normalized, format);
   const withoutHeader =
-    resolvedFormat === "vtt"
-      ? normalized.replace(/^WEBVTT[^\n]*\n+/, "")
+    resolvedFormat === 'vtt'
+      ? normalized.replace(/^WEBVTT[^\n]*\n+/, '')
       : normalized;
   const blocks = withoutHeader
     .split(/\n{2,}/)
@@ -139,7 +143,7 @@ function parseSubtitleText(
 
   for (const block of blocks) {
     const lines = block
-      .split("\n")
+      .split('\n')
       .map((line) => line.trimEnd())
       .filter(Boolean);
 
@@ -148,36 +152,39 @@ function parseSubtitleText(
     }
 
     if (
-      resolvedFormat === "vtt" &&
-      (lines[0]?.startsWith("NOTE") ||
-        lines[0]?.startsWith("STYLE") ||
-        lines[0]?.startsWith("REGION"))
+      resolvedFormat === 'vtt' &&
+      (lines[0]?.startsWith('NOTE') ||
+        lines[0]?.startsWith('STYLE') ||
+        lines[0]?.startsWith('REGION'))
     ) {
       continue;
     }
 
     let timingLineIndex = 0;
 
-    if (!lines[0]?.includes("-->")) {
+    if (!lines[0]?.includes('-->')) {
       timingLineIndex = 1;
     }
 
     const timingLine = lines[timingLineIndex];
 
-    if (!timingLine || !timingLine.includes("-->")) {
+    if (!timingLine || !timingLine.includes('-->')) {
       continue;
     }
 
-    const [rawStart, rawEndAndSettings] = timingLine.split("-->");
+    const [rawStart, rawEndAndSettings] = timingLine.split('-->');
     const rawEnd = rawEndAndSettings?.trim().split(/\s+/, 1)[0];
-    const startTimeInSeconds = parseSubtitleTimestamp(rawStart ?? "");
-    const endTimeInSeconds = parseSubtitleTimestamp(rawEnd ?? "");
+    const startTimeInSeconds = parseSubtitleTimestamp(rawStart ?? '');
+    const endTimeInSeconds = parseSubtitleTimestamp(rawEnd ?? '');
 
     if (startTimeInSeconds === null || endTimeInSeconds === null) {
       continue;
     }
 
-    const text = lines.slice(timingLineIndex + 1).join("\n").trim();
+    const text = lines
+      .slice(timingLineIndex + 1)
+      .join('\n')
+      .trim();
 
     if (!text) {
       continue;
@@ -199,16 +206,16 @@ function formatSubtitleTime(seconds: number) {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const remainingSeconds = totalSeconds % 60;
-  const secondsLabel = remainingSeconds.toFixed(3).padStart(6, "0");
+  const secondsLabel = remainingSeconds.toFixed(3).padStart(6, '0');
 
   if (hours > 0) {
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(
       2,
-      "0",
+      '0',
     )}:${secondsLabel}`;
   }
 
-  return `${String(minutes).padStart(2, "0")}:${secondsLabel}`;
+  return `${String(minutes).padStart(2, '0')}:${secondsLabel}`;
 }
 
 function StoryMediaHeader({
@@ -244,10 +251,14 @@ function StoryMediaHeader({
   );
 }
 
-function StoryMediaTrackElements({ tracks }: { tracks?: StoryMediaTextTrack[] }) {
+function StoryMediaTrackElements({
+  tracks,
+}: {
+  tracks?: StoryMediaTextTrack[];
+}) {
   return tracks?.map((track) => (
     <track
-      key={`${track.kind ?? "subtitles"}-${track.label}-${track.src}`}
+      key={`${track.kind ?? 'subtitles'}-${track.label}-${track.src}`}
       default={track.default}
       kind={track.kind}
       label={track.label}
@@ -262,36 +273,36 @@ export function StorySubtitleFile({
   content,
   title,
   description,
-  languageLabel = "Subtitle file",
-  format = "auto",
+  languageLabel = 'Subtitle file',
+  format = 'auto',
   showTimestamps = true,
   className,
   listClassName,
-  loadingLabel = "Loading subtitle cues...",
-  emptyLabel = "No subtitle cues available.",
-  errorLabel = "Unable to load subtitle file.",
+  loadingLabel = 'Loading subtitle cues...',
+  emptyLabel = 'No subtitle cues available.',
+  errorLabel = 'Unable to load subtitle file.',
 }: StorySubtitleFileProps) {
-  const [resolvedContent, setResolvedContent] = useState(content ?? "");
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "ready" | "error"
-  >(content ? "ready" : src ? "loading" : "idle");
+  const [resolvedContent, setResolvedContent] = useState(content ?? '');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>(
+    content ? 'ready' : src ? 'loading' : 'idle',
+  );
 
   useEffect(() => {
     if (content !== undefined) {
       setResolvedContent(content);
-      setStatus("ready");
+      setStatus('ready');
       return;
     }
 
     if (!src) {
-      setResolvedContent("");
-      setStatus("idle");
+      setResolvedContent('');
+      setStatus('idle');
       return;
     }
 
     let cancelled = false;
 
-    setStatus("loading");
+    setStatus('loading');
 
     void fetch(src)
       .then(async (response) => {
@@ -307,15 +318,15 @@ export function StorySubtitleFile({
         }
 
         setResolvedContent(nextContent);
-        setStatus("ready");
+        setStatus('ready');
       })
       .catch(() => {
         if (cancelled) {
           return;
         }
 
-        setResolvedContent("");
-        setStatus("error");
+        setResolvedContent('');
+        setStatus('error');
       });
 
     return () => {
@@ -327,7 +338,7 @@ export function StorySubtitleFile({
     () => parseSubtitleText(resolvedContent, format),
     [format, resolvedContent],
   );
-  const fileName = title ?? extractFileName(src) ?? "Inline subtitles";
+  const fileName = title ?? extractFileName(src) ?? 'Inline subtitles';
   const badge = src
     ? inferSubtitleFormat(src, format).toUpperCase()
     : inferSubtitleFormat(resolvedContent, format).toUpperCase();
@@ -335,7 +346,7 @@ export function StorySubtitleFile({
   return (
     <section
       className={cn(
-        "relative min-h-[24rem] overflow-hidden rounded-[2rem] border bg-card text-card-foreground shadow-2xl shadow-black/10",
+        'relative min-h-[24rem] overflow-hidden rounded-[2rem] border bg-card text-card-foreground shadow-2xl shadow-black/10',
         className,
       )}
     >
@@ -349,17 +360,17 @@ export function StorySubtitleFile({
         />
         <div
           className={cn(
-            "mt-6 flex-1 rounded-[1.5rem] border border-white/10 bg-black/25 p-4",
+            'mt-6 flex-1 rounded-[1.5rem] border border-white/10 bg-black/25 p-4',
             listClassName,
           )}
         >
-          {status === "loading" ? (
+          {status === 'loading' ? (
             <p className="text-sm text-white/72">{loadingLabel}</p>
           ) : null}
-          {status === "error" ? (
+          {status === 'error' ? (
             <p className="text-sm text-white/72">{errorLabel}</p>
           ) : null}
-          {status !== "loading" && status !== "error" && cues.length === 0 ? (
+          {status !== 'loading' && status !== 'error' && cues.length === 0 ? (
             <p className="text-sm text-white/72">{emptyLabel}</p>
           ) : null}
           {cues.length > 0 ? (
@@ -371,7 +382,7 @@ export function StorySubtitleFile({
                 >
                   {showTimestamps ? (
                     <p className="text-xs uppercase tracking-[0.22em] text-white/60">
-                      {formatSubtitleTime(cue.startTimeInSeconds)} -{" "}
+                      {formatSubtitleTime(cue.startTimeInSeconds)} -{' '}
                       {formatSubtitleTime(cue.endTimeInSeconds)}
                     </p>
                   ) : null}
@@ -396,17 +407,17 @@ export function StoryAudioFile({
   playerClassName,
   tracks,
   controls = true,
-  preload = "metadata",
+  preload = 'metadata',
   src,
   ...props
 }: StoryAudioFileProps) {
-  const sourcePath = typeof src === "string" ? src : undefined;
-  const fileName = title ?? extractFileName(sourcePath) ?? "Audio track";
+  const sourcePath = typeof src === 'string' ? src : undefined;
+  const fileName = title ?? extractFileName(sourcePath) ?? 'Audio track';
 
   return (
     <figure
       className={cn(
-        "relative min-h-[24rem] overflow-hidden rounded-[2rem] border bg-card text-card-foreground shadow-2xl shadow-black/10",
+        'relative min-h-[24rem] overflow-hidden rounded-[2rem] border bg-card text-card-foreground shadow-2xl shadow-black/10',
         className,
       )}
     >
@@ -416,7 +427,11 @@ export function StoryAudioFile({
           label="Audio file"
           title={fileName}
           description={description}
-          badge={sourcePath ? extractFileName(sourcePath)?.split(".").pop() : undefined}
+          badge={
+            sourcePath
+              ? extractFileName(sourcePath)?.split('.').pop()
+              : undefined
+          }
         />
         <div className="grid gap-6 md:grid-cols-[180px_1fr] md:items-end">
           <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5">
@@ -437,7 +452,7 @@ export function StoryAudioFile({
             controls={controls}
             preload={preload}
             src={src}
-            className={cn("w-full", playerClassName)}
+            className={cn('w-full', playerClassName)}
           >
             <StoryMediaTrackElements tracks={tracks} />
           </audio>
@@ -454,18 +469,18 @@ export function StoryVideoFile({
   playerClassName,
   tracks,
   controls = true,
-  preload = "metadata",
+  preload = 'metadata',
   playsInline = true,
   src,
   ...props
 }: StoryVideoFileProps) {
-  const sourcePath = typeof src === "string" ? src : undefined;
-  const fileName = title ?? extractFileName(sourcePath) ?? "Video clip";
+  const sourcePath = typeof src === 'string' ? src : undefined;
+  const fileName = title ?? extractFileName(sourcePath) ?? 'Video clip';
 
   return (
     <figure
       className={cn(
-        "relative min-h-[24rem] overflow-hidden rounded-[2rem] border bg-card text-card-foreground shadow-2xl shadow-black/10",
+        'relative min-h-[24rem] overflow-hidden rounded-[2rem] border bg-card text-card-foreground shadow-2xl shadow-black/10',
         className,
       )}
     >
@@ -475,7 +490,11 @@ export function StoryVideoFile({
           label="Video file"
           title={fileName}
           description={description}
-          badge={sourcePath ? extractFileName(sourcePath)?.split(".").pop() : undefined}
+          badge={
+            sourcePath
+              ? extractFileName(sourcePath)?.split('.').pop()
+              : undefined
+          }
         />
         <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-black/40">
           <video
@@ -485,7 +504,7 @@ export function StoryVideoFile({
             playsInline={playsInline}
             src={src}
             className={cn(
-              "aspect-video w-full bg-black object-cover",
+              'aspect-video w-full bg-black object-cover',
               playerClassName,
             )}
           >
@@ -504,7 +523,7 @@ export function createSubtitleStoryScene<
     return <StorySubtitleFile {...props} />;
   }
 
-  SubtitleStoryScene.displayName = "SubtitleStoryScene";
+  SubtitleStoryScene.displayName = 'SubtitleStoryScene';
 
   return SubtitleStoryScene;
 }
@@ -516,7 +535,7 @@ export function createAudioStoryScene<
     return <StoryAudioFile {...props} />;
   }
 
-  AudioStoryScene.displayName = "AudioStoryScene";
+  AudioStoryScene.displayName = 'AudioStoryScene';
 
   return AudioStoryScene;
 }
@@ -528,7 +547,7 @@ export function createVideoStoryScene<
     return <StoryVideoFile {...props} />;
   }
 
-  VideoStoryScene.displayName = "VideoStoryScene";
+  VideoStoryScene.displayName = 'VideoStoryScene';
 
   return VideoStoryScene;
 }

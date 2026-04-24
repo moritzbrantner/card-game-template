@@ -5,7 +5,9 @@ import { useEffect, useEffectEvent } from 'react';
 
 function isBlogEditorPath(pathname: string) {
   const segments = pathname.split('/').filter(Boolean);
-  return segments.length === 3 && segments[1] === 'profile' && segments[2] === 'blog';
+  return (
+    segments.length === 3 && segments[1] === 'profile' && segments[2] === 'blog'
+  );
 }
 
 async function waitForServiceWorkerController() {
@@ -15,17 +17,26 @@ async function waitForServiceWorkerController() {
 
   await new Promise<void>((resolve) => {
     const timeoutId = window.setTimeout(() => {
-      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      navigator.serviceWorker.removeEventListener(
+        'controllerchange',
+        handleControllerChange,
+      );
       resolve();
     }, 3_000);
 
     function handleControllerChange() {
       window.clearTimeout(timeoutId);
-      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      navigator.serviceWorker.removeEventListener(
+        'controllerchange',
+        handleControllerChange,
+      );
       resolve();
     }
 
-    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+    navigator.serviceWorker.addEventListener(
+      'controllerchange',
+      handleControllerChange,
+    );
   });
 }
 
@@ -40,8 +51,11 @@ export function AppServiceWorker() {
     await navigator.serviceWorker.ready;
     await waitForServiceWorkerController();
 
-    const serviceWorker = navigator.serviceWorker.controller ?? navigator.serviceWorker.ready.then((registration) => registration.active);
-    const controller = serviceWorker instanceof Promise ? await serviceWorker : serviceWorker;
+    const serviceWorker =
+      navigator.serviceWorker.controller ??
+      navigator.serviceWorker.ready.then((registration) => registration.active);
+    const controller =
+      serviceWorker instanceof Promise ? await serviceWorker : serviceWorker;
 
     controller?.postMessage({
       type: 'CACHE_BLOG_EDITOR_ROUTE',
@@ -50,7 +64,10 @@ export function AppServiceWorker() {
   });
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production' || !('serviceWorker' in navigator)) {
+    if (
+      process.env.NODE_ENV !== 'production' ||
+      !('serviceWorker' in navigator)
+    ) {
       return;
     }
 
@@ -78,7 +95,10 @@ export function AppServiceWorker() {
   }, []);
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production' || !('serviceWorker' in navigator)) {
+    if (
+      process.env.NODE_ENV !== 'production' ||
+      !('serviceWorker' in navigator)
+    ) {
       return;
     }
 

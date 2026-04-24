@@ -188,10 +188,10 @@ test('fold completes the hand and awards the pot', () => {
     payload: {},
   });
 
-  assert.equal(afterFold.state.phase, 'complete');
-  assert.deepEqual(afterFold.state.winnerIds, ['p1']);
-  assert.equal(afterFold.state.stacks.p1, 100);
-  assert.deepEqual(engine.finalizeMatch(afterFold)?.winnerIds, ['p1']);
+  assert.equal(afterFold.nextState.state.phase, 'complete');
+  assert.deepEqual(afterFold.nextState.state.winnerIds, ['p1']);
+  assert.equal(afterFold.nextState.state.stacks.p1, 100);
+  assert.deepEqual(engine.finalize(afterFold.nextState)?.winnerIds, ['p1']);
 });
 
 test('showdown evaluates the best seven-card hand', () => {

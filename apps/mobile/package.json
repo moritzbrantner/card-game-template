@@ -1,23 +1,32 @@
 {
   "name": "mobile",
-  "main": "expo-router/entry",
   "version": "1.0.0",
-  "packageManager": "bun@1.3.12",
+  "private": true,
+  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "reset-project": "../../scripts/run-with-node.sh ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios --port 4002",
     "web": "expo start --web --port 4002",
-    "lint": "../../scripts/run-with-node.sh ../../node_modules/eslint-plugin-react/node_modules/eslint/bin/eslint.js .",
+    "lint": "oxfmt --check . && bun run lint:code",
+    "lint:code": "eslint . --max-warnings 0",
     "dev": "expo start --port 4002",
     "build": "expo export --platform web",
-    "test": "../../scripts/run-with-node.sh -e \"console.log('No automated tests configured for this app yet.')\"",
-    "test:unit": "../../scripts/run-with-node.sh --test ./tests/unit.test.js",
+    "check-types": "tsc --noEmit",
+    "test": "bun run test:unit && bun run test:integration && bun run test:e2e",
+    "test:unit:contracts": "../../scripts/run-with-node.sh --test ./tests/unit.test.js",
+    "test:unit:components": "vitest run tests/components.test.tsx",
+    "test:unit": "bun run test:unit:contracts && bun run test:unit:components",
     "test:integration": "../../scripts/run-with-node.sh --test ./tests/integration.test.js",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:serve": "CI=1 expo start --web --port 4002"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
+    "@react-navigation/bottom-tabs": "^7.15.5",
+    "@react-navigation/elements": "^2.9.10",
+    "@react-navigation/native": "^7.1.33",
     "@repo/auth-contract": "workspace:*",
     "@repo/game-catalog": "workspace:*",
     "@repo/game-contracts": "workspace:*",
@@ -27,10 +36,6 @@
     "@repo/game-tcg": "workspace:*",
     "@repo/game-uno": "workspace:*",
     "@repo/multiplayer-contract": "workspace:*",
-    "@expo/vector-icons": "^15.1.1",
-    "@react-navigation/bottom-tabs": "^7.15.5",
-    "@react-navigation/elements": "^2.9.10",
-    "@react-navigation/native": "^7.1.33",
     "expo": "~55.0.15",
     "expo-constants": "~55.0.14",
     "expo-font": "~55.0.6",
@@ -56,14 +61,15 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^25.6.0",
     "@types/react": "~19.1.17",
-    "eslint": "^10.2.0",
-    "eslint-config-expo": "~55.0.0",
     "playwright": "^1.58.2",
-    "typescript": "~6.0.3"
+    "react-test-renderer": "19.1.0",
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.2"
   },
-  "private": true,
+  "packageManager": "bun@1.3.12",
   "trustedDependencies": [
     "unrs-resolver"
   ]

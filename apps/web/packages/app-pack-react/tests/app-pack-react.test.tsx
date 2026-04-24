@@ -9,6 +9,8 @@ describe('@moritzbrantner/app-pack-react', () => {
 
     expect(isValidElement(page)).toBe(true);
     expect(page.props.children[1].props.children).toBe('Redirecting...');
-    expect(page.props.children[2].props.children.props.href).toBe('../examples/forms/');
+    expect(page.props.children[2].props.children.props.href).toBe(
+      '../examples/forms/',
+    );
   });
 });

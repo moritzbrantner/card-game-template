@@ -3,17 +3,25 @@ import { notFound } from 'next/navigation';
 
 import { LocalizedLink } from '@/i18n/server-link';
 import { routing } from '@/i18n/routing';
-import { getAdjacentEntries, getContentEntry, listBlogPosts, renderContentEntry } from '@/src/content/index';
-import { notFoundUnlessFeatureEnabled, resolveLocale } from '@/src/server/page-guards';
+import {
+  getAdjacentEntries,
+  getContentEntry,
+  listBlogPosts,
+  renderContentEntry,
+} from '@/src/content/index';
+import {
+  notFoundUnlessFeatureEnabled,
+  resolveLocale,
+} from '@/src/server/page-guards';
 
 export async function generateStaticParams() {
   const entries = await Promise.all(
-    routing.locales.map(async (locale) => (
-      await listBlogPosts(locale)
-    ).map((entry) => ({
-      locale,
-      slug: entry.slug,
-    }))),
+    routing.locales.map(async (locale) =>
+      (await listBlogPosts(locale)).map((entry) => ({
+        locale,
+        slug: entry.slug,
+      })),
+    ),
   );
 
   return entries.flat();
@@ -66,12 +74,20 @@ export default async function BlogDetailPage({
   return (
     <article className="space-y-8">
       <header className="space-y-3">
-        <LocalizedLink href="/blog" locale={locale} className="text-sm font-medium text-zinc-500">
+        <LocalizedLink
+          href="/blog"
+          locale={locale}
+          className="text-sm font-medium text-zinc-500"
+        >
           Back to blog
         </LocalizedLink>
-        <p className="text-sm text-zinc-500">{new Date(entry.publishedAt).toLocaleDateString(locale)}</p>
+        <p className="text-sm text-zinc-500">
+          {new Date(entry.publishedAt).toLocaleDateString(locale)}
+        </p>
         <h1 className="text-4xl font-semibold tracking-tight">{entry.title}</h1>
-        <p className="max-w-3xl text-zinc-600 dark:text-zinc-300">{entry.description}</p>
+        <p className="max-w-3xl text-zinc-600 dark:text-zinc-300">
+          {entry.description}
+        </p>
       </header>
 
       <div className="prose prose-zinc max-w-none dark:prose-invert">
@@ -80,12 +96,31 @@ export default async function BlogDetailPage({
 
       <footer className="grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl border p-4 dark:border-zinc-800">
-          <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Previous</p>
-          {adjacent.previous ? <LocalizedLink href={`/blog/${adjacent.previous.slug}`} locale={locale}>{adjacent.previous.title}</LocalizedLink> : <p className="text-sm text-zinc-500">No older post.</p>}
+          <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+            Previous
+          </p>
+          {adjacent.previous ? (
+            <LocalizedLink
+              href={`/blog/${adjacent.previous.slug}`}
+              locale={locale}
+            >
+              {adjacent.previous.title}
+            </LocalizedLink>
+          ) : (
+            <p className="text-sm text-zinc-500">No older post.</p>
+          )}
         </div>
         <div className="rounded-2xl border p-4 dark:border-zinc-800">
-          <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Next</p>
-          {adjacent.next ? <LocalizedLink href={`/blog/${adjacent.next.slug}`} locale={locale}>{adjacent.next.title}</LocalizedLink> : <p className="text-sm text-zinc-500">No newer post.</p>}
+          <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+            Next
+          </p>
+          {adjacent.next ? (
+            <LocalizedLink href={`/blog/${adjacent.next.slug}`} locale={locale}>
+              {adjacent.next.title}
+            </LocalizedLink>
+          ) : (
+            <p className="text-sm text-zinc-500">No newer post.</p>
+          )}
         </div>
       </footer>
     </article>

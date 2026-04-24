@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from 'motion/react';
 
-import { cn } from "@moritzbrantner/ui";
+import { cn } from '@moritzbrantner/ui';
 
-import type { StoryNodeData, StoryRenderProps } from "./story-types";
+import type { StoryNodeData, StoryRenderProps } from './story-types';
 
 const gradients = [
-  "from-cyan-500/30 via-sky-500/15 to-background",
-  "from-emerald-500/25 via-teal-500/15 to-background",
-  "from-amber-500/25 via-orange-500/15 to-background",
-  "from-fuchsia-500/25 via-rose-500/15 to-background",
+  'from-cyan-500/30 via-sky-500/15 to-background',
+  'from-emerald-500/25 via-teal-500/15 to-background',
+  'from-amber-500/25 via-orange-500/15 to-background',
+  'from-fuchsia-500/25 via-rose-500/15 to-background',
 ];
 
-export function StoryDefaultStage<
-  TData extends StoryNodeData = StoryNodeData,
->(props: StoryRenderProps<TData>) {
+export function StoryDefaultStage<TData extends StoryNodeData = StoryNodeData>(
+  props: StoryRenderProps<TData>,
+) {
   const { node, currentIndex, progress } = props;
   const reducedMotion = useReducedMotion();
   const CustomScene = node.scene;
@@ -29,17 +29,17 @@ export function StoryDefaultStage<
     <motion.div
       key={node.id}
       className={cn(
-        "relative flex min-h-[24rem] overflow-hidden rounded-[2rem] border bg-card text-card-foreground shadow-2xl shadow-black/10",
+        'relative flex min-h-[24rem] overflow-hidden rounded-[2rem] border bg-card text-card-foreground shadow-2xl shadow-black/10',
         node.stageClassName,
       )}
       initial={reducedMotion ? undefined : { opacity: 0, y: 20, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={reducedMotion ? undefined : { opacity: 0, y: -16, scale: 0.98 }}
-      transition={{ duration: reducedMotion ? 0 : 0.45, ease: "easeOut" }}
+      transition={{ duration: reducedMotion ? 0 : 0.45, ease: 'easeOut' }}
     >
       <div
         className={cn(
-          "absolute inset-0 bg-gradient-to-br opacity-90",
+          'absolute inset-0 bg-gradient-to-br opacity-90',
           gradient,
         )}
       />
@@ -66,7 +66,10 @@ export function StoryDefaultStage<
             <motion.div
               className="h-2 rounded-full bg-foreground"
               animate={{ width: `${Math.max(progress * 100, 8)}%` }}
-              transition={{ duration: reducedMotion ? 0 : 0.35, ease: "easeOut" }}
+              transition={{
+                duration: reducedMotion ? 0 : 0.35,
+                ease: 'easeOut',
+              }}
             />
           </div>
           <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">

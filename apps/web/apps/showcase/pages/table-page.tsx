@@ -1,6 +1,9 @@
 import type { AppLocale } from '@moritzbrantner/app-pack';
 
-import { RestDataTable, type RestDataColumn } from '@/apps/showcase/components/rest-data-table';
+import {
+  RestDataTable,
+  type RestDataColumn,
+} from '@/apps/showcase/components/rest-data-table';
 
 type EmployeeRow = {
   id: number;
@@ -34,9 +37,14 @@ export default function TablePage({ locale }: { locale: AppLocale }) {
   void locale;
   return (
     <section className="flex min-h-[calc(100vh-8.5rem)] w-full flex-col">
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Employee table</h1>
+      <h1 className="mb-4 text-2xl font-semibold tracking-tight">
+        Employee table
+      </h1>
       <div className="flex-1 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-        <RestDataTable<EmployeeRow> endpoint="/api/examples/employees" columns={employeeColumns} />
+        <RestDataTable<EmployeeRow>
+          endpoint="/api/examples/employees"
+          columns={employeeColumns}
+        />
       </div>
     </section>
   );

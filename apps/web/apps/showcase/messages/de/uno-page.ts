@@ -3,7 +3,8 @@ export const unoPage = {
   description:
     'Erstelle autoritative UNO-Partien gegen servergesteuerte Bots, setze sie nach einem Reload fort und oeffne spaeter die Replay-Ansicht.',
   createTitle: 'Partie erstellen',
-  createHint: 'Waehle ein Preset, trage bei Bedarf einen Namen ein und starte eine autoritative UNO-Partie.',
+  createHint:
+    'Waehle ein Preset, trage bei Bedarf einen Namen ein und starte eine autoritative UNO-Partie.',
   createAction: 'Partie erstellen',
   nameLabel: 'Spielername',
   openLobbiesTitle: 'Letzte Partien',
@@ -13,10 +14,13 @@ export const unoPage = {
   joinAction: 'Lobby beitreten',
   leaveLobby: 'Lobby verlassen',
   startGame: 'Spiel starten',
-  readyToStart: 'Alle Plaetze sind besetzt. Der Host kann das Spiel jetzt starten.',
-  waitingForPlayers: 'Fuer den aktuellen Zustand gibt es keine zulaessige Aktion.',
+  readyToStart:
+    'Alle Plaetze sind besetzt. Der Host kann das Spiel jetzt starten.',
+  waitingForPlayers:
+    'Fuer den aktuellen Zustand gibt es keine zulaessige Aktion.',
   activeMatchTitle: 'Aktives Match',
-  activeMatchDescription: 'Der Server ist autoritativ. Reiche hier Zuege ein und setze die Partie nach einem Reload fort.',
+  activeMatchDescription:
+    'Der Server ist autoritativ. Reiche hier Zuege ein und setze die Partie nach einem Reload fort.',
   exitGame: 'Partie aufgeben',
   finishGame: 'Demo-Match abschliessen',
   pastGamesCta: 'Vergangene Spiele',

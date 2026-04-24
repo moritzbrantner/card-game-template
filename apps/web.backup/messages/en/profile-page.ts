@@ -13,9 +13,11 @@ export const profilePage = {
     unblock: 'Unblock',
     blocking: 'Blocking…',
     unblocking: 'Unblocking…',
-    blockedDescription: 'You blocked this user. They can no longer follow you or appear in your directory.',
+    blockedDescription:
+      'You blocked this user. They can no longer follow you or appear in your directory.',
     editProfile: 'Edit profile',
-    error: 'Unable to update this user relationship right now. Please try again.',
+    error:
+      'Unable to update this user relationship right now. Please try again.',
   },
   followersPage: {
     title: 'Followers',
@@ -24,7 +26,8 @@ export const profilePage = {
     summary: 'Showing {visibleCount} of {totalCount} followers.',
     hiddenSummary: '{count} followers are hidden by visibility permissions.',
     empty: 'No one is following this profile yet.',
-    hiddenEmpty: 'Followers exist, but their visibility roles do not allow them to appear here.',
+    hiddenEmpty:
+      'Followers exist, but their visibility roles do not allow them to appear here.',
     roles: {
       PUBLIC: 'Public',
       MEMBERS: 'Members',
@@ -57,7 +60,8 @@ export const profilePage = {
     empty: 'No image',
     alt: 'Profile picture',
     cropTitle: 'Crop your picture',
-    cropDescription: 'Drag to reposition and use zoom to fit your avatar before upload.',
+    cropDescription:
+      'Drag to reposition and use zoom to fit your avatar before upload.',
     cropZoom: 'Zoom',
     cropCancel: 'Cancel crop',
     cropApply: 'Use crop',

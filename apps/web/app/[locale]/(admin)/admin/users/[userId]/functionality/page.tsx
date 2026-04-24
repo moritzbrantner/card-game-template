@@ -5,7 +5,12 @@ import { isAdmin } from '@/lib/authorization';
 import { AdminPageShell } from '@/components/admin/admin-page-shell';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { LocalizedLink } from '@/i18n/server-link';
 import { getAuthSession } from '@/src/auth.server';
 import { getAuthorizedAdminPageDefinitions } from '@/src/admin/pages';
@@ -13,14 +18,20 @@ import type { FoundationFeatureKey } from '@/src/app-config/feature-keys';
 import { updateAdminUserFeatureAccessUseCase } from '@/src/domain/admin-users/use-cases';
 import { getAdminUserDetailUseCase } from '@/src/domain/notifications/use-cases';
 import { listUserFoundationFeatureStates } from '@/src/foundation/features/access';
-import { notFoundUnlessFeatureEnabled, requirePermission, resolveLocale } from '@/src/server/page-guards';
+import {
+  notFoundUnlessFeatureEnabled,
+  requirePermission,
+  resolveLocale,
+} from '@/src/server/page-guards';
 
 async function saveUserFeatureState(formData: FormData) {
   'use server';
 
   const locale = String(formData.get('locale') ?? 'en');
   const targetUserId = String(formData.get('targetUserId') ?? '');
-  const featureKey = String(formData.get('featureKey') ?? '') as FoundationFeatureKey;
+  const featureKey = String(
+    formData.get('featureKey') ?? '',
+  ) as FoundationFeatureKey;
   const enabled = formData.get('enabled') === 'on';
   const session = await getAuthSession();
 
@@ -65,8 +76,12 @@ export default async function AdminUserFunctionalityPage({
     id: user.id,
     role: user.role,
   });
-  const disabledCount = featureStates.filter((state) => !state.userEnabled).length;
-  const effectiveCount = featureStates.filter((state) => state.effectiveEnabled).length;
+  const disabledCount = featureStates.filter(
+    (state) => !state.userEnabled,
+  ).length;
+  const effectiveCount = featureStates.filter(
+    (state) => state.effectiveEnabled,
+  ).length;
 
   return (
     <AdminPageShell
@@ -77,7 +92,11 @@ export default async function AdminUserFunctionalityPage({
       <LocalizedLink
         href={`/admin/users/${user.id}`}
         locale={locale}
-        className={buttonVariants({ variant: 'ghost', size: 'sm', className: 'w-fit' })}
+        className={buttonVariants({
+          variant: 'ghost',
+          size: 'sm',
+          className: 'w-fit',
+        })}
       >
         Back to user inspection
       </LocalizedLink>
@@ -85,15 +104,19 @@ export default async function AdminUserFunctionalityPage({
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard label="Role" value={user.role} />
         <MetricCard label="Effective features" value={String(effectiveCount)} />
-        <MetricCard label="User-specific disables" value={String(disabledCount)} />
+        <MetricCard
+          label="User-specific disables"
+          value={String(disabledCount)}
+        />
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Override scope</CardTitle>
           <CardDescription>
-            These controls only affect functionality that supports per-user overrides for signed-in members and managers.
-            Site-wide disables still take precedence over any user-level setting.
+            These controls only affect functionality that supports per-user
+            overrides for signed-in members and managers. Site-wide disables
+            still take precedence over any user-level setting.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -111,27 +134,44 @@ export default async function AdminUserFunctionalityPage({
 
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-lg font-semibold tracking-tight">{state.label}</p>
+                <p className="text-lg font-semibold tracking-tight">
+                  {state.label}
+                </p>
                 <Badge variant="outline">{state.category}</Badge>
-                <Badge variant={state.effectiveEnabled ? 'secondary' : 'default'}>
+                <Badge
+                  variant={state.effectiveEnabled ? 'secondary' : 'default'}
+                >
                   {state.effectiveEnabled ? 'Available now' : 'Unavailable now'}
                 </Badge>
-                {!state.siteEnabled ? <Badge variant="outline">site-wide disable active</Badge> : null}
-                {!state.manifestEnabled ? <Badge variant="outline">missing from current build</Badge> : null}
+                {!state.siteEnabled ? (
+                  <Badge variant="outline">site-wide disable active</Badge>
+                ) : null}
+                {!state.manifestEnabled ? (
+                  <Badge variant="outline">missing from current build</Badge>
+                ) : null}
               </div>
 
-              <p className="text-sm text-zinc-600 dark:text-zinc-300">{state.description}</p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                {state.description}
+              </p>
 
               <div className="grid gap-2 text-sm text-zinc-600 dark:text-zinc-300 md:grid-cols-3">
                 <p>
-                  <span className="font-medium text-zinc-900 dark:text-zinc-100">Feature key:</span> {state.featureKey}
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                    Feature key:
+                  </span>{' '}
+                  {state.featureKey}
                 </p>
                 <p>
-                  <span className="font-medium text-zinc-900 dark:text-zinc-100">Site-wide status:</span>{' '}
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                    Site-wide status:
+                  </span>{' '}
                   {state.siteEnabled ? 'Enabled' : 'Disabled'}
                 </p>
                 <p>
-                  <span className="font-medium text-zinc-900 dark:text-zinc-100">User status:</span>{' '}
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                    User status:
+                  </span>{' '}
                   {state.userEnabled ? 'Enabled' : 'Disabled'}
                 </p>
               </div>

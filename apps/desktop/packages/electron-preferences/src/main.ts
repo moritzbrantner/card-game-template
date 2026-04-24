@@ -8,14 +8,14 @@ function cloneValue<TValue>(value: TValue): TValue {
   return structuredClone(value);
 }
 
-export interface PreferencesServiceOptions<TPreferences extends Record<string, unknown>> {
+export interface PreferencesServiceOptions<TPreferences extends object> {
   defaultValue: TPreferences;
   getBroadcastTargets: () => WebContents[];
   store: JsonStore<TPreferences>;
   validate: (value: unknown) => value is TPreferences;
 }
 
-export function createPreferencesService<TPreferences extends Record<string, unknown>>(
+export function createPreferencesService<TPreferences extends object>(
   options: PreferencesServiceOptions<TPreferences>,
 ) {
   async function broadcast() {
@@ -43,7 +43,10 @@ export function createPreferencesService<TPreferences extends Record<string, unk
     return nextValue;
   }
 
-  async function set<KKey extends keyof TPreferences>(key: KKey, value: TPreferences[KKey]) {
+  async function set<KKey extends keyof TPreferences>(
+    key: KKey,
+    value: TPreferences[KKey],
+  ) {
     const current = await options.store.load();
     const nextValue = {
       ...current,
@@ -60,10 +63,20 @@ export function createPreferencesService<TPreferences extends Record<string, unk
 
   function installIpc(ipcMain: IpcMain) {
     ipcMain.handle(preferencesChannels.getAll, async () => getAll());
-    ipcMain.handle(preferencesChannels.getOne, async (_event, key: keyof TPreferences) => get(key));
-    ipcMain.handle(preferencesChannels.setOne, async (_event, key: keyof TPreferences, value: TPreferences[keyof TPreferences]) => {
-      await set(key, value);
-    });
+    ipcMain.handle(
+      preferencesChannels.getOne,
+      async (_event, key: keyof TPreferences) => get(key),
+    );
+    ipcMain.handle(
+      preferencesChannels.setOne,
+      async (
+        _event,
+        key: keyof TPreferences,
+        value: TPreferences[keyof TPreferences],
+      ) => {
+        await set(key, value);
+      },
+    );
     ipcMain.handle(preferencesChannels.reset, async () => reset());
 
     return () => {

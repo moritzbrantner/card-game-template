@@ -6,7 +6,11 @@ import {
   type AdminReportFormat,
 } from '@/src/domain/admin-reports/use-cases';
 import { isFeatureEnabled } from '@/src/foundation/features/runtime';
-import { createProblemResponse, invalidQueryProblem, notFoundProblem } from '@/src/http/errors';
+import {
+  createProblemResponse,
+  invalidQueryProblem,
+  notFoundProblem,
+} from '@/src/http/errors';
 import { getAdminAnalyticsSettings } from '@/src/site-config/service';
 import { secureRoute } from '@/src/api/route-security';
 
@@ -51,15 +55,33 @@ export async function GET(
   });
 
   if (!isAdminReportWindow(window)) {
-    return createProblemResponse(invalidQueryProblem('Unsupported report window.', { window: ['Expected one of 24h, 7d, 30d.'] }));
+    return createProblemResponse(
+      invalidQueryProblem('Unsupported report window.', {
+        window: ['Expected one of 24h, 7d, 30d.'],
+      }),
+    );
   }
 
-  const exported = await exportAdminReportUseCase(reportId, window, format, undefined, filters).catch(() => ({
+  const exported = await exportAdminReportUseCase(
+    reportId,
+    window,
+    format,
+    undefined,
+    filters,
+  ).catch(() => ({
     filename: `${reportId}-${window}.${format}`,
-    contentType: format === 'json' ? 'application/json; charset=utf-8' : 'text/csv; charset=utf-8',
-    body: format === 'json'
-      ? JSON.stringify({ reportId, error: 'Report data is temporarily unavailable.' }, null, 2)
-      : 'Message\nReport data is temporarily unavailable.',
+    contentType:
+      format === 'json'
+        ? 'application/json; charset=utf-8'
+        : 'text/csv; charset=utf-8',
+    body:
+      format === 'json'
+        ? JSON.stringify(
+            { reportId, error: 'Report data is temporarily unavailable.' },
+            null,
+            2,
+          )
+        : 'Message\nReport data is temporarily unavailable.',
   }));
 
   return guard.respond(exported.body, {

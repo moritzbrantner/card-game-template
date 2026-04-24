@@ -5,5 +5,9 @@
   "license": "MIT",
   "publishConfig": {
     "access": "public"
+  },
+  "scripts": {
+    "lint": "oxfmt --check . && bun run lint:code",
+    "lint:code": "eslint . --max-warnings 0 --no-error-on-unmatched-pattern"
   }
 }

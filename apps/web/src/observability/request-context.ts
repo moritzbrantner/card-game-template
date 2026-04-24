@@ -14,7 +14,10 @@ export function createRequestContext(request: Request): RequestContext {
   };
 }
 
-export async function withRequestContext<T>(context: RequestContext, callback: () => Promise<T>): Promise<T> {
+export async function withRequestContext<T>(
+  context: RequestContext,
+  callback: () => Promise<T>,
+): Promise<T> {
   return requestContextStorage.run(context, callback);
 }
 

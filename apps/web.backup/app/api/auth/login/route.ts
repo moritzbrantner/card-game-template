@@ -24,7 +24,14 @@ export const POST = createApiRoute({
     );
 
     if (!user?.email) {
-      throw new ProblemError(problem('/problems/invalid-credentials', 'Invalid credentials', 401, 'Email or password is incorrect.'));
+      throw new ProblemError(
+        problem(
+          '/problems/invalid-credentials',
+          'Invalid credentials',
+          401,
+          'Email or password is incorrect.',
+        ),
+      );
     }
 
     await signInSession({

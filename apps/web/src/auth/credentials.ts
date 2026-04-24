@@ -82,7 +82,8 @@ export async function authorizeCredentials(
     return null;
   }
 
-  const resolvedDependencies = dependencies ?? (await resolveDefaultDependencies());
+  const resolvedDependencies =
+    dependencies ?? (await resolveDefaultDependencies());
   const user = await resolvedDependencies.findUserByEmail(normalizedEmail);
 
   if (!user?.passwordHash) {
@@ -96,7 +97,10 @@ export async function authorizeCredentials(
     return null;
   }
 
-  const isValidPassword = await resolvedDependencies.verifyPassword(password, user.passwordHash);
+  const isValidPassword = await resolvedDependencies.verifyPassword(
+    password,
+    user.passwordHash,
+  );
   if (!isValidPassword) {
     registerCredentialAttemptFailure(throttleKey);
     await resolvedDependencies.onAuthenticationFailure(user.id);

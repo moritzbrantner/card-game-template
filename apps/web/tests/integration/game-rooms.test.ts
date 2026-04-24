@@ -3,10 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 
 import { getDb } from '@/src/db/client';
-import {
-  gameRoomSeats,
-  gameRooms,
-} from '@/src/db/schema';
+import { gameRoomSeats, gameRooms } from '@/src/db/schema';
 
 async function clearRoomTables() {
   const db = getDb();
@@ -47,9 +44,8 @@ afterEach(async () => {
 describe('game rooms', () => {
   it('lets two guest humans join a private room, ready up, and be started by the host', async () => {
     mockGuestIdentity('guest-host', 'Host Player');
-    const { createPrivateGameRoomUseCase } = await import(
-      '@/src/domain/game-rooms/use-cases'
-    );
+    const { createPrivateGameRoomUseCase } =
+      await import('@/src/domain/game-rooms/use-cases');
 
     const created = await createPrivateGameRoomUseCase(null, {
       gameId: 'uno-style',
@@ -81,9 +77,8 @@ describe('game rooms', () => {
 
     vi.resetModules();
     mockGuestIdentity('guest-joiner', 'Joiner Player');
-    const { joinPrivateGameRoomUseCase } = await import(
-      '@/src/domain/game-rooms/use-cases'
-    );
+    const { joinPrivateGameRoomUseCase } =
+      await import('@/src/domain/game-rooms/use-cases');
 
     const joined = await joinPrivateGameRoomUseCase(null, created.data.roomId, {
       displayName: 'Bob',
@@ -102,9 +97,8 @@ describe('game rooms', () => {
 
     vi.resetModules();
     mockGuestIdentity('guest-host', 'Host Player');
-    const { setGameRoomReadyUseCase: setHostReady } = await import(
-      '@/src/domain/game-rooms/use-cases'
-    );
+    const { setGameRoomReadyUseCase: setHostReady } =
+      await import('@/src/domain/game-rooms/use-cases');
     const hostReady = await setHostReady(null, created.data.roomId, {
       ready: true,
     });
@@ -113,9 +107,8 @@ describe('game rooms', () => {
 
     vi.resetModules();
     mockGuestIdentity('guest-joiner', 'Joiner Player');
-    const { setGameRoomReadyUseCase: setJoinerReady } = await import(
-      '@/src/domain/game-rooms/use-cases'
-    );
+    const { setGameRoomReadyUseCase: setJoinerReady } =
+      await import('@/src/domain/game-rooms/use-cases');
     const joinerReady = await setJoinerReady(null, created.data.roomId, {
       ready: true,
     });
@@ -128,9 +121,8 @@ describe('game rooms', () => {
 
     vi.resetModules();
     mockGuestIdentity('guest-host', 'Host Player');
-    const { getGameRoomRealtimeUseCase } = await import(
-      '@/src/domain/game-rooms/use-cases'
-    );
+    const { getGameRoomRealtimeUseCase } =
+      await import('@/src/domain/game-rooms/use-cases');
     const roomUpdates = await getGameRoomRealtimeUseCase(
       null,
       created.data.roomId,
@@ -181,9 +173,8 @@ describe('game rooms', () => {
 
     vi.resetModules();
     mockGuestIdentity('guest-host', 'Host Player');
-    const { startGameRoomUseCase: startAsHost } = await import(
-      '@/src/domain/game-rooms/use-cases'
-    );
+    const { startGameRoomUseCase: startAsHost } =
+      await import('@/src/domain/game-rooms/use-cases');
     const started = await startAsHost(null, created.data.roomId);
 
     expect(started).toEqual({
@@ -214,9 +205,8 @@ describe('game rooms', () => {
 
   it('rejects non-host start attempts and start attempts before every player is ready', async () => {
     mockGuestIdentity('guest-host', 'Host Player');
-    const { createPrivateGameRoomUseCase } = await import(
-      '@/src/domain/game-rooms/use-cases'
-    );
+    const { createPrivateGameRoomUseCase } =
+      await import('@/src/domain/game-rooms/use-cases');
     const created = await createPrivateGameRoomUseCase(null, {
       gameId: 'texas-holdem',
       displayName: 'Host',
@@ -230,10 +220,8 @@ describe('game rooms', () => {
 
     vi.resetModules();
     mockGuestIdentity('guest-joiner', 'Joiner Player');
-    const {
-      joinPrivateGameRoomUseCase,
-      startGameRoomUseCase,
-    } = await import('@/src/domain/game-rooms/use-cases');
+    const { joinPrivateGameRoomUseCase, startGameRoomUseCase } =
+      await import('@/src/domain/game-rooms/use-cases');
 
     const joined = await joinPrivateGameRoomUseCase(null, created.data.roomId, {
       displayName: 'Joiner',
@@ -250,9 +238,8 @@ describe('game rooms', () => {
 
     vi.resetModules();
     mockGuestIdentity('guest-host', 'Host Player');
-    const { startGameRoomUseCase: startAsHost } = await import(
-      '@/src/domain/game-rooms/use-cases'
-    );
+    const { startGameRoomUseCase: startAsHost } =
+      await import('@/src/domain/game-rooms/use-cases');
     const notReadyStart = await startAsHost(null, created.data.roomId);
 
     expect(notReadyStart).toEqual({

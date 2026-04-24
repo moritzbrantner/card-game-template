@@ -1,5 +1,10 @@
-import type { GameDefinition, GameId, MatchExecutionMode } from '@repo/game-contracts';
+import type {
+  GameDefinition,
+  GameId,
+  MatchExecutionMode,
+} from '@repo/game-contracts';
 import { pokerCatalogEntry } from '@repo/game-poker';
+import { ticTacToeCatalogEntry } from '@repo/game-tic-tac-toe';
 import { tcgCatalogEntry } from '@repo/game-tcg';
 import { unoCatalogEntry } from '@repo/game-uno';
 
@@ -19,7 +24,9 @@ export function createGameCatalog<TMetadata = Record<string, unknown>>(
 
   function register(entry: GameCatalogEntry<TMetadata>) {
     if (entries.has(entry.definition.gameId)) {
-      throw new Error(`Duplicate game registration: ${entry.definition.gameId}`);
+      throw new Error(
+        `Duplicate game registration: ${entry.definition.gameId}`,
+      );
     }
 
     entries.set(entry.definition.gameId, entry);
@@ -39,7 +46,9 @@ export function createGameCatalog<TMetadata = Record<string, unknown>>(
     listPlayable(playerCount: number, executionMode: MatchExecutionMode) {
       return this.list().filter((entry) => {
         const supportsExecutionMode =
-          executionMode === 'local' ? entry.definition.supportsLocal : entry.definition.supportsOnline;
+          executionMode === 'local'
+            ? entry.definition.supportsLocal
+            : entry.definition.supportsOnline;
 
         return (
           supportsExecutionMode &&
@@ -52,12 +61,11 @@ export function createGameCatalog<TMetadata = Record<string, unknown>>(
 }
 
 export type DefaultGameCatalogMetadata =
+  | typeof ticTacToeCatalogEntry.metadata
   | typeof pokerCatalogEntry.metadata
   | typeof tcgCatalogEntry.metadata
   | typeof unoCatalogEntry.metadata;
 
-export const defaultGameCatalog = createGameCatalog<DefaultGameCatalogMetadata>([
-  pokerCatalogEntry,
-  tcgCatalogEntry,
-  unoCatalogEntry,
-]);
+export const defaultGameCatalog = createGameCatalog<DefaultGameCatalogMetadata>(
+  [pokerCatalogEntry, tcgCatalogEntry, ticTacToeCatalogEntry, unoCatalogEntry],
+);

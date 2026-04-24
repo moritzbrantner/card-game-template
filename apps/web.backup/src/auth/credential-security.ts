@@ -14,7 +14,10 @@ export function buildCredentialThrottleKey(email: string, ip: string): string {
   return `${email.toLowerCase()}::${ip}`;
 }
 
-export function isCredentialAttemptThrottled(key: string, now = Date.now()): boolean {
+export function isCredentialAttemptThrottled(
+  key: string,
+  now = Date.now(),
+): boolean {
   const record = attemptStore.get(key);
   if (!record) {
     return false;
@@ -37,7 +40,10 @@ export function isCredentialAttemptThrottled(key: string, now = Date.now()): boo
   return false;
 }
 
-export function registerCredentialAttemptFailure(key: string, now = Date.now()): void {
+export function registerCredentialAttemptFailure(
+  key: string,
+  now = Date.now(),
+): void {
   const existing = attemptStore.get(key);
 
   if (!existing || existing.firstAttemptAt + THROTTLE_WINDOW_MS <= now) {
@@ -75,7 +81,9 @@ export function getClientIpFromRequest(request: unknown): string {
     return 'unknown';
   }
 
-  const candidate = request as { headers?: Headers | Record<string, string | string[] | undefined> };
+  const candidate = request as {
+    headers?: Headers | Record<string, string | string[] | undefined>;
+  };
   const headers = candidate.headers;
   if (!headers) {
     return 'unknown';

@@ -17,10 +17,15 @@ type VerifyEmailPageContentProps = {
   };
 };
 
-export function VerifyEmailPageContent({ locale, labels }: VerifyEmailPageContentProps) {
+export function VerifyEmailPageContent({
+  locale,
+  labels,
+}: VerifyEmailPageContentProps) {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') ?? '';
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>(token ? 'loading' : 'error');
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
+    token ? 'loading' : 'error',
+  );
 
   useEffect(() => {
     if (!token) {
@@ -31,7 +36,9 @@ export function VerifyEmailPageContent({ locale, labels }: VerifyEmailPageConten
 
     async function verify() {
       try {
-        const response = await fetch(`/api/account/verify-email?token=${encodeURIComponent(token)}`);
+        const response = await fetch(
+          `/api/account/verify-email?token=${encodeURIComponent(token)}`,
+        );
         if (cancelled) {
           return;
         }
@@ -53,13 +60,22 @@ export function VerifyEmailPageContent({ locale, labels }: VerifyEmailPageConten
 
   return (
     <div className="space-y-4">
-      {status === 'loading' ? <p className="text-sm text-zinc-600 dark:text-zinc-400">{labels.verifying}</p> : null}
+      {status === 'loading' ? (
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          {labels.verifying}
+        </p>
+      ) : null}
       {status === 'success' ? (
-        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
+        <p
+          role="status"
+          className="text-sm text-emerald-700 dark:text-emerald-400"
+        >
           {labels.success}
         </p>
       ) : null}
-      {status === 'error' ? <p className="text-sm text-red-600 dark:text-red-400">{labels.error}</p> : null}
+      {status === 'error' ? (
+        <p className="text-sm text-red-600 dark:text-red-400">{labels.error}</p>
+      ) : null}
 
       <div className="flex flex-wrap gap-3">
         <Link

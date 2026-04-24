@@ -8,13 +8,15 @@ export const communicationPage = {
   newsletter: {
     eyebrow: 'E-Mail-Kanal',
     title: 'Newsletter',
-    description: 'Erfasse eine E-Mail-Adresse und sende bei lokaler Entwicklung und e2e-Tests eine echte Nachricht ueber Mailpit.',
+    description:
+      'Erfasse eine E-Mail-Adresse und sende bei lokaler Entwicklung und e2e-Tests eine echte Nachricht ueber Mailpit.',
     email: 'E-Mail-Adresse',
     submit: 'Abonnieren',
     submitting: 'Abonnement wird erstellt...',
     requiredEmail: 'E-Mail ist erforderlich.',
     invalidEmail: 'Gib eine gueltige E-Mail-Adresse ein.',
-    success: 'Du bist angemeldet. Pruefe deinen Posteingang auf die Willkommensmail.',
+    success:
+      'Du bist angemeldet. Pruefe deinen Posteingang auf die Willkommensmail.',
     genericError: 'Das Abonnement konnte gerade nicht erstellt werden.',
   },
   sections: {

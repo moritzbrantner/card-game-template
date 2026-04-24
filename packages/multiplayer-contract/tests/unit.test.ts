@@ -40,7 +40,9 @@ test('canStartRoom rejects rooms that do not have enough ready players', () => {
       visibility: 'private',
       executionMode: 'server-authoritative',
       maxPlayers: 4,
-      seats: [{ seat: 1, playerId: 'p1', ready: true, connectionStatus: 'connected' }],
+      seats: [
+        { seat: 1, playerId: 'p1', ready: true, connectionStatus: 'connected' },
+      ],
     }),
     false,
   );

@@ -14,7 +14,11 @@ async function persistConsent(state: ConsentState) {
   });
 }
 
-export function ConsentSettingsCard({ initialConsent }: { initialConsent: ConsentState }) {
+export function ConsentSettingsCard({
+  initialConsent,
+}: {
+  initialConsent: ConsentState;
+}) {
   const [consent, setConsent] = useState(initialConsent);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
@@ -23,13 +27,17 @@ export function ConsentSettingsCard({ initialConsent }: { initialConsent: Consen
       <div className="space-y-1">
         <p className="font-medium">Consent settings</p>
         <p className="text-sm text-zinc-600 dark:text-zinc-300">
-          Necessary storage stays enabled. Analytics and marketing preferences can be updated any time.
+          Necessary storage stays enabled. Analytics and marketing preferences
+          can be updated any time.
         </p>
       </div>
 
       <div className="mt-4 space-y-3">
         {(['analytics', 'marketing'] as const).map((key) => (
-          <label key={key} className="flex items-center justify-between gap-4 rounded-2xl border p-3 dark:border-zinc-800">
+          <label
+            key={key}
+            className="flex items-center justify-between gap-4 rounded-2xl border p-3 dark:border-zinc-800"
+          >
             <div>
               <p className="font-medium capitalize">{key}</p>
               <p className="text-sm text-zinc-600 dark:text-zinc-300">
@@ -64,7 +72,13 @@ export function ConsentSettingsCard({ initialConsent }: { initialConsent: Consen
         >
           Save consent
         </button>
-        <span className="text-sm text-zinc-500">{status === 'saved' ? 'Saved.' : status === 'saving' ? 'Saving…' : null}</span>
+        <span className="text-sm text-zinc-500">
+          {status === 'saved'
+            ? 'Saved.'
+            : status === 'saving'
+              ? 'Saving…'
+              : null}
+        </span>
       </div>
     </div>
   );

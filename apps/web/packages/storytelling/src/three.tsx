@@ -1,24 +1,23 @@
-"use client";
+'use client';
 
-import type { ComponentType } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import type { Mesh } from "three";
-import { useRef } from "react";
+import type { ComponentType } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import type { Mesh } from 'three';
+import { useRef } from 'react';
 
-import { cn } from "@moritzbrantner/ui";
+import { cn } from '@moritzbrantner/ui';
 
 import type {
   StoryNodeData,
   StoryRenderProps,
   StoryThreeSceneProps,
-} from "./story-types";
+} from './story-types';
 
-export type StoryCanvasStageProps<
-  TData extends StoryNodeData = StoryNodeData,
-> = StoryRenderProps<TData> & {
-  className?: string;
-  cameraPosition?: [number, number, number];
-};
+export type StoryCanvasStageProps<TData extends StoryNodeData = StoryNodeData> =
+  StoryRenderProps<TData> & {
+    className?: string;
+    cameraPosition?: [number, number, number];
+  };
 
 function DefaultThreeScene<TData extends StoryNodeData = StoryNodeData>({
   currentIndex,
@@ -38,10 +37,14 @@ function DefaultThreeScene<TData extends StoryNodeData = StoryNodeData>({
 
   return (
     <>
-      <color attach="background" args={["#050816"]} />
+      <color attach="background" args={['#050816']} />
       <ambientLight intensity={0.8} />
       <directionalLight position={[3, 4, 5]} intensity={1.8} />
-      <pointLight position={[-4, -3, 2]} intensity={1.2} color={`hsl(${hue}, 85%, 70%)`} />
+      <pointLight
+        position={[-4, -3, 2]}
+        intensity={1.2}
+        color={`hsl(${hue}, 85%, 70%)`}
+      />
       <mesh ref={meshRef} scale={1 + progress * 0.35}>
         <icosahedronGeometry args={[1.75, 1]} />
         <meshStandardMaterial
@@ -60,9 +63,7 @@ function DefaultThreeScene<TData extends StoryNodeData = StoryNodeData>({
   );
 }
 
-export function StoryCanvasStage<
-  TData extends StoryNodeData = StoryNodeData,
->({
+export function StoryCanvasStage<TData extends StoryNodeData = StoryNodeData>({
   node,
   className,
   cameraPosition = [0, 0, 6],
@@ -75,7 +76,7 @@ export function StoryCanvasStage<
   return (
     <div
       className={cn(
-        "relative min-h-[24rem] overflow-hidden rounded-[2rem] border bg-black shadow-2xl shadow-black/20",
+        'relative min-h-[24rem] overflow-hidden rounded-[2rem] border bg-black shadow-2xl shadow-black/20',
         node.stageClassName,
         className,
       )}

@@ -16,7 +16,14 @@ export const POST = createApiRoute({
     const result = await updateDisplayNameUseCase(actorId!, body.displayName);
 
     if (!result.ok) {
-      throw new ProblemError(problem('/problems/profile-display-name', 'Unable to update display name', 400, result.error.message));
+      throw new ProblemError(
+        problem(
+          '/problems/profile-display-name',
+          'Unable to update display name',
+          400,
+          result.error.message,
+        ),
+      );
     }
 
     await signInSession({

@@ -60,7 +60,8 @@ describe('blog post use cases', () => {
           {
             id: 'post_1',
             title: 'First post',
-            content: 'This is the first published post for the public blog page.',
+            content:
+              'This is the first published post for the public blog page.',
             createdAt,
             updatedAt,
           },
@@ -85,7 +86,8 @@ describe('blog post use cases', () => {
           userId: 'user_1',
           clientRequestId: '56ac91ba-597a-4d54-9572-aafe5f2b6e95',
           title: 'Trimmed title',
-          content: 'This body has enough content to pass the minimum validation.',
+          content:
+            'This body has enough content to pass the minimum validation.',
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -98,7 +100,8 @@ describe('blog post use cases', () => {
       {
         clientRequestId: '56ac91ba-597a-4d54-9572-aafe5f2b6e95',
         title: '  Trimmed title  ',
-        contentMarkdown: '  This body has enough content to pass the minimum validation.  ',
+        contentMarkdown:
+          '  This body has enough content to pass the minimum validation.  ',
       },
       deps,
     );
@@ -108,7 +111,8 @@ describe('blog post use cases', () => {
       data: {
         id: 'post_2',
         title: 'Trimmed title',
-        contentMarkdown: 'This body has enough content to pass the minimum validation.',
+        contentMarkdown:
+          'This body has enough content to pass the minimum validation.',
       },
     });
     expect(deps.createPost).toHaveBeenCalledWith({
@@ -136,7 +140,9 @@ describe('blog post use cases', () => {
   });
 
   it('does not fail post creation when follower notifications cannot be delivered', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
     try {
       const deps = createDeps({
         findUserById: vi.fn().mockResolvedValue({
@@ -154,12 +160,15 @@ describe('blog post use cases', () => {
             userId: 'user_1',
             clientRequestId: '4afdb6d0-176a-45de-84a2-d62296f58cf4',
             title: 'Resilient title',
-            content: 'This body has enough content to pass the minimum validation.',
+            content:
+              'This body has enough content to pass the minimum validation.',
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         }),
-        createNotifications: vi.fn().mockRejectedValue(new Error('database unavailable')),
+        createNotifications: vi
+          .fn()
+          .mockRejectedValue(new Error('database unavailable')),
       });
 
       const result = await createBlogPostUseCase(
@@ -167,7 +176,8 @@ describe('blog post use cases', () => {
         {
           clientRequestId: '4afdb6d0-176a-45de-84a2-d62296f58cf4',
           title: 'Resilient title',
-          contentMarkdown: 'This body has enough content to pass the minimum validation.',
+          contentMarkdown:
+            'This body has enough content to pass the minimum validation.',
         },
         deps,
       );
@@ -177,7 +187,8 @@ describe('blog post use cases', () => {
         data: {
           id: 'post_3',
           title: 'Resilient title',
-          contentMarkdown: 'This body has enough content to pass the minimum validation.',
+          contentMarkdown:
+            'This body has enough content to pass the minimum validation.',
         },
       });
       expect(deps.createNotifications).toHaveBeenCalledTimes(1);
@@ -196,7 +207,9 @@ describe('blog post use cases', () => {
         name: 'Author',
         image: null,
       }),
-      listFollowerIdsByUserId: vi.fn().mockResolvedValue(['user_2', 'user_1', 'user_2', 'user_3']),
+      listFollowerIdsByUserId: vi
+        .fn()
+        .mockResolvedValue(['user_2', 'user_1', 'user_2', 'user_3']),
       createPost: vi.fn().mockResolvedValue({
         created: true,
         post: {
@@ -204,7 +217,8 @@ describe('blog post use cases', () => {
           userId: 'user_1',
           clientRequestId: '9a5a1a0d-0f2d-4619-b5b5-281e32d4e097',
           title: 'Fanout title',
-          content: 'This body has enough content to pass the minimum validation.',
+          content:
+            'This body has enough content to pass the minimum validation.',
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -216,7 +230,8 @@ describe('blog post use cases', () => {
       {
         clientRequestId: '9a5a1a0d-0f2d-4619-b5b5-281e32d4e097',
         title: 'Fanout title',
-        contentMarkdown: 'This body has enough content to pass the minimum validation.',
+        contentMarkdown:
+          'This body has enough content to pass the minimum validation.',
       },
       deps,
     );
@@ -226,7 +241,8 @@ describe('blog post use cases', () => {
       data: {
         id: 'post_4',
         title: 'Fanout title',
-        contentMarkdown: 'This body has enough content to pass the minimum validation.',
+        contentMarkdown:
+          'This body has enough content to pass the minimum validation.',
       },
     });
     expect(deps.createNotifications).toHaveBeenCalledWith([
@@ -263,7 +279,8 @@ describe('blog post use cases', () => {
           userId: 'user_1',
           clientRequestId: '1e2048e8-7384-44b1-9dbe-b01468ddcac0',
           title: 'Existing title',
-          content: 'This body has enough content to pass the minimum validation.',
+          content:
+            'This body has enough content to pass the minimum validation.',
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -275,7 +292,8 @@ describe('blog post use cases', () => {
       {
         clientRequestId: '1e2048e8-7384-44b1-9dbe-b01468ddcac0',
         title: 'Existing title',
-        contentMarkdown: 'This body has enough content to pass the minimum validation.',
+        contentMarkdown:
+          'This body has enough content to pass the minimum validation.',
       },
       deps,
     );
@@ -285,7 +303,8 @@ describe('blog post use cases', () => {
       data: {
         id: 'post_existing',
         title: 'Existing title',
-        contentMarkdown: 'This body has enough content to pass the minimum validation.',
+        contentMarkdown:
+          'This body has enough content to pass the minimum validation.',
       },
     });
     expect(deps.listFollowerIdsByUserId).not.toHaveBeenCalled();

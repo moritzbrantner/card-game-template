@@ -19,11 +19,15 @@ export function stripLocaleFromPathname(pathname: string): string {
     return pathname || '/';
   }
 
-  const strippedPath = `/${segments.slice(1).join('/')}`.replace(/\/+$/, '') || '/';
+  const strippedPath =
+    `/${segments.slice(1).join('/')}`.replace(/\/+$/, '') || '/';
   return `${strippedPath}${suffix}`;
 }
 
-export function withLocalePath(pathname: string, locale: AppLocale = routing.defaultLocale): string {
+export function withLocalePath(
+  pathname: string,
+  locale: AppLocale = routing.defaultLocale,
+): string {
   if (!pathname.startsWith('/')) {
     return pathname;
   }

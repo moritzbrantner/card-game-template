@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -123,7 +130,9 @@ exit 1
 }
 
 test('setup-promotion-branches renames main to develop and creates promotion branches', () => {
-  const tempDir = mkdtempSync(join(tmpdir(), 'setup-promotion-branches-default-'));
+  const tempDir = mkdtempSync(
+    join(tmpdir(), 'setup-promotion-branches-default-'),
+  );
   const gitLogPath = join(tempDir, 'git.log');
   const ghLogPath = join(tempDir, 'gh.log');
   const gitPath = createMockGit(tempDir);
@@ -158,36 +167,48 @@ test('setup-promotion-branches renames main to develop and creates promotion bra
     assert.match(gitLog, /^branch -f beta develop$/m);
     assert.match(gitLog, /^branch -f staging develop$/m);
     assert.match(gitLog, /^branch -f main develop$/m);
-    assert.match(ghLog, /^repo edit moritzbrantner\/example --default-branch develop$/m);
-    assert.match(output, /Configured promotion branches for moritzbrantner\/example:/);
+    assert.match(
+      ghLog,
+      /^repo edit moritzbrantner\/example --default-branch develop$/m,
+    );
+    assert.match(
+      output,
+      /Configured promotion branches for moritzbrantner\/example:/,
+    );
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
 });
 
 test('setup-promotion-branches can keep the old default branch and skip extra branches', () => {
-  const tempDir = mkdtempSync(join(tmpdir(), 'setup-promotion-branches-keep-old-'));
+  const tempDir = mkdtempSync(
+    join(tmpdir(), 'setup-promotion-branches-keep-old-'),
+  );
   const gitLogPath = join(tempDir, 'git.log');
   const ghLogPath = join(tempDir, 'gh.log');
   const gitPath = createMockGit(tempDir);
   const ghPath = createMockGh(tempDir);
 
   try {
-    execFileSync(scriptPath, ['--keep-old-default-branch', '--no-extra-branches'], {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        GIT_BIN: gitPath,
-        GH_BIN: ghPath,
-        MOCK_REPO_ROOT: repoRoot,
-        MOCK_GIT_LOG: gitLogPath,
-        MOCK_GH_LOG: ghLogPath,
-        MOCK_CURRENT_BRANCH: 'main',
-        MOCK_DEFAULT_BRANCH: 'main',
-        MOCK_REMOTE_BRANCH_MAIN: '1',
+    execFileSync(
+      scriptPath,
+      ['--keep-old-default-branch', '--no-extra-branches'],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          GIT_BIN: gitPath,
+          GH_BIN: ghPath,
+          MOCK_REPO_ROOT: repoRoot,
+          MOCK_GIT_LOG: gitLogPath,
+          MOCK_GH_LOG: ghLogPath,
+          MOCK_CURRENT_BRANCH: 'main',
+          MOCK_DEFAULT_BRANCH: 'main',
+          MOCK_REMOTE_BRANCH_MAIN: '1',
+        },
+        encoding: 'utf8',
       },
-      encoding: 'utf8',
-    });
+    );
 
     const gitLog = readFileSync(gitLogPath, 'utf8');
 
@@ -203,7 +224,9 @@ test('setup-promotion-branches can keep the old default branch and skip extra br
 });
 
 test('setup-promotion-branches accepts explicit repo and custom branch lists', () => {
-  const tempDir = mkdtempSync(join(tmpdir(), 'setup-promotion-branches-custom-'));
+  const tempDir = mkdtempSync(
+    join(tmpdir(), 'setup-promotion-branches-custom-'),
+  );
   const gitLogPath = join(tempDir, 'git.log');
   const ghLogPath = join(tempDir, 'gh.log');
   const gitPath = createMockGit(tempDir);
@@ -212,7 +235,17 @@ test('setup-promotion-branches accepts explicit repo and custom branch lists', (
   try {
     execFileSync(
       scriptPath,
-      ['--repo', 'acme/platform', '--develop-branch', 'trunk', '--extra-branches', 'preview', 'qa', 'preview', '--with-main'],
+      [
+        '--repo',
+        'acme/platform',
+        '--develop-branch',
+        'trunk',
+        '--extra-branches',
+        'preview',
+        'qa',
+        'preview',
+        '--with-main',
+      ],
       {
         cwd: repoRoot,
         env: {
@@ -248,7 +281,9 @@ test('setup-promotion-branches accepts explicit repo and custom branch lists', (
 });
 
 test('setup-promotion-branches is idempotent when the repository is already configured', () => {
-  const tempDir = mkdtempSync(join(tmpdir(), 'setup-promotion-branches-idempotent-'));
+  const tempDir = mkdtempSync(
+    join(tmpdir(), 'setup-promotion-branches-idempotent-'),
+  );
   const gitLogPath = join(tempDir, 'git.log');
   const ghLogPath = join(tempDir, 'gh.log');
   const gitPath = createMockGit(tempDir);
@@ -274,8 +309,16 @@ test('setup-promotion-branches is idempotent when the repository is already conf
 
     assert.match(output, /GitHub default branch already set to develop/);
     assert.match(output, /Branch nightly already exists locally and on origin/);
-    assert.equal(existsSync(gitLogPath), false, 'expected no mutating git commands');
-    assert.equal(existsSync(ghLogPath), false, 'expected no mutating gh commands');
+    assert.equal(
+      existsSync(gitLogPath),
+      false,
+      'expected no mutating git commands',
+    );
+    assert.equal(
+      existsSync(ghLogPath),
+      false,
+      'expected no mutating gh commands',
+    );
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }

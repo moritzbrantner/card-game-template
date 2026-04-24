@@ -7,7 +7,11 @@ import {
   validateNormalizedBlogPostCreateInput,
   type CreateBlogPostRequest,
 } from '@/src/domain/blog/contracts';
-import { failure, success, type ServiceResult } from '@/src/domain/shared/result';
+import {
+  failure,
+  success,
+  type ServiceResult,
+} from '@/src/domain/shared/result';
 import { enqueueJob } from '@/src/jobs/service';
 import { buildProfileImageUrl } from '@/src/profile/object-storage';
 import { buildPublicProfileBlogPath } from '@/src/profile/tags';
@@ -65,7 +69,10 @@ type BlockRelationshipState = {
 export type BlogUseCaseDeps = {
   findUserById: (userId: string) => Promise<BlogAuthorRecord | undefined>;
   findUserByTag: (tag: string) => Promise<BlogAuthorRecord | undefined>;
-  getBlockRelationshipState: (viewerUserId: string, otherUserId: string) => Promise<BlockRelationshipState>;
+  getBlockRelationshipState: (
+    viewerUserId: string,
+    otherUserId: string,
+  ) => Promise<BlockRelationshipState>;
   listPostsByUserId: (userId: string) => Promise<BlogPostRecord[]>;
   listFollowerIdsByUserId: (userId: string) => Promise<string[]>;
   createPost: (input: {
@@ -99,11 +106,17 @@ function getBlogUseCaseDeps(): BlogUseCaseDeps {
       const [isBlockedByViewer, hasBlockedViewer] = await Promise.all([
         getDb().query.userBlocks.findFirst({
           where: (table, { and: innerAnd, eq: innerEq }) =>
-            innerAnd(innerEq(table.blockerId, viewerUserId), innerEq(table.blockedId, otherUserId)),
+            innerAnd(
+              innerEq(table.blockerId, viewerUserId),
+              innerEq(table.blockedId, otherUserId),
+            ),
         }),
         getDb().query.userBlocks.findFirst({
           where: (table, { and: innerAnd, eq: innerEq }) =>
-            innerAnd(innerEq(table.blockerId, otherUserId), innerEq(table.blockedId, viewerUserId)),
+            innerAnd(
+              innerEq(table.blockerId, otherUserId),
+              innerEq(table.blockedId, viewerUserId),
+            ),
         }),
       ]);
 
@@ -149,11 +162,16 @@ function getBlogUseCaseDeps(): BlogUseCaseDeps {
 
       const existingPost = await getDb().query.blogPosts.findFirst({
         where: (table, { and: innerAnd, eq: innerEq }) =>
-          innerAnd(innerEq(table.userId, userId), innerEq(table.clientRequestId, clientRequestId)),
+          innerAnd(
+            innerEq(table.userId, userId),
+            innerEq(table.clientRequestId, clientRequestId),
+          ),
       });
 
       if (!existingPost) {
-        throw new Error('Expected blog post to exist after idempotent create replay.');
+        throw new Error(
+          'Expected blog post to exist after idempotent create replay.',
+        );
       }
 
       return {
@@ -179,7 +197,9 @@ function getBlogUseCaseDeps(): BlogUseCaseDeps {
   };
 }
 
-function resolveProfileDisplayName(user: Pick<BlogAuthorRecord, 'name' | 'email'>) {
+function resolveProfileDisplayName(
+  user: Pick<BlogAuthorRecord, 'name' | 'email'>,
+) {
   const trimmedName = user.name?.trim();
 
   if (trimmedName) {
@@ -236,7 +256,10 @@ export async function getUserBlogUseCase(
   }
 
   if (viewerUserId && viewerUserId !== user.id) {
-    const blockState = await deps.getBlockRelationshipState(viewerUserId, user.id);
+    const blockState = await deps.getBlockRelationshipState(
+      viewerUserId,
+      user.id,
+    );
 
     if (blockState.hasBlockedViewer) {
       return failure({
@@ -280,7 +303,8 @@ export async function createBlogPostUseCase(
   deps: BlogUseCaseDeps = getBlogUseCaseDeps(),
 ): Promise<ServiceResult<BlogPostMutationPayload, BlogError>> {
   const normalizedInput = normalizeBlogPostCreateInput(input);
-  const validationError = validateNormalizedBlogPostCreateInput(normalizedInput);
+  const validationError =
+    validateNormalizedBlogPostCreateInput(normalizedInput);
 
   if (validationError) {
     return failure({
@@ -307,7 +331,9 @@ export async function createBlogPostUseCase(
   });
 
   if (created) {
-    const followerIds = [...new Set(await deps.listFollowerIdsByUserId(userId))].filter((followerId) => followerId !== userId);
+    const followerIds = [
+      ...new Set(await deps.listFollowerIdsByUserId(userId)),
+    ].filter((followerId) => followerId !== userId);
 
     if (followerIds.length > 0) {
       try {
@@ -324,7 +350,10 @@ export async function createBlogPostUseCase(
           ),
         );
       } catch (error) {
-        console.error('Failed to deliver follower notifications for blog post.', error);
+        console.error(
+          'Failed to deliver follower notifications for blog post.',
+          error,
+        );
       }
     }
   }

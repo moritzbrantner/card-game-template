@@ -5,7 +5,10 @@ import { routing } from '@/i18n/routing';
 import { I18nProvider } from '@/src/i18n';
 import { getMessages } from '@/src/i18n/messages';
 import { loadActiveApp } from '@/src/app-config/load-active-app';
-import { generatePublicRouteParams, resolveEnabledPublicRoute } from '@/src/app-config/public-route-resolver';
+import {
+  generatePublicRouteParams,
+  resolveEnabledPublicRoute,
+} from '@/src/app-config/public-route-resolver';
 import { resolveLocale } from '@/src/server/page-guards';
 
 export function generateStaticParams() {
@@ -26,12 +29,14 @@ export async function generateMetadata({
     return {};
   }
 
-  return resolvedRoute.page.generateMetadata?.({
-    locale,
-    pageId: resolvedRoute.page.id,
-    matchedSlug: resolvedRoute.matchedSlug,
-    pathname: resolvedRoute.pathname,
-  }) ?? {};
+  return (
+    resolvedRoute.page.generateMetadata?.({
+      locale,
+      pageId: resolvedRoute.page.id,
+      matchedSlug: resolvedRoute.matchedSlug,
+      pathname: resolvedRoute.pathname,
+    }) ?? {}
+  );
 }
 
 export default async function PublicPageResolver({

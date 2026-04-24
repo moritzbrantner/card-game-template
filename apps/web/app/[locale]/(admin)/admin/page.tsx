@@ -2,10 +2,22 @@ import { AdminPageShell } from '@/components/admin/admin-page-shell';
 import { AdminReportChart } from '@/components/admin/admin-report-chart';
 import { AdminOverviewGrid } from '@/components/admin/admin-overview-grid';
 import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { LocalizedLink } from '@/i18n/server-link';
-import { getAuthorizedAdminPageDefinitions, getAuthorizedAdminWorkspacePageDefinitions } from '@/src/admin/pages';
-import { getAdminReportDetailUseCase, getAdminReportSummaryUseCase } from '@/src/domain/admin-reports/use-cases';
+import {
+  getAuthorizedAdminPageDefinitions,
+  getAuthorizedAdminWorkspacePageDefinitions,
+} from '@/src/admin/pages';
+import {
+  getAdminReportDetailUseCase,
+  getAdminReportSummaryUseCase,
+} from '@/src/domain/admin-reports/use-cases';
 import { createTranslator } from '@/src/i18n/messages';
 import { requirePermission, resolveLocale } from '@/src/server/page-guards';
 import { getAdminAnalyticsSettings } from '@/src/site-config/service';
@@ -23,9 +35,14 @@ export default async function AdminPage({
   const analyticsSettings = await getAdminAnalyticsSettings();
   const [pulse, navigationPulse] = await Promise.all([
     getAdminReportSummaryUseCase('7d'),
-    getAdminReportDetailUseCase('navigationJourneys', analyticsSettings.defaultAdminReportWindow),
+    getAdminReportDetailUseCase(
+      'navigationJourneys',
+      analyticsSettings.defaultAdminReportWindow,
+    ),
   ]);
-  const pages = (await getAuthorizedAdminWorkspacePageDefinitions(session.user.role)).map((page) => ({
+  const pages = (
+    await getAuthorizedAdminWorkspacePageDefinitions(session.user.role)
+  ).map((page) => ({
     key: page.key,
     href: page.href,
     title: t(`${page.key}.title`),
@@ -33,12 +50,19 @@ export default async function AdminPage({
   }));
 
   return (
-    <AdminPageShell title={t('overview.title')} description={t('overview.description')} adminPages={adminPages}>
+    <AdminPageShell
+      title={t('overview.title')}
+      description={t('overview.description')}
+      adminPages={adminPages}
+    >
       <section className="space-y-4">
         <div className="space-y-1">
-          <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">Operational pulse</h2>
+          <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
+            Operational pulse
+          </h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            Live admin health for the last 7 days. Refreshed {pulse.generatedAt}.
+            Live admin health for the last 7 days. Refreshed {pulse.generatedAt}
+            .
           </p>
         </div>
 
@@ -54,14 +78,21 @@ export default async function AdminPage({
               const href = `${metric.href}?window=${pulse.window}`;
 
               return (
-                <LocalizedLink key={metric.id} href={href} locale={locale} className="block">
+                <LocalizedLink
+                  key={metric.id}
+                  href={href}
+                  locale={locale}
+                  className="block"
+                >
                   <Card className="h-full transition-colors hover:border-emerald-400 dark:hover:border-emerald-700">
                     <CardHeader className="space-y-2">
                       <CardDescription>{metric.label}</CardDescription>
                       <CardTitle className="text-3xl">{metric.value}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      <p className="text-sm text-zinc-600 dark:text-zinc-300">{metric.detail}</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                        {metric.detail}
+                      </p>
                       {metric.change ? (
                         <p className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
                           {metric.change.value} {metric.change.detail}
@@ -89,9 +120,12 @@ export default async function AdminPage({
       <section className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
-            <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">Navigation pulse</h2>
+            <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
+              Navigation pulse
+            </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              First-party journey analytics for the last {navigationPulse.window}. Refreshed {navigationPulse.generatedAt}.
+              First-party journey analytics for the last{' '}
+              {navigationPulse.window}. Refreshed {navigationPulse.generatedAt}.
             </p>
           </div>
           <LocalizedLink
@@ -119,7 +153,9 @@ export default async function AdminPage({
                 </CardHeader>
                 {card.detail ? (
                   <CardContent>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-300">{card.detail}</p>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                      {card.detail}
+                    </p>
                   </CardContent>
                 ) : null}
               </Card>
@@ -135,7 +171,9 @@ export default async function AdminPage({
               {navigationPulse.series[0] ? (
                 <AdminReportChart series={navigationPulse.series[0]} />
               ) : (
-                <p className="text-sm text-zinc-600 dark:text-zinc-300">{navigationPulse.message ?? 'Data unavailable.'}</p>
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                  {navigationPulse.message ?? 'Data unavailable.'}
+                </p>
               )}
             </CardContent>
           </Card>

@@ -12,9 +12,16 @@ const createMatchBodySchema = z.object({
   displayName: z.string().trim().min(1).max(60).optional(),
 });
 
-function mapMatchProblem(title: string, code: 'VALIDATION_ERROR' | 'NOT_FOUND' | 'CONFLICT', detail: string) {
-  const status = code === 'VALIDATION_ERROR' ? 400 : code === 'NOT_FOUND' ? 404 : 409;
-  return new ProblemError(problem('/problems/uno-match', title, status, detail));
+function mapMatchProblem(
+  title: string,
+  code: 'VALIDATION_ERROR' | 'NOT_FOUND' | 'CONFLICT',
+  detail: string,
+) {
+  const status =
+    code === 'VALIDATION_ERROR' ? 400 : code === 'NOT_FOUND' ? 404 : 409;
+  return new ProblemError(
+    problem('/problems/uno-match', title, status, detail),
+  );
 }
 
 export const GET = createApiRoute({
@@ -34,7 +41,11 @@ export const POST = createApiRoute({
     const result = await createUnoMatchUseCase(session, body);
 
     if (!result.ok) {
-      throw mapMatchProblem('Unable to create match', result.error.code, result.error.message);
+      throw mapMatchProblem(
+        'Unable to create match',
+        result.error.code,
+        result.error.message,
+      );
     }
 
     return result.data;

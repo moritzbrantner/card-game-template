@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { random, useCurrentFrame, useVideoConfig } from "remotion";
+import { random, useCurrentFrame, useVideoConfig } from 'remotion';
 
 export interface MatrixDecodeProps {
   text: string;
@@ -15,9 +15,9 @@ export interface MatrixDecodeProps {
 
 export function MatrixDecode({
   text,
-  charset = "!@#$%^&*()_+-=<>?/\\|",
+  charset = '!@#$%^&*()_+-=<>?/\\|',
   fontSize = 72,
-  color = "#22c55e",
+  color = '#22c55e',
   fontWeight = 600,
   revealDuration = 60,
   speed = 1,
@@ -27,11 +27,11 @@ export function MatrixDecode({
   // useVideoConfig kept for consistency with sibling primitives
   useVideoConfig();
 
-  let output = "";
+  let output = '';
   for (let i = 0; i < text.length; i++) {
     const revealFrame = (i / Math.max(text.length, 1)) * revealDuration;
-    if (text[i] === " ") {
-      output += " ";
+    if (text[i] === ' ') {
+      output += ' ';
     } else if (frame >= revealFrame) {
       output += text[i];
     } else {
@@ -44,12 +44,12 @@ export function MatrixDecode({
   return (
     <div
       style={{
-        position: "absolute",
+        position: 'absolute',
         inset: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "white",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'white',
       }}
     >
       <span
@@ -58,10 +58,10 @@ export function MatrixDecode({
           fontSize,
           fontWeight,
           color,
-          letterSpacing: "0.05em",
-          whiteSpace: "pre",
+          letterSpacing: '0.05em',
+          whiteSpace: 'pre',
           fontFamily:
-            "var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace",
+            'var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace',
         }}
       >
         {output}

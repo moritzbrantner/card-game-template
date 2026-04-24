@@ -1,6 +1,7 @@
 export const settingsPage = {
   title: 'Einstellungen',
-  description: 'Passe Erscheinungsbild, Datumsverhalten, Benachrichtigungseinstellungen, Datenschutz, Hotkey-Sichtbarkeit und Profilsteuerung an einer Stelle an.',
+  description:
+    'Passe Erscheinungsbild, Datumsverhalten, Benachrichtigungseinstellungen, Datenschutz, Hotkey-Sichtbarkeit und Profilsteuerung an einer Stelle an.',
   saveState: 'Einstellungen werden automatisch gespeichert',
   tabs: {
     appearance: 'Darstellung',
@@ -18,7 +19,8 @@ export const settingsPage = {
   },
   rbac: {
     title: 'Rollenbasierter Zugriff',
-    description: 'Die Autorisierung nutzt jetzt eine Better-Auth-Zugriffsmatrix statt einzelner Rollenabfragen.',
+    description:
+      'Die Autorisierung nutzt jetzt eine Better-Auth-Zugriffsmatrix statt einzelner Rollenabfragen.',
     allowed: 'Erlaubt',
     denied: 'Nicht erlaubt',
     permissions: {
@@ -31,11 +33,14 @@ export const settingsPage = {
   },
   appearance: {
     title: 'Darstellungsoptionen',
-    description: 'Passe die visuelle Stimmung und die Dichte der Oberfläche an.',
+    description:
+      'Passe die visuelle Stimmung und die Dichte der Oberfläche an.',
     compactSpacing: 'Kompakte Abstände',
-    compactSpacingDescription: 'Verringert Innenabstände und verdichtet das Layout im Hauptbereich.',
+    compactSpacingDescription:
+      'Verringert Innenabstände und verdichtet das Layout im Hauptbereich.',
     reducedMotion: 'Weniger Bewegung',
-    reducedMotionDescription: 'Reduziert nicht notwendige Animationen und Bewegungen.',
+    reducedMotionDescription:
+      'Reduziert nicht notwendige Animationen und Bewegungen.',
     backgrounds: {
       paper: {
         title: 'Papier',
@@ -57,11 +62,13 @@ export const settingsPage = {
   },
   dates: {
     title: 'Datums- und Kalenderverhalten',
-    description: 'Lege fest, wie Daten formatiert und Kalender dargestellt werden.',
+    description:
+      'Lege fest, wie Daten formatiert und Kalender dargestellt werden.',
     formatLabel: 'Datumsformat',
     weekStartsLabel: 'Wochenbeginn',
     showOutsideDays: 'Außerhalb liegende Tage anzeigen',
-    showOutsideDaysDescription: 'Zeigt auslaufende Tage des vorherigen und nächsten Monats im Kalender an.',
+    showOutsideDaysDescription:
+      'Zeigt auslaufende Tage des vorherigen und nächsten Monats im Kalender an.',
     previewLabel: 'Vorschau',
     formats: {
       localized: 'Lokales Mittelformat',
@@ -75,19 +82,24 @@ export const settingsPage = {
   },
   workflow: {
     title: 'Arbeitsfluss und Navigation',
-    description: 'Bestimme, wie viele Navigationshilfen die Anwendung anzeigen soll.',
+    description:
+      'Bestimme, wie viele Navigationshilfen die Anwendung anzeigen soll.',
     hotkeyHints: 'Hotkey-Hinweise anzeigen',
-    hotkeyHintsDescription: 'Zeigt den Hotkey-Launcher und Inline-Kürzel in der Navigation an.',
+    hotkeyHintsDescription:
+      'Zeigt den Hotkey-Launcher und Inline-Kürzel in der Navigation an.',
     hotkeySummary:
       'Nutze `Alt` plus einen Buchstaben zum Seitenwechsel oder drücke `?`, um die vollständige Kürzelliste zu öffnen.',
   },
   notifications: {
     title: 'Benachrichtigungseinstellungen',
-    description: 'Lege fest, ob persönliche Benachrichtigungen aktiv sind und wie sie gekennzeichnet werden.',
+    description:
+      'Lege fest, ob persönliche Benachrichtigungen aktiv sind und wie sie gekennzeichnet werden.',
     enabled: 'Benachrichtigungen aktivieren',
-    enabledDescription: 'Schaltet deine persönlichen In-App-Benachrichtigungen ein oder aus.',
+    enabledDescription:
+      'Schaltet deine persönlichen In-App-Benachrichtigungen ein oder aus.',
     typeLabel: 'Benachrichtigungstyp',
-    typeDescription: 'Verwende einen beliebigen String wie `instant`, `digest` oder ein teamspezifisches Label.',
+    typeDescription:
+      'Verwende einen beliebigen String wie `instant`, `digest` oder ein teamspezifisches Label.',
     typePlaceholder: 'instant',
     types: {
       instant: 'Sofort',
@@ -97,50 +109,62 @@ export const settingsPage = {
   },
   privacy: {
     title: 'Datenschutzoptionen',
-    description: 'Lege fest, ob andere dein Profil finden können und wie sichtbar deine Profilaktivität ist.',
+    description:
+      'Lege fest, ob andere dein Profil finden können und wie sichtbar deine Profilaktivität ist.',
   },
   account: {
     email: {
       title: 'E-Mail-Adresse',
-      description: 'Ändere die E-Mail-Adresse, mit der du dich bei diesem Konto anmeldest.',
+      description:
+        'Ändere die E-Mail-Adresse, mit der du dich bei diesem Konto anmeldest.',
       currentEmail: 'Aktuelle E-Mail-Adresse',
       newEmail: 'Neue E-Mail-Adresse',
       currentPassword: 'Aktuelles Passwort',
       save: 'E-Mail aktualisieren',
       saving: 'Wird aktualisiert…',
       success: 'E-Mail-Adresse aktualisiert.',
-      genericError: 'Deine E-Mail-Adresse konnte gerade nicht aktualisiert werden. Bitte versuche es erneut.',
+      genericError:
+        'Deine E-Mail-Adresse konnte gerade nicht aktualisiert werden. Bitte versuche es erneut.',
     },
     deletion: {
       title: 'Konto löschen',
       badge: 'Gefahrenbereich',
-      description: 'Lösche dein Konto dauerhaft und entferne deinen Zugriff auf diesen Arbeitsbereich.',
-      warning: 'Diese Aktion kann nicht rückgängig gemacht werden. Dein Profil, deine Sitzungen und zugehörige Kontodaten werden entfernt.',
+      description:
+        'Lösche dein Konto dauerhaft und entferne deinen Zugriff auf diesen Arbeitsbereich.',
+      warning:
+        'Diese Aktion kann nicht rückgängig gemacht werden. Dein Profil, deine Sitzungen und zugehörige Kontodaten werden entfernt.',
       currentPassword: 'Aktuelles Passwort',
       remove: 'Konto löschen',
       removing: 'Wird gelöscht…',
       redirecting: 'Konto gelöscht. Weiterleitung…',
-      genericError: 'Dein Konto konnte gerade nicht gelöscht werden. Bitte versuche es erneut.',
+      genericError:
+        'Dein Konto konnte gerade nicht gelöscht werden. Bitte versuche es erneut.',
     },
   },
   profilePictureTitle: 'Profilbild',
-  profilePictureDescription: 'Lade ein neues Profilbild hoch oder entferne dein aktuelles Bild.',
+  profilePictureDescription:
+    'Lade ein neues Profilbild hoch oder entferne dein aktuelles Bild.',
   profileDiscovery: {
     title: 'Suche und Auffindbarkeit',
-    description: 'Steuere, ob dein Profil erscheint, wenn andere nach Benutzern zum Folgen suchen.',
+    description:
+      'Steuere, ob dein Profil erscheint, wenn andere nach Benutzern zum Folgen suchen.',
     toggleTitle: 'Von anderen gefunden werden',
-    toggleDescription: 'Wenn aktiviert, können andere angemeldete Benutzer dein Profil auf der Personen-Seite und in vergleichbaren Suchansichten finden.',
+    toggleDescription:
+      'Wenn aktiviert, können andere angemeldete Benutzer dein Profil auf der Personen-Seite und in vergleichbaren Suchansichten finden.',
     saving: 'Suchsichtbarkeit wird gespeichert…',
     successEnabled: 'Dein Profil kann jetzt in der Suche gefunden werden.',
     successDisabled: 'Dein Profil wurde aus den Suchergebnissen entfernt.',
-    error: 'Die Suchsichtbarkeit konnte gerade nicht aktualisiert werden. Bitte versuche es erneut.',
+    error:
+      'Die Suchsichtbarkeit konnte gerade nicht aktualisiert werden. Bitte versuche es erneut.',
   },
   followerVisibility: {
     title: 'Follower-Sichtbarkeit',
-    description: 'Lege fest, wer dich sehen kann, wenn du in der Follower-Liste eines anderen Profils erscheinst.',
+    description:
+      'Lege fest, wer dich sehen kann, wenn du in der Follower-Liste eines anderen Profils erscheinst.',
     saving: 'Follower-Sichtbarkeit wird gespeichert…',
     success: 'Follower-Sichtbarkeit aktualisiert.',
-    error: 'Die Follower-Sichtbarkeit konnte gerade nicht aktualisiert werden. Bitte versuche es erneut.',
+    error:
+      'Die Follower-Sichtbarkeit konnte gerade nicht aktualisiert werden. Bitte versuche es erneut.',
     options: {
       PUBLIC: {
         title: 'Öffentlich',
@@ -152,18 +176,21 @@ export const settingsPage = {
       },
       PRIVATE: {
         title: 'Privat',
-        description: 'Nur du und der Profilinhaber sehen dich in Follower-Listen.',
+        description:
+          'Nur du und der Profilinhaber sehen dich in Follower-Listen.',
       },
     },
   },
   blockedUsers: {
     title: 'Blockierte Benutzer',
-    description: 'Verwalte die Personen, die du blockiert hast. Beim Blockieren werden Follow-Beziehungen in beide Richtungen entfernt.',
+    description:
+      'Verwalte die Personen, die du blockiert hast. Beim Blockieren werden Follow-Beziehungen in beide Richtungen entfernt.',
     empty: 'Du hast niemanden blockiert.',
     unblock: 'Entblockieren',
     unblocking: 'Wird entblockiert…',
     success: 'Benutzer entblockiert.',
-    error: 'Blockierte Benutzer konnten gerade nicht aktualisiert werden. Bitte versuche es erneut.',
+    error:
+      'Blockierte Benutzer konnten gerade nicht aktualisiert werden. Bitte versuche es erneut.',
   },
   form: {
     chooseImage: 'Profilbild auswählen',
@@ -175,7 +202,8 @@ export const settingsPage = {
     empty: 'Kein Bild',
     alt: 'Profilbild',
     cropTitle: 'Bild zuschneiden',
-    cropDescription: 'Verschiebe das Bild und passe den Zoom an, bevor du es hochlädst.',
+    cropDescription:
+      'Verschiebe das Bild und passe den Zoom an, bevor du es hochlädst.',
     cropZoom: 'Zoom',
     cropCancel: 'Zuschneiden abbrechen',
     cropApply: 'Ausschnitt verwenden',

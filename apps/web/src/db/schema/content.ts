@@ -1,4 +1,1 @@
-export {
-  blogPosts,
-  newsletterSubscriptions,
-} from './legacy';
+export { blogPosts, newsletterSubscriptions } from './legacy';

@@ -71,9 +71,24 @@ describe('game bot AI service', () => {
   it('resolves configured profiles from bot participant names', () => {
     const profiles = getDefaultUnoBotAiProfiles();
 
-    expect(resolveUnoBotAiProfileForParticipant({ displayName: 'House Bot' }, profiles).id).toBe('house-bot');
-    expect(resolveUnoBotAiProfileForParticipant({ displayName: 'Table Bot' }, profiles).id).toBe('table-bot');
-    expect(resolveUnoBotAiProfileForParticipant({ displayName: 'Unknown Bot' }, profiles).id).toBe('fallback-bot');
+    expect(
+      resolveUnoBotAiProfileForParticipant(
+        { displayName: 'House Bot' },
+        profiles,
+      ).id,
+    ).toBe('house-bot');
+    expect(
+      resolveUnoBotAiProfileForParticipant(
+        { displayName: 'Table Bot' },
+        profiles,
+      ).id,
+    ).toBe('table-bot');
+    expect(
+      resolveUnoBotAiProfileForParticipant(
+        { displayName: 'Unknown Bot' },
+        profiles,
+      ).id,
+    ).toBe('fallback-bot');
   });
 
   it('uses the active AI profile to choose between legal UNO bot moves', () => {
@@ -103,7 +118,11 @@ describe('game bot AI service', () => {
         playerId: 'p2',
         kind: 'play-card',
         createdAt: '2026-04-21T00:00:00.000Z',
-        payload: { cardId: 'wild-draw-four', chosenColor: 'blue', sayUno: true },
+        payload: {
+          cardId: 'wild-draw-four',
+          chosenColor: 'blue',
+          sayUno: true,
+        },
       },
     ] satisfies UnoMove[];
 
@@ -120,7 +139,23 @@ describe('game bot AI service', () => {
       },
     ])[0]!;
 
-    expect(chooseUnoBotMove({ legalMoves: moves, playerId: 'p2', profile: conservative, seed: 's', state })).toEqual(moves[0]);
-    expect(chooseUnoBotMove({ legalMoves: moves, playerId: 'p2', profile: wildHappy, seed: 's', state })).toEqual(moves[1]);
+    expect(
+      chooseUnoBotMove({
+        legalMoves: moves,
+        playerId: 'p2',
+        profile: conservative,
+        seed: 's',
+        state,
+      }),
+    ).toEqual(moves[0]);
+    expect(
+      chooseUnoBotMove({
+        legalMoves: moves,
+        playerId: 'p2',
+        profile: wildHappy,
+        seed: 's',
+        state,
+      }),
+    ).toEqual(moves[1]);
   });
 });

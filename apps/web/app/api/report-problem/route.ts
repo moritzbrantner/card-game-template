@@ -1,6 +1,12 @@
 import { secureRoute } from '@/src/api/route-security';
 
-const allowedAreas = new Set(['bug', 'performance', 'account', 'billing', 'other']);
+const allowedAreas = new Set([
+  'bug',
+  'performance',
+  'account',
+  'billing',
+  'other',
+]);
 
 function readString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -42,10 +48,17 @@ export async function POST(request: Request) {
   const subject = readString(formData, 'subject');
   const details = readString(formData, 'details');
 
-  if (!isValidEmail(email) || !allowedAreas.has(area) || !isValidOptionalUrl(pageUrl) || subject.length < 8 || details.length < 30) {
+  if (
+    !isValidEmail(email) ||
+    !allowedAreas.has(area) ||
+    !isValidOptionalUrl(pageUrl) ||
+    subject.length < 8 ||
+    details.length < 30
+  ) {
     return guard.json(
       {
-        error: 'Please complete the form with a valid email, category, subject, and enough detail to investigate.',
+        error:
+          'Please complete the form with a valid email, category, subject, and enough detail to investigate.',
       },
       { status: 400 },
     );

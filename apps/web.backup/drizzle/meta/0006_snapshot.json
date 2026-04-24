@@ -97,12 +97,8 @@
           "name": "Account_userId_User_id_fk",
           "tableFrom": "Account",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -110,10 +106,7 @@
       "compositePrimaryKeys": {
         "Account_pkey": {
           "name": "Account_pkey",
-          "columns": [
-            "provider",
-            "providerAccountId"
-          ]
+          "columns": ["provider", "providerAccountId"]
         }
       },
       "uniqueConstraints": {},
@@ -298,12 +291,8 @@
           "name": "PageVisitQueryParameter_pageVisitId_PageVisit_id_fk",
           "tableFrom": "PageVisitQueryParameter",
           "tableTo": "PageVisit",
-          "columnsFrom": [
-            "pageVisitId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pageVisitId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -408,12 +397,8 @@
           "name": "PageVisit_userId_User_id_fk",
           "tableFrom": "PageVisit",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -495,12 +480,8 @@
           "name": "Profile_userId_User_id_fk",
           "tableFrom": "Profile",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -682,12 +663,8 @@
           "name": "Session_userId_User_id_fk",
           "tableFrom": "Session",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -759,12 +736,8 @@
           "name": "UserFollow_followerId_User_id_fk",
           "tableFrom": "UserFollow",
           "tableTo": "User",
-          "columnsFrom": [
-            "followerId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["followerId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
@@ -772,12 +745,8 @@
           "name": "UserFollow_followingId_User_id_fk",
           "tableFrom": "UserFollow",
           "tableTo": "User",
-          "columnsFrom": [
-            "followingId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["followingId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -785,10 +754,7 @@
       "compositePrimaryKeys": {
         "UserFollow_pkey": {
           "name": "UserFollow_pkey",
-          "columns": [
-            "followerId",
-            "followingId"
-          ]
+          "columns": ["followerId", "followingId"]
         }
       },
       "uniqueConstraints": {},
@@ -970,10 +936,7 @@
       "compositePrimaryKeys": {
         "VerificationToken_pkey": {
           "name": "VerificationToken_pkey",
-          "columns": [
-            "identifier",
-            "token"
-          ]
+          "columns": ["identifier", "token"]
         }
       },
       "uniqueConstraints": {},
@@ -986,11 +949,7 @@
     "public.Role": {
       "name": "Role",
       "schema": "public",
-      "values": [
-        "ADMIN",
-        "MANAGER",
-        "USER"
-      ]
+      "values": ["ADMIN", "MANAGER", "USER"]
     }
   },
   "schemas": {},

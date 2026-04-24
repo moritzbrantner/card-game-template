@@ -1,9 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
-import { TEST_USER_FOLLOWS, TEST_USER_NOTIFICATIONS, TEST_USERS } from "@/src/testing/test-users";
+import {
+  TEST_USER_FOLLOWS,
+  TEST_USER_NOTIFICATIONS,
+  TEST_USERS,
+} from '@/src/testing/test-users';
 
-describe("test user seed fixtures", () => {
-  it("provides a larger seeded account set with unique identities", () => {
+describe('test user seed fixtures', () => {
+  it('provides a larger seeded account set with unique identities', () => {
     expect(TEST_USERS.length).toBeGreaterThanOrEqual(8);
 
     const emails = TEST_USERS.map((user) => user.email);
@@ -13,7 +17,7 @@ describe("test user seed fixtures", () => {
     expect(new Set(tags).size).toBe(tags.length);
   });
 
-  it("creates a follow graph where the default user both follows and is followed", () => {
+  it('creates a follow graph where the default user both follows and is followed', () => {
     const emails = new Set(TEST_USERS.map((user) => user.email));
 
     for (const relationship of TEST_USER_FOLLOWS) {
@@ -22,11 +26,19 @@ describe("test user seed fixtures", () => {
       expect(relationship.followerEmail).not.toBe(relationship.followingEmail);
     }
 
-    expect(TEST_USER_FOLLOWS.some((relationship) => relationship.followerEmail === "user@example.com")).toBe(true);
-    expect(TEST_USER_FOLLOWS.some((relationship) => relationship.followingEmail === "user@example.com")).toBe(true);
+    expect(
+      TEST_USER_FOLLOWS.some(
+        (relationship) => relationship.followerEmail === 'user@example.com',
+      ),
+    ).toBe(true);
+    expect(
+      TEST_USER_FOLLOWS.some(
+        (relationship) => relationship.followingEmail === 'user@example.com',
+      ),
+    ).toBe(true);
   });
 
-  it("seeds notification history for multiple member accounts", () => {
+  it('seeds notification history for multiple member accounts', () => {
     const emails = new Set(TEST_USERS.map((user) => user.email));
 
     for (const notification of TEST_USER_NOTIFICATIONS) {
@@ -36,9 +48,19 @@ describe("test user seed fixtures", () => {
       }
     }
 
-    const primaryUserNotifications = TEST_USER_NOTIFICATIONS.filter((notification) => notification.userEmail === "user@example.com");
+    const primaryUserNotifications = TEST_USER_NOTIFICATIONS.filter(
+      (notification) => notification.userEmail === 'user@example.com',
+    );
 
-    expect(primaryUserNotifications.some((notification) => notification.status === "unread")).toBe(true);
-    expect(primaryUserNotifications.some((notification) => notification.status === "read")).toBe(true);
+    expect(
+      primaryUserNotifications.some(
+        (notification) => notification.status === 'unread',
+      ),
+    ).toBe(true);
+    expect(
+      primaryUserNotifications.some(
+        (notification) => notification.status === 'read',
+      ),
+    ).toBe(true);
   });
 });

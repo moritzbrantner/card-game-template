@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import type { AppManifest } from '@/src/app-config/contracts';
-import { resolveEnabledPublicRoute, resolvePublicRoute } from '@/src/app-config/public-route-resolver';
+import {
+  resolveEnabledPublicRoute,
+  resolvePublicRoute,
+} from '@/src/app-config/public-route-resolver';
 
 function createManifest(overrides?: Partial<AppManifest>): AppManifest {
   return {
@@ -49,7 +52,9 @@ describe('public route resolver', () => {
     const manifest = createManifest();
 
     expect(resolvePublicRoute(manifest, undefined)?.page.id).toBe('home');
-    expect(resolvePublicRoute(manifest, ['examples', 'forms'])?.page.id).toBe('forms');
+    expect(resolvePublicRoute(manifest, ['examples', 'forms'])?.page.id).toBe(
+      'forms',
+    );
     expect(resolvePublicRoute(manifest, ['forms'])?.matchedSlug).toBe('forms');
   });
 
@@ -60,7 +65,9 @@ describe('public route resolver', () => {
       },
     });
 
-    expect(resolveEnabledPublicRoute(manifest, ['examples', 'forms'])).toBeNull();
+    expect(
+      resolveEnabledPublicRoute(manifest, ['examples', 'forms']),
+    ).toBeNull();
     expect(resolveEnabledPublicRoute(manifest, ['forms'])).toBeNull();
   });
 });

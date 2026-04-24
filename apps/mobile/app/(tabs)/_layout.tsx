@@ -15,40 +15,51 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[activeTheme].tint,
         headerShown: false,
         tabBarButton: HapticTab,
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="uno"
         options={{
           title: 'UNO-style',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="rectangle.stack.fill" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="rectangle.stack.fill" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="poker"
         options={{
           title: "Hold'em",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="suit.club.fill" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="suit.club.fill" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="tcg"
         options={{
           title: 'Arcane Duel',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="sparkles" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="sparkles" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="house.fill" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
           title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="paperplane.fill" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -56,7 +67,11 @@ export default function TabLayout() {
         options={{
           title: 'Communication',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="bubble.left.and.bubble.right.fill" color={color} />
+            <IconSymbol
+              size={28}
+              name="bubble.left.and.bubble.right.fill"
+              color={color}
+            />
           ),
         }}
       />
@@ -65,7 +80,11 @@ export default function TabLayout() {
         options={{
           title: 'Uploads',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="square.and.arrow.up.fill" color={color} />
+            <IconSymbol
+              size={28}
+              name="square.and.arrow.up.fill"
+              color={color}
+            />
           ),
         }}
       />
@@ -73,14 +92,18 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="gearshape.fill" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="three"
         options={{
           title: 'Three.js',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="cube.fill" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="cube.fill" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -88,7 +111,11 @@ export default function TabLayout() {
         options={{
           title: 'Form',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="list.bullet.clipboard.fill" color={color} />
+            <IconSymbol
+              size={28}
+              name="list.bullet.clipboard.fill"
+              color={color}
+            />
           ),
         }}
       />

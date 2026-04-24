@@ -17,9 +17,7 @@ const env = getEnv();
 const githubPagesBasePath = normalizeRouterBasePath(env.githubPagesBasePath);
 
 export const normalNextConfig: NextConfig = {
-  allowedDevOrigins: [
-    ...allowedDevOrigins,
-  ],
+  allowedDevOrigins: [...allowedDevOrigins],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
@@ -29,9 +27,7 @@ export const normalNextConfig: NextConfig = {
 };
 
 export const githubPagesNextConfig: NextConfig = {
-  allowedDevOrigins: [
-    ...allowedDevOrigins,
-  ],
+  allowedDevOrigins: [...allowedDevOrigins],
   assetPrefix: githubPagesBasePath === '/' ? undefined : githubPagesBasePath,
   basePath: githubPagesBasePath === '/' ? undefined : githubPagesBasePath,
   images: {

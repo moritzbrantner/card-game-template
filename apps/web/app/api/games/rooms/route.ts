@@ -26,7 +26,9 @@ function mapRoomProblem(
         : code === 'FORBIDDEN'
           ? 403
           : 409;
-  return new ProblemError(problem('/problems/game-room', title, status, detail));
+  return new ProblemError(
+    problem('/problems/game-room', title, status, detail),
+  );
 }
 
 export const GET = createApiRoute({
@@ -46,7 +48,11 @@ export const POST = createApiRoute({
     const result = await createPrivateGameRoomUseCase(session, body);
 
     if (!result.ok) {
-      throw mapRoomProblem('Unable to create room', result.error.code, result.error.message);
+      throw mapRoomProblem(
+        'Unable to create room',
+        result.error.code,
+        result.error.message,
+      );
     }
 
     return result.data;

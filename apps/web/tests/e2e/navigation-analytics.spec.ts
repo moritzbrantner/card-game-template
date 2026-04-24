@@ -16,7 +16,9 @@ const adminUser = getSeededUser('admin@example.com');
 const memberUser = getSeededUser('user@example.com');
 
 test.describe('navigation analytics', () => {
-  test('captures an anonymous home to blog to login path and lets admins refine filters', async ({ page }) => {
+  test('captures an anonymous home to blog to login path and lets admins refine filters', async ({
+    page,
+  }) => {
     await seedNavigationJourney(['/en', '/en/blog', '/en/login']);
 
     await gotoAndWaitForHydration(page, '/en/login');
@@ -26,11 +28,20 @@ test.describe('navigation analytics', () => {
     await expect(page).toHaveURL('/en/profile');
     await waitForAppHydration(page);
 
-    await gotoAndWaitForHydration(page, '/en/admin/reports/navigationJourneys?window=24h&audience=anonymous&path=/blog');
-    await expect(page.getByRole('heading', { name: 'Navigation journeys' })).toBeVisible();
+    await gotoAndWaitForHydration(
+      page,
+      '/en/admin/reports/navigationJourneys?window=24h&audience=anonymous&path=/blog',
+    );
+    await expect(
+      page.getByRole('heading', { name: 'Navigation journeys' }),
+    ).toBeVisible();
     await expect(page.locator('input[name="path"]')).toHaveValue('/blog');
-    await expect(page.getByRole('cell', { name: '/blog', exact: true })).toBeVisible();
-    await expect(page.getByRole('cell', { name: '/login', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: '/blog', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: '/login', exact: true }),
+    ).toBeVisible();
 
     await page.locator('select[name="audience"]').selectOption('all');
     await page.getByRole('button', { name: 'Apply filters' }).click();
@@ -38,13 +49,23 @@ test.describe('navigation analytics', () => {
   });
 
   test('captures an authenticated multi-page session', async ({ page }) => {
-    await seedNavigationJourney(['/en/people', '/en/profile', '/en/notifications'], memberUser.email);
+    await seedNavigationJourney(
+      ['/en/people', '/en/profile', '/en/notifications'],
+      memberUser.email,
+    );
 
     await loginWithCredentials(page, adminUser.email, adminUser.password);
-    await gotoAndWaitForHydration(page, '/en/admin/reports/navigationJourneys?window=24h&audience=authenticated&path=/people');
+    await gotoAndWaitForHydration(
+      page,
+      '/en/admin/reports/navigationJourneys?window=24h&audience=authenticated&path=/people',
+    );
 
-    await expect(page.getByRole('heading', { name: 'Navigation journeys' })).toBeVisible();
-    await expect(page.getByRole('row', { name: /\/people\s+\/profile/ })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Navigation journeys' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('row', { name: /\/people\s+\/profile/ }),
+    ).toBeVisible();
   });
 });
 
@@ -59,25 +80,29 @@ async function seedNavigationJourney(paths: string[], userEmail?: string) {
     const pathname = getPathname(href);
     const classification = classifyNavigationPathname(pathname);
     const previousPathname = previousHref ? getPathname(previousHref) : null;
-    const previousClassification = previousPathname ? classifyNavigationPathname(previousPathname) : null;
+    const previousClassification = previousPathname
+      ? classifyNavigationPathname(previousPathname)
+      : null;
 
-    await getDb().insert(pageVisits).values({
-      id: randomUUID(),
-      userId,
-      trackingVersion: 2,
-      visitorId,
-      sessionId,
-      href,
-      pathname,
-      canonicalPath: classification.canonicalPath,
-      routeGroup: classification.routeGroup,
-      isAuthenticated: Boolean(userId),
-      previousPathname,
-      previousCanonicalPath: previousClassification?.canonicalPath ?? null,
-      referrerType: previousPathname ? 'internal' : 'direct',
-      referrerHost: null,
-      visitedAt: new Date(startedAt + index * 1000),
-    });
+    await getDb()
+      .insert(pageVisits)
+      .values({
+        id: randomUUID(),
+        userId,
+        trackingVersion: 2,
+        visitorId,
+        sessionId,
+        href,
+        pathname,
+        canonicalPath: classification.canonicalPath,
+        routeGroup: classification.routeGroup,
+        isAuthenticated: Boolean(userId),
+        previousPathname,
+        previousCanonicalPath: previousClassification?.canonicalPath ?? null,
+        referrerType: previousPathname ? 'internal' : 'direct',
+        referrerHost: null,
+        visitedAt: new Date(startedAt + index * 1000),
+      });
 
     previousHref = href;
   }

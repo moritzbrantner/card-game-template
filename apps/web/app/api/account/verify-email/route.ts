@@ -14,7 +14,14 @@ export const GET = createApiRoute({
     const result = await verifyEmailByToken(query.token);
 
     if (!result.ok) {
-      throw new ProblemError(problem('/problems/email-verification', 'Unable to verify email', 400, result.error));
+      throw new ProblemError(
+        problem(
+          '/problems/email-verification',
+          'Unable to verify email',
+          400,
+          result.error,
+        ),
+      );
     }
 
     return { ok: true };

@@ -1,19 +1,18 @@
-# Releasing Packages
+# Internal Workspace Packages
 
-Internal packages live in `packages/ui` and `packages/storytelling`.
+The `apps/web/packages/*` workspaces are internal modules for the web app. They are not published independently and should be consumed through the monorepo workspace graph.
 
 ## Local verification
 
 ```bash
 bun run packages:lint
-bun run packages:typecheck
-bun run packages:test
-bun run packages:build
+bun run packages:check-types
+bun run packages:test:unit
 ```
 
-## Publishing expectations
+## Maintenance expectations
 
-- Publish only from `packages/*`.
-- Treat package `exports` as the supported public API surface.
-- Do not commit tarballs, `.turbo` logs, or built `dist/` output back into the repo.
-- Keep release notes focused on public entrypoint changes and breaking API shifts.
+- Keep these workspaces `private`.
+- Prefer source-first workspace imports over built `dist/` artifacts.
+- Preserve the existing import-hygiene checks for package boundaries.
+- Do not commit generated `dist/`, `.turbo`, Playwright, or other test artifacts.

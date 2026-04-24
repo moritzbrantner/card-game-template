@@ -4,7 +4,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 test('desktop renderer uses the preload-backed desktop platform APIs', () => {
-  const source = fs.readFileSync(path.resolve(__dirname, '../src/renderer.ts'), 'utf8');
+  const source = fs.readFileSync(
+    path.resolve(__dirname, '../src/renderer.ts'),
+    'utf8',
+  );
 
   assert.match(source, /@repo\/game-session/);
   assert.match(source, /createUnoScreen/);
@@ -27,11 +30,17 @@ test('desktop renderer uses the preload-backed desktop platform APIs', () => {
   assert.match(source, /Websockets/);
   assert.match(source, /CRDTs/);
   assert.match(source, /window\.addEventListener\('hashchange', renderApp\)/);
-  assert.match(source, /createSharedButtonLabel\(\{ label: 'desktop-launch' \}\)/);
+  assert.match(
+    source,
+    /createSharedButtonLabel\(\s*\{\s*label:\s*'desktop-launch',?\s*\}\s*\)/,
+  );
 });
 
 test('desktop navbar component provides app navigation links including documents', () => {
-  const source = fs.readFileSync(path.resolve(__dirname, '../src/navbar.ts'), 'utf8');
+  const source = fs.readFileSync(
+    path.resolve(__dirname, '../src/navbar.ts'),
+    'utf8',
+  );
 
   assert.match(source, /navbar__brand/);
   assert.match(source, /Desktop App/);
@@ -57,10 +66,7 @@ test('desktop navbar component provides app navigation links including documents
 
 test('desktop exposes a typed online game client adapter', () => {
   const source = fs.readFileSync(
-    path.resolve(
-      __dirname,
-      '../src/platform/online/online-game-client.ts',
-    ),
+    path.resolve(__dirname, '../src/platform/online/online-game-client.ts'),
     'utf8',
   );
 

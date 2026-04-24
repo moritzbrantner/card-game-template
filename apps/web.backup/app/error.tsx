@@ -17,9 +17,16 @@ export default function GlobalError({
     <html>
       <body className="bg-zinc-50 p-8 text-zinc-950">
         <div className="mx-auto max-w-2xl rounded-[2rem] border border-zinc-200 bg-white p-8 shadow-sm">
-          <p className="text-sm uppercase tracking-[0.24em] text-zinc-500">Application error</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Something failed on the server.</h1>
-          <p className="mt-3 text-zinc-600">The request has been logged. Retry the render or return to a safe page.</p>
+          <p className="text-sm uppercase tracking-[0.24em] text-zinc-500">
+            Application error
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight">
+            Something failed on the server.
+          </h1>
+          <p className="mt-3 text-zinc-600">
+            The request has been logged. Retry the render or return to a safe
+            page.
+          </p>
           <button
             type="button"
             onClick={reset}

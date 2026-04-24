@@ -37,15 +37,21 @@ const port = String(Number(args.get('port') ?? process.env.PORT ?? '3000'));
 try {
   await access(nextBuildDir);
 } catch {
-  console.error(`Missing Next.js build output at ${nextBuildDir}. Run "bun run build" first.`);
+  console.error(
+    `Missing Next.js build output at ${nextBuildDir}. Run "bun run build" first.`,
+  );
   process.exit(1);
 }
 
-const child = spawn(process.execPath, [nextCli, 'start', '--hostname', host, '--port', port], {
-  cwd: appRoot,
-  env: process.env,
-  stdio: 'inherit',
-});
+const child = spawn(
+  process.execPath,
+  [nextCli, 'start', '--hostname', host, '--port', port],
+  {
+    cwd: appRoot,
+    env: process.env,
+    stdio: 'inherit',
+  },
+);
 
 child.on('exit', (code, signal) => {
   if (signal) {

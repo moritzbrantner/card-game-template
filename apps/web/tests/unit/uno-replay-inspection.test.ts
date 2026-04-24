@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { createMatchReplay, type MatchState } from '@repo/game-contracts';
-import { createUnoAdapter, defaultUnoRules, type UnoCard, type UnoMove, type UnoState } from '@repo/game-uno';
+import {
+  createUnoAdapter,
+  defaultUnoRules,
+  type UnoCard,
+  type UnoMove,
+  type UnoState,
+} from '@repo/game-uno';
 import type { SessionParticipant } from '@repo/game-session';
 
 import {
@@ -14,7 +20,12 @@ const participants: readonly SessionParticipant[] = [
   { playerId: 'p2', displayName: 'Bob', seat: 2, controller: 'bot' },
 ];
 
-function createCard(color: UnoCard['color'], kind: UnoCard['kind'], id: string, value?: number): UnoCard {
+function createCard(
+  color: UnoCard['color'],
+  kind: UnoCard['kind'],
+  id: string,
+  value?: number,
+): UnoCard {
   return {
     color,
     kind,
@@ -72,18 +83,25 @@ describe('UNO replay inspection', () => {
       replay,
     });
 
-    expect(perspectives.map((perspective) => perspective.id)).toEqual(['bird-eye', 'player:p1', 'player:p2']);
-    expect(steps[0]?.views['bird-eye']?.players.map((player) => player.visibleCards.map((card) => card.id))).toEqual([
-      ['red-4'],
-      ['blue-1'],
+    expect(perspectives.map((perspective) => perspective.id)).toEqual([
+      'bird-eye',
+      'player:p1',
+      'player:p2',
     ]);
-    expect(steps[0]?.views['player:p1']?.players.map((player) => player.visibleCards.map((card) => card.id))).toEqual([
-      ['red-4'],
-      [],
-    ]);
-    expect(steps[0]?.views['player:p2']?.players.map((player) => player.visibleCards.map((card) => card.id))).toEqual([
-      [],
-      ['blue-1'],
-    ]);
+    expect(
+      steps[0]?.views['bird-eye']?.players.map((player) =>
+        player.visibleCards.map((card) => card.id),
+      ),
+    ).toEqual([['red-4'], ['blue-1']]);
+    expect(
+      steps[0]?.views['player:p1']?.players.map((player) =>
+        player.visibleCards.map((card) => card.id),
+      ),
+    ).toEqual([['red-4'], []]);
+    expect(
+      steps[0]?.views['player:p2']?.players.map((player) =>
+        player.visibleCards.map((card) => card.id),
+      ),
+    ).toEqual([[], ['blue-1']]);
   });
 });

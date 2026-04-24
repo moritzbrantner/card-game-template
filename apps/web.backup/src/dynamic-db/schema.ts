@@ -1,4 +1,9 @@
-export type DbSchemaFieldType = 'text' | 'textarea' | 'number' | 'boolean' | 'date';
+export type DbSchemaFieldType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'boolean'
+  | 'date';
 
 export type DbSchemaField = {
   name: string;
@@ -26,7 +31,9 @@ function isFieldType(value: string): value is DbSchemaFieldType {
 
 export function parseDbSchemaDocument(value: unknown): DbSchemaDocument {
   if (!value || typeof value !== 'object' || !('tables' in value)) {
-    throw new Error('Invalid db-schema.json: expected an object with a tables array.');
+    throw new Error(
+      'Invalid db-schema.json: expected an object with a tables array.',
+    );
   }
 
   const rawTables = (value as { tables: unknown }).tables;
@@ -36,34 +43,56 @@ export function parseDbSchemaDocument(value: unknown): DbSchemaDocument {
 
   const tables = rawTables.map((table, tableIndex): DbSchemaTable => {
     if (!table || typeof table !== 'object') {
-      throw new Error(`Invalid db-schema.json: table at index ${tableIndex} must be an object.`);
+      throw new Error(
+        `Invalid db-schema.json: table at index ${tableIndex} must be an object.`,
+      );
     }
 
     const rawTable = table as Record<string, unknown>;
-    if (typeof rawTable.name !== 'string' || typeof rawTable.label !== 'string' || !Array.isArray(rawTable.fields)) {
-      throw new Error(`Invalid db-schema.json: table at index ${tableIndex} is missing required fields.`);
+    if (
+      typeof rawTable.name !== 'string' ||
+      typeof rawTable.label !== 'string' ||
+      !Array.isArray(rawTable.fields)
+    ) {
+      throw new Error(
+        `Invalid db-schema.json: table at index ${tableIndex} is missing required fields.`,
+      );
     }
 
     const fields = rawTable.fields.map((field, fieldIndex): DbSchemaField => {
       if (!field || typeof field !== 'object') {
-        throw new Error(`Invalid db-schema.json: field at table ${rawTable.name}, index ${fieldIndex} must be an object.`);
+        throw new Error(
+          `Invalid db-schema.json: field at table ${rawTable.name}, index ${fieldIndex} must be an object.`,
+        );
       }
 
       const rawField = field as Record<string, unknown>;
-      if (typeof rawField.name !== 'string' || typeof rawField.label !== 'string' || typeof rawField.type !== 'string') {
-        throw new Error(`Invalid db-schema.json: field at table ${rawTable.name}, index ${fieldIndex} is missing required properties.`);
+      if (
+        typeof rawField.name !== 'string' ||
+        typeof rawField.label !== 'string' ||
+        typeof rawField.type !== 'string'
+      ) {
+        throw new Error(
+          `Invalid db-schema.json: field at table ${rawTable.name}, index ${fieldIndex} is missing required properties.`,
+        );
       }
 
       if (!isFieldType(rawField.type)) {
-        throw new Error(`Invalid db-schema.json: unsupported field type "${rawField.type}" in table ${rawTable.name}.`);
+        throw new Error(
+          `Invalid db-schema.json: unsupported field type "${rawField.type}" in table ${rawTable.name}.`,
+        );
       }
 
       return {
         name: rawField.name,
         label: rawField.label,
         type: rawField.type,
-        required: typeof rawField.required === 'boolean' ? rawField.required : false,
-        placeholder: typeof rawField.placeholder === 'string' ? rawField.placeholder : undefined,
+        required:
+          typeof rawField.required === 'boolean' ? rawField.required : false,
+        placeholder:
+          typeof rawField.placeholder === 'string'
+            ? rawField.placeholder
+            : undefined,
         format: rawField.format === 'json' ? 'json' : undefined,
       };
     });
@@ -71,7 +100,10 @@ export function parseDbSchemaDocument(value: unknown): DbSchemaDocument {
     return {
       name: rawTable.name,
       label: rawTable.label,
-      description: typeof rawTable.description === 'string' ? rawTable.description : undefined,
+      description:
+        typeof rawTable.description === 'string'
+          ? rawTable.description
+          : undefined,
       fields,
     };
   });

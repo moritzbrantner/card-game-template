@@ -1,10 +1,19 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { buttonVariants } from '@/components/ui/button';
 import { ProfileDisplayNameForm } from '@/components/profile-display-name-form';
 import { ProfileImageForm } from '@/components/profile-image-form';
 import { ProfileTagForm } from '@/components/profile-tag-form';
 import { LocalizedLink } from '@/i18n/server-link';
-import { buildPublicProfileBlogPath, buildPublicProfilePath } from '@/src/profile/tags';
+import {
+  buildPublicProfileBlogPath,
+  buildPublicProfilePath,
+} from '@/src/profile/tags';
 import { createTranslator } from '@/src/i18n/messages';
 import { requireAuth, resolveLocale } from '@/src/server/page-guards';
 
@@ -72,8 +81,12 @@ export default async function ProfilePage({
 
         <div className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
           <div className="space-y-1">
-            <h2 className="text-lg font-semibold tracking-tight">{blogT('editor.cardTitle')}</h2>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">{blogT('editor.cardDescription')}</p>
+            <h2 className="text-lg font-semibold tracking-tight">
+              {blogT('editor.cardTitle')}
+            </h2>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              {blogT('editor.cardDescription')}
+            </p>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-3">
@@ -85,14 +98,22 @@ export default async function ProfilePage({
               {blogT('editor.openComposer')}
             </LocalizedLink>
             <LocalizedLink
-              href={session.user.tag ? buildPublicProfileBlogPath(session.user.tag) : '/profile/blog'}
+              href={
+                session.user.tag
+                  ? buildPublicProfileBlogPath(session.user.tag)
+                  : '/profile/blog'
+              }
               locale={locale}
               className={buttonVariants({ variant: 'outline' })}
             >
               {blogT('editor.viewPublicBlog')}
             </LocalizedLink>
             <LocalizedLink
-              href={session.user.tag ? buildPublicProfilePath(session.user.tag) : '/profile'}
+              href={
+                session.user.tag
+                  ? buildPublicProfilePath(session.user.tag)
+                  : '/profile'
+              }
               locale={locale}
               className={buttonVariants({ variant: 'outline' })}
             >

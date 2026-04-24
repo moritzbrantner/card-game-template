@@ -24,7 +24,10 @@ function listEntrypointFiles() {
     const messagesIndexPath = path.join(appRoot, 'messages', 'index.ts');
     const testsRoot = path.join(appRoot, 'tests');
 
-    files.push(path.relative(process.cwd(), manifestPath), path.relative(process.cwd(), messagesIndexPath));
+    files.push(
+      path.relative(process.cwd(), manifestPath),
+      path.relative(process.cwd(), messagesIndexPath),
+    );
 
     try {
       walkTests(testsRoot, files);
@@ -53,7 +56,12 @@ function walkTests(currentPath: string, files: string[]) {
 
 function readImports(filePath: string) {
   const source = readFileSync(filePath, 'utf8');
-  return Array.from(source.matchAll(/(?:import|export)\s+(?:type\s+)?(?:[^'"]+?\s+from\s+)?['"]([^'"]+)['"]/g), (match) => match[1]);
+  return Array.from(
+    source.matchAll(
+      /(?:import|export)\s+(?:type\s+)?(?:[^'"]+?\s+from\s+)?['"]([^'"]+)['"]/g,
+    ),
+    (match) => match[1],
+  );
 }
 
 describe('architecture: app-pack entrypoints', () => {
@@ -62,19 +70,26 @@ describe('architecture: app-pack entrypoints', () => {
       const currentApp = filePath.split(path.sep)[1];
       const selfAppPrefix = `@/apps/${currentApp}/`;
 
-      return readImports(filePath).flatMap((importPath) => {
-        if (!importPath.startsWith('@/')) {
-          return [];
-        }
+      return readImports(filePath)
+        .flatMap((importPath) => {
+          if (!importPath.startsWith('@/')) {
+            return [];
+          }
 
-        if (importPath.startsWith(selfAppPrefix)) {
-          return [];
-        }
+          if (importPath.startsWith(selfAppPrefix)) {
+            return [];
+          }
 
-        return [`${filePath} -> ${importPath}`];
-      }).filter((violation) =>
-        !APPROVED_PACKAGE_PREFIXES.some((prefix) => violation.endsWith(`-> ${prefix}`) || violation.includes(`-> ${prefix}/`)),
-      );
+          return [`${filePath} -> ${importPath}`];
+        })
+        .filter(
+          (violation) =>
+            !APPROVED_PACKAGE_PREFIXES.some(
+              (prefix) =>
+                violation.endsWith(`-> ${prefix}`) ||
+                violation.includes(`-> ${prefix}/`),
+            ),
+        );
     });
 
     expect(violations).toEqual([]);

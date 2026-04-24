@@ -21,7 +21,14 @@ export const POST = createApiRoute({
     const result = await signUpWithCredentials(body);
 
     if (!result.ok) {
-      throw new ProblemError(problem('/problems/account-signup', 'Unable to create account', 400, result.error));
+      throw new ProblemError(
+        problem(
+          '/problems/account-signup',
+          'Unable to create account',
+          400,
+          result.error,
+        ),
+      );
     }
 
     const user = await getDb().query.users.findFirst({
@@ -30,7 +37,12 @@ export const POST = createApiRoute({
 
     if (!user?.email) {
       throw new ProblemError(
-        problem('/problems/session-bootstrap-failed', 'Automatic sign-in failed', 500, 'Account created, but automatic sign-in failed. Try logging in manually.'),
+        problem(
+          '/problems/session-bootstrap-failed',
+          'Automatic sign-in failed',
+          500,
+          'Account created, but automatic sign-in failed. Try logging in manually.',
+        ),
       );
     }
 

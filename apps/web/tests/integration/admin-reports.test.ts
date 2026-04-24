@@ -1,25 +1,30 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AppRole } from '@/lib/authorization';
-import { exportAdminReportUseCase, getAdminReportDetailUseCase } from '@/src/domain/admin-reports/use-cases';
+import {
+  exportAdminReportUseCase,
+  getAdminReportDetailUseCase,
+} from '@/src/domain/admin-reports/use-cases';
 
-function createVisit(overrides: Partial<{
-  id: string;
-  userId: string | null;
-  trackingVersion: number;
-  visitorId: string;
-  sessionId: string;
-  pathname: string;
-  href: string;
-  canonicalPath: string;
-  routeGroup: string;
-  isAuthenticated: boolean;
-  previousPathname: string | null;
-  previousCanonicalPath: string | null;
-  referrerType: string;
-  referrerHost: string | null;
-  visitedAt: Date;
-}> = {}) {
+function createVisit(
+  overrides: Partial<{
+    id: string;
+    userId: string | null;
+    trackingVersion: number;
+    visitorId: string;
+    sessionId: string;
+    pathname: string;
+    href: string;
+    canonicalPath: string;
+    routeGroup: string;
+    isAuthenticated: boolean;
+    previousPathname: string | null;
+    previousCanonicalPath: string | null;
+    referrerType: string;
+    referrerHost: string | null;
+    visitedAt: Date;
+  }> = {},
+) {
   return {
     id: 'visit_1',
     userId: 'admin_1',
@@ -40,10 +45,14 @@ function createVisit(overrides: Partial<{
   };
 }
 
-function createApiMocks(session: { user?: { id: string; role: AppRole } } | null) {
+function createApiMocks(
+  session: { user?: { id: string; role: AppRole } } | null,
+) {
   vi.doMock('@/src/api/security', () => ({
     auditAction: vi.fn().mockResolvedValue(undefined),
-    enforceRateLimit: vi.fn().mockResolvedValue({ ok: true, remaining: 10, resetAt: 0 }),
+    enforceRateLimit: vi
+      .fn()
+      .mockResolvedValue({ ok: true, remaining: 10, resetAt: 0 }),
     getRateLimitKey: vi.fn().mockReturnValue('test'),
   }));
   vi.doMock('@/src/auth.server', () => ({
@@ -58,9 +67,13 @@ function createApiMocks(session: { user?: { id: string; role: AppRole } } | null
     }),
   }));
   vi.doMock('@/src/observability/request-context', () => ({
-    createRequestContext: vi.fn().mockReturnValue({ requestId: 'test-request' }),
+    createRequestContext: vi
+      .fn()
+      .mockReturnValue({ requestId: 'test-request' }),
     setRequestActorId: vi.fn(),
-    withRequestContext: vi.fn(async (_context, callback: () => Promise<Response>) => callback()),
+    withRequestContext: vi.fn(
+      async (_context, callback: () => Promise<Response>) => callback(),
+    ),
   }));
 }
 
@@ -113,7 +126,9 @@ describe('admin reports', () => {
       }),
     );
 
-    expect(detail.cards.find((card) => card.label === 'Failed jobs')?.value).toBe('1');
+    expect(
+      detail.cards.find((card) => card.label === 'Failed jobs')?.value,
+    ).toBe('1');
     expect(detail.table.rows).toContainEqual([
       '2026-04-16T07:05:00.000Z',
       'job',
@@ -134,7 +149,9 @@ describe('admin reports', () => {
 
   it('exports report data as JSON and CSV', async () => {
     const deps = Promise.resolve({
-      listUsers: async () => [{ id: 'admin_1', role: 'ADMIN' as const, lockoutUntil: null }],
+      listUsers: async () => [
+        { id: 'admin_1', role: 'ADMIN' as const, lockoutUntil: null },
+      ],
       listAuditLogsSince: async () => [],
       listPageVisitsSince: async () => [
         createVisit({ href: 'http://localhost/en/admin/reports' }),
@@ -142,13 +159,25 @@ describe('admin reports', () => {
       listJobsSince: async () => [],
     });
 
-    const jsonExport = await exportAdminReportUseCase('workspaceAdoption', '7d', 'json', deps);
-    const csvExport = await exportAdminReportUseCase('workspaceAdoption', '7d', 'csv', deps);
+    const jsonExport = await exportAdminReportUseCase(
+      'workspaceAdoption',
+      '7d',
+      'json',
+      deps,
+    );
+    const csvExport = await exportAdminReportUseCase(
+      'workspaceAdoption',
+      '7d',
+      'csv',
+      deps,
+    );
 
     expect(jsonExport.contentType).toContain('application/json');
     expect(jsonExport.body).toContain('"series"');
     expect(jsonExport.body).toContain('"breakdowns"');
-    expect(csvExport.body.split('\n')[0]).toBe('Path,Workspace,Visits,Unique admins');
+    expect(csvExport.body.split('\n')[0]).toBe(
+      'Path,Workspace,Visits,Unique admins',
+    );
   });
 
   it('aggregates localized workspace visits by normalized workspace key', async () => {
@@ -173,8 +202,13 @@ describe('admin reports', () => {
       }),
     );
 
-    expect(detail.cards.find((card) => card.label === 'Admin visits')?.value).toBe('2');
-    expect(detail.breakdowns.find((breakdown) => breakdown.id === 'workspace-visits')?.rows).toEqual(
+    expect(
+      detail.cards.find((card) => card.label === 'Admin visits')?.value,
+    ).toBe('2');
+    expect(
+      detail.breakdowns.find((breakdown) => breakdown.id === 'workspace-visits')
+        ?.rows,
+    ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ label: 'Reports', value: '1' }),
         expect.objectContaining({ label: 'Users', value: '1' }),
@@ -194,9 +228,12 @@ describe('admin reports', () => {
       isFeatureEnabled: (featureKey: string) => featureKey !== 'admin.reports',
     }));
 
-    const routeDisabled = await import('@/app/api/admin/reports/[reportId]/route');
+    const routeDisabled =
+      await import('@/app/api/admin/reports/[reportId]/route');
     const disabledResponse = await routeDisabled.GET(
-      new Request('http://localhost/api/admin/reports/securityAccess?window=7d&format=csv'),
+      new Request(
+        'http://localhost/api/admin/reports/securityAccess?window=7d&format=csv',
+      ),
       { params: Promise.resolve({ reportId: 'securityAccess' }) },
     );
     expect(disabledResponse.status).toBe(404);
@@ -207,9 +244,12 @@ describe('admin reports', () => {
       isFeatureEnabled: () => true,
     }));
 
-    const routeUnauthorized = await import('@/app/api/admin/reports/[reportId]/route');
+    const routeUnauthorized =
+      await import('@/app/api/admin/reports/[reportId]/route');
     const unauthorizedResponse = await routeUnauthorized.GET(
-      new Request('http://localhost/api/admin/reports/securityAccess?window=7d&format=csv'),
+      new Request(
+        'http://localhost/api/admin/reports/securityAccess?window=7d&format=csv',
+      ),
       { params: Promise.resolve({ reportId: 'securityAccess' }) },
     );
 

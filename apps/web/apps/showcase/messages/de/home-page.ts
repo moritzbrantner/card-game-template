@@ -11,15 +11,18 @@ export const homePage = {
   sections: {
     foundation: {
       title: 'Anwendungsfundament',
-      description: 'Authentifizierung, Locale-Routing, Profilverwaltung, Admin-Steuerung und typisierte Service-Grenzen.',
+      description:
+        'Authentifizierung, Locale-Routing, Profilverwaltung, Admin-Steuerung und typisierte Service-Grenzen.',
     },
     interaction: {
       title: 'Interaktionsdemos',
-      description: 'Formularzustand, scrollgesteuertes Storytelling, Datentabellen und staerkere UI-Muster fuer kommende Features.',
+      description:
+        'Formularzustand, scrollgesteuertes Storytelling, Datentabellen und staerkere UI-Muster fuer kommende Features.',
     },
     delivery: {
       title: 'Auslieferungsgrundlagen',
-      description: 'Upload-Regeln, Kommunikationsleitlinien und reservierte Bereiche fuer 3D- oder Echtzeit-Arbeit.',
+      description:
+        'Upload-Regeln, Kommunikationsleitlinien und reservierte Bereiche fuer 3D- oder Echtzeit-Arbeit.',
     },
   },
 };

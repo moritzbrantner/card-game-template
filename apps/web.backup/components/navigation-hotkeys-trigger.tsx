@@ -14,8 +14,10 @@ type NavigationHotkeyItem = {
   searchText: string;
 };
 
-const NavigationHotkeys = dynamic(
-  () => import('@/components/navigation-hotkeys').then((mod) => mod.NavigationHotkeys),
+const NavigationHotkeys = dynamic(() =>
+  import('@/components/navigation-hotkeys').then(
+    (mod) => mod.NavigationHotkeys,
+  ),
 );
 
 export function NavigationHotkeysTrigger({

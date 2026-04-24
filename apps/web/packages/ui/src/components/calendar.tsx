@@ -1,61 +1,65 @@
-"use client"
+'use client';
 
-import * as React from "react"
+import * as React from 'react';
 import {
   DayPicker,
   getDefaultClassNames,
   type DayButton,
   type Locale,
-} from "react-day-picker"
+} from 'react-day-picker';
 
-import { cn } from "../lib/cn"
-import { Button, buttonVariants } from "./button"
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "lucide-react"
+import { cn } from '../lib/cn';
+import { Button, buttonVariants } from './button';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronDownIcon,
+} from 'lucide-react';
 
 type CalendarIcsProperty = [
   name: string,
   parameters: Record<string, string | string[]>,
   valueType: string,
   value: unknown,
-]
+];
 
 type CalendarIcsComponent = [
   name: string,
   properties: CalendarIcsProperty[],
   components: CalendarIcsComponent[],
-]
+];
 
-type CalendarIcsData = CalendarIcsComponent
+type CalendarIcsData = CalendarIcsComponent;
 
 type CalendarEvent = {
-  uid?: string
-  summary?: string
-  description?: string
-  location?: string
-  start: Date
-  end?: Date
-  isAllDay: boolean
-}
+  uid?: string;
+  summary?: string;
+  description?: string;
+  location?: string;
+  start: Date;
+  end?: Date;
+  isAllDay: boolean;
+};
 
 type CalendarCellComponentProps = React.ComponentProps<typeof DayButton> & {
-  locale?: Partial<Locale>
-  events?: CalendarEvent[]
-  maxEventsPerDay?: number
-}
+  locale?: Partial<Locale>;
+  events?: CalendarEvent[];
+  maxEventsPerDay?: number;
+};
 
 type CalendarProps = React.ComponentProps<typeof DayPicker> & {
-  buttonVariant?: React.ComponentProps<typeof Button>["variant"]
-  cellComponent?: React.ComponentType<CalendarCellComponentProps>
-  icsData?: CalendarIcsData
-  maxEventsPerDay?: number
-}
+  buttonVariant?: React.ComponentProps<typeof Button>['variant'];
+  cellComponent?: React.ComponentType<CalendarCellComponentProps>;
+  icsData?: CalendarIcsData;
+  maxEventsPerDay?: number;
+};
 
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
-  captionLayout = "label",
-  buttonVariant = "ghost",
+  captionLayout = 'label',
+  buttonVariant = 'ghost',
   cellComponent: CellComponent,
   defaultMonth,
   month,
@@ -66,12 +70,20 @@ function Calendar({
   components,
   ...props
 }: CalendarProps) {
-  const defaultClassNames = getDefaultClassNames()
-  const calendarEvents = React.useMemo(() => getCalendarEventsFromIcsData(icsData), [icsData])
-  const eventsByDay = React.useMemo(() => getEventsByDay(calendarEvents), [calendarEvents])
-  const defaultDayButton = (dayButtonProps: React.ComponentProps<typeof DayButton>) => {
-    const DayButtonComponent = CellComponent ?? CalendarDayButton
-    const dayEvents = eventsByDay.get(getDayKey(dayButtonProps.day.date)) ?? []
+  const defaultClassNames = getDefaultClassNames();
+  const calendarEvents = React.useMemo(
+    () => getCalendarEventsFromIcsData(icsData),
+    [icsData],
+  );
+  const eventsByDay = React.useMemo(
+    () => getEventsByDay(calendarEvents),
+    [calendarEvents],
+  );
+  const defaultDayButton = (
+    dayButtonProps: React.ComponentProps<typeof DayButton>,
+  ) => {
+    const DayButtonComponent = CellComponent ?? CalendarDayButton;
+    const dayEvents = eventsByDay.get(getDayKey(dayButtonProps.day.date)) ?? [];
 
     return (
       <DayButtonComponent
@@ -80,8 +92,8 @@ function Calendar({
         maxEventsPerDay={maxEventsPerDay}
         {...dayButtonProps}
       />
-    )
-  }
+    );
+  };
 
   return (
     <DayPicker
@@ -89,106 +101,106 @@ function Calendar({
       defaultMonth={defaultMonth ?? month ?? calendarEvents[0]?.start}
       month={month}
       className={cn(
-        "group/calendar bg-background p-2 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(7)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
+        'group/calendar bg-background p-2 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(7)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent',
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
         String.raw`rtl:**:[.rdp-button\_previous>svg]:rotate-180`,
-        className
+        className,
       )}
       captionLayout={captionLayout}
       locale={locale}
       formatters={{
         formatMonthDropdown: (date) =>
-          date.toLocaleString(locale?.code, { month: "short" }),
+          date.toLocaleString(locale?.code, { month: 'short' }),
         ...formatters,
       }}
       classNames={{
-        root: cn("w-fit", defaultClassNames.root),
+        root: cn('w-fit', defaultClassNames.root),
         months: cn(
-          "relative flex flex-col gap-4 md:flex-row",
-          defaultClassNames.months
+          'relative flex flex-col gap-4 md:flex-row',
+          defaultClassNames.months,
         ),
-        month: cn("flex w-full flex-col gap-4", defaultClassNames.month),
+        month: cn('flex w-full flex-col gap-4', defaultClassNames.month),
         nav: cn(
-          "absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1",
-          defaultClassNames.nav
+          'absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1',
+          defaultClassNames.nav,
         ),
         button_previous: cn(
           buttonVariants({ variant: buttonVariant }),
-          "size-(--cell-size) p-0 select-none aria-disabled:opacity-50",
-          defaultClassNames.button_previous
+          'size-(--cell-size) p-0 select-none aria-disabled:opacity-50',
+          defaultClassNames.button_previous,
         ),
         button_next: cn(
           buttonVariants({ variant: buttonVariant }),
-          "size-(--cell-size) p-0 select-none aria-disabled:opacity-50",
-          defaultClassNames.button_next
+          'size-(--cell-size) p-0 select-none aria-disabled:opacity-50',
+          defaultClassNames.button_next,
         ),
         month_caption: cn(
-          "flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)",
-          defaultClassNames.month_caption
+          'flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)',
+          defaultClassNames.month_caption,
         ),
         dropdowns: cn(
-          "flex h-(--cell-size) w-full items-center justify-center gap-1.5 text-sm font-medium",
-          defaultClassNames.dropdowns
+          'flex h-(--cell-size) w-full items-center justify-center gap-1.5 text-sm font-medium',
+          defaultClassNames.dropdowns,
         ),
         dropdown_root: cn(
-          "relative rounded-(--cell-radius)",
-          defaultClassNames.dropdown_root
+          'relative rounded-(--cell-radius)',
+          defaultClassNames.dropdown_root,
         ),
         dropdown: cn(
-          "absolute inset-0 bg-popover opacity-0",
-          defaultClassNames.dropdown
+          'absolute inset-0 bg-popover opacity-0',
+          defaultClassNames.dropdown,
         ),
         caption_label: cn(
-          "font-medium select-none",
-          captionLayout === "label"
-            ? "text-sm"
-            : "flex items-center gap-1 rounded-(--cell-radius) text-sm [&>svg]:size-3.5 [&>svg]:text-muted-foreground",
-          defaultClassNames.caption_label
+          'font-medium select-none',
+          captionLayout === 'label'
+            ? 'text-sm'
+            : 'flex items-center gap-1 rounded-(--cell-radius) text-sm [&>svg]:size-3.5 [&>svg]:text-muted-foreground',
+          defaultClassNames.caption_label,
         ),
-        table: "w-full border-collapse",
-        weekdays: cn("flex", defaultClassNames.weekdays),
+        table: 'w-full border-collapse',
+        weekdays: cn('flex', defaultClassNames.weekdays),
         weekday: cn(
-          "flex-1 rounded-(--cell-radius) text-[0.8rem] font-normal text-muted-foreground select-none",
-          defaultClassNames.weekday
+          'flex-1 rounded-(--cell-radius) text-[0.8rem] font-normal text-muted-foreground select-none',
+          defaultClassNames.weekday,
         ),
-        week: cn("mt-2 flex w-full", defaultClassNames.week),
+        week: cn('mt-2 flex w-full', defaultClassNames.week),
         week_number_header: cn(
-          "w-(--cell-size) select-none",
-          defaultClassNames.week_number_header
+          'w-(--cell-size) select-none',
+          defaultClassNames.week_number_header,
         ),
         week_number: cn(
-          "text-[0.8rem] text-muted-foreground select-none",
-          defaultClassNames.week_number
+          'text-[0.8rem] text-muted-foreground select-none',
+          defaultClassNames.week_number,
         ),
         day: cn(
-          "group/day relative aspect-square h-full w-full rounded-(--cell-radius) p-0 text-center select-none [&:last-child[data-selected=true]_button]:rounded-r-(--cell-radius)",
+          'group/day relative aspect-square h-full w-full rounded-(--cell-radius) p-0 text-center select-none [&:last-child[data-selected=true]_button]:rounded-r-(--cell-radius)',
           props.showWeekNumber
-            ? "[&:nth-child(2)[data-selected=true]_button]:rounded-l-(--cell-radius)"
-            : "[&:first-child[data-selected=true]_button]:rounded-l-(--cell-radius)",
-          defaultClassNames.day
+            ? '[&:nth-child(2)[data-selected=true]_button]:rounded-l-(--cell-radius)'
+            : '[&:first-child[data-selected=true]_button]:rounded-l-(--cell-radius)',
+          defaultClassNames.day,
         ),
         range_start: cn(
-          "relative isolate z-0 rounded-l-(--cell-radius) bg-muted after:absolute after:inset-y-0 after:right-0 after:w-4 after:bg-muted",
-          defaultClassNames.range_start
+          'relative isolate z-0 rounded-l-(--cell-radius) bg-muted after:absolute after:inset-y-0 after:right-0 after:w-4 after:bg-muted',
+          defaultClassNames.range_start,
         ),
-        range_middle: cn("rounded-none", defaultClassNames.range_middle),
+        range_middle: cn('rounded-none', defaultClassNames.range_middle),
         range_end: cn(
-          "relative isolate z-0 rounded-r-(--cell-radius) bg-muted after:absolute after:inset-y-0 after:left-0 after:w-4 after:bg-muted",
-          defaultClassNames.range_end
+          'relative isolate z-0 rounded-r-(--cell-radius) bg-muted after:absolute after:inset-y-0 after:left-0 after:w-4 after:bg-muted',
+          defaultClassNames.range_end,
         ),
         today: cn(
-          "rounded-(--cell-radius) bg-muted text-foreground data-[selected=true]:rounded-none",
-          defaultClassNames.today
+          'rounded-(--cell-radius) bg-muted text-foreground data-[selected=true]:rounded-none',
+          defaultClassNames.today,
         ),
         outside: cn(
-          "text-muted-foreground aria-selected:text-muted-foreground",
-          defaultClassNames.outside
+          'text-muted-foreground aria-selected:text-muted-foreground',
+          defaultClassNames.outside,
         ),
         disabled: cn(
-          "text-muted-foreground opacity-50",
-          defaultClassNames.disabled
+          'text-muted-foreground opacity-50',
+          defaultClassNames.disabled,
         ),
-        hidden: cn("invisible", defaultClassNames.hidden),
+        hidden: cn('invisible', defaultClassNames.hidden),
         ...classNames,
       }}
       components={{
@@ -200,24 +212,27 @@ function Calendar({
               className={cn(className)}
               {...props}
             />
-          )
+          );
         },
         Chevron: ({ className, orientation, ...props }) => {
-          if (orientation === "left") {
+          if (orientation === 'left') {
             return (
-              <ChevronLeftIcon className={cn("size-4", className)} {...props} />
-            )
+              <ChevronLeftIcon className={cn('size-4', className)} {...props} />
+            );
           }
 
-          if (orientation === "right") {
+          if (orientation === 'right') {
             return (
-              <ChevronRightIcon className={cn("size-4", className)} {...props} />
-            )
+              <ChevronRightIcon
+                className={cn('size-4', className)}
+                {...props}
+              />
+            );
           }
 
           return (
-            <ChevronDownIcon className={cn("size-4", className)} {...props} />
-          )
+            <ChevronDownIcon className={cn('size-4', className)} {...props} />
+          );
         },
         DayButton: defaultDayButton,
         WeekNumber: ({ children, ...props }) => {
@@ -227,13 +242,13 @@ function Calendar({
                 {children}
               </div>
             </td>
-          )
+          );
         },
         ...components,
       }}
       {...props}
     />
-  )
+  );
 }
 
 function CalendarDayButton({
@@ -246,18 +261,18 @@ function CalendarDayButton({
   locale,
   ...props
 }: React.ComponentProps<typeof DayButton> & {
-  locale?: Partial<Locale>
-  events?: CalendarEvent[]
-  maxEventsPerDay?: number
+  locale?: Partial<Locale>;
+  events?: CalendarEvent[];
+  maxEventsPerDay?: number;
 }) {
-  const defaultClassNames = getDefaultClassNames()
-  const visibleEvents = events.slice(0, maxEventsPerDay)
-  const hiddenEventsCount = Math.max(events.length - visibleEvents.length, 0)
+  const defaultClassNames = getDefaultClassNames();
+  const visibleEvents = events.slice(0, maxEventsPerDay);
+  const hiddenEventsCount = Math.max(events.length - visibleEvents.length, 0);
 
-  const ref = React.useRef<HTMLButtonElement>(null)
+  const ref = React.useRef<HTMLButtonElement>(null);
   React.useEffect(() => {
-    if (modifiers.focused) ref.current?.focus()
-  }, [modifiers.focused])
+    if (modifiers.focused) ref.current?.focus();
+  }, [modifiers.focused]);
 
   return (
     <Button
@@ -276,9 +291,9 @@ function CalendarDayButton({
       data-range-middle={modifiers.range_middle}
       data-has-events={events.length > 0 || undefined}
       className={cn(
-        "relative isolate z-10 flex aspect-square size-auto w-full min-w-(--cell-size) flex-col items-start justify-start gap-1 overflow-hidden border-0 p-1.5 text-left leading-none font-normal group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-[3px] group-data-[focused=true]/day:ring-ring/50 data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-r-(--cell-radius) data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-muted data-[range-middle=true]:text-foreground data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-l-(--cell-radius) data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground dark:hover:text-foreground",
+        'relative isolate z-10 flex aspect-square size-auto w-full min-w-(--cell-size) flex-col items-start justify-start gap-1 overflow-hidden border-0 p-1.5 text-left leading-none font-normal group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-[3px] group-data-[focused=true]/day:ring-ring/50 data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-r-(--cell-radius) data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-muted data-[range-middle=true]:text-foreground data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-l-(--cell-radius) data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground dark:hover:text-foreground',
         defaultClassNames.day,
-        className
+        className,
       )}
       {...props}
     >
@@ -304,10 +319,10 @@ function CalendarDayButton({
         </div>
       ) : null}
     </Button>
-  )
+  );
 }
 
-export { Calendar, CalendarDayButton }
+export { Calendar, CalendarDayButton };
 export type {
   CalendarProps,
   CalendarCellComponentProps,
@@ -315,117 +330,123 @@ export type {
   CalendarIcsComponent,
   CalendarIcsData,
   CalendarIcsProperty,
-}
+};
 
-function getCalendarEventsFromIcsData(icsData?: CalendarIcsData): CalendarEvent[] {
-  if (!icsData || icsData[0].toLowerCase() !== "vcalendar") {
-    return []
+function getCalendarEventsFromIcsData(
+  icsData?: CalendarIcsData,
+): CalendarEvent[] {
+  if (!icsData || icsData[0].toLowerCase() !== 'vcalendar') {
+    return [];
   }
 
   return icsData[2]
     .flatMap((component) => {
-      if (component[0].toLowerCase() !== "vevent") {
-        return []
+      if (component[0].toLowerCase() !== 'vevent') {
+        return [];
       }
 
-      const event = parseCalendarEvent(component[1])
-      return event ? [event] : []
+      const event = parseCalendarEvent(component[1]);
+      return event ? [event] : [];
     })
-    .sort((left, right) => left.start.getTime() - right.start.getTime())
+    .sort((left, right) => left.start.getTime() - right.start.getTime());
 }
 
-function parseCalendarEvent(properties: CalendarIcsProperty[]): CalendarEvent | null {
-  const startProperty = getCalendarProperty(properties, "dtstart")
-  const start = parseCalendarDate(startProperty)
+function parseCalendarEvent(
+  properties: CalendarIcsProperty[],
+): CalendarEvent | null {
+  const startProperty = getCalendarProperty(properties, 'dtstart');
+  const start = parseCalendarDate(startProperty);
 
   if (!start) {
-    return null
+    return null;
   }
 
-  const endProperty = getCalendarProperty(properties, "dtend")
-  const end = parseCalendarDate(endProperty)
+  const endProperty = getCalendarProperty(properties, 'dtend');
+  const end = parseCalendarDate(endProperty);
 
   return {
-    uid: getCalendarTextProperty(properties, "uid"),
-    summary: getCalendarTextProperty(properties, "summary"),
-    description: getCalendarTextProperty(properties, "description"),
-    location: getCalendarTextProperty(properties, "location"),
+    uid: getCalendarTextProperty(properties, 'uid'),
+    summary: getCalendarTextProperty(properties, 'summary'),
+    description: getCalendarTextProperty(properties, 'description'),
+    location: getCalendarTextProperty(properties, 'location'),
     start: start.value,
     end: end?.value,
     isAllDay: start.isAllDay,
-  }
+  };
 }
 
 function getCalendarProperty(
   properties: CalendarIcsProperty[],
-  propertyName: string
+  propertyName: string,
 ) {
-  return properties.find(([name]) => name.toLowerCase() === propertyName)
+  return properties.find(([name]) => name.toLowerCase() === propertyName);
 }
 
 function getCalendarTextProperty(
   properties: CalendarIcsProperty[],
-  propertyName: string
+  propertyName: string,
 ) {
-  const property = getCalendarProperty(properties, propertyName)
+  const property = getCalendarProperty(properties, propertyName);
 
-  return typeof property?.[3] === "string" ? property[3] : undefined
+  return typeof property?.[3] === 'string' ? property[3] : undefined;
 }
 
 function parseCalendarDate(property?: CalendarIcsProperty) {
   if (!property) {
-    return null
+    return null;
   }
 
-  const [, , valueType, value] = property
+  const [, , valueType, value] = property;
 
-  if (typeof value !== "string") {
-    return null
+  if (typeof value !== 'string') {
+    return null;
   }
 
-  const normalizedType = valueType.toLowerCase()
-  const isAllDay = normalizedType === "date"
-  const parsedValue = isAllDay ? parseCalendarDateOnly(value) : parseCalendarDateTime(value)
+  const normalizedType = valueType.toLowerCase();
+  const isAllDay = normalizedType === 'date';
+  const parsedValue = isAllDay
+    ? parseCalendarDateOnly(value)
+    : parseCalendarDateTime(value);
 
   if (!parsedValue) {
-    return null
+    return null;
   }
 
   return {
     isAllDay,
     value: parsedValue,
-  }
+  };
 }
 
 function parseCalendarDateOnly(value: string) {
-  const hyphenatedMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  const compactMatch = value.match(/^(\d{4})(\d{2})(\d{2})$/)
-  const match = hyphenatedMatch ?? compactMatch
+  const hyphenatedMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const compactMatch = value.match(/^(\d{4})(\d{2})(\d{2})$/);
+  const match = hyphenatedMatch ?? compactMatch;
 
   if (!match) {
-    return null
+    return null;
   }
 
-  const [, year, month, day] = match
-  return new Date(Number(year), Number(month) - 1, Number(day))
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day));
 }
 
 function parseCalendarDateTime(value: string) {
-  const nativeDate = new Date(value)
+  const nativeDate = new Date(value);
 
   if (!Number.isNaN(nativeDate.getTime())) {
-    return nativeDate
+    return nativeDate;
   }
 
   const match = value.match(
-    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z)?$/
-  )
+    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z)?$/,
+  );
 
   if (!match) {
-    return null
+    return null;
   }
 
-  const [, year, month, day, hours, minutes, seconds, utc] = match
+  const [, year, month, day, hours, minutes, seconds, utc] = match;
 
   if (utc) {
     return new Date(
@@ -435,9 +456,9 @@ function parseCalendarDateTime(value: string) {
         Number(day),
         Number(hours),
         Number(minutes),
-        Number(seconds)
-      )
-    )
+        Number(seconds),
+      ),
+    );
   }
 
   return new Date(
@@ -446,75 +467,77 @@ function parseCalendarDateTime(value: string) {
     Number(day),
     Number(hours),
     Number(minutes),
-    Number(seconds)
-  )
+    Number(seconds),
+  );
 }
 
 function getEventsByDay(events: CalendarEvent[]) {
-  const eventMap = new Map<string, CalendarEvent[]>()
+  const eventMap = new Map<string, CalendarEvent[]>();
 
   for (const event of events) {
-    const firstDay = startOfDay(event.start)
-    const lastDay = startOfDay(getEventDisplayEnd(event))
+    const firstDay = startOfDay(event.start);
+    const lastDay = startOfDay(getEventDisplayEnd(event));
 
     for (
       let day = firstDay;
       day.getTime() <= lastDay.getTime();
       day = addDays(day, 1)
     ) {
-      const dayKey = getDayKey(day)
-      const dayEvents = eventMap.get(dayKey) ?? []
-      dayEvents.push(event)
-      eventMap.set(dayKey, dayEvents)
+      const dayKey = getDayKey(day);
+      const dayEvents = eventMap.get(dayKey) ?? [];
+      dayEvents.push(event);
+      eventMap.set(dayKey, dayEvents);
     }
   }
 
   for (const dayEvents of eventMap.values()) {
-    dayEvents.sort((left, right) => left.start.getTime() - right.start.getTime())
+    dayEvents.sort(
+      (left, right) => left.start.getTime() - right.start.getTime(),
+    );
   }
 
-  return eventMap
+  return eventMap;
 }
 
 function getEventDisplayEnd(event: CalendarEvent) {
   if (!event.end || event.end.getTime() <= event.start.getTime()) {
-    return event.start
+    return event.start;
   }
 
-  return new Date(event.end.getTime() - 1)
+  return new Date(event.end.getTime() - 1);
 }
 
 function getDayKey(date: Date) {
   return [
     date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-")
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
 }
 
 function startOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 function addDays(date: Date, amount: number) {
-  const nextDate = new Date(date)
-  nextDate.setDate(nextDate.getDate() + amount)
-  return nextDate
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + amount);
+  return nextDate;
 }
 
 function getCalendarEventKey(event: CalendarEvent) {
-  return `${event.uid ?? event.summary ?? "event"}-${event.start.toISOString()}`
+  return `${event.uid ?? event.summary ?? 'event'}-${event.start.toISOString()}`;
 }
 
 function getCalendarEventLabel(event: CalendarEvent, locale?: Partial<Locale>) {
-  const summary = event.summary ?? "Untitled event"
+  const summary = event.summary ?? 'Untitled event';
 
   if (event.isAllDay) {
-    return summary
+    return summary;
   }
 
   return `${event.start.toLocaleTimeString(locale?.code, {
-    hour: "numeric",
-    minute: "2-digit",
-  })} ${summary}`
+    hour: 'numeric',
+    minute: '2-digit',
+  })} ${summary}`;
 }

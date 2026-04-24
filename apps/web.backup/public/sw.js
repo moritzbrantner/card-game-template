@@ -26,7 +26,11 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('message', (event) => {
-  if (!event.data || event.data.type !== 'CACHE_BLOG_EDITOR_ROUTE' || typeof event.data.url !== 'string') {
+  if (
+    !event.data ||
+    event.data.type !== 'CACHE_BLOG_EDITOR_ROUTE' ||
+    typeof event.data.url !== 'string'
+  ) {
     return;
   }
 
@@ -61,16 +65,21 @@ function isStaticAssetRequest(request, url) {
     return true;
   }
 
-  return ['script', 'style', 'font', 'image', 'manifest'].includes(request.destination);
+  return ['script', 'style', 'font', 'image', 'manifest'].includes(
+    request.destination,
+  );
 }
 
 function isBlogEditorRoute(url) {
   const segments = url.pathname.split('/').filter(Boolean);
-  return segments.length === 3 && segments[1] === 'profile' && segments[2] === 'blog';
+  return (
+    segments.length === 3 && segments[1] === 'profile' && segments[2] === 'blog'
+  );
 }
 
 function getBlogEditorCacheKey(input) {
-  const url = typeof input === 'string' ? new URL(input, self.location.origin) : input;
+  const url =
+    typeof input === 'string' ? new URL(input, self.location.origin) : input;
   return `${url.origin}${url.pathname}`;
 }
 
@@ -129,11 +138,14 @@ async function networkFirstBlogPage(request) {
       return cachedResponse;
     }
 
-    return new Response('Offline. Reload this page after reconnecting once the blog editor has been loaded online.', {
-      status: 503,
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
+    return new Response(
+      'Offline. Reload this page after reconnecting once the blog editor has been loaded online.',
+      {
+        status: 503,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
       },
-    });
+    );
   }
 }

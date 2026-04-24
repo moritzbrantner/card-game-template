@@ -43,7 +43,8 @@ export const logger = {
   info: (obj: unknown, msg?: string) => getBaseLogger().info(obj, msg),
   warn: (obj: unknown, msg?: string) => getBaseLogger().warn(obj, msg),
   error: (obj: unknown, msg?: string) => getBaseLogger().error(obj, msg),
-  child: (bindings: Record<string, unknown>) => asLogger(getBaseLogger().child(bindings)),
+  child: (bindings: Record<string, unknown>) =>
+    asLogger(getBaseLogger().child(bindings)),
 } satisfies Logger;
 
 export function getLogger(bindings: Record<string, unknown> = {}): Logger {

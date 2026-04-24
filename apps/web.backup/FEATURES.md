@@ -3,6 +3,7 @@
 ## Core platform features
 
 ### User management
+
 - **Status:** done
 - **Summary:** Credential login, self-serve signup, email verification, password reset, session handling, account email change, account deletion, and profile updates are implemented.
 - **Acceptance criteria:**
@@ -13,6 +14,7 @@
   - [x] Account email change and account deletion validate current password.
 
 ### Authorization and admin access
+
 - **Status:** done
 - **Summary:** Role-aware helpers, admin/workspace navigation, and protected admin APIs are implemented.
 - **Acceptance criteria:**
@@ -21,6 +23,7 @@
   - [x] Authorization reporting endpoint exposes rate-limited permission state.
 
 ### API hardening
+
 - **Status:** done
 - **Summary:** Shared rate limiting and audit logging protect public and privileged HTTP endpoints.
 - **Acceptance criteria:**
@@ -29,6 +32,7 @@
   - [x] Audit metadata is sanitized before persistence.
 
 ### Example accelerators
+
 - **Status:** done
 - **Summary:** Example routes demonstrate forms, storytelling, communication, uploads, and mock REST data under an explicit `/examples/*` namespace.
 - **Acceptance criteria:**

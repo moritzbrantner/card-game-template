@@ -7,7 +7,10 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { defaultGameCatalog } from '@repo/game-catalog';
-import { createLocalGameSession, type LocalGameSession } from '@repo/game-session';
+import {
+  createLocalGameSession,
+  type LocalGameSession,
+} from '@repo/game-session';
 import {
   createUnoAdapter,
   createUnoBots,
@@ -22,7 +25,10 @@ import {
   type UnoState,
 } from '@repo/game-uno';
 
-function createSession(presetId: UnoExamplePresetId, rules: UnoRules): LocalGameSession<UnoState, UnoMove, UnoPlayerView> {
+function createSession(
+  presetId: UnoExamplePresetId,
+  rules: UnoRules,
+): LocalGameSession<UnoState, UnoMove, UnoPlayerView> {
   const preset = getUnoExamplePreset(presetId);
   const seed = `${presetId}:${JSON.stringify(rules)}`;
 
@@ -48,12 +54,14 @@ export default function UnoScreen() {
   const catalogEntry = defaultGameCatalog.get('uno-style');
   const [presetId, setPresetId] = useState<UnoExamplePresetId>('mixed-table');
   const [rules, setRules] = useState<UnoRules>(defaultUnoRules);
-  const sessionRef = useRef<LocalGameSession<UnoState, UnoMove, UnoPlayerView> | null>(null);
-  const [snapshot, setSnapshot] = useState(() => {
-    const session = createSession('mixed-table', defaultUnoRules);
-    sessionRef.current = session;
-    return session.getSnapshot();
-  });
+  const sessionRef = useRef<LocalGameSession<
+    UnoState,
+    UnoMove,
+    UnoPlayerView
+  > | null>(null);
+  const [snapshot, setSnapshot] = useState(() =>
+    createSession('mixed-table', defaultUnoRules).getSnapshot(),
+  );
 
   useEffect(() => {
     const session = createSession(presetId, rules);
@@ -76,10 +84,12 @@ export default function UnoScreen() {
           <ThemedView
             style={[styles.hero, { borderColor }]}
             lightColor={Colors.light.surface}
-            darkColor={Colors.dark.surface}>
+            darkColor={Colors.dark.surface}
+          >
             <ThemedText type="title">UNO-style</ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
-              Shared local play example with hotseat handoff, deterministic bots, and reusable rules.
+              Shared local play example with hotseat handoff, deterministic
+              bots, and reusable rules.
             </ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
               Catalog route: {catalogEntry?.metadata?.route}
@@ -91,8 +101,11 @@ export default function UnoScreen() {
               style={({ pressed }) => [
                 styles.primaryButton,
                 { backgroundColor: tintColor, opacity: pressed ? 0.82 : 1 },
-              ]}>
-              <ThemedText style={styles.primaryButtonText}>Restart match</ThemedText>
+              ]}
+            >
+              <ThemedText style={styles.primaryButtonText}>
+                Restart match
+              </ThemedText>
             </Pressable>
           </ThemedView>
 
@@ -109,10 +122,12 @@ export default function UnoScreen() {
                     styles.choiceButton,
                     {
                       borderColor,
-                      backgroundColor: preset.id === presetId ? accentSurface : 'transparent',
+                      backgroundColor:
+                        preset.id === presetId ? accentSurface : 'transparent',
                       opacity: pressed ? 0.82 : 1,
                     },
-                  ]}>
+                  ]}
+                >
                   <ThemedText type="defaultSemiBold">{preset.label}</ThemedText>
                 </Pressable>
               ))}
@@ -122,12 +137,14 @@ export default function UnoScreen() {
           <ThemedView style={styles.section}>
             <ThemedText type="subtitle">House rule toggles</ThemedText>
             <ThemedView style={styles.buttonRow}>
-              {([
-                ['drawStacking', 'Draw stacking'],
-                ['jumpIn', 'Jump-in'],
-                ['sevenZero', '7-0 swap'],
-                ['requireUnoCall', 'Require UNO call'],
-              ] as const).map(([key, label]) => (
+              {(
+                [
+                  ['drawStacking', 'Draw stacking'],
+                  ['jumpIn', 'Jump-in'],
+                  ['sevenZero', '7-0 swap'],
+                  ['requireUnoCall', 'Require UNO call'],
+                ] as const
+              ).map(([key, label]) => (
                 <Pressable
                   key={key}
                   onPress={() => {
@@ -140,10 +157,13 @@ export default function UnoScreen() {
                     styles.choiceButton,
                     {
                       borderColor,
-                      backgroundColor: rules[key] ? accentSurface : 'transparent',
+                      backgroundColor: rules[key]
+                        ? accentSurface
+                        : 'transparent',
                       opacity: pressed ? 0.82 : 1,
                     },
-                  ]}>
+                  ]}
+                >
                   <ThemedText type="defaultSemiBold">{label}</ThemedText>
                 </Pressable>
               ))}
@@ -153,16 +173,25 @@ export default function UnoScreen() {
           <ThemedView
             style={[styles.card, { borderColor }]}
             lightColor={Colors.light.surface}
-            darkColor={Colors.dark.surface}>
+            darkColor={Colors.dark.surface}
+          >
             <ThemedText type="subtitle">Table status</ThemedText>
-            <ThemedText style={{ color: mutedTextColor }}>Active color: {snapshot.view.activeColor}</ThemedText>
+            <ThemedText style={{ color: mutedTextColor }}>
+              Active color: {snapshot.view.activeColor}
+            </ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
               Pending draw: {snapshot.view.pendingDrawAmount}
             </ThemedText>
-            <ThemedText style={{ color: mutedTextColor }}>Draw pile: {snapshot.view.drawPileCount}</ThemedText>
-            <ThemedText style={{ color: mutedTextColor }}>{snapshot.view.status}</ThemedText>
+            <ThemedText style={{ color: mutedTextColor }}>
+              Draw pile: {snapshot.view.drawPileCount}
+            </ThemedText>
+            <ThemedText style={{ color: mutedTextColor }}>
+              {snapshot.view.status}
+            </ThemedText>
             {snapshot.view.matchResultBanner ? (
-              <ThemedText type="defaultSemiBold">{snapshot.view.matchResultBanner}</ThemedText>
+              <ThemedText type="defaultSemiBold">
+                {snapshot.view.matchResultBanner}
+              </ThemedText>
             ) : null}
           </ThemedView>
 
@@ -170,10 +199,12 @@ export default function UnoScreen() {
             <ThemedView
               style={[styles.card, { borderColor }]}
               lightColor={Colors.light.surface}
-              darkColor={Colors.dark.surface}>
+              darkColor={Colors.dark.surface}
+            >
               <ThemedText type="subtitle">Hotseat handoff</ThemedText>
               <ThemedText style={{ color: mutedTextColor }}>
-                Waiting for {snapshot.view.pendingHotseatPlayerId} to take over this device.
+                Waiting for {snapshot.view.pendingHotseatPlayerId} to take over
+                this device.
               </ThemedText>
               <Pressable
                 onPress={() => {
@@ -182,8 +213,11 @@ export default function UnoScreen() {
                 style={({ pressed }) => [
                   styles.primaryButton,
                   { backgroundColor: tintColor, opacity: pressed ? 0.82 : 1 },
-                ]}>
-                <ThemedText style={styles.primaryButtonText}>Reveal next hand</ThemedText>
+                ]}
+              >
+                <ThemedText style={styles.primaryButtonText}>
+                  Reveal next hand
+                </ThemedText>
               </Pressable>
             </ThemedView>
           ) : null}
@@ -195,12 +229,14 @@ export default function UnoScreen() {
                 key={player.playerId}
                 style={[styles.card, { borderColor }]}
                 lightColor={Colors.light.surface}
-                darkColor={Colors.dark.surface}>
+                darkColor={Colors.dark.surface}
+              >
                 <ThemedText type="defaultSemiBold">
                   {player.displayName} · {player.controller}
                 </ThemedText>
                 <ThemedText style={{ color: mutedTextColor }}>
-                  {player.handCount} cards · {player.isActive ? 'Active turn' : 'Waiting'}
+                  {player.handCount} cards ·{' '}
+                  {player.isActive ? 'Active turn' : 'Waiting'}
                 </ThemedText>
                 <ThemedView style={styles.handRow}>
                   {player.visibleCards.length > 0 ? (
@@ -209,12 +245,15 @@ export default function UnoScreen() {
                         key={card.id}
                         style={[styles.handCard, { borderColor }]}
                         lightColor={Colors.light.background}
-                        darkColor={Colors.dark.background}>
+                        darkColor={Colors.dark.background}
+                      >
                         <ThemedText>{card.label}</ThemedText>
                       </ThemedView>
                     ))
                   ) : (
-                    <ThemedText style={{ color: mutedTextColor }}>Hidden until you own this seat.</ThemedText>
+                    <ThemedText style={{ color: mutedTextColor }}>
+                      Hidden until you own this seat.
+                    </ThemedText>
                   )}
                 </ThemedView>
               </ThemedView>
@@ -235,12 +274,17 @@ export default function UnoScreen() {
                       style={({ pressed }) => [
                         styles.choiceButton,
                         { borderColor, opacity: pressed ? 0.82 : 1 },
-                      ]}>
-                      <ThemedText type="defaultSemiBold">{action.label}</ThemedText>
+                      ]}
+                    >
+                      <ThemedText type="defaultSemiBold">
+                        {action.label}
+                      </ThemedText>
                     </Pressable>
                   ))
                 ) : (
-                  <ThemedText style={{ color: mutedTextColor }}>No visible actions right now.</ThemedText>
+                  <ThemedText style={{ color: mutedTextColor }}>
+                    No visible actions right now.
+                  </ThemedText>
                 )}
               </ThemedView>
             </ThemedView>

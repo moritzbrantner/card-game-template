@@ -24,7 +24,8 @@ export default function ProfileScreen() {
               <ThemedView
                 style={[styles.hero, { borderColor }]}
                 lightColor={Colors.light.surface}
-                darkColor={Colors.dark.surface}>
+                darkColor={Colors.dark.surface}
+              >
                 <ThemedText style={[styles.eyebrow, { color: mutedTextColor }]}>
                   Mobile profile
                 </ThemedText>
@@ -38,17 +39,21 @@ export default function ProfileScreen() {
               <ThemedView
                 style={[styles.card, { borderColor }]}
                 lightColor={Colors.light.surface}
-                darkColor={Colors.dark.surface}>
+                darkColor={Colors.dark.surface}
+              >
                 <ThemedText type="subtitle">Overview</ThemedText>
                 <ThemedText>{user.role}</ThemedText>
-                <ThemedText style={{ color: mutedTextColor }}>{user.location}</ThemedText>
+                <ThemedText style={{ color: mutedTextColor }}>
+                  {user.location}
+                </ThemedText>
                 <ThemedText style={styles.about}>{user.about}</ThemedText>
               </ThemedView>
 
               <ThemedView
                 style={[styles.card, { borderColor }]}
                 lightColor={Colors.light.surface}
-                darkColor={Colors.dark.surface}>
+                darkColor={Colors.dark.surface}
+              >
                 <ThemedText type="subtitle">Focus areas</ThemedText>
                 <ThemedView style={styles.interests}>
                   {user.interests.map((interest) => (
@@ -56,7 +61,8 @@ export default function ProfileScreen() {
                       key={interest}
                       style={[styles.interestPill, { borderColor }]}
                       lightColor={Colors.light.surface}
-                      darkColor={Colors.dark.surface}>
+                      darkColor={Colors.dark.surface}
+                    >
                       <ThemedText>{interest}</ThemedText>
                     </ThemedView>
                   ))}
@@ -67,10 +73,12 @@ export default function ProfileScreen() {
             <ThemedView
               style={[styles.card, { borderColor }]}
               lightColor={Colors.light.surface}
-              darkColor={Colors.dark.surface}>
+              darkColor={Colors.dark.surface}
+            >
               <ThemedText type="subtitle">Profile not found</ThemedText>
               <ThemedText>
-                This mobile route only resolves handles that look like /profile/@username.
+                This mobile route only resolves handles that look like
+                /profile/@username.
               </ThemedText>
             </ThemedView>
           )}

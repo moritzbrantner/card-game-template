@@ -17,9 +17,9 @@ export async function GET(request: Request) {
     return guard.response;
   }
 
-  const [reportsPermission] = getAdminActionPermissions(guard.session!.user.role).filter(
-    (permission) => permission.key === 'viewReports',
-  );
+  const [reportsPermission] = getAdminActionPermissions(
+    guard.session!.user.role,
+  ).filter((permission) => permission.key === 'viewReports');
 
   return guard.json({
     action: 'viewReports',

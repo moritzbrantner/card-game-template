@@ -17,7 +17,8 @@ function prependNodeToolchainToPath() {
     .filter(Boolean);
 
   const nodeBinary =
-    candidates.find((candidate) => !candidate.startsWith('/tmp/bun-node-')) ?? candidates[0];
+    candidates.find((candidate) => !candidate.startsWith('/tmp/bun-node-')) ??
+    candidates[0];
 
   if (!nodeBinary) {
     return;

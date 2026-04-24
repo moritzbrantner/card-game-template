@@ -8,7 +8,10 @@ import { StaticRedirectPage } from '@/components/static-redirect-page';
 
 import { loadShowcaseMessages } from './messages';
 
-async function redirectToLocalizedPath(path: string, locale: AppLocale): Promise<never> {
+async function redirectToLocalizedPath(
+  path: string,
+  locale: AppLocale,
+): Promise<never> {
   const { redirect } = await import('next/navigation');
   redirect(withLocalePath(path, locale));
   throw new Error('Next.js redirect did not terminate rendering.');
@@ -21,9 +24,9 @@ const enabledFeatures = {
   'profiles.follow': true,
   'profiles.blog': true,
   'people.directory': true,
-  'notifications': true,
-  'newsletter': true,
-  'reportProblem': true,
+  notifications: true,
+  newsletter: true,
+  reportProblem: true,
   'content.blog': true,
   'content.changelog': true,
   'workspace.dataEntry': true,
@@ -47,7 +50,8 @@ const showcaseManifest: AppManifest = {
   siteName: 'Next Template',
   defaultLocaleMetadata: {
     title: 'Next Template',
-    description: 'Next.js application with auth, admin examples, and Drizzle/Postgres persistence.',
+    description:
+      'Next.js application with auth, admin examples, and Drizzle/Postgres persistence.',
   },
   enabledFeatures,
   publicPages: [
@@ -95,7 +99,9 @@ const showcaseManifest: AppManifest = {
       render: async ({ locale, matchedSlug }) => {
         if (matchedSlug === 'forms') {
           if (isGithubPagesBuild) {
-            return createElement(StaticRedirectPage, { href: '../examples/forms/' });
+            return createElement(StaticRedirectPage, {
+              href: '../examples/forms/',
+            });
           }
 
           return redirectToLocalizedPath('/examples/forms', locale);
@@ -116,7 +122,9 @@ const showcaseManifest: AppManifest = {
       render: async ({ locale, matchedSlug }) => {
         if (matchedSlug === 'story') {
           if (isGithubPagesBuild) {
-            return createElement(StaticRedirectPage, { href: '../examples/story/' });
+            return createElement(StaticRedirectPage, {
+              href: '../examples/story/',
+            });
           }
 
           return redirectToLocalizedPath('/examples/story', locale);
@@ -137,7 +145,9 @@ const showcaseManifest: AppManifest = {
       render: async ({ locale, matchedSlug }) => {
         if (matchedSlug === 'communication') {
           if (isGithubPagesBuild) {
-            return createElement(StaticRedirectPage, { href: '../examples/communication/' });
+            return createElement(StaticRedirectPage, {
+              href: '../examples/communication/',
+            });
           }
 
           return redirectToLocalizedPath('/examples/communication', locale);
@@ -170,7 +180,9 @@ const showcaseManifest: AppManifest = {
       render: async ({ locale, matchedSlug }) => {
         if (matchedSlug === 'uploads') {
           if (isGithubPagesBuild) {
-            return createElement(StaticRedirectPage, { href: '../examples/uploads/' });
+            return createElement(StaticRedirectPage, {
+              href: '../examples/uploads/',
+            });
           }
 
           return redirectToLocalizedPath('/examples/uploads', locale);
@@ -185,12 +197,42 @@ const showcaseManifest: AppManifest = {
   publicNavigation: [
     { pageId: 'home', category: 'discover', hotkey: ['alt', 'h'], order: 10 },
     { pageId: 'about', category: 'discover', hotkey: ['alt', 'a'], order: 20 },
-    { pageId: 'remocn', category: 'discover', hotkey: ['alt', 'v'], prefetch: false, order: 30 },
-    { pageId: 'story', category: 'discover', hotkey: ['alt', 's'], prefetch: false, order: 40 },
-    { pageId: 'communication', category: 'discover', hotkey: ['alt', 'c'], prefetch: false, order: 50 },
-    { pageId: 'forms', category: 'workspace', hotkey: ['alt', 'f'], prefetch: false, order: 60 },
+    {
+      pageId: 'remocn',
+      category: 'discover',
+      hotkey: ['alt', 'v'],
+      prefetch: false,
+      order: 30,
+    },
+    {
+      pageId: 'story',
+      category: 'discover',
+      hotkey: ['alt', 's'],
+      prefetch: false,
+      order: 40,
+    },
+    {
+      pageId: 'communication',
+      category: 'discover',
+      hotkey: ['alt', 'c'],
+      prefetch: false,
+      order: 50,
+    },
+    {
+      pageId: 'forms',
+      category: 'workspace',
+      hotkey: ['alt', 'f'],
+      prefetch: false,
+      order: 60,
+    },
     { pageId: 'table', category: 'workspace', hotkey: ['alt', 't'], order: 70 },
-    { pageId: 'uploads', category: 'workspace', hotkey: ['alt', 'u'], prefetch: false, order: 80 },
+    {
+      pageId: 'uploads',
+      category: 'workspace',
+      hotkey: ['alt', 'u'],
+      prefetch: false,
+      order: 80,
+    },
   ],
   contentRoots: {
     pages: ['apps/showcase/content/pages'],

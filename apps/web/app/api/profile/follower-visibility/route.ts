@@ -13,9 +13,21 @@ function mapFollowerVisibilityProblem(
   code: 'NOT_FOUND' | 'VALIDATION_ERROR' | 'FORBIDDEN' | 'CONFLICT',
   detail: string,
 ) {
-  const status = code === 'NOT_FOUND' ? 404 : code === 'FORBIDDEN' ? 403 : code === 'CONFLICT' ? 409 : 400;
+  const status =
+    code === 'NOT_FOUND'
+      ? 404
+      : code === 'FORBIDDEN'
+        ? 403
+        : code === 'CONFLICT'
+          ? 409
+          : 400;
   return new ProblemError(
-    problem('/problems/profile-follower-visibility', 'Unable to update follower visibility', status, detail),
+    problem(
+      '/problems/profile-follower-visibility',
+      'Unable to update follower visibility',
+      status,
+      detail,
+    ),
   );
 }
 
@@ -25,10 +37,16 @@ export const PATCH = createApiRoute({
   permission: 'profile.manageOwnFollowerVisibility',
   bodySchema: followerVisibilityBodySchema,
   async handler({ actorId, body }) {
-    const result = await updateProfileFollowerVisibilityUseCase(actorId!, body.followerVisibility);
+    const result = await updateProfileFollowerVisibilityUseCase(
+      actorId!,
+      body.followerVisibility,
+    );
 
     if (!result.ok) {
-      throw mapFollowerVisibilityProblem(result.error.code, result.error.message);
+      throw mapFollowerVisibilityProblem(
+        result.error.code,
+        result.error.message,
+      );
     }
 
     return {

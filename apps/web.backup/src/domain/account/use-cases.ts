@@ -10,7 +10,11 @@ import {
 } from '@/src/auth/account-lifecycle';
 import { getDb } from '@/src/db/client';
 import { users, verificationTokens } from '@/src/db/schema';
-import { failure, success, type ServiceResult } from '@/src/domain/shared/result';
+import {
+  failure,
+  success,
+  type ServiceResult,
+} from '@/src/domain/shared/result';
 import { deleteProfileImage } from '@/src/profile/object-storage';
 
 const EMAIL_VERIFICATION_PREFIX = 'email-verification:';
@@ -69,8 +73,14 @@ async function resolveMutationDependencies(): Promise<AccountMutationDependencie
           .delete(verificationTokens)
           .where(
             or(
-              like(verificationTokens.identifier, `${EMAIL_VERIFICATION_PREFIX}${userId}`),
-              like(verificationTokens.identifier, `${PASSWORD_RESET_PREFIX}${userId}`),
+              like(
+                verificationTokens.identifier,
+                `${EMAIL_VERIFICATION_PREFIX}${userId}`,
+              ),
+              like(
+                verificationTokens.identifier,
+                `${PASSWORD_RESET_PREFIX}${userId}`,
+              ),
             ),
           );
 
@@ -100,7 +110,9 @@ function mapLifecycleError(error: string): AccountError {
 
 export async function registerAccountUseCase(
   input: SignupInput,
-): Promise<ServiceResult<{ userId: string; verificationToken: string }, AccountError>> {
+): Promise<
+  ServiceResult<{ userId: string; verificationToken: string }, AccountError>
+> {
   const result = await signUpWithCredentials(input);
 
   if (!result.ok) {
@@ -113,7 +125,9 @@ export async function registerAccountUseCase(
   });
 }
 
-export async function requestAccountRecoveryUseCase(email: string): Promise<ServiceResult<{ requested: true }, never>> {
+export async function requestAccountRecoveryUseCase(
+  email: string,
+): Promise<ServiceResult<{ requested: true }, never>> {
   await requestPasswordReset(email);
   return success({ requested: true });
 }
@@ -131,7 +145,9 @@ export async function recoverAccountWithTokenUseCase(
   return success({ recovered: true });
 }
 
-export async function verifyAccountEmailUseCase(token: string): Promise<ServiceResult<{ verified: true }, AccountError>> {
+export async function verifyAccountEmailUseCase(
+  token: string,
+): Promise<ServiceResult<{ verified: true }, AccountError>> {
   const result = await verifyEmailByToken(token);
 
   if (!result.ok) {
@@ -184,7 +200,10 @@ export async function updateAccountEmailUseCase(
     });
   }
 
-  const passwordMatches = await resolvedDeps.verifyPassword(currentPassword, existingUser.passwordHash);
+  const passwordMatches = await resolvedDeps.verifyPassword(
+    currentPassword,
+    existingUser.passwordHash,
+  );
   if (!passwordMatches) {
     return failure({
       code: 'FORBIDDEN',
@@ -246,7 +265,10 @@ export async function deleteAccountUseCase(
     });
   }
 
-  const passwordMatches = await resolvedDeps.verifyPassword(currentPassword, existingUser.passwordHash);
+  const passwordMatches = await resolvedDeps.verifyPassword(
+    currentPassword,
+    existingUser.passwordHash,
+  );
   if (!passwordMatches) {
     return failure({
       code: 'FORBIDDEN',
@@ -259,10 +281,13 @@ export async function deleteAccountUseCase(
   try {
     await resolvedDeps.deleteProfileImage(existingUser.image);
   } catch (error) {
-    console.error('[account] failed to delete profile image during account deletion', {
-      userId,
-      error,
-    });
+    console.error(
+      '[account] failed to delete profile image during account deletion',
+      {
+        userId,
+        error,
+      },
+    );
   }
 
   return success({ deleted: true });

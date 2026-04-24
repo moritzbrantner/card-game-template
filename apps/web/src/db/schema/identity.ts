@@ -1,6 +1,1 @@
-export {
-  profiles,
-  userBlocks,
-  userFollows,
-  users,
-} from './legacy';
+export { profiles, userBlocks, userFollows, users } from './legacy';

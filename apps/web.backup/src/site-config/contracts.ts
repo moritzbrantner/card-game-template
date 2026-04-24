@@ -13,7 +13,10 @@ export const analyticsSiteSettingKeys = [
   'analytics.defaultAdminReportWindow',
 ] as const;
 
-export const siteSettingKeys = [...publicSiteSettingKeys, ...analyticsSiteSettingKeys] as const;
+export const siteSettingKeys = [
+  ...publicSiteSettingKeys,
+  ...analyticsSiteSettingKeys,
+] as const;
 
 export type SiteSettingKey = (typeof siteSettingKeys)[number];
 export type PublicSiteSettingKey = (typeof publicSiteSettingKeys)[number];

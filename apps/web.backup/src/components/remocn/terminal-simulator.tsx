@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
 import {
   Sequence,
   interpolate,
   useCurrentFrame,
   useVideoConfig,
-} from "remotion";
+} from 'remotion';
 
-export type TerminalLineType = "command" | "log" | "success" | "error";
+export type TerminalLineType = 'command' | 'log' | 'success' | 'error';
 
 export interface TerminalLine {
   text: string;
@@ -41,36 +41,36 @@ export interface TerminalSimulatorProps {
 }
 
 const DEFAULT_LINES: TerminalLine[] = [
-  { text: "npm run build", type: "command", delay: 0 },
-  { text: "Resolving dependencies...", type: "log", delay: 6 },
-  { text: "> remocn@1.0.0 build", type: "log", delay: 4 },
-  { text: "> next build", type: "log", delay: 4 },
-  { text: "Compiling...", type: "log", delay: 12 },
-  { text: "Compiled successfully in 4.2s", type: "success", delay: 14 },
-  { text: "Generating static pages (24/24)", type: "log", delay: 10 },
-  { text: "Build completed without errors", type: "success", delay: 12 },
+  { text: 'npm run build', type: 'command', delay: 0 },
+  { text: 'Resolving dependencies...', type: 'log', delay: 6 },
+  { text: '> remocn@1.0.0 build', type: 'log', delay: 4 },
+  { text: '> next build', type: 'log', delay: 4 },
+  { text: 'Compiling...', type: 'log', delay: 12 },
+  { text: 'Compiled successfully in 4.2s', type: 'success', delay: 14 },
+  { text: 'Generating static pages (24/24)', type: 'log', delay: 10 },
+  { text: 'Build completed without errors', type: 'success', delay: 12 },
 ];
 
 const TYPE_COLORS: Record<TerminalLineType, string> = {
-  command: "#fafafa",
-  log: "#a1a1aa",
-  success: "#22c55e",
-  error: "#ef4444",
+  command: '#fafafa',
+  log: '#a1a1aa',
+  success: '#22c55e',
+  error: '#ef4444',
 };
 
 /** Auto freeze-frame heuristic: any line ending in "..." holds the camera. */
 function autoPause(line: TerminalLine): number {
   if (line.pause !== undefined) return line.pause;
-  if (line.text.trimEnd().endsWith("...")) return 18;
+  if (line.text.trimEnd().endsWith('...')) return 18;
   return 0;
 }
 
 export function TerminalSimulator({
   lines = DEFAULT_LINES,
-  prompt = "$",
-  title = "~/projects/remocn",
-  background = "#0a0a0a",
-  chromeColor = "#1a1a1a",
+  prompt = '$',
+  title = '~/projects/remocn',
+  background = '#0a0a0a',
+  chromeColor = '#1a1a1a',
   fontSize = 18,
   charsPerFrame = 1,
   chunkSize = 4,
@@ -114,12 +114,12 @@ export function TerminalSimulator({
     <div
       className={className}
       style={{
-        position: "absolute",
+        position: 'absolute',
         inset: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#050505",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#050505',
       }}
     >
       <div
@@ -128,13 +128,13 @@ export function TerminalSimulator({
           height: windowHeight,
           background,
           borderRadius: 12,
-          overflow: "hidden",
+          overflow: 'hidden',
           boxShadow:
-            "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)",
-          display: "flex",
-          flexDirection: "column",
+            '0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)',
+          display: 'flex',
+          flexDirection: 'column',
           fontFamily:
-            "var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace",
+            'var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace',
         }}
       >
         {/* Chrome */}
@@ -142,11 +142,11 @@ export function TerminalSimulator({
           style={{
             height: 40,
             background: chromeColor,
-            display: "flex",
-            alignItems: "center",
-            padding: "0 16px",
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 16px',
             gap: 8,
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
           }}
         >
           <Light color="#ff5f57" />
@@ -155,8 +155,8 @@ export function TerminalSimulator({
           <div
             style={{
               flex: 1,
-              textAlign: "center",
-              color: "#71717a",
+              textAlign: 'center',
+              color: '#71717a',
               fontSize: 13,
             }}
           >
@@ -169,13 +169,13 @@ export function TerminalSimulator({
           style={{
             flex: 1,
             padding: 20,
-            overflow: "hidden",
-            position: "relative",
+            overflow: 'hidden',
+            position: 'relative',
           }}
         >
           <div
             style={{
-              position: "absolute",
+              position: 'absolute',
               left: 20,
               right: 20,
               top: 20,
@@ -213,7 +213,7 @@ function Light({ color }: { color: string }) {
       style={{
         width: 12,
         height: 12,
-        borderRadius: "50%",
+        borderRadius: '50%',
         background: color,
         opacity: 0.85,
       }}
@@ -248,8 +248,8 @@ function TerminalLineRow({
   // feel — text doesn't drip, it lurches.
   const linearRevealed = Math.floor(
     interpolate(localFrame, [0, totalChars / charsPerFrame], [0, totalChars], {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
+      extrapolateLeft: 'clamp',
+      extrapolateRight: 'clamp',
     }),
   );
   const revealed = Math.min(
@@ -267,19 +267,19 @@ function TerminalLineRow({
         height: lineHeight,
         fontSize,
         color: TYPE_COLORS[line.type],
-        display: "flex",
-        alignItems: "center",
-        whiteSpace: "pre",
+        display: 'flex',
+        alignItems: 'center',
+        whiteSpace: 'pre',
       }}
     >
-      {line.type === "command" && (
-        <span style={{ color: "#22c55e", marginRight: 8 }}>{prompt}</span>
+      {line.type === 'command' && (
+        <span style={{ color: '#22c55e', marginRight: 8 }}>{prompt}</span>
       )}
       <span>{visible}</span>
       {!typingDone && cursorVisible && (
         <span
           style={{
-            display: "inline-block",
+            display: 'inline-block',
             width: fontSize * 0.55,
             height: fontSize,
             background: TYPE_COLORS[line.type],

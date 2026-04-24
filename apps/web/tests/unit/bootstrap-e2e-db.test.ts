@@ -1,5 +1,12 @@
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -76,8 +83,12 @@ exit 0
       });
 
       expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
-      expect(result.stdout).toContain('DATABASE_URL was not set; defaulting to');
-      expect(result.stdout).toContain('Reusing already-reachable Postgres instance from DATABASE_URL.');
+      expect(result.stdout).toContain(
+        'DATABASE_URL was not set; defaulting to',
+      );
+      expect(result.stdout).toContain(
+        'Reusing already-reachable Postgres instance from DATABASE_URL.',
+      );
 
       const bunLog = readFileSync(bunLogPath, 'utf8');
       expect(bunLog).toContain('run db:migrate');
@@ -86,7 +97,9 @@ exit 0
       let dockerLog = '';
       try {
         dockerLog = readFileSync(dockerLogPath, 'utf8');
-      } catch {}
+      } catch {
+        // The bootstrap script should not touch docker in this scenario.
+      }
       expect(dockerLog).toBe('');
     } finally {
       rmSync(testDir, { force: true, recursive: true });
@@ -157,11 +170,7 @@ case "$subcommand" in
     ;;
   config)
     if [[ "\${1:-}" == "--services" ]]; then
-      if [[ "$has_expected_file" -eq 1 ]]; then
-        printf 'postgres\\npostgres-test\\nmailpit\\nminio\\n'
-      else
-        printf 'postgres\\n'
-      fi
+      printf 'postgres\\npostgres-test\\nmailpit\\nminio\\n'
       exit 0
     fi
     ;;
@@ -240,7 +249,8 @@ exit 0
           FAKE_DOCKER_LOG: dockerLogPath,
           FAKE_BUN_STATE: bunStatePath,
           FAKE_BUN_LOG: bunLogPath,
-          DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:55435/next_template?schema=public',
+          DATABASE_URL:
+            'postgresql://postgres:postgres@127.0.0.1:55435/next_template?schema=public',
           E2E_MANAGED_DATABASE: '1',
           PATH: `${binDir}:${process.env.PATH ?? ''}`,
           PROFILE_IMAGE_STORAGE_ENDPOINT: 'http://127.0.0.1:65535',

@@ -20,7 +20,13 @@ type SubmissionState =
     }
   | null;
 
-const areaOptions = ['bug', 'performance', 'account', 'billing', 'other'] as const;
+const areaOptions = [
+  'bug',
+  'performance',
+  'account',
+  'billing',
+  'other',
+] as const;
 
 export function ReportProblemForm() {
   const t = useTranslations('ReportProblemPage');
@@ -47,7 +53,9 @@ export function ReportProblemForm() {
       return;
     }
 
-    const body = (await response.json().catch(() => null)) as { referenceId?: string } | null;
+    const body = (await response.json().catch(() => null)) as {
+      referenceId?: string;
+    } | null;
 
     if (!body?.referenceId) {
       setSubmissionState({
@@ -78,7 +86,9 @@ export function ReportProblemForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="problem-report-email">{t('fields.email.label')}</Label>
+          <Label htmlFor="problem-report-email">
+            {t('fields.email.label')}
+          </Label>
           <Input
             id="problem-report-email"
             name="email"
@@ -111,7 +121,9 @@ export function ReportProblemForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="problem-report-url">{t('fields.pageUrl.label')}</Label>
+          <Label htmlFor="problem-report-url">
+            {t('fields.pageUrl.label')}
+          </Label>
           <Input
             id="problem-report-url"
             name="pageUrl"
@@ -123,7 +135,9 @@ export function ReportProblemForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="problem-report-subject">{t('fields.subject.label')}</Label>
+        <Label htmlFor="problem-report-subject">
+          {t('fields.subject.label')}
+        </Label>
         <Input
           id="problem-report-subject"
           name="subject"
@@ -135,7 +149,9 @@ export function ReportProblemForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="problem-report-details">{t('fields.details.label')}</Label>
+        <Label htmlFor="problem-report-details">
+          {t('fields.details.label')}
+        </Label>
         <Textarea
           id="problem-report-details"
           name="details"
@@ -148,7 +164,9 @@ export function ReportProblemForm() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t('footnote')}</p>
+        <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+          {t('footnote')}
+        </p>
 
         <Button type="submit" disabled={pending}>
           {pending ? t('actions.submitting') : t('actions.submit')}
@@ -156,7 +174,11 @@ export function ReportProblemForm() {
       </div>
 
       <div role="status" aria-live="polite" className="space-y-1">
-        {submissionState?.error ? <p className="text-sm text-red-600 dark:text-red-400">{submissionState.error}</p> : null}
+        {submissionState?.error ? (
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {submissionState.error}
+          </p>
+        ) : null}
         {submissionState?.referenceId ? (
           <p className="text-sm text-emerald-600 dark:text-emerald-400">
             {t('success.message', { referenceId: submissionState.referenceId })}

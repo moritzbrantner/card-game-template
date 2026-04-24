@@ -2,12 +2,22 @@ import { notFound } from 'next/navigation';
 
 import { BlogPostComposer } from '@/components/blog-post-composer';
 import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { LocalizedLink } from '@/i18n/server-link';
 import { createTranslator } from '@/src/i18n/messages';
 import { getUserBlogUseCase } from '@/src/domain/blog/use-cases';
 import { buildPublicProfileBlogPath } from '@/src/profile/tags';
-import { notFoundUnlessFeatureEnabledForUser, requireAuth, resolveLocale } from '@/src/server/page-guards';
+import {
+  notFoundUnlessFeatureEnabledForUser,
+  requireAuth,
+  resolveLocale,
+} from '@/src/server/page-guards';
 
 function formatBlogDate(locale: string, date: Date) {
   return new Intl.DateTimeFormat(locale, {
@@ -52,7 +62,11 @@ export default async function ProfileBlogPage({
               {t('editor.backToProfile')}
             </LocalizedLink>
             <LocalizedLink
-              href={session.user.tag ? buildPublicProfileBlogPath(session.user.tag) : '/profile/blog'}
+              href={
+                session.user.tag
+                  ? buildPublicProfileBlogPath(session.user.tag)
+                  : '/profile/blog'
+              }
               locale={locale}
               className={buttonVariants({ variant: 'default' })}
             >
@@ -107,16 +121,28 @@ export default async function ProfileBlogPage({
             blog.posts.map((post) => {
               const createdLabel = formatBlogDate(locale, post.createdAt);
               const updatedLabel = formatBlogDate(locale, post.updatedAt);
-              const wasUpdated = post.updatedAt.getTime() !== post.createdAt.getTime();
+              const wasUpdated =
+                post.updatedAt.getTime() !== post.createdAt.getTime();
 
               return (
-                <article key={post.id} className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
+                <article
+                  key={post.id}
+                  className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800"
+                >
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-600 dark:text-zinc-400">
-                      <span>{t('posts.publishedAt', { date: createdLabel })}</span>
-                      {wasUpdated ? <span>{t('posts.updatedAt', { date: updatedLabel })}</span> : null}
+                      <span>
+                        {t('posts.publishedAt', { date: createdLabel })}
+                      </span>
+                      {wasUpdated ? (
+                        <span>
+                          {t('posts.updatedAt', { date: updatedLabel })}
+                        </span>
+                      ) : null}
                     </div>
-                    <h2 className="text-xl font-semibold tracking-tight">{post.title}</h2>
+                    <h2 className="text-xl font-semibold tracking-tight">
+                      {post.title}
+                    </h2>
                     <p className="whitespace-pre-wrap text-sm leading-7 text-zinc-700 dark:text-zinc-300">
                       {post.content}
                     </p>
@@ -125,7 +151,9 @@ export default async function ProfileBlogPage({
               );
             })
           ) : (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">{t('posts.empty')}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              {t('posts.empty')}
+            </p>
           )}
         </CardContent>
       </Card>

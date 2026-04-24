@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import type { ReactNode } from "react";
-import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import type { ReactNode } from 'react';
+import { interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
 
 export interface SpotlightCardProps {
   title?: string;
@@ -20,7 +20,7 @@ export interface SpotlightCardProps {
 }
 
 const FONT_FAMILY =
-  "var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif";
+  'var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif';
 
 /**
  * Smooth synthetic cursor path: a slow Lissajous figure-8 that tours the
@@ -40,16 +40,16 @@ function cursorAt(
 }
 
 export function SpotlightCard({
-  title = "Spotlight Card",
-  body = "Soft radial light follows the cursor, picking out the microborder.",
+  title = 'Spotlight Card',
+  body = 'Soft radial light follows the cursor, picking out the microborder.',
   cardWidth = 520,
   cardHeight = 320,
   glowSize = 600,
   glowOpacity = 0.08,
-  background = "#050505",
-  cardColor = "#0a0a0a",
-  textColor = "#fafafa",
-  mutedColor = "#71717a",
+  background = '#050505',
+  cardColor = '#0a0a0a',
+  textColor = '#fafafa',
+  mutedColor = '#71717a',
   speed = 1,
   className,
   children,
@@ -67,8 +67,8 @@ export function SpotlightCard({
 
   // Card fades up briefly at the start so the preview has a clean entrance.
   const cardOpacity = interpolate(frame, [0, 12], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
   });
 
   const surfaceGlow = `radial-gradient(${glowSize}px circle at ${cursor.x}px ${cursor.y}px, rgba(255,255,255,${glowOpacity}), transparent 40%)`;
@@ -78,19 +78,19 @@ export function SpotlightCard({
     <div
       className={className}
       style={{
-        position: "absolute",
+        position: 'absolute',
         inset: 0,
         background,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         fontFamily: FONT_FAMILY,
       }}
     >
       {/* Border glow wrapper — 1px padding + masked radial gradient. */}
       <div
         style={{
-          position: "relative",
+          position: 'relative',
           width: cardWidth,
           height: cardHeight,
           borderRadius: 20,
@@ -102,35 +102,35 @@ export function SpotlightCard({
         {/* Card surface */}
         <div
           style={{
-            position: "relative",
-            width: "100%",
-            height: "100%",
+            position: 'relative',
+            width: '100%',
+            height: '100%',
             borderRadius: 19,
             background: cardColor,
-            overflow: "hidden",
-            boxShadow: "0 30px 80px rgba(0,0,0,0.5)",
+            overflow: 'hidden',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.5)',
           }}
         >
           {/* Surface glow underlay */}
           <div
             style={{
-              position: "absolute",
+              position: 'absolute',
               inset: 0,
               background: surfaceGlow,
-              pointerEvents: "none",
+              pointerEvents: 'none',
             }}
           />
 
           {/* Card content */}
           <div
             style={{
-              position: "relative",
+              position: 'relative',
               padding: 36,
-              display: "flex",
-              flexDirection: "column",
+              display: 'flex',
+              flexDirection: 'column',
               gap: 12,
-              height: "100%",
-              justifyContent: "flex-end",
+              height: '100%',
+              justifyContent: 'flex-end',
             }}
           >
             {children ?? (
@@ -139,7 +139,7 @@ export function SpotlightCard({
                   style={{
                     fontSize: 28,
                     fontWeight: 700,
-                    letterSpacing: "-0.02em",
+                    letterSpacing: '-0.02em',
                     color: textColor,
                   }}
                 >

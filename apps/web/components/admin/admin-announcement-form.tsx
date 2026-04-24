@@ -11,7 +11,9 @@ import type { SiteAnnouncementStatus } from '@/src/site-config/service';
 
 export type AnnouncementFormState = {
   error?: string;
-  fieldErrors?: Partial<Record<'title' | 'body' | 'status' | 'publishAt' | 'unpublishAt', string>>;
+  fieldErrors?: Partial<
+    Record<'title' | 'body' | 'status' | 'publishAt' | 'unpublishAt', string>
+  >;
 };
 
 export type AnnouncementFormValues = {
@@ -29,7 +31,10 @@ type AdminAnnouncementFormProps = {
   mode: 'create' | 'edit';
   initialValues: AnnouncementFormValues;
   cancelHref?: string;
-  action: (state: AnnouncementFormState, formData: FormData) => Promise<AnnouncementFormState>;
+  action: (
+    state: AnnouncementFormState,
+    formData: FormData,
+  ) => Promise<AnnouncementFormState>;
 };
 
 const initialState: AnnouncementFormState = {};
@@ -57,19 +62,33 @@ export function AdminAnnouncementForm({
 
       <div className="grid gap-2">
         <Label htmlFor="announcement-title">Title</Label>
-        <Input id="announcement-title" name="title" defaultValue={initialValues.title} />
+        <Input
+          id="announcement-title"
+          name="title"
+          defaultValue={initialValues.title}
+        />
         <FieldError message={state.fieldErrors?.title} />
       </div>
 
       <div className="grid gap-2">
         <Label htmlFor="announcement-body">Body</Label>
-        <Textarea id="announcement-body" name="body" defaultValue={initialValues.body} rows={5} />
+        <Textarea
+          id="announcement-body"
+          name="body"
+          defaultValue={initialValues.body}
+          rows={5}
+        />
         <FieldError message={state.fieldErrors?.body} />
       </div>
 
       <div className="grid gap-2">
         <Label htmlFor="announcement-href">Destination link</Label>
-        <Input id="announcement-href" name="href" defaultValue={initialValues.href} placeholder="/status" />
+        <Input
+          id="announcement-href"
+          name="href"
+          defaultValue={initialValues.href}
+          placeholder="/status"
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -91,25 +110,44 @@ export function AdminAnnouncementForm({
 
         <div className="grid gap-2">
           <Label htmlFor="announcement-publish-at">Publish at</Label>
-          <Input id="announcement-publish-at" type="datetime-local" name="publishAt" defaultValue={initialValues.publishAt} />
+          <Input
+            id="announcement-publish-at"
+            type="datetime-local"
+            name="publishAt"
+            defaultValue={initialValues.publishAt}
+          />
           <FieldError message={state.fieldErrors?.publishAt} />
         </div>
 
         <div className="grid gap-2">
           <Label htmlFor="announcement-unpublish-at">Unpublish at</Label>
-          <Input id="announcement-unpublish-at" type="datetime-local" name="unpublishAt" defaultValue={initialValues.unpublishAt} />
+          <Input
+            id="announcement-unpublish-at"
+            type="datetime-local"
+            name="unpublishAt"
+            defaultValue={initialValues.unpublishAt}
+          />
           <FieldError message={state.fieldErrors?.unpublishAt} />
         </div>
       </div>
 
-      {state.error ? <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p> : null}
+      {state.error ? (
+        <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={pending}>
-          {pending ? 'Saving...' : mode === 'edit' ? 'Update announcement' : 'Create announcement'}
+          {pending
+            ? 'Saving...'
+            : mode === 'edit'
+              ? 'Update announcement'
+              : 'Create announcement'}
         </Button>
         {cancelHref ? (
-          <Link href={cancelHref} className={buttonVariants({ variant: 'ghost' })}>
+          <Link
+            href={cancelHref}
+            className={buttonVariants({ variant: 'ghost' })}
+          >
             Cancel
           </Link>
         ) : null}

@@ -1,8 +1,14 @@
 import { getBlogLocalDb } from '@/src/local-first/blog/db';
-import type { BlogDraftStatus, LocalBlogDraft } from '@/src/local-first/blog/types';
+import type {
+  BlogDraftStatus,
+  LocalBlogDraft,
+} from '@/src/local-first/blog/types';
 
 export async function listLocalBlogDraftsForUser(userId: string) {
-  const drafts = await getBlogLocalDb().drafts.where('userId').equals(userId).sortBy('updatedAt');
+  const drafts = await getBlogLocalDb()
+    .drafts.where('userId')
+    .equals(userId)
+    .sortBy('updatedAt');
   return drafts.reverse();
 }
 
@@ -50,7 +56,10 @@ export async function saveLocalBlogDraft(
       return;
     }
 
-    const existingJob = await db.outbox.where('draftId').equals(draftId).first();
+    const existingJob = await db.outbox
+      .where('draftId')
+      .equals(draftId)
+      .first();
     const nextStatus = existingJob ? 'queued_publish' : 'draft';
 
     await db.drafts.update(draftId, {

@@ -3,7 +3,11 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { buildProfileImageUrl, deleteProfileImage, uploadProfileImage } from '@/src/profile/object-storage';
+import {
+  buildProfileImageUrl,
+  deleteProfileImage,
+  uploadProfileImage,
+} from '@/src/profile/object-storage';
 
 const PROFILE_IMAGE_ENV_KEYS = [
   'PROFILE_IMAGE_STORAGE_BUCKET',
@@ -15,7 +19,9 @@ const PROFILE_IMAGE_ENV_KEYS = [
   'PROFILE_IMAGE_STORAGE_FORCE_PATH_STYLE',
 ] as const;
 
-const originalEnv = Object.fromEntries(PROFILE_IMAGE_ENV_KEYS.map((key) => [key, process.env[key]]));
+const originalEnv = Object.fromEntries(
+  PROFILE_IMAGE_ENV_KEYS.map((key) => [key, process.env[key]]),
+);
 
 afterEach(() => {
   for (const key of PROFILE_IMAGE_ENV_KEYS) {

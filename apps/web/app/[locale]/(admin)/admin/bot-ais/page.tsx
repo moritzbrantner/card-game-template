@@ -3,7 +3,13 @@ import { revalidatePath } from 'next/cache';
 import { AdminPageShell } from '@/components/admin/admin-page-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,12 +23,18 @@ import {
 } from '@/src/domain/game-bot-ai/service';
 import { hasPermissionForRole } from '@/src/domain/authorization/service';
 import { createTranslator } from '@/src/i18n/messages';
-import { notFoundUnlessFeatureEnabled, requirePermission, resolveLocale } from '@/src/server/page-guards';
+import {
+  notFoundUnlessFeatureEnabled,
+  requirePermission,
+  resolveLocale,
+} from '@/src/server/page-guards';
 
-async function forbidUnlessAllowed(permission: 'admin.systemSettings.edit' | 'admin.systemSettings.read') {
+async function forbidUnlessAllowed(
+  permission: 'admin.systemSettings.edit' | 'admin.systemSettings.read',
+) {
   const session = await getAuthSession();
 
-  if (!await hasPermissionForRole(session?.user.role, permission)) {
+  if (!(await hasPermissionForRole(session?.user.role, permission))) {
     throw new Error('Forbidden');
   }
 }
@@ -67,7 +79,11 @@ export default async function AdminBotAisPage({
   ]);
 
   return (
-    <AdminPageShell title={t('botAis.title')} description={t('botAis.description')} adminPages={adminPages}>
+    <AdminPageShell
+      title={t('botAis.title')}
+      description={t('botAis.description')}
+      adminPages={adminPages}
+    >
       <section className="grid gap-4 lg:grid-cols-2">
         {profiles.map((profile) => (
           <Card key={profile.id} className="h-full">
@@ -89,7 +105,9 @@ export default async function AdminBotAisPage({
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor={`${profile.id}-displayName`}>Display name</Label>
+                    <Label htmlFor={`${profile.id}-displayName`}>
+                      Display name
+                    </Label>
                     <Input
                       id={`${profile.id}-displayName`}
                       name="displayName"
@@ -124,12 +142,16 @@ export default async function AdminBotAisPage({
                     disabled={!canEdit}
                     className="size-4 rounded border-zinc-300"
                   />
-                  <span className="font-medium">Use this profile when matching bot seats</span>
+                  <span className="font-medium">
+                    Use this profile when matching bot seats
+                  </span>
                 </label>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor={`${profile.id}-aggression`}>Aggression</Label>
+                    <Label htmlFor={`${profile.id}-aggression`}>
+                      Aggression
+                    </Label>
                     <Input
                       id={`${profile.id}-aggression`}
                       name="aggression"
@@ -142,7 +164,9 @@ export default async function AdminBotAisPage({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor={`${profile.id}-unoCallBias`}>UNO call bias</Label>
+                    <Label htmlFor={`${profile.id}-unoCallBias`}>
+                      UNO call bias
+                    </Label>
                     <Input
                       id={`${profile.id}-unoCallBias`}
                       name="unoCallBias"
@@ -155,7 +179,9 @@ export default async function AdminBotAisPage({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor={`${profile.id}-actionCardBias`}>Action card bias</Label>
+                    <Label htmlFor={`${profile.id}-actionCardBias`}>
+                      Action card bias
+                    </Label>
                     <Input
                       id={`${profile.id}-actionCardBias`}
                       name="actionCardBias"
@@ -168,7 +194,9 @@ export default async function AdminBotAisPage({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor={`${profile.id}-wildCardBias`}>Wild card bias</Label>
+                    <Label htmlFor={`${profile.id}-wildCardBias`}>
+                      Wild card bias
+                    </Label>
                     <Input
                       id={`${profile.id}-wildCardBias`}
                       name="wildCardBias"
@@ -181,7 +209,9 @@ export default async function AdminBotAisPage({
                   </div>
 
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor={`${profile.id}-drawBias`}>Draw/pass bias</Label>
+                    <Label htmlFor={`${profile.id}-drawBias`}>
+                      Draw/pass bias
+                    </Label>
                     <Input
                       id={`${profile.id}-drawBias`}
                       name="drawBias"

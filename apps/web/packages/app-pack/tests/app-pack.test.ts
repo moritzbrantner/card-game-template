@@ -53,8 +53,12 @@ describe('@moritzbrantner/app-pack', () => {
   });
 
   it('resolves public routes and aliases from the package export surface', () => {
-    expect(resolvePublicRoute(manifest, ['examples', 'forms'])?.page.id).toBe('forms');
-    expect(resolveEnabledPublicRoute(manifest, ['forms'])?.page.id).toBe('forms');
+    expect(resolvePublicRoute(manifest, ['examples', 'forms'])?.page.id).toBe(
+      'forms',
+    );
+    expect(resolveEnabledPublicRoute(manifest, ['forms'])?.page.id).toBe(
+      'forms',
+    );
     expect(generatePublicRouteParams(['en', 'de'], manifest)).toEqual([
       { locale: 'en', publicSlug: [] },
       { locale: 'en', publicSlug: ['examples', 'forms'] },
@@ -66,7 +70,12 @@ describe('@moritzbrantner/app-pack', () => {
   });
 
   it('exports the redirect result guard', () => {
-    expect(isPublicPageRedirectResult({ kind: 'redirect', href: '/en/examples/forms' })).toBe(true);
+    expect(
+      isPublicPageRedirectResult({
+        kind: 'redirect',
+        href: '/en/examples/forms',
+      }),
+    ).toBe(true);
     expect(isPublicPageRedirectResult({ kind: 'component' })).toBe(false);
   });
 });

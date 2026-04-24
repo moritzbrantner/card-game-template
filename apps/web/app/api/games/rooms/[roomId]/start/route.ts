@@ -20,7 +20,9 @@ function mapRoomProblem(
         : code === 'FORBIDDEN'
           ? 403
           : 409;
-  return new ProblemError(problem('/problems/game-room', title, status, detail));
+  return new ProblemError(
+    problem('/problems/game-room', title, status, detail),
+  );
 }
 
 export const POST = createApiRoute({
@@ -30,7 +32,11 @@ export const POST = createApiRoute({
     const result = await startGameRoomUseCase(session, getRoomId(request));
 
     if (!result.ok) {
-      throw mapRoomProblem('Unable to start room', result.error.code, result.error.message);
+      throw mapRoomProblem(
+        'Unable to start room',
+        result.error.code,
+        result.error.message,
+      );
     }
 
     return result.data;

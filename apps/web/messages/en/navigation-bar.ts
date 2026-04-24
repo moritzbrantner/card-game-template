@@ -37,7 +37,8 @@ export const navigationBar = {
   hotkeys: {
     button: 'Hotkeys',
     title: 'Navigation hotkeys',
-    description: 'Jump between routes with Alt shortcuts without reaching for the menu.',
+    description:
+      'Jump between routes with Alt shortcuts without reaching for the menu.',
     searchPlaceholder: 'Search pages…',
     empty: 'No matching pages.',
     pending: 'Hold Alt while pressing a shortcut key',

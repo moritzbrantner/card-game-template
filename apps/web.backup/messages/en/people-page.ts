@@ -1,9 +1,11 @@
 export const peoplePage = {
   title: 'People',
-  description: 'See who you already follow and search for more people to add to your network.',
+  description:
+    'See who you already follow and search for more people to add to your network.',
   search: {
     title: 'Find people to follow',
-    description: 'Search by display name or email to find profiles that are discoverable.',
+    description:
+      'Search by display name or email to find profiles that are discoverable.',
     placeholder: 'Search people',
     loading: 'Searching…',
     idle: 'Start typing to search for people you can follow.',

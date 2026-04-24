@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { defaultAppSettings, normalizeAppSettings, parseAppSettings } from '@/src/settings/preferences';
+import {
+  defaultAppSettings,
+  normalizeAppSettings,
+  parseAppSettings,
+} from '@/src/settings/preferences';
 
 describe('app settings', () => {
   it('normalizes nested notification preferences', () => {

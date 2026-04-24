@@ -23,8 +23,20 @@ describe('announcement scheduling', () => {
   });
 
   it('detects stale scheduled timestamps', () => {
-    expect(scheduledTimestampMatches(new Date('2026-04-16T12:00:00.000Z'), '2026-04-16T12:00:00.000Z')).toBe(true);
-    expect(scheduledTimestampMatches(new Date('2026-04-16T12:05:00.000Z'), '2026-04-16T12:00:00.000Z')).toBe(false);
-    expect(scheduledTimestampMatches(null, '2026-04-16T12:00:00.000Z')).toBe(false);
+    expect(
+      scheduledTimestampMatches(
+        new Date('2026-04-16T12:00:00.000Z'),
+        '2026-04-16T12:00:00.000Z',
+      ),
+    ).toBe(true);
+    expect(
+      scheduledTimestampMatches(
+        new Date('2026-04-16T12:05:00.000Z'),
+        '2026-04-16T12:00:00.000Z',
+      ),
+    ).toBe(false);
+    expect(scheduledTimestampMatches(null, '2026-04-16T12:00:00.000Z')).toBe(
+      false,
+    );
   });
 });

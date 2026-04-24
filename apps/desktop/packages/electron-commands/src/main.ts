@@ -1,4 +1,9 @@
-import type { BrowserWindow, IpcMain, IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron';
+import type {
+  BrowserWindow,
+  IpcMain,
+  IpcMainInvokeEvent,
+  MenuItemConstructorOptions,
+} from 'electron';
 
 import { commandsChannels, type CommandState } from './shared.ts';
 
@@ -23,6 +28,19 @@ export interface CommandsServiceOptions {
 export function createCommandsService(options: CommandsServiceOptions) {
   const commandMap = new Map<string, CommandDefinition>();
   const acceleratorMap = new Map<string, string>();
+
+  function asBrowserWindow(window: unknown): BrowserWindow | null {
+    if (
+      window &&
+      typeof window === 'object' &&
+      'webContents' in window &&
+      'isDestroyed' in window
+    ) {
+      return window as BrowserWindow;
+    }
+
+    return null;
+  }
 
   options.definitions.forEach((definition) => {
     if (commandMap.has(definition.id)) {
@@ -84,12 +102,20 @@ export function createCommandsService(options: CommandsServiceOptions) {
     return definition;
   }
 
-  function isEnabled(commandId: string, window = options.getWindowForState?.() ?? null) {
+  function isEnabled(
+    commandId: string,
+    window = options.getWindowForState?.() ?? null,
+  ) {
     const definition = getDefinition(commandId);
-    return definition.isEnabled ? definition.isEnabled(getContext(window)) : true;
+    return definition.isEnabled
+      ? definition.isEnabled(getContext(window))
+      : true;
   }
 
-  async function run(commandId: string, window = options.getWindowForState?.() ?? null) {
+  async function run(
+    commandId: string,
+    window = options.getWindowForState?.() ?? null,
+  ) {
     const definition = getDefinition(commandId);
     const context = getContext(window);
 
@@ -100,24 +126,31 @@ export function createCommandsService(options: CommandsServiceOptions) {
     await definition.execute(context);
   }
 
-  function list(window = options.getWindowForState?.() ?? null): CommandState[] {
+  function list(
+    window = options.getWindowForState?.() ?? null,
+  ): CommandState[] {
     return options.definitions.map((definition) => ({
       accelerator: definition.accelerator,
-      enabled: definition.isEnabled ? definition.isEnabled(getContext(window)) : true,
+      enabled: definition.isEnabled
+        ? definition.isEnabled(getContext(window))
+        : true,
       id: definition.id,
     }));
   }
 
   function createMenuItem(
     commandId: string,
-    overrides?: Omit<MenuItemConstructorOptions, 'accelerator' | 'click' | 'enabled' | 'label'>,
+    overrides?: Omit<
+      MenuItemConstructorOptions,
+      'accelerator' | 'click' | 'enabled' | 'label'
+    >,
   ): MenuItemConstructorOptions {
     const definition = getDefinition(commandId);
 
     return {
       accelerator: definition.accelerator,
       click: async (_menuItem, browserWindow) => {
-        await run(commandId, browserWindow);
+        await run(commandId, asBrowserWindow(browserWindow));
       },
       enabled: true,
       label: definition.label,

@@ -1,11 +1,15 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: This hook intentionally forwards a caller-provided dependency list.
+// This hook intentionally forwards a caller-provided dependency list.
 'use client';
 
 import { useEffect, useState, type DependencyList } from 'react';
 
 import { liveQuery } from 'dexie';
 
-export function useLiveQueryValue<T>(query: () => Promise<T>, dependencies: DependencyList, initialValue: T) {
+export function useLiveQueryValue<T>(
+  query: () => Promise<T>,
+  dependencies: DependencyList,
+  initialValue: T,
+) {
   const [value, setValue] = useState(initialValue);
 
   useEffect(() => {

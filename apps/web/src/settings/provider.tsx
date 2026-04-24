@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, startTransition, useContext, useLayoutEffect, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  startTransition,
+  useContext,
+  useLayoutEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import {
   APP_SETTINGS_COOKIE_NAME,
@@ -42,7 +49,9 @@ function getInitialClientSettings(initialSettings: AppSettings): AppSettings {
     .find((cookie) => cookie.startsWith(`${APP_SETTINGS_COOKIE_NAME}=`))
     ?.slice(APP_SETTINGS_COOKIE_NAME.length + 1);
 
-  return parseAppSettings(cookieValue ?? window.localStorage.getItem(APP_SETTINGS_STORAGE_KEY));
+  return parseAppSettings(
+    cookieValue ?? window.localStorage.getItem(APP_SETTINGS_STORAGE_KEY),
+  );
 }
 
 export function AppSettingsProvider({
@@ -52,12 +61,17 @@ export function AppSettingsProvider({
   children: ReactNode;
   initialSettings: AppSettings;
 }) {
-  const [settings, setSettings] = useState<AppSettings>(() => getInitialClientSettings(initialSettings));
+  const [settings, setSettings] = useState<AppSettings>(() =>
+    getInitialClientSettings(initialSettings),
+  );
 
   useLayoutEffect(() => {
     (window as WindowWithAppSettings).__appSettings = settings;
     applyAppSettingsToDocument(settings);
-    window.localStorage.setItem(APP_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    window.localStorage.setItem(
+      APP_SETTINGS_STORAGE_KEY,
+      JSON.stringify(settings),
+    );
     document.cookie = buildAppSettingsCookie(settings);
   }, [settings]);
 
@@ -69,7 +83,9 @@ export function AppSettingsProvider({
           startTransition(() => {
             setSettings((currentSettings) => ({
               ...currentSettings,
-              ...(typeof nextSettings === 'function' ? nextSettings(currentSettings) : nextSettings),
+              ...(typeof nextSettings === 'function'
+                ? nextSettings(currentSettings)
+                : nextSettings),
             }));
           });
         },

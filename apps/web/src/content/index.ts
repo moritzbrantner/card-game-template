@@ -11,7 +11,11 @@ import rehypeSlug from 'rehype-slug';
 import remarkGfm from 'remark-gfm';
 
 import { loadActiveApp } from '@/src/app-config/load-active-app';
-import type { ContentCollection, ContentEntry, ContentIndexRecord } from '@/src/content/contracts';
+import type {
+  ContentCollection,
+  ContentEntry,
+  ContentIndexRecord,
+} from '@/src/content/contracts';
 import { getEnv } from '@/src/config/env';
 
 const LEGACY_CONTENT_ROOT = path.join(process.cwd(), 'content');
@@ -21,8 +25,16 @@ const frontmatterSchema = z.object({
   description: z.string().min(1),
   slug: z.string().min(1),
   locale: z.string().min(2),
-  publishedAt: z.union([z.string().datetime(), z.date().transform((value) => value.toISOString())]),
-  updatedAt: z.union([z.string().datetime(), z.date().transform((value) => value.toISOString())]).optional(),
+  publishedAt: z.union([
+    z.string().datetime(),
+    z.date().transform((value) => value.toISOString()),
+  ]),
+  updatedAt: z
+    .union([
+      z.string().datetime(),
+      z.date().transform((value) => value.toISOString()),
+    ])
+    .optional(),
   draft: z.boolean().default(false),
   tags: z.array(z.string()).default([]),
   seo: z
@@ -44,7 +56,8 @@ function resolveContentRoot(root: string) {
 }
 
 export function getConfiguredContentRoots(collection: ContentCollection) {
-  const configuredRoots = loadActiveApp().contentRoots[collection].map(resolveContentRoot);
+  const configuredRoots =
+    loadActiveApp().contentRoots[collection].map(resolveContentRoot);
   const legacyRoot = path.join(LEGACY_CONTENT_ROOT, collection);
 
   if (existsSync(legacyRoot) && !configuredRoots.includes(legacyRoot)) {
@@ -55,7 +68,9 @@ export function getConfiguredContentRoots(collection: ContentCollection) {
 }
 
 function collectionDirectories(collection: ContentCollection, locale: string) {
-  return getConfiguredContentRoots(collection).map((root) => path.join(root, locale));
+  return getConfiguredContentRoots(collection).map((root) =>
+    path.join(root, locale),
+  );
 }
 
 function getHref(collection: ContentCollection, locale: string, slug: string) {
@@ -66,14 +81,21 @@ function getHref(collection: ContentCollection, locale: string, slug: string) {
   return `/${locale}/${collection}/${slug}`;
 }
 
-async function readCollection(collection: ContentCollection, locale: string): Promise<IndexedCollection> {
+async function readCollection(
+  collection: ContentCollection,
+  locale: string,
+): Promise<IndexedCollection> {
   const directories = collectionDirectories(collection, locale);
   const filePaths: string[] = [];
 
   for (const directory of directories) {
     try {
-      const fileNames = (await readdir(directory)).filter((fileName) => fileName.endsWith('.mdx'));
-      filePaths.push(...fileNames.map((fileName) => path.join(directory, fileName)));
+      const fileNames = (await readdir(directory)).filter((fileName) =>
+        fileName.endsWith('.mdx'),
+      );
+      filePaths.push(
+        ...fileNames.map((fileName) => path.join(directory, fileName)),
+      );
     } catch {
       continue;
     }
@@ -106,18 +128,27 @@ async function readCollection(collection: ContentCollection, locale: string): Pr
   return {
     records: records
       .filter((record) => !record.draft || !getEnv().isProduction)
-      .sort((left, right) => new Date(right.publishedAt).getTime() - new Date(left.publishedAt).getTime()),
+      .sort(
+        (left, right) =>
+          new Date(right.publishedAt).getTime() -
+          new Date(left.publishedAt).getTime(),
+      ),
   };
 }
 
-const getCollectionCache = cache(async (collection: ContentCollection, locale: string) => readCollection(collection, locale));
+const getCollectionCache = cache(
+  async (collection: ContentCollection, locale: string) =>
+    readCollection(collection, locale),
+);
 
 export async function getPageContent(locale: string, slug: string) {
   const collection = await getCollectionCache('pages', locale);
   return collection.records.find((record) => record.slug === slug) ?? null;
 }
 
-export async function listBlogPosts(locale: string): Promise<ContentIndexRecord[]> {
+export async function listBlogPosts(
+  locale: string,
+): Promise<ContentIndexRecord[]> {
   const collection = await getCollectionCache('blog', locale);
   return collection.records.map((record) => {
     const { body, ...summary } = record;
@@ -126,7 +157,9 @@ export async function listBlogPosts(locale: string): Promise<ContentIndexRecord[
   });
 }
 
-export async function listChangelogEntries(locale: string): Promise<ContentIndexRecord[]> {
+export async function listChangelogEntries(
+  locale: string,
+): Promise<ContentIndexRecord[]> {
   const collection = await getCollectionCache('changelog', locale);
   return collection.records.map((record) => {
     const { body, ...summary } = record;
@@ -135,14 +168,24 @@ export async function listChangelogEntries(locale: string): Promise<ContentIndex
   });
 }
 
-export async function getContentEntry(collection: Extract<ContentCollection, 'blog' | 'changelog'>, locale: string, slug: string) {
+export async function getContentEntry(
+  collection: Extract<ContentCollection, 'blog' | 'changelog'>,
+  locale: string,
+  slug: string,
+) {
   const indexed = await getCollectionCache(collection, locale);
   return indexed.records.find((record) => record.slug === slug) ?? null;
 }
 
-export async function getAdjacentEntries(collection: Extract<ContentCollection, 'blog' | 'changelog'>, locale: string, slug: string) {
+export async function getAdjacentEntries(
+  collection: Extract<ContentCollection, 'blog' | 'changelog'>,
+  locale: string,
+  slug: string,
+) {
   const indexed = await getCollectionCache(collection, locale);
-  const currentIndex = indexed.records.findIndex((record) => record.slug === slug);
+  const currentIndex = indexed.records.findIndex(
+    (record) => record.slug === slug,
+  );
 
   if (currentIndex === -1) {
     return {

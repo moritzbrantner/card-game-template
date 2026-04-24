@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { normalizePublicBasePath, normalizeRouterBasePath } from '@/src/runtime/base-path';
+import {
+  normalizePublicBasePath,
+  normalizeRouterBasePath,
+} from '@/src/runtime/base-path';
 
 describe('base path normalization', () => {
   it('normalizes the public base path for asset URLs', () => {

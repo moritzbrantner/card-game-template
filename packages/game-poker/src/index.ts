@@ -6,10 +6,10 @@ import type {
   PlayerId,
   PlayerProfile,
 } from '@repo/game-contracts';
+import { shuffleWithSeed } from '@repo/card-kit';
 import {
   areMovesEquivalent,
   createSeededRandom,
-  shuffleWithSeed,
   type GameAdapter,
 } from '@repo/game-engine';
 import type {
@@ -319,7 +319,7 @@ function createDeck(): PokerCard[] {
   );
 }
 
-function nextPlayerId(
+function _nextPlayerId(
   players: readonly PlayerProfile[],
   currentPlayerId: PlayerId,
 ): PlayerId {

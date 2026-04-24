@@ -25,7 +25,8 @@ export const authPages = {
     heroDescription:
       'Register with a valid email and a strong password. You will be signed in as soon as your account is created.',
     title: 'Register',
-    description: 'Set up your account with credentials that meet the security requirements.',
+    description:
+      'Set up your account with credentials that meet the security requirements.',
     form: {
       name: 'Display name',
       email: 'Email',
@@ -36,26 +37,31 @@ export const authPages = {
       requiredEmail: 'Email is required.',
       invalidEmail: 'Enter a valid email address.',
       requiredPassword: 'Password is required.',
-      weakPassword: 'Use at least 10 characters with uppercase, lowercase, and a number.',
+      weakPassword:
+        'Use at least 10 characters with uppercase, lowercase, and a number.',
       requiredConfirmPassword: 'Please confirm your password.',
       passwordMismatch: 'Passwords do not match.',
       nameTooLong: 'Display name must be 80 characters or fewer.',
-      genericError: 'Account created, but automatic sign-in failed. Try logging in manually.',
+      genericError:
+        'Account created, but automatic sign-in failed. Try logging in manually.',
       loginPrompt: 'Already have an account?',
       loginCta: 'Log in',
       resetPasswordTitle: 'Need to reset an existing password?',
-      resetPasswordDescription: 'Send a secure reset link without leaving this page.',
+      resetPasswordDescription:
+        'Send a secure reset link without leaving this page.',
       resetPasswordEmail: 'Account email',
       resetPasswordSubmit: 'Send reset link',
       resetPasswordSubmitting: 'Sending reset link...',
-      resetPasswordSuccess: 'If that account exists, a reset link is on its way.',
+      resetPasswordSuccess:
+        'If that account exists, a reset link is on its way.',
       resetPasswordGenericError: 'Unable to send a reset link right now.',
     },
   },
   resetPassword: {
     eyebrow: 'Account recovery',
     title: 'Choose a new password',
-    description: 'Use the secure token from your email to set a fresh password.',
+    description:
+      'Use the secure token from your email to set a fresh password.',
     missingToken: 'This reset link is incomplete or has already been used.',
     success: 'Your password has been updated. You can sign in now.',
     loginCta: 'Return to login',
@@ -65,7 +71,8 @@ export const authPages = {
       submit: 'Update password',
       submitting: 'Updating password...',
       requiredPassword: 'Password is required.',
-      weakPassword: 'Use at least 10 characters with uppercase, lowercase, and a number.',
+      weakPassword:
+        'Use at least 10 characters with uppercase, lowercase, and a number.',
       requiredConfirmPassword: 'Please confirm your password.',
       passwordMismatch: 'Passwords do not match.',
       genericError: 'Unable to reset your password with this link.',
@@ -74,7 +81,8 @@ export const authPages = {
   verifyEmail: {
     eyebrow: 'Account verification',
     title: 'Verify your email',
-    description: 'We are checking the secure verification link from your email now.',
+    description:
+      'We are checking the secure verification link from your email now.',
     verifying: 'Verifying your email address...',
     success: 'Your email is verified. You can continue using your account.',
     error: 'This verification link is invalid or has expired.',

@@ -1,6 +1,9 @@
 import Dexie, { type Table } from 'dexie';
 
-import type { BlogPublishJob, LocalBlogDraft } from '@/src/local-first/blog/types';
+import type {
+  BlogPublishJob,
+  LocalBlogDraft,
+} from '@/src/local-first/blog/types';
 
 class BlogLocalDatabase extends Dexie {
   drafts!: Table<LocalBlogDraft, string>;
@@ -24,7 +27,9 @@ const globalForBlogLocalDb = globalThis as typeof globalThis & {
 
 export function getBlogLocalDb() {
   if (typeof window === 'undefined') {
-    throw new Error('Local-first blog storage is only available in the browser.');
+    throw new Error(
+      'Local-first blog storage is only available in the browser.',
+    );
   }
 
   if (!globalForBlogLocalDb.__blogLocalDb) {

@@ -3,7 +3,9 @@ import type { IpcRenderer } from 'electron';
 import type { DocumentsBridge } from './shared.ts';
 import { documentsChannels } from './shared.ts';
 
-export function createDocumentsBridge(ipcRenderer: IpcRenderer): DocumentsBridge {
+export function createDocumentsBridge(
+  ipcRenderer: IpcRenderer,
+): DocumentsBridge {
   return {
     async getState() {
       return ipcRenderer.invoke(documentsChannels.getState);
@@ -27,14 +29,20 @@ export function createDocumentsBridge(ipcRenderer: IpcRenderer): DocumentsBridge
       await ipcRenderer.invoke(documentsChannels.saveAs);
     },
     subscribe(listener) {
-      const wrappedListener = (_event: unknown, state: Parameters<typeof listener>[0]) => {
+      const wrappedListener = (
+        _event: unknown,
+        state: Parameters<typeof listener>[0],
+      ) => {
         listener(state);
       };
 
       ipcRenderer.on(documentsChannels.stateDidChange, wrappedListener);
 
       return () => {
-        ipcRenderer.removeListener(documentsChannels.stateDidChange, wrappedListener);
+        ipcRenderer.removeListener(
+          documentsChannels.stateDidChange,
+          wrappedListener,
+        );
       };
     },
     async updateDraft(content: string) {

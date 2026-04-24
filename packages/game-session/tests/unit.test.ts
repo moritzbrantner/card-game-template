@@ -1,8 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type { GameMove, MatchState, PlayerId } from '../../game-contracts/src/index.ts';
-import { areMovesEquivalent, type GameAdapter } from '../../game-engine/src/index.ts';
+import type {
+  GameMove,
+  MatchState,
+  PlayerId,
+} from '../../game-contracts/src/index.ts';
+import {
+  areMovesEquivalent,
+  type GameAdapter,
+} from '../../game-engine/src/index.ts';
 import {
   createLocalGameSession,
   createServerGameSession,
@@ -18,9 +25,24 @@ type CounterState = {
 type CounterMove = GameMove<{ amount: number }>;
 
 const participants = [
-  { playerId: 'p1', displayName: 'Alice', seat: 1, controller: 'human' as const },
-  { playerId: 'p2', displayName: 'Bot Bob', seat: 2, controller: 'bot' as const },
-  { playerId: 'p3', displayName: 'Casey', seat: 3, controller: 'human' as const },
+  {
+    playerId: 'p1',
+    displayName: 'Alice',
+    seat: 1,
+    controller: 'human' as const,
+  },
+  {
+    playerId: 'p2',
+    displayName: 'Bot Bob',
+    seat: 2,
+    controller: 'bot' as const,
+  },
+  {
+    playerId: 'p3',
+    displayName: 'Casey',
+    seat: 3,
+    controller: 'human' as const,
+  },
 ];
 
 const counterAdapter = {
@@ -71,8 +93,13 @@ const counterAdapter = {
         candidate.payload.amount === move.payload.amount,
     );
   },
-  applyMove(state: MatchState<CounterState>, move: CounterMove): MatchState<CounterState> {
-    const currentIndex = state.players.findIndex((player) => player.playerId === move.playerId);
+  applyMove(
+    state: MatchState<CounterState>,
+    move: CounterMove,
+  ): MatchState<CounterState> {
+    const currentIndex = state.players.findIndex(
+      (player) => player.playerId === move.playerId,
+    );
     const nextIndex = (currentIndex + 1) % state.players.length;
 
     return {
@@ -118,7 +145,9 @@ function createSelectedActorCounterAdapter(input: {
       }));
     },
     isLegalMove(state, move): boolean {
-      return this.listLegalMoves(state).some((candidate) => areMovesEquivalent(candidate, move));
+      return this.listLegalMoves(state).some((candidate) =>
+        areMovesEquivalent(candidate, move),
+      );
     },
     applyMove(state, move): MatchState<CounterState> {
       return {
@@ -175,7 +204,10 @@ test('local session snapshots expose and filter to the selected actor', () => {
       p2: {
         chooseMove({ legalMoves, playerId }) {
           assert.equal(playerId, 'p2');
-          assert.deepEqual([...new Set(legalMoves.map((move) => move.playerId))], ['p2']);
+          assert.deepEqual(
+            [...new Set(legalMoves.map((move) => move.playerId))],
+            ['p2'],
+          );
           return legalMoves[0] ?? null;
         },
       },
@@ -194,7 +226,10 @@ test('local session snapshots expose and filter to the selected actor', () => {
   assert.equal(snapshot.match.activePlayerId, 'p1');
   assert.equal(snapshot.match.state.total, 1);
   assert.equal(snapshot.selectedActorPlayerId, 'p1');
-  assert.deepEqual([...new Set(snapshot.legalMoves.map((move) => move.playerId))], ['p1']);
+  assert.deepEqual(
+    [...new Set(snapshot.legalMoves.map((move) => move.playerId))],
+    ['p1'],
+  );
   assert.deepEqual(snapshot.view, {
     legalMovePlayerIds: ['p1'],
     selectedActorPlayerId: 'p1',
@@ -207,8 +242,18 @@ test('local session hides the next hotseat hand until confirmation', () => {
     hotseat: true,
     matchId: 'session-2',
     participants: [
-      { playerId: 'p1', displayName: 'Alice', seat: 1, controller: 'human' as const },
-      { playerId: 'p2', displayName: 'Casey', seat: 2, controller: 'human' as const },
+      {
+        playerId: 'p1',
+        displayName: 'Alice',
+        seat: 1,
+        controller: 'human' as const,
+      },
+      {
+        playerId: 'p2',
+        displayName: 'Casey',
+        seat: 2,
+        controller: 'human' as const,
+      },
     ],
     setup: { target: 3 },
     projectView: ({ viewerPlayerId, pendingHotseatPlayerId }) => ({
@@ -243,11 +288,25 @@ test('local hotseat handoff follows the selected actor instead of the active pla
     hotseat: true,
     matchId: 'session-selected-hotseat',
     participants: [
-      { playerId: 'p1', displayName: 'Alice', seat: 1, controller: 'human' as const },
-      { playerId: 'p2', displayName: 'Casey', seat: 2, controller: 'human' as const },
+      {
+        playerId: 'p1',
+        displayName: 'Alice',
+        seat: 1,
+        controller: 'human' as const,
+      },
+      {
+        playerId: 'p2',
+        displayName: 'Casey',
+        seat: 2,
+        controller: 'human' as const,
+      },
     ],
     setup: { target: 3 },
-    projectView: ({ selectedActorPlayerId, viewerPlayerId, pendingHotseatPlayerId }) => ({
+    projectView: ({
+      selectedActorPlayerId,
+      viewerPlayerId,
+      pendingHotseatPlayerId,
+    }) => ({
       selectedActorPlayerId,
       viewerPlayerId,
       pendingHotseatPlayerId,
@@ -389,7 +448,10 @@ test('server session accepts explicit replay metadata and preserves it on resume
 });
 
 test('server session persists the opening snapshot so progression tracking starts at match creation', () => {
-  const savedSnapshots: Array<{ acceptedMoveCount: number; startedAt: string }> = [];
+  const savedSnapshots: Array<{
+    acceptedMoveCount: number;
+    startedAt: string;
+  }> = [];
 
   const session = createServerGameSession({
     adapter: counterAdapter,
@@ -477,7 +539,9 @@ test('resuming a persisted replay and submitting another move matches playing th
     })(),
   });
 
-  for (const move of initialSession.getReplay().acceptedMoves.map((entry) => entry.move)) {
+  for (const move of initialSession
+    .getReplay()
+    .acceptedMoves.map((entry) => entry.move)) {
     fullRun.submitMove(move);
   }
 
@@ -546,14 +610,23 @@ test('verifyReplayIntegrity rejects tampered move order and mismatched latest st
   assert.deepEqual(verifyReplayIntegrity({ adapter: counterAdapter, replay }), {
     ok: true,
   });
-  assert.deepEqual(verifyReplayIntegrity({ adapter: counterAdapter, replay: movedOutOfOrder }), {
-    ok: false,
-    reason: 'accepted move timestamps are out of order',
-  });
-  assert.deepEqual(verifyReplayIntegrity({ adapter: counterAdapter, replay: mismatchedLatestState }), {
-    ok: false,
-    reason: 'latest state does not match the accepted move log',
-  });
+  assert.deepEqual(
+    verifyReplayIntegrity({ adapter: counterAdapter, replay: movedOutOfOrder }),
+    {
+      ok: false,
+      reason: 'accepted move timestamps are out of order',
+    },
+  );
+  assert.deepEqual(
+    verifyReplayIntegrity({
+      adapter: counterAdapter,
+      replay: mismatchedLatestState,
+    }),
+    {
+      ok: false,
+      reason: 'latest state does not match the accepted move log',
+    },
+  );
 });
 
 test('verifyReplayIntegrity rejects mismatched replay metadata but accepts legacy metadata', () => {
@@ -581,11 +654,20 @@ test('verifyReplayIntegrity rejects mismatched replay metadata but accepts legac
     metadata: null,
   };
 
-  assert.deepEqual(verifyReplayIntegrity({ adapter: counterAdapter, replay: mismatchedReplay }), {
-    ok: false,
-    reason: 'replay ruleset version does not match the adapter',
-  });
-  assert.deepEqual(verifyReplayIntegrity({ adapter: counterAdapter, replay: legacyReplay }), {
-    ok: true,
-  });
+  assert.deepEqual(
+    verifyReplayIntegrity({
+      adapter: counterAdapter,
+      replay: mismatchedReplay,
+    }),
+    {
+      ok: false,
+      reason: 'replay ruleset version does not match the adapter',
+    },
+  );
+  assert.deepEqual(
+    verifyReplayIntegrity({ adapter: counterAdapter, replay: legacyReplay }),
+    {
+      ok: true,
+    },
+  );
 });

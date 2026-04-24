@@ -47,8 +47,9 @@ export default function ReactHookFormScreen() {
           <ThemedView style={styles.header}>
             <ThemedText type="title">React Hook Form</ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
-              An overview of the main pieces of React Hook Form and how they interact with
-              required validation, dirty state, validity, and reset.
+              An overview of the main pieces of React Hook Form and how they
+              interact with required validation, dirty state, validity, and
+              reset.
             </ThemedText>
           </ThemedView>
 
@@ -57,16 +58,20 @@ export default function ReactHookFormScreen() {
               key={item.title}
               style={[styles.card, { borderColor }]}
               lightColor={Colors.light.surface}
-              darkColor={Colors.dark.surface}>
+              darkColor={Colors.dark.surface}
+            >
               <ThemedText type="subtitle">{item.title}</ThemedText>
-              <ThemedText style={{ color: mutedTextColor }}>{item.description}</ThemedText>
+              <ThemedText style={{ color: mutedTextColor }}>
+                {item.description}
+              </ThemedText>
             </ThemedView>
           ))}
 
           <ThemedView
             style={[styles.card, { borderColor }]}
             lightColor={Colors.light.surface}
-            darkColor={Colors.dark.surface}>
+            darkColor={Colors.dark.surface}
+          >
             <ThemedText type="subtitle">State interactions</ThemedText>
             {interactionItems.map((item) => (
               <ThemedText key={item} style={{ color: mutedTextColor }}>

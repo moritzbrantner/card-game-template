@@ -11,14 +11,25 @@ import type {
   PlayerProfile,
 } from '@repo/game-contracts';
 import { createMatchReplay, summarizeMatchReplay } from '@repo/game-contracts';
-import { canonicalizeMove, createGameEngine, createReplayMetadata, DEFAULT_RNG_VERSION, type GameAdapter } from '@repo/game-engine';
+import {
+  canonicalizeMove,
+  createGameEngine,
+  createReplayMetadata,
+  DEFAULT_RNG_VERSION,
+  type GameAdapter,
+} from '@repo/game-engine';
 
 function isSerializableDeepEqual(left: unknown, right: unknown): boolean {
   if (Object.is(left, right)) {
     return true;
   }
 
-  if (typeof left !== 'object' || left === null || typeof right !== 'object' || right === null) {
+  if (
+    typeof left !== 'object' ||
+    left === null ||
+    typeof right !== 'object' ||
+    right === null
+  ) {
     return false;
   }
 
@@ -80,11 +91,22 @@ export type LocalGameSessionBot<TState, TMove extends GameMove> = {
   }): TMove | null;
 };
 
-export type LocalGameSessionPersistence<TState, TMove extends GameMove, TView> = {
-  save(snapshot: LocalGameSessionSnapshot<TState, TMove, TView>): Promise<void> | void;
+export type LocalGameSessionPersistence<
+  TState,
+  TMove extends GameMove,
+  TView,
+> = {
+  save(
+    snapshot: LocalGameSessionSnapshot<TState, TMove, TView>,
+  ): Promise<void> | void;
 };
 
-export type CreateLocalGameSessionInput<TSetup, TState, TMove extends GameMove, TView> = {
+export type CreateLocalGameSessionInput<
+  TSetup,
+  TState,
+  TMove extends GameMove,
+  TView,
+> = {
   adapter: GameAdapter<TSetup, TState, TMove>;
   bots?: Partial<Record<PlayerId, LocalGameSessionBot<TState, TMove>>>;
   executionMode?: MatchExecutionMode;
@@ -101,7 +123,11 @@ export type LocalGameSession<TState, TMove extends GameMove, TView> = {
   getSnapshot(): LocalGameSessionSnapshot<TState, TMove, TView>;
   restart(): void;
   submitMove(move: TMove): void;
-  subscribe(listener: (snapshot: LocalGameSessionSnapshot<TState, TMove, TView>) => void): () => void;
+  subscribe(
+    listener: (
+      snapshot: LocalGameSessionSnapshot<TState, TMove, TView>,
+    ) => void,
+  ): () => void;
 };
 
 export type ServerGameSessionSnapshot<TState, TMove extends GameMove> = {
@@ -116,10 +142,16 @@ export type ServerGameSessionSnapshot<TState, TMove extends GameMove> = {
 };
 
 export type ServerGameSessionPersistence<TState, TMove extends GameMove> = {
-  save(snapshot: ServerGameSessionSnapshot<TState, TMove>): Promise<void> | void;
+  save(
+    snapshot: ServerGameSessionSnapshot<TState, TMove>,
+  ): Promise<void> | void;
 };
 
-export type CreateServerGameSessionInput<TSetup, TState, TMove extends GameMove> = {
+export type CreateServerGameSessionInput<
+  TSetup,
+  TState,
+  TMove extends GameMove,
+> = {
   adapter: GameAdapter<TSetup, TState, TMove>;
   executionMode?: Extract<MatchExecutionMode, 'server-authoritative'>;
   matchId: string;
@@ -130,7 +162,11 @@ export type CreateServerGameSessionInput<TSetup, TState, TMove extends GameMove>
   setup: TSetup;
 };
 
-export type ResumeServerGameSessionInput<TSetup, TState, TMove extends GameMove> = {
+export type ResumeServerGameSessionInput<
+  TSetup,
+  TState,
+  TMove extends GameMove,
+> = {
   adapter: GameAdapter<TSetup, TState, TMove>;
   now?: () => string;
   participants: readonly PlayerProfile[];
@@ -152,7 +188,9 @@ export type ServerGameSession<TState, TMove extends GameMove> = {
   getReplay(): MatchReplay<TState, TMove>;
   getSnapshot(): ServerGameSessionSnapshot<TState, TMove>;
   submitMove(move: TMove): void;
-  subscribe(listener: (snapshot: ServerGameSessionSnapshot<TState, TMove>) => void): () => void;
+  subscribe(
+    listener: (snapshot: ServerGameSessionSnapshot<TState, TMove>) => void,
+  ): () => void;
 };
 
 function cloneState<TState>(state: MatchState<TState>): MatchState<TState> {
@@ -163,42 +201,16 @@ function cloneValue<TValue>(value: TValue): TValue {
   return structuredClone(value);
 }
 
-function sortPlayersBySeat<TPlayer extends PlayerProfile>(players: readonly TPlayer[]): TPlayer[] {
+function sortPlayersBySeat<TPlayer extends PlayerProfile>(
+  players: readonly TPlayer[],
+): TPlayer[] {
   return [...players].sort((left, right) => left.seat - right.seat);
 }
 
-function resolveSelectedActor<TSetup, TState, TMove extends GameMove>(input: {
-  adapter: GameAdapter<TSetup, TState, TMove>;
-  state: MatchState<TState>;
-  matchResult: MatchResult | null;
-}): {
-  legalMoves: readonly TMove[];
-  selectedActorPlayerId: PlayerId | null;
-} {
-  if (input.matchResult) {
-    return {
-      legalMoves: [],
-      selectedActorPlayerId: null,
-    };
-  }
-
-  const allLegalMoves = input.adapter.listLegalMoves(input.state);
-  const selectedActorPlayerId = input.adapter.selectActor
-    ? input.adapter.selectActor({
-        state: input.state,
-        legalMoves: allLegalMoves,
-      })
-    : input.state.activePlayerId;
-
-  return {
-    legalMoves: selectedActorPlayerId
-      ? allLegalMoves.filter((move) => move.playerId === selectedActorPlayerId)
-      : [],
-    selectedActorPlayerId,
-  };
-}
-
-function withAcceptedFinishedAt(result: MatchResult | null, finishedAt: string): MatchResult | null {
+function withAcceptedFinishedAt(
+  result: MatchResult | null,
+  finishedAt: string,
+): MatchResult | null {
   return result
     ? {
         ...result,
@@ -211,8 +223,14 @@ function canonicalizeAdapterMove<TSetup, TState, TMove extends GameMove>(
   adapter: GameAdapter<TSetup, TState, TMove>,
   move: TMove,
 ): TMove {
-  const validatedMove = adapter.validateMove ? adapter.validateMove(move) : move;
-  return canonicalizeMove(adapter.canonicalizeMove ? adapter.canonicalizeMove(validatedMove) : validatedMove);
+  const validatedMove = adapter.validateMove
+    ? adapter.validateMove(move)
+    : move;
+  return canonicalizeMove(
+    adapter.canonicalizeMove
+      ? adapter.canonicalizeMove(validatedMove)
+      : validatedMove,
+  );
 }
 
 function expectedReplayVersions<TSetup, TState, TMove extends GameMove>(
@@ -221,7 +239,8 @@ function expectedReplayVersions<TSetup, TState, TMove extends GameMove>(
   return {
     gameVersion: adapter.metadata?.gameVersion ?? adapter.definition.gameId,
     rngVersion: adapter.metadata?.rngVersion ?? DEFAULT_RNG_VERSION,
-    rulesetVersion: adapter.metadata?.rulesetVersion ?? adapter.definition.gameId,
+    rulesetVersion:
+      adapter.metadata?.rulesetVersion ?? adapter.definition.gameId,
   };
 }
 
@@ -236,7 +255,10 @@ function rebuildServerReplay<TSetup, TState, TMove extends GameMove>(
   const engine = createGameEngine(input.adapter);
   let currentState = cloneState(input.replay.initialState);
   let history: MatchState<TState>[] = [cloneState(currentState)];
-  let matchResult = withAcceptedFinishedAt(engine.finalizeMatch(currentState), input.replay.startedAt);
+  let matchResult = withAcceptedFinishedAt(
+    engine.finalize(currentState),
+    input.replay.startedAt,
+  );
   let replay = createMatchReplay<TState, TMove>({
     startedAt: input.replay.startedAt,
     initialState: cloneState(input.replay.initialState),
@@ -247,15 +269,21 @@ function rebuildServerReplay<TSetup, TState, TMove extends GameMove>(
   });
 
   for (const acceptedMove of input.replay.acceptedMoves) {
-    const submittedMove = canonicalizeAdapterMove(input.adapter, acceptedMove.move);
-    const nextState = engine.submitMove(currentState, submittedMove);
+    const submittedMove = canonicalizeAdapterMove(
+      input.adapter,
+      acceptedMove.move,
+    );
+    const transition = engine.submitMove(currentState, submittedMove);
 
-    currentState = nextState;
-    history = [...history, cloneState(nextState)];
-    matchResult = withAcceptedFinishedAt(engine.finalizeMatch(nextState), acceptedMove.acceptedAt);
+    currentState = transition.nextState;
+    history = [...history, cloneState(transition.nextState)];
+    matchResult = withAcceptedFinishedAt(
+      transition.result,
+      acceptedMove.acceptedAt,
+    );
     replay = {
       ...replay,
-      latestState: cloneState(nextState),
+      latestState: cloneState(transition.nextState),
       acceptedMoves: [
         ...replay.acceptedMoves,
         {
@@ -277,13 +305,22 @@ function rebuildServerReplay<TSetup, TState, TMove extends GameMove>(
   };
 }
 
-export function createLocalGameSession<TSetup, TState, TMove extends GameMove, TView>(
+export function createLocalGameSession<
+  TSetup,
+  TState,
+  TMove extends GameMove,
+  TView,
+>(
   input: CreateLocalGameSessionInput<TSetup, TState, TMove, TView>,
 ): LocalGameSession<TState, TMove, TView> {
   const engine = createGameEngine(input.adapter);
-  const listeners = new Set<(snapshot: LocalGameSessionSnapshot<TState, TMove, TView>) => void>();
+  const listeners = new Set<
+    (snapshot: LocalGameSessionSnapshot<TState, TMove, TView>) => void
+  >();
   const orderedParticipants = sortPlayersBySeat(input.participants);
-  const humanParticipants = orderedParticipants.filter((participant) => participant.controller === 'human');
+  const humanParticipants = orderedParticipants.filter(
+    (participant) => participant.controller === 'human',
+  );
 
   let currentState = engine.startMatch({
     matchId: input.matchId,
@@ -292,20 +329,22 @@ export function createLocalGameSession<TSetup, TState, TMove extends GameMove, T
     executionMode: input.executionMode,
   });
   let history: MatchState<TState>[] = [cloneState(currentState)];
-  let matchResult = engine.finalizeMatch(currentState);
+  let matchResult = engine.finalize(currentState);
   let viewerPlayerId: PlayerId | null = null;
   let pendingHotseatPlayerId: PlayerId | null = null;
 
   function getParticipant(playerId: PlayerId) {
-    return orderedParticipants.find((participant) => participant.playerId === playerId) ?? null;
+    return (
+      orderedParticipants.find(
+        (participant) => participant.playerId === playerId,
+      ) ?? null
+    );
   }
 
   function getSnapshot(): LocalGameSessionSnapshot<TState, TMove, TView> {
-    const { legalMoves, selectedActorPlayerId } = resolveSelectedActor({
-      adapter: input.adapter,
-      state: currentState,
-      matchResult,
-    });
+    const inspection = engine.inspect(currentState);
+    const legalMoves = inspection.legalMoves;
+    const selectedActorPlayerId = inspection.actorPlayerId;
 
     return {
       history,
@@ -347,16 +386,16 @@ export function createLocalGameSession<TSetup, TState, TMove extends GameMove, T
       pendingHotseatPlayerId = null;
       const winnerPlayerId = matchResult.winnerIds[0];
       viewerPlayerId =
-        currentState.players.find((player) => player.playerId === winnerPlayerId)?.playerId ?? viewerPlayerId;
+        currentState.players.find(
+          (player) => player.playerId === winnerPlayerId,
+        )?.playerId ?? viewerPlayerId;
       return;
     }
 
-    const { selectedActorPlayerId } = resolveSelectedActor({
-      adapter: input.adapter,
-      state: currentState,
-      matchResult,
-    });
-    const activeParticipant = selectedActorPlayerId ? getParticipant(selectedActorPlayerId) : null;
+    const selectedActorPlayerId = engine.inspect(currentState).actorPlayerId;
+    const activeParticipant = selectedActorPlayerId
+      ? getParticipant(selectedActorPlayerId)
+      : null;
 
     if (!activeParticipant || activeParticipant.controller === 'bot') {
       pendingHotseatPlayerId = null;
@@ -364,7 +403,12 @@ export function createLocalGameSession<TSetup, TState, TMove extends GameMove, T
       return;
     }
 
-    if (input.hotseat && humanParticipants.length > 1 && viewerPlayerId && viewerPlayerId !== activeParticipant.playerId) {
+    if (
+      input.hotseat &&
+      humanParticipants.length > 1 &&
+      viewerPlayerId &&
+      viewerPlayerId !== activeParticipant.playerId
+    ) {
       pendingHotseatPlayerId = activeParticipant.playerId;
       viewerPlayerId = null;
       return;
@@ -374,10 +418,10 @@ export function createLocalGameSession<TSetup, TState, TMove extends GameMove, T
     viewerPlayerId = activeParticipant.playerId;
   }
 
-  function pushState(nextState: MatchState<TState>) {
-    currentState = nextState;
-    history = [...history, cloneState(nextState)];
-    matchResult = engine.finalizeMatch(nextState);
+  function pushTransition(transition: ReturnType<typeof engine.submitMove>) {
+    currentState = transition.nextState;
+    history = [...history, cloneState(transition.nextState)];
+    matchResult = transition.result;
     alignViewer();
   }
 
@@ -387,30 +431,33 @@ export function createLocalGameSession<TSetup, TState, TMove extends GameMove, T
     }
 
     while (!matchResult) {
-      const { legalMoves, selectedActorPlayerId } = resolveSelectedActor({
-        adapter: input.adapter,
-        state: currentState,
-        matchResult,
-      });
-      const activeParticipant = selectedActorPlayerId ? getParticipant(selectedActorPlayerId) : null;
+      const inspection = engine.inspect(currentState);
+      const legalMoves = inspection.legalMoves;
+      const selectedActorPlayerId = inspection.actorPlayerId;
+      const activeParticipant = selectedActorPlayerId
+        ? getParticipant(selectedActorPlayerId)
+        : null;
 
       if (!activeParticipant || activeParticipant.controller !== 'bot') {
         break;
       }
 
       const bot = input.bots?.[activeParticipant.playerId];
-      const chosenMove = bot?.chooseMove({
-        legalMoves,
-        participants: orderedParticipants,
-        playerId: activeParticipant.playerId,
-        state: currentState,
-      }) ?? legalMoves[0] ?? null;
+      const chosenMove =
+        bot?.chooseMove({
+          legalMoves,
+          participants: orderedParticipants,
+          playerId: activeParticipant.playerId,
+          state: currentState,
+        }) ??
+        legalMoves[0] ??
+        null;
 
       if (!chosenMove) {
         break;
       }
 
-      pushState(engine.submitMove(currentState, chosenMove));
+      pushTransition(engine.submitMove(currentState, chosenMove));
     }
   }
 
@@ -422,7 +469,7 @@ export function createLocalGameSession<TSetup, TState, TMove extends GameMove, T
       executionMode: input.executionMode,
     });
     history = [cloneState(currentState)];
-    matchResult = engine.finalizeMatch(currentState);
+    matchResult = engine.finalize(currentState);
     viewerPlayerId = null;
     pendingHotseatPlayerId = null;
     alignViewer();
@@ -449,7 +496,7 @@ export function createLocalGameSession<TSetup, TState, TMove extends GameMove, T
       resetState();
     },
     submitMove(move) {
-      pushState(engine.submitMove(currentState, move));
+      pushTransition(engine.submitMove(currentState, move));
       processBots();
       emit();
     },
@@ -462,14 +509,22 @@ export function createLocalGameSession<TSetup, TState, TMove extends GameMove, T
   };
 }
 
-export function reconstructMatchHistoryFromReplay<TSetup, TState, TMove extends GameMove>(input: {
+export function reconstructMatchHistoryFromReplay<
+  TSetup,
+  TState,
+  TMove extends GameMove,
+>(input: {
   adapter: GameAdapter<TSetup, TState, TMove>;
   replay: MatchReplay<TState, TMove>;
 }): MatchState<TState>[] {
   return rebuildServerReplay(input).history;
 }
 
-function createServerSessionRuntime<TSetup, TState, TMove extends GameMove>(input: {
+function createServerSessionRuntime<
+  TSetup,
+  TState,
+  TMove extends GameMove,
+>(input: {
   adapter: GameAdapter<TSetup, TState, TMove>;
   now: () => string;
   participants: readonly PlayerProfile[];
@@ -481,12 +536,17 @@ function createServerSessionRuntime<TSetup, TState, TMove extends GameMove>(inpu
   replayMetadata: GameReplayMetadata | null;
 }): ServerGameSession<TState, TMove> {
   const engine = createGameEngine(input.adapter);
-  const listeners = new Set<(snapshot: ServerGameSessionSnapshot<TState, TMove>) => void>();
+  const listeners = new Set<
+    (snapshot: ServerGameSessionSnapshot<TState, TMove>) => void
+  >();
   const orderedParticipants = sortPlayersBySeat(input.participants);
 
   let currentState = cloneState(input.initialState);
   let history: MatchState<TState>[] = [cloneState(currentState)];
-  let matchResult = withAcceptedFinishedAt(engine.finalizeMatch(currentState), input.startedAt);
+  let matchResult = withAcceptedFinishedAt(
+    engine.finalize(currentState),
+    input.startedAt,
+  );
   let replay = createMatchReplay<TState, TMove>({
     startedAt: input.startedAt,
     initialState: cloneState(input.initialState),
@@ -497,11 +557,9 @@ function createServerSessionRuntime<TSetup, TState, TMove extends GameMove>(inpu
   });
 
   function buildSnapshot(): ServerGameSessionSnapshot<TState, TMove> {
-    const { legalMoves, selectedActorPlayerId } = resolveSelectedActor({
-      adapter: input.adapter,
-      state: currentState,
-      matchResult,
-    });
+    const inspection = engine.inspect(currentState);
+    const legalMoves = inspection.legalMoves;
+    const selectedActorPlayerId = inspection.actorPlayerId;
 
     return {
       analysis: summarizeMatchReplay(replay),
@@ -534,15 +592,21 @@ function createServerSessionRuntime<TSetup, TState, TMove extends GameMove>(inpu
       throw new Error(`Match ${currentState.matchId} is already complete`);
     }
 
-    const submittedMove = canonicalizeAdapterMove(input.adapter, acceptedMove.move);
-    const nextState = engine.submitMove(currentState, submittedMove);
+    const submittedMove = canonicalizeAdapterMove(
+      input.adapter,
+      acceptedMove.move,
+    );
+    const transition = engine.submitMove(currentState, submittedMove);
 
-    currentState = nextState;
-    history = [...history, cloneState(nextState)];
-    matchResult = withAcceptedFinishedAt(engine.finalizeMatch(nextState), acceptedMove.acceptedAt);
+    currentState = transition.nextState;
+    history = [...history, cloneState(transition.nextState)];
+    matchResult = withAcceptedFinishedAt(
+      transition.result,
+      acceptedMove.acceptedAt,
+    );
     replay = {
       ...replay,
-      latestState: cloneState(nextState),
+      latestState: cloneState(transition.nextState),
       acceptedMoves: [
         ...replay.acceptedMoves,
         {
@@ -591,7 +655,11 @@ function createServerSessionRuntime<TSetup, TState, TMove extends GameMove>(inpu
   };
 }
 
-export function verifyReplayIntegrity<TSetup, TState, TMove extends GameMove>(input: {
+export function verifyReplayIntegrity<
+  TSetup,
+  TState,
+  TMove extends GameMove,
+>(input: {
   adapter: GameAdapter<TSetup, TState, TMove>;
   replay: MatchReplay<TState, TMove>;
 }): ReplayIntegrityCheck {
@@ -628,7 +696,11 @@ export function verifyReplayIntegrity<TSetup, TState, TMove extends GameMove>(in
       };
     }
 
-    if (index > 0 && input.replay.acceptedMoves[index - 1]!.acceptedAt > acceptedMove.acceptedAt) {
+    if (
+      index > 0 &&
+      input.replay.acceptedMoves[index - 1]!.acceptedAt >
+        acceptedMove.acceptedAt
+    ) {
       return {
         ok: false,
         reason: 'accepted move timestamps are out of order',
@@ -648,11 +720,17 @@ export function verifyReplayIntegrity<TSetup, TState, TMove extends GameMove>(in
   } catch (error) {
     return {
       ok: false,
-      reason: error instanceof Error ? error.message : 'replay reconstruction failed',
+      reason:
+        error instanceof Error ? error.message : 'replay reconstruction failed',
     };
   }
 
-  if (!isSerializableDeepEqual(rebuilt.replay.latestState, input.replay.latestState)) {
+  if (
+    !isSerializableDeepEqual(
+      rebuilt.replay.latestState,
+      input.replay.latestState,
+    )
+  ) {
     return {
       ok: false,
       reason: 'latest state does not match the accepted move log',
@@ -666,10 +744,14 @@ export function verifyReplayIntegrity<TSetup, TState, TMove extends GameMove>(in
     };
   }
 
-  if (input.replay.result && rebuilt.replay.finishedAt !== input.replay.finishedAt) {
+  if (
+    input.replay.result &&
+    rebuilt.replay.finishedAt !== input.replay.finishedAt
+  ) {
     return {
       ok: false,
-      reason: 'finished timestamp does not match the reconstructed replay outcome',
+      reason:
+        'finished timestamp does not match the reconstructed replay outcome',
     };
   }
 
@@ -699,7 +781,8 @@ export function createServerGameSession<TSetup, TState, TMove extends GameMove>(
     startedAt,
     initialState,
     persistInitialSnapshot: true,
-    replayMetadata: input.replayMetadata ?? createReplayMetadata(input.adapter, input.setup),
+    replayMetadata:
+      input.replayMetadata ?? createReplayMetadata(input.adapter, input.setup),
   });
 }
 

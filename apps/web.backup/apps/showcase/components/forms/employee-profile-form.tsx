@@ -30,14 +30,26 @@ export function EmployeeProfileForm() {
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-1">
           <span className="text-sm font-medium">First name</span>
-          <input className="w-full rounded border p-2" {...register('firstName', { required: true })} />
-          {errors.firstName && <span className="text-sm text-red-600">First name is required.</span>}
+          <input
+            className="w-full rounded border p-2"
+            {...register('firstName', { required: true })}
+          />
+          {errors.firstName && (
+            <span className="text-sm text-red-600">
+              First name is required.
+            </span>
+          )}
         </label>
 
         <label className="space-y-1">
           <span className="text-sm font-medium">Last name</span>
-          <input className="w-full rounded border p-2" {...register('lastName', { required: true })} />
-          {errors.lastName && <span className="text-sm text-red-600">Last name is required.</span>}
+          <input
+            className="w-full rounded border p-2"
+            {...register('lastName', { required: true })}
+          />
+          {errors.lastName && (
+            <span className="text-sm text-red-600">Last name is required.</span>
+          )}
         </label>
 
         <label className="space-y-1">
@@ -50,7 +62,11 @@ export function EmployeeProfileForm() {
               pattern: /\S+@\S+\.\S+/,
             })}
           />
-          {errors.email && <span className="text-sm text-red-600">Please enter a valid email.</span>}
+          {errors.email && (
+            <span className="text-sm text-red-600">
+              Please enter a valid email.
+            </span>
+          )}
         </label>
 
         <label className="space-y-1">
@@ -63,7 +79,9 @@ export function EmployeeProfileForm() {
             })}
           />
           {errors.phone && (
-            <span className="text-sm text-red-600">Phone is required and must be at least 10 digits.</span>
+            <span className="text-sm text-red-600">
+              Phone is required and must be at least 10 digits.
+            </span>
           )}
         </label>
 
@@ -78,13 +96,22 @@ export function EmployeeProfileForm() {
               max: 100,
             })}
           />
-          {errors.age && <span className="text-sm text-red-600">Age must be between 18 and 100.</span>}
+          {errors.age && (
+            <span className="text-sm text-red-600">
+              Age must be between 18 and 100.
+            </span>
+          )}
         </label>
 
         <label className="space-y-1">
           <span className="text-sm font-medium">Job title</span>
-          <input className="w-full rounded border p-2" {...register('jobTitle', { required: true })} />
-          {errors.jobTitle && <span className="text-sm text-red-600">Job title is required.</span>}
+          <input
+            className="w-full rounded border p-2"
+            {...register('jobTitle', { required: true })}
+          />
+          {errors.jobTitle && (
+            <span className="text-sm text-red-600">Job title is required.</span>
+          )}
         </label>
 
         <label className="space-y-1">
@@ -94,19 +121,30 @@ export function EmployeeProfileForm() {
             className="w-full rounded border p-2"
             {...register('startDate', { required: true })}
           />
-          {errors.startDate && <span className="text-sm text-red-600">Start date is required.</span>}
+          {errors.startDate && (
+            <span className="text-sm text-red-600">
+              Start date is required.
+            </span>
+          )}
         </label>
 
         <label className="space-y-1">
           <span className="text-sm font-medium">Department</span>
-          <select className="w-full rounded border p-2" {...register('department', { required: true })}>
+          <select
+            className="w-full rounded border p-2"
+            {...register('department', { required: true })}
+          >
             {departmentOptions.map((department) => (
               <option key={department} value={department}>
                 {department}
               </option>
             ))}
           </select>
-          {errors.department && <span className="text-sm text-red-600">Department is required.</span>}
+          {errors.department && (
+            <span className="text-sm text-red-600">
+              Department is required.
+            </span>
+          )}
         </label>
       </div>
 
@@ -125,7 +163,11 @@ export function EmployeeProfileForm() {
             minLength: 20,
           })}
         />
-        {errors.bio && <span className="text-sm text-red-600">Bio must be at least 20 characters.</span>}
+        {errors.bio && (
+          <span className="text-sm text-red-600">
+            Bio must be at least 20 characters.
+          </span>
+        )}
       </label>
 
       <button
@@ -137,7 +179,10 @@ export function EmployeeProfileForm() {
       </button>
 
       {submissionMessage && (
-        <p role="status" className="rounded bg-green-100 p-3 text-sm text-green-900">
+        <p
+          role="status"
+          className="rounded bg-green-100 p-3 text-sm text-green-900"
+        >
           {submissionMessage}
         </p>
       )}

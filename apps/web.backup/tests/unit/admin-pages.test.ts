@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import type { AppManifest } from '@/src/app-config/contracts';
-import { getEnabledAdminPageDefinitions, getEnabledAdminWorkspacePageDefinitions } from '@/src/admin/pages';
+import {
+  getEnabledAdminPageDefinitions,
+  getEnabledAdminWorkspacePageDefinitions,
+} from '@/src/admin/pages';
 
-function createManifest(enabledFeatures: AppManifest['enabledFeatures']): AppManifest {
+function createManifest(
+  enabledFeatures: AppManifest['enabledFeatures'],
+): AppManifest {
   return {
     id: 'test-app',
     siteName: 'Test App',
@@ -35,16 +40,11 @@ describe('admin page helpers', () => {
       'admin.dataStudio': true,
     });
 
-    expect(getEnabledAdminPageDefinitions(manifest).map((page) => page.key)).toEqual([
-      'overview',
-      'content',
-      'users',
-      'dataStudio',
-    ]);
-    expect(getEnabledAdminWorkspacePageDefinitions(manifest).map((page) => page.key)).toEqual([
-      'content',
-      'users',
-      'dataStudio',
-    ]);
+    expect(
+      getEnabledAdminPageDefinitions(manifest).map((page) => page.key),
+    ).toEqual(['overview', 'content', 'users', 'dataStudio']);
+    expect(
+      getEnabledAdminWorkspacePageDefinitions(manifest).map((page) => page.key),
+    ).toEqual(['content', 'users', 'dataStudio']);
   });
 });

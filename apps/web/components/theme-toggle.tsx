@@ -3,11 +3,18 @@
 import { useSyncExternalStore } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { THEME_COOKIE_NAME, THEME_STORAGE_KEY, Theme, isTheme } from '@/lib/theme';
+import {
+  THEME_COOKIE_NAME,
+  THEME_STORAGE_KEY,
+  Theme,
+  isTheme,
+} from '@/lib/theme';
 import { useTranslations } from '@/src/i18n';
 
 function getSystemTheme(): Theme {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
 }
 
 function getThemeSnapshot(): Theme {
@@ -45,10 +52,15 @@ function persistTheme(theme: Theme) {
 
 export function ThemeToggle() {
   const t = useTranslations('ThemeToggle');
-  const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, () => 'light');
+  const theme = useSyncExternalStore(
+    subscribeTheme,
+    getThemeSnapshot,
+    () => 'light',
+  );
 
   const nextTheme = theme === 'dark' ? 'light' : 'dark';
-  const nextThemeLabel = nextTheme === 'dark' ? t('darkTheme') : t('lightTheme');
+  const nextThemeLabel =
+    nextTheme === 'dark' ? t('darkTheme') : t('lightTheme');
 
   return (
     <Button

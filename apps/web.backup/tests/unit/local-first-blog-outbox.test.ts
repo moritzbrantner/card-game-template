@@ -32,6 +32,8 @@ describe('local-first blog outbox', () => {
     const now = new Date('2026-04-16T10:00:00.000Z');
     const nextAttemptAt = getNextPublishAttemptAt(now, 0, false);
 
-    expect(nextAttemptAt.getTime()).toBeGreaterThan(now.getTime() + 300 * 24 * 60 * 60 * 1_000);
+    expect(nextAttemptAt.getTime()).toBeGreaterThan(
+      now.getTime() + 300 * 24 * 60 * 60 * 1_000,
+    );
   });
 });

@@ -51,7 +51,14 @@ export function ProfileMenu({
         onClick={() => setOpen((current) => !current)}
       >
         {imageUrl ? (
-          <Image src={imageUrl} alt={displayName} fill sizes="36px" unoptimized className="object-cover" />
+          <Image
+            src={imageUrl}
+            alt={displayName}
+            fill
+            sizes="36px"
+            unoptimized
+            className="object-cover"
+          />
         ) : (
           <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-100">
             {displayName.charAt(0).toUpperCase() || 'U'}
@@ -88,7 +95,8 @@ export function ProfileMenu({
             className={buttonVariants({
               variant: 'ghost',
               size: 'sm',
-              className: 'w-full justify-start text-red-600 hover:text-red-600 dark:text-red-400 dark:hover:text-red-400',
+              className:
+                'w-full justify-start text-red-600 hover:text-red-600 dark:text-red-400 dark:hover:text-red-400',
             })}
             onClick={() => {
               void fetch('/api/auth/logout', {

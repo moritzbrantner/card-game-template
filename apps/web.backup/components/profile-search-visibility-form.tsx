@@ -63,7 +63,9 @@ export function ProfileSearchVisibilityForm({
       <label className="flex items-start justify-between gap-4 rounded-2xl border p-4 dark:border-zinc-800">
         <div>
           <p className="font-medium">{labels.title}</p>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{labels.description}</p>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+            {labels.description}
+          </p>
         </div>
         <input
           type="checkbox"
@@ -77,9 +79,19 @@ export function ProfileSearchVisibilityForm({
         />
       </label>
 
-      {isPending ? <p className="text-sm text-zinc-600 dark:text-zinc-300">{labels.saving}</p> : null}
-      {message ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{message}</p> : null}
-      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
+      {isPending ? (
+        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          {labels.saving}
+        </p>
+      ) : null}
+      {message ? (
+        <p className="text-sm text-emerald-600 dark:text-emerald-400">
+          {message}
+        </p>
+      ) : null}
+      {error ? (
+        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+      ) : null}
     </div>
   );
 }

@@ -1,8 +1,16 @@
-import type { CreateBlogPostRequest, CreateBlogPostResponse } from '@/src/domain/blog/contracts';
+import type {
+  CreateBlogPostRequest,
+  CreateBlogPostResponse,
+} from '@/src/domain/blog/contracts';
 
 export type { CreateBlogPostRequest, CreateBlogPostResponse };
 
-export type BlogDraftStatus = 'draft' | 'queued_publish' | 'publishing' | 'publish_failed' | 'published';
+export type BlogDraftStatus =
+  | 'draft'
+  | 'queued_publish'
+  | 'publishing'
+  | 'publish_failed'
+  | 'published';
 
 export type PublishJobStatus = 'pending' | 'running' | 'failed';
 

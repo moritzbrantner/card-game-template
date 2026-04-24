@@ -17,7 +17,14 @@ export const POST = createApiRoute({
       const result = await updateProfileImageUseCase(actorId!, body.image);
 
       if (!result.ok) {
-        throw new ProblemError(problem('/problems/profile-image', 'Unable to update profile image', 400, result.error.message));
+        throw new ProblemError(
+          problem(
+            '/problems/profile-image',
+            'Unable to update profile image',
+            400,
+            result.error.message,
+          ),
+        );
       }
 
       await signInSession({
@@ -27,7 +34,10 @@ export const POST = createApiRoute({
 
       return { ok: true };
     } catch (error) {
-      getLogger({ subsystem: 'profile' }).error({ err: error }, 'Profile image upload failed');
+      getLogger({ subsystem: 'profile' }).error(
+        { err: error },
+        'Profile image upload failed',
+      );
       throw error;
     }
   },

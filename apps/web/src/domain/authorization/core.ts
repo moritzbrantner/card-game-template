@@ -33,7 +33,10 @@ export const appPermissionKeys = [
 
 export type AppPermissionKey = (typeof appPermissionKeys)[number];
 
-export type RolePermissionAssignments = Record<AppRole, readonly AppPermissionKey[]>;
+export type RolePermissionAssignments = Record<
+  AppRole,
+  readonly AppPermissionKey[]
+>;
 
 type BusinessAction =
   | 'viewDashboard'
@@ -287,7 +290,11 @@ const permissionActionMap: Record<AppPermissionKey, BusinessAction> = {
 
 export const appPermissionMetadata: Record<
   AppPermissionKey,
-  { label: string; description: string; category: 'workspace' | 'account' | 'profile' | 'admin' }
+  {
+    label: string;
+    description: string;
+    category: 'workspace' | 'account' | 'profile' | 'admin';
+  }
 > = {
   'dashboard.view': {
     label: 'View dashboard',
@@ -386,7 +393,8 @@ export const appPermissionMetadata: Record<
   },
   'admin.users.notify': {
     label: 'Send admin notifications',
-    description: 'Send direct, role-based, or broadcast notifications from admin tools.',
+    description:
+      'Send direct, role-based, or broadcast notifications from admin tools.',
     category: 'admin',
   },
   'admin.roles.read': {
@@ -406,7 +414,8 @@ export const appPermissionMetadata: Record<
   },
   'admin.systemSettings.edit': {
     label: 'Edit system settings',
-    description: 'Update site, analytics, feature flag, and authorization settings.',
+    description:
+      'Update site, analytics, feature flag, and authorization settings.',
     category: 'admin',
   },
   'admin.dataStudio.read': {
@@ -512,18 +521,40 @@ export const defaultRolePermissionAssignments: RolePermissionAssignments = {
 };
 
 export function normalizeRolePermissionAssignments(
-  input: Partial<Record<AppRole, readonly AppPermissionKey[]>> | null | undefined,
+  input:
+    | Partial<Record<AppRole, readonly AppPermissionKey[]>>
+    | null
+    | undefined,
 ): RolePermissionAssignments {
   return {
-    USER: uniquePermissions((input?.USER ?? defaultRolePermissionAssignments.USER).filter(isAppPermissionKey)),
-    MANAGER: uniquePermissions((input?.MANAGER ?? defaultRolePermissionAssignments.MANAGER).filter(isAppPermissionKey)),
-    ADMIN: uniquePermissions((input?.ADMIN ?? defaultRolePermissionAssignments.ADMIN).filter(isAppPermissionKey)),
-    SUPERADMIN: uniquePermissions((input?.SUPERADMIN ?? defaultRolePermissionAssignments.SUPERADMIN).filter(isAppPermissionKey)),
+    USER: uniquePermissions(
+      (input?.USER ?? defaultRolePermissionAssignments.USER).filter(
+        isAppPermissionKey,
+      ),
+    ),
+    MANAGER: uniquePermissions(
+      (input?.MANAGER ?? defaultRolePermissionAssignments.MANAGER).filter(
+        isAppPermissionKey,
+      ),
+    ),
+    ADMIN: uniquePermissions(
+      (input?.ADMIN ?? defaultRolePermissionAssignments.ADMIN).filter(
+        isAppPermissionKey,
+      ),
+    ),
+    SUPERADMIN: uniquePermissions(
+      (input?.SUPERADMIN ?? defaultRolePermissionAssignments.SUPERADMIN).filter(
+        isAppPermissionKey,
+      ),
+    ),
   };
 }
 
 export function isAppPermissionKey(value: unknown): value is AppPermissionKey {
-  return typeof value === 'string' && (appPermissionKeys as readonly string[]).includes(value);
+  return (
+    typeof value === 'string' &&
+    (appPermissionKeys as readonly string[]).includes(value)
+  );
 }
 
 export function getPermissionsForRole(
@@ -537,7 +568,10 @@ export function getPermissionsForRole(
   return assignments[role] ?? [];
 }
 
-export function hasRole(currentRole: AppRole | null | undefined, minimumRole: AppRole): boolean {
+export function hasRole(
+  currentRole: AppRole | null | undefined,
+  minimumRole: AppRole,
+): boolean {
   if (!currentRole) {
     return false;
   }
@@ -553,12 +587,17 @@ export function isSuperAdmin(role: AppRole | null | undefined): boolean {
   return hasRole(role, 'SUPERADMIN');
 }
 
-function canPerform(role: AppRole | null | undefined, action: BusinessAction): boolean {
+function canPerform(
+  role: AppRole | null | undefined,
+  action: BusinessAction,
+): boolean {
   if (!role) {
     return false;
   }
 
-  return (baseUserPermissions[role] as AccessControlRole).authorize(actionPermissions[action]).success;
+  return (baseUserPermissions[role] as AccessControlRole).authorize(
+    actionPermissions[action],
+  ).success;
 }
 
 export function hasPermission(
@@ -583,7 +622,9 @@ export function canViewDashboard(role: AppRole | null | undefined): boolean {
   return hasPermission(role, 'dashboard.view');
 }
 
-export function canUpdateOwnAccountEmail(role: AppRole | null | undefined): boolean {
+export function canUpdateOwnAccountEmail(
+  role: AppRole | null | undefined,
+): boolean {
   return hasPermission(role, 'account.updateOwnEmail');
 }
 
@@ -591,7 +632,9 @@ export function canDeleteOwnAccount(role: AppRole | null | undefined): boolean {
   return hasPermission(role, 'account.deleteOwn');
 }
 
-export function canReadOwnNotifications(role: AppRole | null | undefined): boolean {
+export function canReadOwnNotifications(
+  role: AppRole | null | undefined,
+): boolean {
   return hasPermission(role, 'notifications.readOwn');
 }
 
@@ -599,19 +642,27 @@ export function canEditOwnProfile(role: AppRole | null | undefined): boolean {
   return hasPermission(role, 'profile.editOwn');
 }
 
-export function canManageOwnProfileImage(role: AppRole | null | undefined): boolean {
+export function canManageOwnProfileImage(
+  role: AppRole | null | undefined,
+): boolean {
   return hasPermission(role, 'profile.manageOwnImage');
 }
 
-export function canManageOwnProfileTags(role: AppRole | null | undefined): boolean {
+export function canManageOwnProfileTags(
+  role: AppRole | null | undefined,
+): boolean {
   return hasPermission(role, 'profile.manageOwnTags');
 }
 
-export function canManageOwnSearchVisibility(role: AppRole | null | undefined): boolean {
+export function canManageOwnSearchVisibility(
+  role: AppRole | null | undefined,
+): boolean {
   return hasPermission(role, 'profile.manageOwnSearchVisibility');
 }
 
-export function canManageOwnFollowerVisibility(role: AppRole | null | undefined): boolean {
+export function canManageOwnFollowerVisibility(
+  role: AppRole | null | undefined,
+): boolean {
   return hasPermission(role, 'profile.manageOwnFollowerVisibility');
 }
 
@@ -631,11 +682,15 @@ export function canExportReports(role: AppRole | null | undefined): boolean {
   return hasPermission(role, 'admin.reports.export');
 }
 
-export function canAccessDataEntryWorkspace(role: AppRole | null | undefined): boolean {
+export function canAccessDataEntryWorkspace(
+  role: AppRole | null | undefined,
+): boolean {
   return hasPermission(role, 'workspace.access');
 }
 
-export function canWriteDataEntryRecords(role: AppRole | null | undefined): boolean {
+export function canWriteDataEntryRecords(
+  role: AppRole | null | undefined,
+): boolean {
   return hasPermission(role, 'workspace.dataEntry.write');
 }
 
@@ -663,11 +718,15 @@ export function canReadRoleSettings(role: AppRole | null | undefined): boolean {
   return hasPermission(role, 'admin.roles.read');
 }
 
-export function canManageSystemSettings(role: AppRole | null | undefined): boolean {
+export function canManageSystemSettings(
+  role: AppRole | null | undefined,
+): boolean {
   return hasPermission(role, 'admin.systemSettings.edit');
 }
 
-export function canReadSystemSettings(role: AppRole | null | undefined): boolean {
+export function canReadSystemSettings(
+  role: AppRole | null | undefined,
+): boolean {
   return hasPermission(role, 'admin.systemSettings.read');
 }
 
@@ -683,7 +742,10 @@ export function canWriteDataStudio(role: AppRole | null | undefined): boolean {
   return hasPermission(role, 'admin.dataStudio.write');
 }
 
-export function forbidUnless(condition: unknown, message = 'Forbidden'): asserts condition {
+export function forbidUnless(
+  condition: unknown,
+  message = 'Forbidden',
+): asserts condition {
   if (!condition) {
     const error = new Error(message) as Error & { status: 403 };
     error.name = 'AuthorizationError';

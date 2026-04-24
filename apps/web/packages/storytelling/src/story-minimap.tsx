@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { motion, useTransform } from "motion/react";
+import { motion, useTransform } from 'motion/react';
 
-import { cn } from "@moritzbrantner/ui";
+import { cn } from '@moritzbrantner/ui';
 
-import { useStoryContext } from "./story-context";
+import { useStoryContext } from './story-context';
 
 export type StoryMinimapProps = {
   className?: string;
@@ -16,15 +16,10 @@ const clamp = (value: number, min: number, max: number) =>
 
 function StoryMinimapComponent({
   className,
-  ariaLabel = "Story minimap",
+  ariaLabel = 'Story minimap',
 }: StoryMinimapProps) {
-  const {
-    sceneMeta,
-    activeIndex,
-    sceneCount,
-    sceneProgress,
-    scrollToScene,
-  } = useStoryContext("StoryMinimap");
+  const { sceneMeta, activeIndex, sceneCount, sceneProgress, scrollToScene } =
+    useStoryContext('StoryMinimap');
   const maxSceneIndex = Math.max(sceneCount - 1, 0);
   const railProgress = useTransform(sceneProgress, (value) =>
     maxSceneIndex === 0 ? 1 : clamp(value / maxSceneIndex, 0, 1),
@@ -37,7 +32,7 @@ function StoryMinimapComponent({
   return (
     <nav
       className={cn(
-        "rounded-2xl border bg-background/70 p-3 shadow-sm backdrop-blur-sm",
+        'rounded-2xl border bg-background/70 p-3 shadow-sm backdrop-blur-sm',
         className,
       )}
       aria-label={ariaLabel}
@@ -72,23 +67,23 @@ function StoryMinimapComponent({
                 <button
                   type="button"
                   className={cn(
-                    "flex min-w-[10rem] items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors md:min-w-0 md:w-full md:items-center",
+                    'flex min-w-[10rem] items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors md:min-w-0 md:w-full md:items-center',
                     isActive
-                      ? "border-foreground/15 bg-foreground text-background"
-                      : "border-transparent text-muted-foreground hover:border-border hover:bg-muted/70 hover:text-foreground",
+                      ? 'border-foreground/15 bg-foreground text-background'
+                      : 'border-transparent text-muted-foreground hover:border-border hover:bg-muted/70 hover:text-foreground',
                   )}
                   onClick={() => scrollToScene(index)}
-                  aria-current={isActive ? "step" : undefined}
+                  aria-current={isActive ? 'step' : undefined}
                   aria-label={`Go to scene ${index + 1}: ${scene.title}`}
                 >
                   <span
                     className={cn(
-                      "flex size-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors",
+                      'flex size-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors',
                       isActive
-                        ? "border-background/25 bg-background/10 text-background"
+                        ? 'border-background/25 bg-background/10 text-background'
                         : isComplete
-                          ? "border-foreground/20 bg-foreground/10 text-foreground"
-                          : "border-border bg-background text-muted-foreground",
+                          ? 'border-foreground/20 bg-foreground/10 text-foreground'
+                          : 'border-border bg-background text-muted-foreground',
                     )}
                     aria-hidden="true"
                   >
@@ -98,8 +93,10 @@ function StoryMinimapComponent({
                   <span className="min-w-0">
                     <span
                       className={cn(
-                        "block text-[11px] uppercase tracking-[0.18em]",
-                        isActive ? "text-background/70" : "text-muted-foreground",
+                        'block text-[11px] uppercase tracking-[0.18em]',
+                        isActive
+                          ? 'text-background/70'
+                          : 'text-muted-foreground',
                       )}
                     >
                       {scene.menuLabel ?? scene.eyebrow ?? `Scene ${index + 1}`}

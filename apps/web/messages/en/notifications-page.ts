@@ -2,7 +2,8 @@ export const notificationsPage = {
   fallbackUser: 'there',
   badge: 'Signed-in updates',
   title: 'Notifications',
-  description: 'A simple inbox for {name}. Keep track of security events, workspace updates, and scheduled digests.',
+  description:
+    'A simple inbox for {name}. Keep track of security events, workspace updates, and scheduled digests.',
   summary: {
     unread: {
       label: 'Unread',
@@ -32,7 +33,8 @@ export const notificationsPage = {
   },
   actions: {
     title: 'Quick actions',
-    description: 'Jump directly to the areas most often connected to account notifications.',
+    description:
+      'Jump directly to the areas most often connected to account notifications.',
     profile: 'Open profile',
     settings: 'Notification settings',
     markAllRead: 'Mark all as read',
@@ -41,9 +43,12 @@ export const notificationsPage = {
   },
   preferences: {
     title: 'Delivery preferences',
-    description: 'Use this page as a lightweight notification center while your full preference controls live in settings.',
-    email: 'Email alerts stay enabled for security and account-recovery events.',
+    description:
+      'Use this page as a lightweight notification center while your full preference controls live in settings.',
+    email:
+      'Email alerts stay enabled for security and account-recovery events.',
     push: 'In-app notices are ideal for workspace activity that does not require immediate attention.',
-    digest: 'Weekly digests help reduce noise while still summarizing changes worth reviewing.',
+    digest:
+      'Weekly digests help reduce noise while still summarizing changes worth reviewing.',
   },
 };

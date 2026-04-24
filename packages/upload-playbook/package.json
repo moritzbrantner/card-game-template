@@ -9,6 +9,8 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "lint": "oxfmt --check . && bun run lint:code",
+    "lint:code": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit"
   },
   "devDependencies": {

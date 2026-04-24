@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import { isTrackablePageVisitPathname, normalizeTrackedPageVisit, resolveTrackedPageVisitReferrer } from '@/src/analytics/page-visits';
+import {
+  isTrackablePageVisitPathname,
+  normalizeTrackedPageVisit,
+  resolveTrackedPageVisitReferrer,
+} from '@/src/analytics/page-visits';
 
 describe('page visit tracking', () => {
   it('splits the pathname and query parameters for aggregation', () => {
-    expect(normalizeTrackedPageVisit('/en/profile?utm_source=launch&filter=active&token=secret')).toEqual({
+    expect(
+      normalizeTrackedPageVisit(
+        '/en/profile?utm_source=launch&filter=active&token=secret',
+      ),
+    ).toEqual({
       href: '/en/profile?utm_source=launch&filter=active&token=secret',
       pathname: '/en/profile',
       queryParameters: [
@@ -16,7 +24,9 @@ describe('page visit tracking', () => {
   });
 
   it('normalizes absolute URLs into relative app hrefs', () => {
-    expect(normalizeTrackedPageVisit('https://example.com/en/about?ref=nav#team')).toEqual({
+    expect(
+      normalizeTrackedPageVisit('https://example.com/en/about?ref=nav#team'),
+    ).toEqual({
       href: '/en/about?ref=nav#team',
       pathname: '/en/about',
       queryParameters: [{ key: 'ref', value: 'nav', position: 0 }],
@@ -24,7 +34,9 @@ describe('page visit tracking', () => {
   });
 
   it('rejects empty href values', () => {
-    expect(() => normalizeTrackedPageVisit('')).toThrowError('Page visit href is required.');
+    expect(() => normalizeTrackedPageVisit('')).toThrowError(
+      'Page visit href is required.',
+    );
   });
 
   it('derives internal referrers from previous tracked hrefs', () => {
@@ -59,7 +71,9 @@ describe('page visit tracking', () => {
 
   it('skips non-page urls', () => {
     expect(isTrackablePageVisitPathname('/en/about')).toBe(true);
-    expect(isTrackablePageVisitPathname('/api/analytics/page-visits')).toBe(false);
+    expect(isTrackablePageVisitPathname('/api/analytics/page-visits')).toBe(
+      false,
+    );
     expect(isTrackablePageVisitPathname('/_serverFn/abc123')).toBe(false);
   });
 });

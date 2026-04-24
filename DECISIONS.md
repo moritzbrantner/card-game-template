@@ -2,11 +2,11 @@
 
 ## 2026-04-17
 
-### The repository serves as a card-game platform template
+### The repository serves as a turn-based game platform template
 
-- Decision: Position the monorepo as a reusable template for card games rather than a generic app starter.
-- Rationale: The product goal is specific: cross-platform card games with reusable logic and multiplayer support.
-- Consequence: Root documentation, future packages, and sample implementations should optimize for card-game development workflows.
+- Decision: Position the monorepo as a reusable template for deterministic turn-based games rather than a generic app starter.
+- Rationale: The product goal is specific: cross-platform turn-based games with reusable logic, replayability, and multiplayer support.
+- Consequence: Root documentation and package boundaries should optimize for a generic turn engine, with card-specific helpers layered on top.
 
 ### The game engine must run both locally and on the server
 

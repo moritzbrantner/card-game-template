@@ -8,11 +8,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "${POSTGRES_PORT:-55433}:5432"
+      - '${POSTGRES_PORT:-55433}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d next_template"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d next_template']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -20,18 +20,22 @@ services:
 
   postgres-dev:
     image: postgres:16-alpine
-    container_name: "${DEV_DB_CONTAINER_NAME:-web-dev-postgres}"
-    profiles: ["dev"]
+    container_name: '${DEV_DB_CONTAINER_NAME:-web-dev-postgres}'
+    profiles: ['dev']
     environment:
-      POSTGRES_DB: "${DEV_DB_NAME:-next_template}"
-      POSTGRES_USER: "${DEV_DB_USER:-postgres}"
-      POSTGRES_PASSWORD: "${DEV_DB_PASSWORD:-postgres}"
+      POSTGRES_DB: '${DEV_DB_NAME:-next_template}'
+      POSTGRES_USER: '${DEV_DB_USER:-postgres}'
+      POSTGRES_PASSWORD: '${DEV_DB_PASSWORD:-postgres}'
     ports:
-      - "${DEV_DB_PORT:-55434}:5432"
+      - '${DEV_DB_PORT:-55434}:5432'
     tmpfs:
       - /var/lib/postgresql/data:rw
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DEV_DB_USER:-postgres} -d ${DEV_DB_NAME:-next_template}"]
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DEV_DB_USER:-postgres} -d ${DEV_DB_NAME:-next_template}',
+        ]
       interval: 2s
       timeout: 5s
       retries: 30
@@ -39,18 +43,22 @@ services:
 
   postgres-dev-host:
     image: postgres:16-alpine
-    container_name: "${DEV_DB_HOST_CONTAINER_NAME:-web-dev-postgres-host}"
-    profiles: ["dev"]
+    container_name: '${DEV_DB_HOST_CONTAINER_NAME:-web-dev-postgres-host}'
+    profiles: ['dev']
     network_mode: host
     environment:
-      POSTGRES_DB: "${DEV_DB_NAME:-next_template}"
-      POSTGRES_USER: "${DEV_DB_USER:-postgres}"
-      POSTGRES_PASSWORD: "${DEV_DB_PASSWORD:-postgres}"
+      POSTGRES_DB: '${DEV_DB_NAME:-next_template}'
+      POSTGRES_USER: '${DEV_DB_USER:-postgres}'
+      POSTGRES_PASSWORD: '${DEV_DB_PASSWORD:-postgres}'
     command: postgres -c "port=${DEV_DB_PORT:-55434}"
     tmpfs:
       - /var/lib/postgresql/data:rw
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DEV_DB_USER:-postgres} -d ${DEV_DB_NAME:-next_template} -p ${DEV_DB_PORT:-55434}"]
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DEV_DB_USER:-postgres} -d ${DEV_DB_NAME:-next_template} -p ${DEV_DB_PORT:-55434}',
+        ]
       interval: 2s
       timeout: 5s
       retries: 30
@@ -58,40 +66,40 @@ services:
 
   postgres-test:
     image: postgres:16-alpine
-    container_name: "${TEST_DB_CONTAINER_NAME:-web-test-postgres}"
-    profiles: ["test"]
+    container_name: '${TEST_DB_CONTAINER_NAME:-web-test-postgres}'
+    profiles: ['test']
     environment:
       POSTGRES_DB: next_template
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "${TEST_POSTGRES_PORT:-55435}:5432"
+      - '${TEST_POSTGRES_PORT:-55435}:5432'
     tmpfs:
       - /var/lib/postgresql/data:rw
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d next_template"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d next_template']
       interval: 2s
       timeout: 5s
       retries: 30
       start_period: 5s
-  
+
   mailpit:
     image: axllent/mailpit:latest
     ports:
-      - "1025:1025" # SMTP
-      - "8025:8025" # Web UI
+      - '1025:1025' # SMTP
+      - '8025:8025' # Web UI
 
   minio:
     image: minio/minio:latest
     container_name: next-template-minio
     restart: unless-stopped
     environment:
-      MINIO_ROOT_USER: "${MINIO_ROOT_USER:-minioadmin}"
-      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:-minioadmin}"
+      MINIO_ROOT_USER: '${MINIO_ROOT_USER:-minioadmin}'
+      MINIO_ROOT_PASSWORD: '${MINIO_ROOT_PASSWORD:-minioadmin}'
     command: server /data --console-address ":9001"
     ports:
-      - "${MINIO_API_PORT:-9000}:9000" # S3 API
-      - "${MINIO_CONSOLE_PORT:-9001}:9001" # Web console
+      - '${MINIO_API_PORT:-9000}:9000' # S3 API
+      - '${MINIO_CONSOLE_PORT:-9001}:9001' # Web console
     volumes:
       - minio_data:/data
 
@@ -99,11 +107,11 @@ services:
     image: minio/mc:latest
     depends_on:
       - minio
-    restart: "no"
+    restart: 'no'
     environment:
-      MINIO_ROOT_USER: "${MINIO_ROOT_USER:-minioadmin}"
-      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:-minioadmin}"
-      MINIO_BUCKET: "${MINIO_BUCKET:-profile-images}"
+      MINIO_ROOT_USER: '${MINIO_ROOT_USER:-minioadmin}'
+      MINIO_ROOT_PASSWORD: '${MINIO_ROOT_PASSWORD:-minioadmin}'
+      MINIO_BUCKET: '${MINIO_BUCKET:-profile-images}'
     entrypoint: >
       /bin/sh -c "
       until mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD; do

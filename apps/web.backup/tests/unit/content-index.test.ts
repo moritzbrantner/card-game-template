@@ -6,7 +6,10 @@ describe('content index', () => {
   it('loads localized MDX entries', async () => {
     const posts = await listBlogPosts('en');
 
-    expect(posts.map((post) => post.slug)).toEqual(['hybrid-sites', 'template-launch']);
+    expect(posts.map((post) => post.slug)).toEqual([
+      'hybrid-sites',
+      'template-launch',
+    ]);
   });
 
   it('resolves adjacent entries in reverse chronological order', async () => {

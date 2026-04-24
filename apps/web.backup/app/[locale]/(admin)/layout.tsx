@@ -4,9 +4,16 @@ import { I18nProvider } from '@/src/i18n';
 import { getMessages } from '@/src/i18n/messages';
 import { adminWebsiteNamespaces } from '@/src/i18n/namespaces';
 import { loadAppContext } from '@/src/runtime.functions';
-import { notFoundUnlessFeatureEnabled, redirectToLocaleHome, resolveLocale } from '@/src/server/page-guards';
+import {
+  notFoundUnlessFeatureEnabled,
+  redirectToLocaleHome,
+  resolveLocale,
+} from '@/src/server/page-guards';
 import { isAdmin } from '@/lib/authorization';
-import { getActiveAnnouncements, getPublicSiteConfig } from '@/src/site-config/service';
+import {
+  getActiveAnnouncements,
+  getPublicSiteConfig,
+} from '@/src/site-config/service';
 
 export default async function AdminLocaleLayout({
   children,

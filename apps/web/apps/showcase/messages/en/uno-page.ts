@@ -3,7 +3,8 @@ export const unoPage = {
   description:
     'Create authoritative UNO matches against server-run bots, resume them after refresh, and review the finished replay later.',
   createTitle: 'Create a match',
-  createHint: 'Choose a preset, set a player name when needed, and start an authoritative UNO run.',
+  createHint:
+    'Choose a preset, set a player name when needed, and start an authoritative UNO run.',
   createAction: 'Create match',
   nameLabel: 'Player name',
   openLobbiesTitle: 'Recent matches',
@@ -16,7 +17,8 @@ export const unoPage = {
   readyToStart: 'Everyone is seated. The host can start the game now.',
   waitingForPlayers: 'No legal action is available for the current state.',
   activeMatchTitle: 'Active match',
-  activeMatchDescription: 'The server is authoritative. Submit moves here and the match resumes from persisted state after reload.',
+  activeMatchDescription:
+    'The server is authoritative. Submit moves here and the match resumes from persisted state after reload.',
   exitGame: 'Abandon match',
   finishGame: 'Finish demo match',
   pastGamesCta: 'Past games',

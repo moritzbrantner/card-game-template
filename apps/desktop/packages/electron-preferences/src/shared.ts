@@ -6,10 +6,13 @@ export const preferencesChannels = {
   updated: 'moritzbrantner:preferences:updated',
 } as const;
 
-export interface PreferencesBridge<TPreferences extends Record<string, unknown>> {
+export interface PreferencesBridge<TPreferences extends object> {
   get<KKey extends keyof TPreferences>(key: KKey): Promise<TPreferences[KKey]>;
   getAll(): Promise<TPreferences>;
   reset(): Promise<TPreferences>;
-  set<KKey extends keyof TPreferences>(key: KKey, value: TPreferences[KKey]): Promise<void>;
+  set<KKey extends keyof TPreferences>(
+    key: KKey,
+    value: TPreferences[KKey],
+  ): Promise<void>;
   subscribe(listener: (preferences: TPreferences) => void): () => void;
 }

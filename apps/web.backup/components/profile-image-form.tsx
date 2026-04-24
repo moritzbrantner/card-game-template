@@ -29,7 +29,10 @@ type ProfileImageFormProps = {
   };
 };
 
-export function ProfileImageForm({ currentImage, labels }: ProfileImageFormProps) {
+export function ProfileImageForm({
+  currentImage,
+  labels,
+}: ProfileImageFormProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [draftFile, setDraftFile] = useState<File | null>(null);
@@ -63,7 +66,10 @@ export function ProfileImageForm({ currentImage, labels }: ProfileImageFormProps
     });
 
     if (!response.ok) {
-      const problem = await readProblemDetail(response, 'Unable to update profile picture right now. Please try again.');
+      const problem = await readProblemDetail(
+        response,
+        'Unable to update profile picture right now. Please try again.',
+      );
       setState({ error: problem.message });
       setPending(false);
       return;
@@ -89,7 +95,10 @@ export function ProfileImageForm({ currentImage, labels }: ProfileImageFormProps
     });
 
     if (!response.ok) {
-      const problem = await readProblemDetail(response, 'Unable to update profile picture right now. Please try again.');
+      const problem = await readProblemDetail(
+        response,
+        'Unable to update profile picture right now. Please try again.',
+      );
       setState({ error: problem.message });
       setPending(false);
       return;
@@ -134,14 +143,28 @@ export function ProfileImageForm({ currentImage, labels }: ProfileImageFormProps
       <div className="flex items-center gap-4">
         <div className="relative h-24 w-24 overflow-hidden rounded-full border border-zinc-300 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900">
           {imageToRender ? (
-            <Image src={imageToRender} alt={labels.alt} fill sizes="96px" unoptimized className="object-cover" />
+            <Image
+              src={imageToRender}
+              alt={labels.alt}
+              fill
+              sizes="96px"
+              unoptimized
+              className="object-cover"
+            />
           ) : (
-            <div className="flex h-full items-center justify-center text-xs text-zinc-500">{labels.empty}</div>
+            <div className="flex h-full items-center justify-center text-xs text-zinc-500">
+              {labels.empty}
+            </div>
           )}
         </div>
 
         {currentImage ? (
-          <Button type="button" variant="ghost" onClick={() => void handleRemove()} disabled={pending}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => void handleRemove()}
+            disabled={pending}
+          >
             {labels.remove}
           </Button>
         ) : null}
@@ -160,11 +183,17 @@ export function ProfileImageForm({ currentImage, labels }: ProfileImageFormProps
             className="block w-full rounded-md border border-zinc-300 p-2 text-sm dark:border-zinc-700"
             onChange={handleFileChange}
           />
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">{labels.hint}</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            {labels.hint}
+          </p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
             {`Max ${(imageConstraints.maxUploadBytes / (1024 * 1024)).toFixed(0)}MB · ${imageConstraints.minDimensionPx}-${imageConstraints.maxDimensionPx}px`}
           </p>
-          {selectedFile ? <p className="text-xs text-emerald-600 dark:text-emerald-400">{labels.ready}</p> : null}
+          {selectedFile ? (
+            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+              {labels.ready}
+            </p>
+          ) : null}
         </div>
 
         {draftFile ? (
@@ -186,8 +215,16 @@ export function ProfileImageForm({ currentImage, labels }: ProfileImageFormProps
           {pending ? labels.uploading : labels.upload}
         </Button>
 
-        {state.error ? <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p> : null}
-        {state.success ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{labels.success}</p> : null}
+        {state.error ? (
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {state.error}
+          </p>
+        ) : null}
+        {state.success ? (
+          <p className="text-sm text-emerald-600 dark:text-emerald-400">
+            {labels.success}
+          </p>
+        ) : null}
       </form>
     </div>
   );

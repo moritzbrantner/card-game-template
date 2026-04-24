@@ -17,7 +17,10 @@ type ProfileDisplayNameFormProps = {
   };
 };
 
-export function ProfileDisplayNameForm({ currentDisplayName, labels }: ProfileDisplayNameFormProps) {
+export function ProfileDisplayNameForm({
+  currentDisplayName,
+  labels,
+}: ProfileDisplayNameFormProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [state, setState] = useState<{ error?: string; success?: boolean }>({});
@@ -34,7 +37,10 @@ export function ProfileDisplayNameForm({ currentDisplayName, labels }: ProfileDi
     });
 
     if (!response.ok) {
-      const problem = await readProblemDetail(response, 'Unable to update your display name right now. Please try again.');
+      const problem = await readProblemDetail(
+        response,
+        'Unable to update your display name right now. Please try again.',
+      );
       setState({ error: problem.message });
       setPending(false);
       return;
@@ -68,8 +74,14 @@ export function ProfileDisplayNameForm({ currentDisplayName, labels }: ProfileDi
         {pending ? labels.saving : labels.save}
       </Button>
 
-      {state.error ? <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p> : null}
-      {state.success ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{labels.success}</p> : null}
+      {state.error ? (
+        <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>
+      ) : null}
+      {state.success ? (
+        <p className="text-sm text-emerald-600 dark:text-emerald-400">
+          {labels.success}
+        </p>
+      ) : null}
     </form>
   );
 }

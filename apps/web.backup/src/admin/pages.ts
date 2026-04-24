@@ -8,8 +8,16 @@ export const adminPageDefinitions = [
   { key: 'content', href: '/admin/content', featureKey: 'admin.content' },
   { key: 'reports', href: '/admin/reports', featureKey: 'admin.reports' },
   { key: 'users', href: '/admin/users', featureKey: 'admin.users' },
-  { key: 'systemSettings', href: '/admin/system-settings', featureKey: 'admin.systemSettings' },
-  { key: 'dataStudio', href: '/admin/data-studio', featureKey: 'admin.dataStudio' },
+  {
+    key: 'systemSettings',
+    href: '/admin/system-settings',
+    featureKey: 'admin.systemSettings',
+  },
+  {
+    key: 'dataStudio',
+    href: '/admin/data-studio',
+    featureKey: 'admin.dataStudio',
+  },
 ] as const satisfies readonly {
   key: string;
   href: string;
@@ -18,12 +26,22 @@ export const adminPageDefinitions = [
 
 export type AdminPageKey = (typeof adminPageDefinitions)[number]['key'];
 
-export const adminWorkspacePageDefinitions = adminPageDefinitions.filter((page) => page.key !== 'overview');
+export const adminWorkspacePageDefinitions = adminPageDefinitions.filter(
+  (page) => page.key !== 'overview',
+);
 
-export function getEnabledAdminPageDefinitions(manifest: AppManifest = loadActiveApp()) {
-  return adminPageDefinitions.filter((page) => isFeatureEnabled(page.featureKey, manifest));
+export function getEnabledAdminPageDefinitions(
+  manifest: AppManifest = loadActiveApp(),
+) {
+  return adminPageDefinitions.filter((page) =>
+    isFeatureEnabled(page.featureKey, manifest),
+  );
 }
 
-export function getEnabledAdminWorkspacePageDefinitions(manifest: AppManifest = loadActiveApp()) {
-  return adminWorkspacePageDefinitions.filter((page) => isFeatureEnabled(page.featureKey, manifest));
+export function getEnabledAdminWorkspacePageDefinitions(
+  manifest: AppManifest = loadActiveApp(),
+) {
+  return adminWorkspacePageDefinitions.filter((page) =>
+    isFeatureEnabled(page.featureKey, manifest),
+  );
 }

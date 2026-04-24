@@ -10,10 +10,10 @@ import type {
   PlayerProfile,
 } from '@repo/game-contracts';
 import { summarizeMatchReplay } from '@repo/game-contracts';
+import { shuffleWithSeed } from '@repo/card-kit';
 import {
   areMovesEquivalent,
   createSeededRandom,
-  shuffleWithSeed,
   type GameAdapter,
 } from '@repo/game-engine';
 import type {
@@ -24,7 +24,13 @@ import type {
 import { reconstructMatchHistoryFromReplay } from '@repo/game-session';
 
 export type UnoColor = 'red' | 'yellow' | 'green' | 'blue';
-export type UnoCardKind = 'number' | 'skip' | 'reverse' | 'draw-two' | 'wild' | 'wild-draw-four';
+export type UnoCardKind =
+  | 'number'
+  | 'skip'
+  | 'reverse'
+  | 'draw-two'
+  | 'wild'
+  | 'wild-draw-four';
 
 export type UnoCard = {
   color: UnoColor | 'wild';
@@ -159,13 +165,22 @@ export const unoDefinition: GameDefinition = {
 };
 
 const COLORS: readonly UnoColor[] = ['red', 'yellow', 'green', 'blue'];
-const UNO_RULE_KEYS = ['drawStacking', 'jumpIn', 'requireUnoCall', 'sevenZero'] as const;
+const UNO_RULE_KEYS = [
+  'drawStacking',
+  'jumpIn',
+  'requireUnoCall',
+  'sevenZero',
+] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function assertNoUnknownKeys(value: Record<string, unknown>, allowedKeys: readonly string[], label: string) {
+function assertNoUnknownKeys(
+  value: Record<string, unknown>,
+  allowedKeys: readonly string[],
+  label: string,
+) {
   for (const key of Object.keys(value)) {
     if (!allowedKeys.includes(key)) {
       throw new Error(`${label} contains an unsupported field: ${key}`);
@@ -189,9 +204,13 @@ function createUnoPlayPayload(input: {
 }): UnoPlayCardMove['payload'] {
   return {
     cardId: input.cardId,
-    ...(input.chosenColor !== undefined ? { chosenColor: input.chosenColor } : {}),
+    ...(input.chosenColor !== undefined
+      ? { chosenColor: input.chosenColor }
+      : {}),
     ...(input.sayUno !== undefined ? { sayUno: input.sayUno } : {}),
-    ...(input.targetPlayerId !== undefined ? { targetPlayerId: input.targetPlayerId } : {}),
+    ...(input.targetPlayerId !== undefined
+      ? { targetPlayerId: input.targetPlayerId }
+      : {}),
   };
 }
 
@@ -205,7 +224,10 @@ export function parseUnoSetup(value: unknown): UnoSetup {
   const setup: UnoSetup = {};
 
   if (value.seed !== undefined) {
-    if (typeof value.seed !== 'string' && !(typeof value.seed === 'number' && Number.isFinite(value.seed))) {
+    if (
+      typeof value.seed !== 'string' &&
+      !(typeof value.seed === 'number' && Number.isFinite(value.seed))
+    ) {
       throw new Error('UNO setup seed must be a string or finite number.');
     }
 
@@ -262,7 +284,11 @@ export function parseUnoMove(value: unknown): UnoMove {
     throw new Error('UNO move must be an object.');
   }
 
-  assertNoUnknownKeys(value, ['playerId', 'kind', 'createdAt', 'payload'], 'UNO move');
+  assertNoUnknownKeys(
+    value,
+    ['playerId', 'kind', 'createdAt', 'payload'],
+    'UNO move',
+  );
 
   if (typeof value.playerId !== 'string' || value.playerId.length === 0) {
     throw new Error('UNO move playerId is required.');
@@ -295,25 +321,44 @@ export function parseUnoMove(value: unknown): UnoMove {
     throw new Error(`Unsupported UNO move kind: ${value.kind}`);
   }
 
-  assertNoUnknownKeys(value.payload, ['cardId', 'chosenColor', 'sayUno', 'targetPlayerId'], 'UNO play-card payload');
+  assertNoUnknownKeys(
+    value.payload,
+    ['cardId', 'chosenColor', 'sayUno', 'targetPlayerId'],
+    'UNO play-card payload',
+  );
 
-  if (typeof value.payload.cardId !== 'string' || value.payload.cardId.length === 0) {
+  if (
+    typeof value.payload.cardId !== 'string' ||
+    value.payload.cardId.length === 0
+  ) {
     throw new Error('UNO play-card payload cardId is required.');
   }
 
-  if (value.payload.sayUno !== undefined && typeof value.payload.sayUno !== 'boolean') {
+  if (
+    value.payload.sayUno !== undefined &&
+    typeof value.payload.sayUno !== 'boolean'
+  ) {
     throw new Error('UNO play-card payload sayUno must be a boolean.');
   }
 
-  if (value.payload.targetPlayerId !== undefined && typeof value.payload.targetPlayerId !== 'string') {
+  if (
+    value.payload.targetPlayerId !== undefined &&
+    typeof value.payload.targetPlayerId !== 'string'
+  ) {
     throw new Error('UNO play-card payload targetPlayerId must be a string.');
   }
 
   const payload = createUnoPlayPayload({
     cardId: value.payload.cardId,
-    ...(value.payload.chosenColor !== undefined ? { chosenColor: parseUnoColor(value.payload.chosenColor) } : {}),
-    ...(value.payload.sayUno !== undefined ? { sayUno: value.payload.sayUno } : {}),
-    ...(value.payload.targetPlayerId !== undefined ? { targetPlayerId: value.payload.targetPlayerId } : {}),
+    ...(value.payload.chosenColor !== undefined
+      ? { chosenColor: parseUnoColor(value.payload.chosenColor) }
+      : {}),
+    ...(value.payload.sayUno !== undefined
+      ? { sayUno: value.payload.sayUno }
+      : {}),
+    ...(value.payload.targetPlayerId !== undefined
+      ? { targetPlayerId: value.payload.targetPlayerId }
+      : {}),
   });
 
   return {
@@ -324,9 +369,15 @@ export function parseUnoMove(value: unknown): UnoMove {
   };
 }
 
-function createCard(color: UnoColor | 'wild', kind: UnoCardKind, occurrence: number, value?: number): UnoCard {
+function createCard(
+  color: UnoColor | 'wild',
+  kind: UnoCardKind,
+  occurrence: number,
+  value?: number,
+): UnoCard {
   const valueLabel = kind === 'number' ? `${value}` : kind;
-  const label = color === 'wild' ? kind.replace(/-/g, ' ') : `${color} ${valueLabel}`;
+  const label =
+    color === 'wild' ? kind.replace(/-/g, ' ') : `${color} ${valueLabel}`;
 
   return {
     color,
@@ -362,7 +413,9 @@ function createDeck(): UnoCard[] {
   return deck;
 }
 
-function cloneHands(hands: Record<PlayerId, readonly UnoCard[]>): Record<PlayerId, readonly UnoCard[]> {
+function cloneHands(
+  hands: Record<PlayerId, readonly UnoCard[]>,
+): Record<PlayerId, readonly UnoCard[]> {
   return Object.fromEntries(
     Object.entries(hands).map(([playerId, cards]) => [playerId, [...cards]]),
   ) as Record<PlayerId, readonly UnoCard[]>;
@@ -372,7 +425,10 @@ function getTopDiscard(state: UnoState): UnoCard {
   return state.discardPile[state.discardPile.length - 1]!;
 }
 
-function getPlayerIndex(players: readonly PlayerProfile[], playerId: PlayerId): number {
+function getPlayerIndex(
+  players: readonly PlayerProfile[],
+  playerId: PlayerId,
+): number {
   const index = players.findIndex((player) => player.playerId === playerId);
 
   if (index < 0) {
@@ -382,24 +438,39 @@ function getPlayerIndex(players: readonly PlayerProfile[], playerId: PlayerId): 
   return index;
 }
 
-function nextPlayerId(players: readonly PlayerProfile[], currentPlayerId: PlayerId, direction: 1 | -1, steps = 1): PlayerId {
+function nextPlayerId(
+  players: readonly PlayerProfile[],
+  currentPlayerId: PlayerId,
+  direction: 1 | -1,
+  steps = 1,
+): PlayerId {
   const currentIndex = getPlayerIndex(players, currentPlayerId);
-  const normalizedIndex = (currentIndex + direction * steps + players.length * 4) % players.length;
+  const normalizedIndex =
+    (currentIndex + direction * steps + players.length * 4) % players.length;
   return players[normalizedIndex]!.playerId;
 }
 
-function playerIdsAfter(players: readonly PlayerProfile[], currentPlayerId: PlayerId): PlayerId[] {
+function playerIdsAfter(
+  players: readonly PlayerProfile[],
+  currentPlayerId: PlayerId,
+): PlayerId[] {
   const currentIndex = getPlayerIndex(players, currentPlayerId);
   const orderedPlayerIds: PlayerId[] = [];
 
   for (let offset = 1; offset < players.length; offset += 1) {
-    orderedPlayerIds.push(players[(currentIndex + offset) % players.length]!.playerId);
+    orderedPlayerIds.push(
+      players[(currentIndex + offset) % players.length]!.playerId,
+    );
   }
 
   return orderedPlayerIds;
 }
 
-function recycleDrawPile(drawPile: readonly UnoCard[], discardPile: readonly UnoCard[], seed: number | string) {
+function recycleDrawPile(
+  drawPile: readonly UnoCard[],
+  discardPile: readonly UnoCard[],
+  seed: number | string,
+) {
   if (drawPile.length > 0) {
     return {
       discardPile,
@@ -428,14 +499,22 @@ function recycleDrawPile(drawPile: readonly UnoCard[], discardPile: readonly Uno
 function drawCards(
   state: UnoState,
   amount: number,
-): { discardPile: readonly UnoCard[]; drawPile: readonly UnoCard[]; drawnCards: readonly UnoCard[] } {
+): {
+  discardPile: readonly UnoCard[];
+  drawPile: readonly UnoCard[];
+  drawnCards: readonly UnoCard[];
+} {
   let drawPile = [...state.drawPile];
   let discardPile = [...state.discardPile];
   const drawnCards: UnoCard[] = [];
 
   while (drawnCards.length < amount) {
     if (drawPile.length === 0) {
-      const recycled = recycleDrawPile(drawPile, discardPile, `${state.seed}:${drawnCards.length}`);
+      const recycled = recycleDrawPile(
+        drawPile,
+        discardPile,
+        `${state.seed}:${drawnCards.length}`,
+      );
       drawPile = [...recycled.drawPile];
       discardPile = [...recycled.discardPile];
     }
@@ -460,7 +539,10 @@ function countsByColor(cards: readonly UnoCard[]) {
   return COLORS.map((color) => ({
     color,
     count: cards.filter((card) => card.color === color).length,
-  })).sort((left, right) => right.count - left.count || left.color.localeCompare(right.color));
+  })).sort(
+    (left, right) =>
+      right.count - left.count || left.color.localeCompare(right.color),
+  );
 }
 
 function choosePreferredColor(cards: readonly UnoCard[]): UnoColor {
@@ -474,7 +556,11 @@ function matchesCurrentDiscard(card: UnoCard, state: UnoState): boolean {
     return true;
   }
 
-  if (card.kind === 'number' && topDiscard.kind === 'number' && card.value === topDiscard.value) {
+  if (
+    card.kind === 'number' &&
+    topDiscard.kind === 'number' &&
+    card.value === topDiscard.value
+  ) {
     return true;
   }
 
@@ -482,7 +568,11 @@ function matchesCurrentDiscard(card: UnoCard, state: UnoState): boolean {
 }
 
 function matchesExactFace(card: UnoCard, otherCard: UnoCard): boolean {
-  return card.color === otherCard.color && card.kind === otherCard.kind && card.value === otherCard.value;
+  return (
+    card.color === otherCard.color &&
+    card.kind === otherCard.kind &&
+    card.value === otherCard.value
+  );
 }
 
 function canPlayWildDrawFour(state: UnoState, playerId: PlayerId): boolean {
@@ -541,13 +631,19 @@ function createPlayCardMoves(
   const hand = state.hands[playerId] ?? [];
   const remainingCardsAfterPlay = hand.length - 1;
   const sayUnoValues =
-    state.rules.requireUnoCall && remainingCardsAfterPlay === 1 ? [false, true] : [true];
+    state.rules.requireUnoCall && remainingCardsAfterPlay === 1
+      ? [false, true]
+      : [true];
   const targetPlayerIds =
     state.rules.sevenZero && card.kind === 'number' && card.value === 7
-      ? players.filter((player) => player.playerId !== playerId).map((player) => player.playerId)
+      ? players
+          .filter((player) => player.playerId !== playerId)
+          .map((player) => player.playerId)
       : [undefined];
   const chosenColors =
-    card.kind === 'wild' || card.kind === 'wild-draw-four' ? COLORS : [undefined];
+    card.kind === 'wild' || card.kind === 'wild-draw-four'
+      ? COLORS
+      : [undefined];
 
   const moves: UnoPlayCardMove[] = [];
 
@@ -581,7 +677,11 @@ function rotateHands(
   const previousDirection = direction === 1 ? -1 : 1;
 
   for (const player of players) {
-    const sourcePlayerId = nextPlayerId(players, player.playerId, previousDirection);
+    const sourcePlayerId = nextPlayerId(
+      players,
+      player.playerId,
+      previousDirection,
+    );
     rotated[player.playerId] = [...(hands[sourcePlayerId] ?? [])];
   }
 
@@ -608,7 +708,9 @@ function createWinnerResult(state: MatchState<UnoState>): MatchResult | null {
   };
 }
 
-export function summarizeUnoReplay(replay: MatchReplay<UnoState, UnoMove>): UnoReplayAnalysis {
+export function summarizeUnoReplay(
+  replay: MatchReplay<UnoState, UnoMove>,
+): UnoReplayAnalysis {
   const base = summarizeMatchReplay(replay);
   const history = reconstructMatchHistoryFromReplay({
     adapter: createUnoAdapter(),
@@ -635,7 +737,11 @@ export function summarizeUnoReplay(replay: MatchReplay<UnoState, UnoMove>): UnoR
       cardsDrawn: 0,
       cardsPlayed: 0,
       penaltiesTaken: 0,
-      turnsSurvived: history.slice(0, -1).filter((state) => (state.state.hands[player.playerId]?.length ?? 0) > 0).length,
+      turnsSurvived: history
+        .slice(0, -1)
+        .filter(
+          (state) => (state.state.hands[player.playerId]?.length ?? 0) > 0,
+        ).length,
       unoCallsMade: 0,
       unoCallsMissed: 0,
       wildColorChoices: new Map(),
@@ -675,11 +781,14 @@ export function summarizeUnoReplay(replay: MatchReplay<UnoState, UnoMove>): UnoR
 
     metrics.cardsPlayed += 1;
 
-    const playedCard = (before.state.hands[acceptedMove.move.playerId] ?? []).find(
-      (candidate) => candidate.id === acceptedMove.move.payload.cardId,
-    );
+    const playedCard = (
+      before.state.hands[acceptedMove.move.playerId] ?? []
+    ).find((candidate) => candidate.id === acceptedMove.move.payload.cardId);
 
-    if (before.state.rules.requireUnoCall && (before.state.hands[acceptedMove.move.playerId]?.length ?? 0) === 2) {
+    if (
+      before.state.rules.requireUnoCall &&
+      (before.state.hands[acceptedMove.move.playerId]?.length ?? 0) === 2
+    ) {
       if (acceptedMove.move.payload.sayUno) {
         metrics.unoCallsMade += 1;
       } else {
@@ -693,13 +802,16 @@ export function summarizeUnoReplay(replay: MatchReplay<UnoState, UnoMove>): UnoR
       if (acceptedMove.move.payload.chosenColor) {
         metrics.wildColorChoices.set(
           acceptedMove.move.payload.chosenColor,
-          (metrics.wildColorChoices.get(acceptedMove.move.payload.chosenColor) ?? 0) + 1,
+          (metrics.wildColorChoices.get(
+            acceptedMove.move.payload.chosenColor,
+          ) ?? 0) + 1,
         );
       }
     }
 
     if (
-      (playedCard?.kind === 'draw-two' || playedCard?.kind === 'wild-draw-four') &&
+      (playedCard?.kind === 'draw-two' ||
+        playedCard?.kind === 'wild-draw-four') &&
       !before.state.rules.drawStacking
     ) {
       for (const player of before.players) {
@@ -708,7 +820,8 @@ export function summarizeUnoReplay(replay: MatchReplay<UnoState, UnoMove>): UnoR
         }
 
         const drawnCount =
-          (after.state.hands[player.playerId]?.length ?? 0) - (before.state.hands[player.playerId]?.length ?? 0);
+          (after.state.hands[player.playerId]?.length ?? 0) -
+          (before.state.hands[player.playerId]?.length ?? 0);
 
         if (drawnCount > 0) {
           const targetMetrics = metricsByPlayer.get(player.playerId);
@@ -721,7 +834,11 @@ export function summarizeUnoReplay(replay: MatchReplay<UnoState, UnoMove>): UnoR
       }
     }
 
-    if (before.state.rules.requireUnoCall && (before.state.hands[acceptedMove.move.playerId]?.length ?? 0) === 2 && !acceptedMove.move.payload.sayUno) {
+    if (
+      before.state.rules.requireUnoCall &&
+      (before.state.hands[acceptedMove.move.playerId]?.length ?? 0) === 2 &&
+      !acceptedMove.move.payload.sayUno
+    ) {
       const penaltyDrawCount =
         (after.state.hands[acceptedMove.move.playerId]?.length ?? 0) -
         ((before.state.hands[acceptedMove.move.playerId]?.length ?? 0) - 1);
@@ -747,7 +864,10 @@ export function summarizeUnoReplay(replay: MatchReplay<UnoState, UnoMove>): UnoR
         unoCallsMade: metrics?.unoCallsMade ?? 0,
         unoCallsMissed: metrics?.unoCallsMissed ?? 0,
         wildColorChoices: [...(metrics?.wildColorChoices.entries() ?? [])]
-          .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+          .sort(
+            (left, right) =>
+              right[1] - left[1] || left[0].localeCompare(right[0]),
+          )
           .map(([color, count]) => ({
             color,
             count,
@@ -759,11 +879,7 @@ export function summarizeUnoReplay(replay: MatchReplay<UnoState, UnoMove>): UnoR
   };
 }
 
-export function createUnoAdapter(): GameAdapter<
-  UnoSetup,
-  UnoState,
-  UnoMove
-> {
+export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
   return {
     definition: unoDefinition,
     metadata: {
@@ -836,7 +952,14 @@ export function createUnoAdapter(): GameAdapter<
       const activePlayableCards = getPlayableCards(state.state, activePlayerId);
 
       for (const card of activePlayableCards) {
-        legalMoves.push(...createPlayCardMoves(state.state, activePlayerId, card, state.players));
+        legalMoves.push(
+          ...createPlayCardMoves(
+            state.state,
+            activePlayerId,
+            card,
+            state.players,
+          ),
+        );
       }
 
       if (state.state.pendingDrawAmount > 0) {
@@ -862,7 +985,11 @@ export function createUnoAdapter(): GameAdapter<
         });
       }
 
-      if (state.state.rules.jumpIn && state.state.pendingDrawAmount === 0 && !state.state.drawnCardThisTurnId) {
+      if (
+        state.state.rules.jumpIn &&
+        state.state.pendingDrawAmount === 0 &&
+        !state.state.drawnCardThisTurnId
+      ) {
         const topDiscard = getTopDiscard(state.state);
 
         for (const player of state.players) {
@@ -875,7 +1002,14 @@ export function createUnoAdapter(): GameAdapter<
               continue;
             }
 
-            legalMoves.push(...createPlayCardMoves(state.state, player.playerId, card, state.players));
+            legalMoves.push(
+              ...createPlayCardMoves(
+                state.state,
+                player.playerId,
+                card,
+                state.players,
+              ),
+            );
           }
         }
       }
@@ -884,8 +1018,15 @@ export function createUnoAdapter(): GameAdapter<
     },
     selectActor({ state, legalMoves }): PlayerId | null {
       if (state.state.rules.jumpIn) {
-        for (const playerId of playerIdsAfter(state.players, state.activePlayerId)) {
-          if (legalMoves.some((move) => move.playerId === playerId && move.kind === 'play-card')) {
+        for (const playerId of playerIdsAfter(
+          state.players,
+          state.activePlayerId,
+        )) {
+          if (
+            legalMoves.some(
+              (move) => move.playerId === playerId && move.kind === 'play-card',
+            )
+          ) {
             return playerId;
           }
         }
@@ -894,16 +1035,21 @@ export function createUnoAdapter(): GameAdapter<
       return state.activePlayerId;
     },
     isLegalMove(state, move): boolean {
-      return this.listLegalMoves(state).some((candidate) => areMovesEquivalent(candidate, move));
+      return this.listLegalMoves(state).some((candidate) =>
+        areMovesEquivalent(candidate, move),
+      );
     },
     applyMove(state, move): MatchState<UnoState> {
       const nextHands = cloneHands(state.state.hands);
-      const topDiscard = getTopDiscard(state.state);
 
       if (move.kind === 'draw-card') {
-        const amount = state.state.pendingDrawAmount > 0 ? state.state.pendingDrawAmount : 1;
+        const amount =
+          state.state.pendingDrawAmount > 0 ? state.state.pendingDrawAmount : 1;
         const drawn = drawCards(state.state, amount);
-        nextHands[move.playerId] = [...(nextHands[move.playerId] ?? []), ...drawn.drawnCards];
+        nextHands[move.playerId] = [
+          ...(nextHands[move.playerId] ?? []),
+          ...drawn.drawnCards,
+        ];
 
         const endsTurn = amount > 1 || state.state.pendingDrawAmount > 0;
         const drawnCard = drawn.drawnCards[0] ?? null;
@@ -911,29 +1057,35 @@ export function createUnoAdapter(): GameAdapter<
           !endsTurn &&
           Boolean(
             drawnCard &&
-              getPlayableCards(
-                {
-                  ...state.state,
-                  drawPile: drawn.drawPile,
-                  discardPile: drawn.discardPile,
-                  drawnCardThisTurnId: drawnCard.id,
-                  hands: nextHands,
-                },
-                move.playerId,
-              ).some((card) => card.id === drawnCard.id),
+            getPlayableCards(
+              {
+                ...state.state,
+                drawPile: drawn.drawPile,
+                discardPile: drawn.discardPile,
+                drawnCardThisTurnId: drawnCard.id,
+                hands: nextHands,
+              },
+              move.playerId,
+            ).some((card) => card.id === drawnCard.id),
           );
 
         return {
           ...state,
           turn: state.turn + 1,
-          activePlayerId: endsTurn || !canPlayDrawnCard
-            ? nextPlayerId(state.players, move.playerId, state.state.direction)
-            : move.playerId,
+          activePlayerId:
+            endsTurn || !canPlayDrawnCard
+              ? nextPlayerId(
+                  state.players,
+                  move.playerId,
+                  state.state.direction,
+                )
+              : move.playerId,
           state: {
             ...state.state,
             discardPile: drawn.discardPile,
             drawPile: drawn.drawPile,
-            drawnCardThisTurnId: endsTurn || !canPlayDrawnCard ? null : drawnCard!.id,
+            drawnCardThisTurnId:
+              endsTurn || !canPlayDrawnCard ? null : drawnCard!.id,
             hands: nextHands,
             lastEvent:
               amount > 1
@@ -949,7 +1101,11 @@ export function createUnoAdapter(): GameAdapter<
         return {
           ...state,
           turn: state.turn + 1,
-          activePlayerId: nextPlayerId(state.players, move.playerId, state.state.direction),
+          activePlayerId: nextPlayerId(
+            state.players,
+            move.playerId,
+            state.state.direction,
+          ),
           state: {
             ...state.state,
             drawnCardThisTurnId: null,
@@ -958,24 +1114,42 @@ export function createUnoAdapter(): GameAdapter<
         };
       }
 
-      const card = (nextHands[move.playerId] ?? []).find((candidate) => candidate.id === move.payload.cardId);
+      const card = (nextHands[move.playerId] ?? []).find(
+        (candidate) => candidate.id === move.payload.cardId,
+      );
 
       if (!card) {
-        throw new Error(`Card ${move.payload.cardId} is not in hand for ${move.playerId}`);
+        throw new Error(
+          `Card ${move.payload.cardId} is not in hand for ${move.playerId}`,
+        );
       }
 
-      nextHands[move.playerId] = (nextHands[move.playerId] ?? []).filter((candidate) => candidate.id !== card.id);
+      nextHands[move.playerId] = (nextHands[move.playerId] ?? []).filter(
+        (candidate) => candidate.id !== card.id,
+      );
 
       let direction = state.state.direction;
       let discardPile = [...state.state.discardPile, card];
       let drawPile = [...state.state.drawPile];
-      let currentColor = card.color === 'wild' ? move.payload.chosenColor ?? 'red' : card.color;
+      const currentColor =
+        card.color === 'wild'
+          ? (move.payload.chosenColor ?? 'red')
+          : card.color;
       let pendingDrawAmount = 0;
       let pendingDrawSource: UnoState['pendingDrawSource'] = null;
       let lastEvent = `${move.playerId} played ${card.label}`;
-      let activePlayerId = nextPlayerId(state.players, move.playerId, direction);
+      let activePlayerId = nextPlayerId(
+        state.players,
+        move.playerId,
+        direction,
+      );
 
-      if (state.state.rules.sevenZero && card.kind === 'number' && card.value === 7 && move.payload.targetPlayerId) {
+      if (
+        state.state.rules.sevenZero &&
+        card.kind === 'number' &&
+        card.value === 7 &&
+        move.payload.targetPlayerId
+      ) {
         const targetPlayerId = move.payload.targetPlayerId;
         const playerHand = nextHands[move.playerId] ?? [];
         nextHands[move.playerId] = [...(nextHands[targetPlayerId] ?? [])];
@@ -983,7 +1157,11 @@ export function createUnoAdapter(): GameAdapter<
         lastEvent = `${move.playerId} swapped hands with ${targetPlayerId}`;
       }
 
-      if (state.state.rules.sevenZero && card.kind === 'number' && card.value === 0) {
+      if (
+        state.state.rules.sevenZero &&
+        card.kind === 'number' &&
+        card.value === 0
+      ) {
         const rotated = rotateHands(state.players, nextHands, direction);
         Object.assign(nextHands, rotated);
         lastEvent = `${move.playerId} rotated every hand`;
@@ -995,13 +1173,22 @@ export function createUnoAdapter(): GameAdapter<
           lastEvent = `${move.playerId} reversed play and skipped the opponent`;
         } else {
           direction = state.state.direction === 1 ? -1 : 1;
-          activePlayerId = nextPlayerId(state.players, move.playerId, direction);
+          activePlayerId = nextPlayerId(
+            state.players,
+            move.playerId,
+            direction,
+          );
           lastEvent = `${move.playerId} reversed the turn order`;
         }
       }
 
       if (card.kind === 'skip') {
-        activePlayerId = nextPlayerId(state.players, move.playerId, direction, 2);
+        activePlayerId = nextPlayerId(
+          state.players,
+          move.playerId,
+          direction,
+          2,
+        );
         lastEvent = `${move.playerId} skipped the next player`;
       }
 
@@ -1009,10 +1196,18 @@ export function createUnoAdapter(): GameAdapter<
         if (state.state.rules.drawStacking) {
           pendingDrawAmount = state.state.pendingDrawAmount + 2;
           pendingDrawSource = 'draw-two';
-          activePlayerId = nextPlayerId(state.players, move.playerId, direction);
+          activePlayerId = nextPlayerId(
+            state.players,
+            move.playerId,
+            direction,
+          );
           lastEvent = `${move.playerId} stacked a draw two`;
         } else {
-          const targetPlayerId = nextPlayerId(state.players, move.playerId, direction);
+          const targetPlayerId = nextPlayerId(
+            state.players,
+            move.playerId,
+            direction,
+          );
           const drawn = drawCards(
             {
               ...state.state,
@@ -1024,8 +1219,15 @@ export function createUnoAdapter(): GameAdapter<
           );
           drawPile = [...drawn.drawPile];
           discardPile = [...drawn.discardPile];
-          nextHands[targetPlayerId] = [...(nextHands[targetPlayerId] ?? []), ...drawn.drawnCards];
-          activePlayerId = nextPlayerId(state.players, targetPlayerId, direction);
+          nextHands[targetPlayerId] = [
+            ...(nextHands[targetPlayerId] ?? []),
+            ...drawn.drawnCards,
+          ];
+          activePlayerId = nextPlayerId(
+            state.players,
+            targetPlayerId,
+            direction,
+          );
           lastEvent = `${move.playerId} forced ${targetPlayerId} to draw 2`;
         }
       }
@@ -1038,10 +1240,18 @@ export function createUnoAdapter(): GameAdapter<
         if (state.state.rules.drawStacking) {
           pendingDrawAmount = state.state.pendingDrawAmount + 4;
           pendingDrawSource = 'wild-draw-four';
-          activePlayerId = nextPlayerId(state.players, move.playerId, direction);
+          activePlayerId = nextPlayerId(
+            state.players,
+            move.playerId,
+            direction,
+          );
           lastEvent = `${move.playerId} stacked a wild draw four`;
         } else {
-          const targetPlayerId = nextPlayerId(state.players, move.playerId, direction);
+          const targetPlayerId = nextPlayerId(
+            state.players,
+            move.playerId,
+            direction,
+          );
           const drawn = drawCards(
             {
               ...state.state,
@@ -1053,13 +1263,24 @@ export function createUnoAdapter(): GameAdapter<
           );
           drawPile = [...drawn.drawPile];
           discardPile = [...drawn.discardPile];
-          nextHands[targetPlayerId] = [...(nextHands[targetPlayerId] ?? []), ...drawn.drawnCards];
-          activePlayerId = nextPlayerId(state.players, targetPlayerId, direction);
+          nextHands[targetPlayerId] = [
+            ...(nextHands[targetPlayerId] ?? []),
+            ...drawn.drawnCards,
+          ];
+          activePlayerId = nextPlayerId(
+            state.players,
+            targetPlayerId,
+            direction,
+          );
           lastEvent = `${move.playerId} forced ${targetPlayerId} to draw 4`;
         }
       }
 
-      if (state.state.rules.requireUnoCall && (nextHands[move.playerId] ?? []).length === 1 && !move.payload.sayUno) {
+      if (
+        state.state.rules.requireUnoCall &&
+        (nextHands[move.playerId] ?? []).length === 1 &&
+        !move.payload.sayUno
+      ) {
         const penalty = drawCards(
           {
             ...state.state,
@@ -1071,11 +1292,15 @@ export function createUnoAdapter(): GameAdapter<
         );
         drawPile = [...penalty.drawPile];
         discardPile = [...penalty.discardPile];
-        nextHands[move.playerId] = [...(nextHands[move.playerId] ?? []), ...penalty.drawnCards];
+        nextHands[move.playerId] = [
+          ...(nextHands[move.playerId] ?? []),
+          ...penalty.drawnCards,
+        ];
         lastEvent = `${move.playerId} forgot to call UNO and drew 2 cards`;
       }
 
-      const winnerPlayerId = (nextHands[move.playerId] ?? []).length === 0 ? move.playerId : null;
+      const winnerPlayerId =
+        (nextHands[move.playerId] ?? []).length === 0 ? move.playerId : null;
 
       return {
         ...state,
@@ -1105,17 +1330,27 @@ export function createUnoAdapter(): GameAdapter<
   };
 }
 
-function describeMove(move: UnoMove, state: UnoState, players: readonly SessionParticipant[]) {
+function describeMove(
+  move: UnoMove,
+  state: UnoState,
+  players: readonly SessionParticipant[],
+) {
   if (move.kind === 'draw-card') {
-    return state.pendingDrawAmount > 0 ? `Draw ${state.pendingDrawAmount} cards` : 'Draw a card';
+    return state.pendingDrawAmount > 0
+      ? `Draw ${state.pendingDrawAmount} cards`
+      : 'Draw a card';
   }
 
   if (move.kind === 'pass') {
     return 'Pass';
   }
 
-  const card = (state.hands[move.playerId] ?? []).find((candidate) => candidate.id === move.payload.cardId);
-  const targetPlayer = players.find((player) => player.playerId === move.payload.targetPlayerId);
+  const card = (state.hands[move.playerId] ?? []).find(
+    (candidate) => candidate.id === move.payload.cardId,
+  );
+  const targetPlayer = players.find(
+    (player) => player.playerId === move.payload.targetPlayerId,
+  );
   const fragments = [card?.label ?? move.payload.cardId];
 
   if (move.payload.chosenColor) {
@@ -1139,7 +1374,9 @@ export function projectUnoPlayerView(
   return {
     activeColor: input.state.state.currentColor,
     activePlayerId: input.state.activePlayerId,
-    discardTop: input.state.state.discardPile[input.state.state.discardPile.length - 1] ?? null,
+    discardTop:
+      input.state.state.discardPile[input.state.state.discardPile.length - 1] ??
+      null,
     drawPileCount: input.state.state.drawPile.length,
     legalActions: input.viewerPlayerId
       ? input.legalMoves
@@ -1164,7 +1401,10 @@ export function projectUnoPlayerView(
       isActive: participant.playerId === input.state.activePlayerId,
       isViewer: participant.playerId === input.viewerPlayerId,
       playerId: participant.playerId,
-      visibleCards: participant.playerId === input.viewerPlayerId ? [...(input.state.state.hands[participant.playerId] ?? [])] : [],
+      visibleCards:
+        participant.playerId === input.viewerPlayerId
+          ? [...(input.state.state.hands[participant.playerId] ?? [])]
+          : [],
     })),
     status: input.state.state.lastEvent,
     viewerPlayerId: input.viewerPlayerId,
@@ -1185,14 +1425,18 @@ function moveScore(
     return -1100;
   }
 
-  const card = (state.hands[playerId] ?? []).find((candidate) => candidate.id === move.payload.cardId);
+  const card = (state.hands[playerId] ?? []).find(
+    (candidate) => candidate.id === move.payload.cardId,
+  );
 
   if (!card) {
     return -1200;
   }
 
   let score = 0;
-  const random = createSeededRandom(`${seed}:${card.id}:${move.payload.chosenColor ?? 'none'}:${move.payload.targetPlayerId ?? 'none'}`);
+  const random = createSeededRandom(
+    `${seed}:${card.id}:${move.payload.chosenColor ?? 'none'}:${move.payload.targetPlayerId ?? 'none'}`,
+  );
 
   if (card.kind === 'wild' || card.kind === 'wild-draw-four') {
     score -= 100;
@@ -1200,12 +1444,20 @@ function moveScore(
     score += 100;
   }
 
-  if (card.kind === 'skip' || card.kind === 'reverse' || card.kind === 'draw-two') {
+  if (
+    card.kind === 'skip' ||
+    card.kind === 'reverse' ||
+    card.kind === 'draw-two'
+  ) {
     score += 50;
   }
 
   if (card.kind === 'wild' || card.kind === 'wild-draw-four') {
-    const preferredColor = choosePreferredColor((state.hands[playerId] ?? []).filter((handCard) => handCard.id !== card.id));
+    const preferredColor = choosePreferredColor(
+      (state.hands[playerId] ?? []).filter(
+        (handCard) => handCard.id !== card.id,
+      ),
+    );
     if (move.payload.chosenColor === preferredColor) {
       score += 40;
     }
@@ -1228,16 +1480,28 @@ export function createUnoBots(
       .map((participant) => {
         const bot: LocalGameSessionBot<UnoState, UnoMove> = {
           chooseMove({ legalMoves, playerId, state }) {
-            const ownLegalMoves = legalMoves.filter((move) => move.playerId === playerId);
-            const playableMoves = ownLegalMoves.filter((move) => move.kind === 'play-card');
+            const ownLegalMoves = legalMoves.filter(
+              (move) => move.playerId === playerId,
+            );
+            const playableMoves = ownLegalMoves.filter(
+              (move) => move.kind === 'play-card',
+            );
 
             if (playableMoves.length > 0) {
-              return [...playableMoves].sort(
-                (left, right) => moveScore(right, state.state, playerId, seed) - moveScore(left, state.state, playerId, seed),
-              )[0] ?? null;
+              return (
+                [...playableMoves].sort(
+                  (left, right) =>
+                    moveScore(right, state.state, playerId, seed) -
+                    moveScore(left, state.state, playerId, seed),
+                )[0] ?? null
+              );
             }
 
-            return ownLegalMoves.find((move) => move.kind === 'draw-card') ?? ownLegalMoves.find((move) => move.kind === 'pass') ?? null;
+            return (
+              ownLegalMoves.find((move) => move.kind === 'draw-card') ??
+              ownLegalMoves.find((move) => move.kind === 'pass') ??
+              null
+            );
           },
         };
 
@@ -1252,8 +1516,18 @@ export const unoExamplePresets: readonly UnoExamplePreset[] = [
     label: 'Hotseat duo',
     hotseat: true,
     seats: [
-      { playerId: 'p1', displayName: 'Player One', seat: 1, controller: 'human' },
-      { playerId: 'p2', displayName: 'Player Two', seat: 2, controller: 'human' },
+      {
+        playerId: 'p1',
+        displayName: 'Player One',
+        seat: 1,
+        controller: 'human',
+      },
+      {
+        playerId: 'p2',
+        displayName: 'Player Two',
+        seat: 2,
+        controller: 'human',
+      },
     ],
   },
   {
@@ -1261,9 +1535,19 @@ export const unoExamplePresets: readonly UnoExamplePreset[] = [
     label: 'Mixed table',
     hotseat: true,
     seats: [
-      { playerId: 'p1', displayName: 'Player One', seat: 1, controller: 'human' },
+      {
+        playerId: 'p1',
+        displayName: 'Player One',
+        seat: 1,
+        controller: 'human',
+      },
       { playerId: 'p2', displayName: 'House Bot', seat: 2, controller: 'bot' },
-      { playerId: 'p3', displayName: 'Player Two', seat: 3, controller: 'human' },
+      {
+        playerId: 'p3',
+        displayName: 'Player Two',
+        seat: 3,
+        controller: 'human',
+      },
       { playerId: 'p4', displayName: 'Table Bot', seat: 4, controller: 'bot' },
     ],
   },
@@ -1272,18 +1556,33 @@ export const unoExamplePresets: readonly UnoExamplePreset[] = [
     label: 'Bot duel',
     hotseat: false,
     seats: [
-      { playerId: 'p1', displayName: 'Player One', seat: 1, controller: 'human' },
+      {
+        playerId: 'p1',
+        displayName: 'Player One',
+        seat: 1,
+        controller: 'human',
+      },
       { playerId: 'p2', displayName: 'House Bot', seat: 2, controller: 'bot' },
     ],
   },
 ] as const;
 
-export function createUnoExampleParticipants(presetId: UnoExamplePresetId): readonly SessionParticipant[] {
-  return unoExamplePresets.find((preset) => preset.id === presetId)?.seats ?? unoExamplePresets[0]!.seats;
+export function createUnoExampleParticipants(
+  presetId: UnoExamplePresetId,
+): readonly SessionParticipant[] {
+  return (
+    unoExamplePresets.find((preset) => preset.id === presetId)?.seats ??
+    unoExamplePresets[0]!.seats
+  );
 }
 
-export function getUnoExamplePreset(presetId: UnoExamplePresetId): UnoExamplePreset {
-  return unoExamplePresets.find((preset) => preset.id === presetId) ?? unoExamplePresets[0]!;
+export function getUnoExamplePreset(
+  presetId: UnoExamplePresetId,
+): UnoExamplePreset {
+  return (
+    unoExamplePresets.find((preset) => preset.id === presetId) ??
+    unoExamplePresets[0]!
+  );
 }
 
 export const unoCatalogEntry: UnoCatalogEntry = {

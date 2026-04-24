@@ -1,4 +1,1 @@
-export {
-  listFeatureFlags,
-  upsertFeatureFlag,
-} from './shared';
+export { listFeatureFlags, upsertFeatureFlag } from './shared';

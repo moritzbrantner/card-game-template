@@ -12,7 +12,9 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   return {
     name: activeApp.siteName,
     short_name: activeApp.siteName,
-    description: activeApp.defaultLocaleMetadata.description || siteConfig.seo.defaultDescription,
+    description:
+      activeApp.defaultLocaleMetadata.description ||
+      siteConfig.seo.defaultDescription,
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

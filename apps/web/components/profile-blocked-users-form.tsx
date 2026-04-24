@@ -19,7 +19,10 @@ type ProfileBlockedUsersFormProps = {
   };
 };
 
-export function ProfileBlockedUsersForm({ initialProfiles, labels }: ProfileBlockedUsersFormProps) {
+export function ProfileBlockedUsersForm({
+  initialProfiles,
+  labels,
+}: ProfileBlockedUsersFormProps) {
   const [profiles, setProfiles] = useState(initialProfiles);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -45,7 +48,11 @@ export function ProfileBlockedUsersForm({ initialProfiles, labels }: ProfileBloc
         return;
       }
 
-      setProfiles((current) => current.filter((currentProfile) => currentProfile.userId !== profile.userId));
+      setProfiles((current) =>
+        current.filter(
+          (currentProfile) => currentProfile.userId !== profile.userId,
+        ),
+      );
       setFeedback(labels.success);
     } catch {
       setError(labels.error);
@@ -63,14 +70,25 @@ export function ProfileBlockedUsersForm({ initialProfiles, labels }: ProfileBloc
       ) : (
         <div className="space-y-3">
           {profiles.map((profile) => (
-            <div key={profile.userId} className="flex items-center justify-between gap-3 rounded-2xl border p-3 dark:border-zinc-800">
+            <div
+              key={profile.userId}
+              className="flex items-center justify-between gap-3 rounded-2xl border p-3 dark:border-zinc-800"
+            >
               <div className="flex min-w-0 items-center gap-3">
-                <Avatar imageUrl={profile.imageUrl} displayName={profile.displayName} />
+                <Avatar
+                  imageUrl={profile.imageUrl}
+                  displayName={profile.displayName}
+                />
                 <div className="min-w-0">
-                  <Link href={`/profile/@${profile.tag}`} className="block truncate font-medium hover:underline">
+                  <Link
+                    href={`/profile/@${profile.tag}`}
+                    className="block truncate font-medium hover:underline"
+                  >
                     {profile.displayName}
                   </Link>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300">/@{profile.tag}</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                    /@{profile.tag}
+                  </p>
                 </div>
               </div>
 
@@ -81,24 +99,45 @@ export function ProfileBlockedUsersForm({ initialProfiles, labels }: ProfileBloc
                 disabled={pendingUserId === profile.userId}
                 onClick={() => handleUnblock(profile)}
               >
-                {pendingUserId === profile.userId ? labels.unblocking : labels.unblock}
+                {pendingUserId === profile.userId
+                  ? labels.unblocking
+                  : labels.unblock}
               </Button>
             </div>
           ))}
         </div>
       )}
 
-      {feedback ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{feedback}</p> : null}
-      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
+      {feedback ? (
+        <p className="text-sm text-emerald-600 dark:text-emerald-400">
+          {feedback}
+        </p>
+      ) : null}
+      {error ? (
+        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+      ) : null}
     </div>
   );
 }
 
-function Avatar({ imageUrl, displayName }: { imageUrl: string | null; displayName: string }) {
+function Avatar({
+  imageUrl,
+  displayName,
+}: {
+  imageUrl: string | null;
+  displayName: string;
+}) {
   return (
     <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-100 text-sm font-semibold text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
       {imageUrl ? (
-        <Image src={imageUrl} alt={displayName} fill sizes="48px" unoptimized className="object-cover" />
+        <Image
+          src={imageUrl}
+          alt={displayName}
+          fill
+          sizes="48px"
+          unoptimized
+          className="object-cover"
+        />
       ) : (
         <span>{displayName.charAt(0).toUpperCase() || 'U'}</span>
       )}

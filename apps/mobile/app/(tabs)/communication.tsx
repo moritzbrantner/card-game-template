@@ -40,8 +40,8 @@ export default function CommunicationScreen() {
           <ThemedView style={styles.header}>
             <ThemedText type="title">Communication</ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
-              This category groups the main primitives behind realtime collaboration on web,
-              desktop, and mobile.
+              This category groups the main primitives behind realtime
+              collaboration on web, desktop, and mobile.
             </ThemedText>
           </ThemedView>
 
@@ -50,12 +50,15 @@ export default function CommunicationScreen() {
               key={section.title}
               style={[styles.card, { borderColor }]}
               lightColor={Colors.light.surface}
-              darkColor={Colors.dark.surface}>
+              darkColor={Colors.dark.surface}
+            >
               <ThemedText style={[styles.eyebrow, { color: mutedTextColor }]}>
                 Communication topic
               </ThemedText>
               <ThemedText type="subtitle">{section.title}</ThemedText>
-              <ThemedText style={{ color: mutedTextColor }}>{section.description}</ThemedText>
+              <ThemedText style={{ color: mutedTextColor }}>
+                {section.description}
+              </ThemedText>
               {section.bullets.map((bullet) => (
                 <ThemedText key={bullet} style={{ color: mutedTextColor }}>
                   • {bullet}

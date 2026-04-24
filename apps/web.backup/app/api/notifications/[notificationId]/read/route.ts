@@ -21,7 +21,10 @@ export async function POST(
     return guard.json({ error: 'Notification not found.' }, { status: 404 });
   }
 
-  const result = await markNotificationReadUseCase(guard.actorId!, notificationId);
+  const result = await markNotificationReadUseCase(
+    guard.actorId!,
+    notificationId,
+  );
 
   if (!result.ok) {
     return guard.json({ error: result.error.message }, { status: 404 });

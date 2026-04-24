@@ -2,7 +2,10 @@ import { cookies } from 'next/headers';
 import * as z from 'zod';
 
 import { createApiRoute } from '@/src/http/route';
-import { CONSENT_COOKIE_NAME, serializeConsentState } from '@/src/privacy/contracts';
+import {
+  CONSENT_COOKIE_NAME,
+  serializeConsentState,
+} from '@/src/privacy/contracts';
 
 const consentBodySchema = z.object({
   necessary: z.literal(true),

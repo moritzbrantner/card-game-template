@@ -17,7 +17,9 @@ describe('credential security', () => {
 
     for (let index = 0; index < 4; index += 1) {
       registerCredentialAttemptFailure(key, now + index * 1_000);
-      expect(isCredentialAttemptThrottled(key, now + index * 1_000)).toBe(false);
+      expect(isCredentialAttemptThrottled(key, now + index * 1_000)).toBe(
+        false,
+      );
     }
 
     registerCredentialAttemptFailure(key, now + 5_000);

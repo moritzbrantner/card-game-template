@@ -27,9 +27,14 @@ function normalizeFieldErrors(value: unknown) {
           return null;
         }
 
-        const normalizedMessages = messages.filter((message): message is string => typeof message === 'string' && message.trim().length > 0);
+        const normalizedMessages = messages.filter(
+          (message): message is string =>
+            typeof message === 'string' && message.trim().length > 0,
+        );
 
-        return normalizedMessages.length > 0 ? [field, normalizedMessages] : null;
+        return normalizedMessages.length > 0
+          ? [field, normalizedMessages]
+          : null;
       })
       .filter((entry): entry is [string, string[]] => entry !== null),
   );
@@ -57,7 +62,11 @@ async function readErrorBody(response: Response) {
 
   const contentType = response.headers.get('content-type') ?? '';
 
-  if (contentType.includes('json') || trimmedBody.startsWith('{') || trimmedBody.startsWith('[')) {
+  if (
+    contentType.includes('json') ||
+    trimmedBody.startsWith('{') ||
+    trimmedBody.startsWith('[')
+  ) {
     try {
       return JSON.parse(trimmedBody) as unknown;
     } catch {
@@ -68,12 +77,17 @@ async function readErrorBody(response: Response) {
   return trimmedBody;
 }
 
-export async function readProblemDetail(response: Response, fallbackText: string): Promise<ClientProblemDetail> {
+export async function readProblemDetail(
+  response: Response,
+  fallbackText: string,
+): Promise<ClientProblemDetail> {
   const body = await readErrorBody(response);
   const record = isRecord(body) ? body : null;
-  const detail = typeof body === 'string' ? readString(body) : readString(record?.detail);
+  const detail =
+    typeof body === 'string' ? readString(body) : readString(record?.detail);
   const title = readString(record?.title);
-  const legacyMessage = readString(record?.error) ?? readString(record?.message);
+  const legacyMessage =
+    readString(record?.error) ?? readString(record?.message);
   const fieldErrors = normalizeFieldErrors(record?.fieldErrors);
   const formMessage = detail ?? legacyMessage ?? title;
 

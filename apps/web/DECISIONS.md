@@ -1,6 +1,7 @@
 # DECISIONS.md
 
 ## DEC-0001: Next.js App Router is the canonical application runtime
+
 - **Date:** 2026-04-16
 - **Status:** accepted
 
@@ -21,6 +22,7 @@ Standardize the repository on Next.js 16 App Router, Bun, and Drizzle. Documenta
   - Stale TanStack-era references are intentionally removed
 
 ## DEC-0002: `src/` is the canonical application namespace and `AppManifest` is the app-pack seam
+
 - **Date:** 2026-04-16
 - **Status:** accepted
 
@@ -41,6 +43,7 @@ Keep `src/` as the sole canonical application namespace for the root app and kee
   - The manifest shape stays conservative in phase 1 instead of being redesigned immediately
 
 ## DEC-0003: Shared libraries are first-class Bun workspaces
+
 - **Date:** 2026-04-16
 - **Status:** accepted
 

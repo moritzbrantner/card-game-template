@@ -19,22 +19,26 @@ export const remocnPage = {
     terminal: {
       eyebrow: 'UI Block',
       title: 'TerminalSimulator',
-      description: 'A CLI-style install preview that makes the registry workflow feel tangible instead of theoretical.',
+      description:
+        'A CLI-style install preview that makes the registry workflow feel tangible instead of theoretical.',
     },
     blur: {
       eyebrow: 'Typography',
       title: 'BlurReveal',
-      description: 'A heavy-to-sharp text reveal that works well for hero copy, intros, and product names.',
+      description:
+        'A heavy-to-sharp text reveal that works well for hero copy, intros, and product names.',
     },
     matrix: {
       eyebrow: 'Typography',
       title: 'MatrixDecode',
-      description: 'A decoding text treatment with a technical edge, useful for launch sequences and status states.',
+      description:
+        'A decoding text treatment with a technical edge, useful for launch sequences and status states.',
     },
     spotlight: {
       eyebrow: 'Environment & lighting',
       title: 'SpotlightCard',
-      description: 'A synthetic cursor drags a soft radial light over a card surface and makes the border breathe.',
+      description:
+        'A synthetic cursor drags a soft radial light over a card surface and makes the border breathe.',
     },
   },
   install: {
@@ -44,8 +48,11 @@ export const remocnPage = {
   },
   integration: {
     title: 'Integration notes',
-    pointOne: 'The registry components themselves came in through the official shadcn-compatible CLI.',
-    pointTwo: 'Because this repository is a website, not a dedicated Remotion project, the previews run through @remotion/player.',
-    pointThree: 'The route stays localized and lives inside the existing navigation shell instead of creating a separate demo app.',
+    pointOne:
+      'The registry components themselves came in through the official shadcn-compatible CLI.',
+    pointTwo:
+      'Because this repository is a website, not a dedicated Remotion project, the previews run through @remotion/player.',
+    pointThree:
+      'The route stays localized and lives inside the existing navigation shell instead of creating a separate demo app.',
   },
 };

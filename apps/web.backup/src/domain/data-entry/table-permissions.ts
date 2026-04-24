@@ -1,6 +1,10 @@
 import type { AppRole } from '@/lib/authorization';
 
-export type ManagedTable = 'User' | 'Profile' | 'SecurityAuditLog' | 'SecurityRateLimitCounter';
+export type ManagedTable =
+  | 'User'
+  | 'Profile'
+  | 'SecurityAuditLog'
+  | 'SecurityRateLimitCounter';
 
 export const managedTables: readonly ManagedTable[] = [
   'User',
@@ -43,7 +47,10 @@ export const tablePermissions: readonly TablePermission[] = [
   },
 ] as const;
 
-export function canReadTable(role: AppRole | null | undefined, table: ManagedTable): boolean {
+export function canReadTable(
+  role: AppRole | null | undefined,
+  table: ManagedTable,
+): boolean {
   if (!role) {
     return false;
   }
@@ -53,7 +60,10 @@ export function canReadTable(role: AppRole | null | undefined, table: ManagedTab
   return permission ? permission.readRoles.includes(role) : false;
 }
 
-export function canWriteTable(role: AppRole | null | undefined, table: ManagedTable): boolean {
+export function canWriteTable(
+  role: AppRole | null | undefined,
+  table: ManagedTable,
+): boolean {
   if (!role) {
     return false;
   }

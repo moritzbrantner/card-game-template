@@ -19,7 +19,9 @@ const booleanStringSchema = z
   });
 
 const rawEnvSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
   NEXT_DEPLOY_TARGET: z.enum(['gh-pages']).optional(),
   GITHUB_PAGES_BASE_PATH: z.string().optional(),
   DATABASE_URL: z.string().optional(),
@@ -39,7 +41,9 @@ const rawEnvSchema = z.object({
   PROFILE_IMAGE_PUBLIC_BASE_URL: z.string().url().optional(),
   ANALYTICS_ENABLED: booleanStringSchema.optional(),
   INTERNAL_CRON_SECRET: z.string().optional(),
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
+  LOG_LEVEL: z
+    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+    .optional(),
 });
 
 export type AppEnv = {
@@ -80,7 +84,14 @@ export type AppEnv = {
     internalCronSecret?: string;
   };
   observability: {
-    logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
+    logLevel:
+      | 'fatal'
+      | 'error'
+      | 'warn'
+      | 'info'
+      | 'debug'
+      | 'trace'
+      | 'silent';
   };
 };
 
@@ -92,7 +103,12 @@ function trimOptional(value?: string) {
 }
 
 function deriveSiteUrl(raw: z.infer<typeof rawEnvSchema>) {
-  return trimOptional(raw.SITE_URL) ?? trimOptional(raw.AUTH_URL) ?? trimOptional(raw.NEXTAUTH_URL) ?? DEFAULT_SITE_URL;
+  return (
+    trimOptional(raw.SITE_URL) ??
+    trimOptional(raw.AUTH_URL) ??
+    trimOptional(raw.NEXTAUTH_URL) ??
+    DEFAULT_SITE_URL
+  );
 }
 
 export function resetEnvForTests() {
@@ -105,28 +121,50 @@ export function getEnv(): AppEnv {
   }
 
   const raw = rawEnvSchema.parse(process.env);
-  const deploymentTarget = raw.NEXT_DEPLOY_TARGET === 'gh-pages' ? 'gh-pages' : 'default';
+  const deploymentTarget =
+    raw.NEXT_DEPLOY_TARGET === 'gh-pages' ? 'gh-pages' : 'default';
   const databaseUrl = trimOptional(raw.DATABASE_URL);
 
   if (deploymentTarget !== 'gh-pages' && !databaseUrl) {
-    throw new Error('Invalid environment configuration: DATABASE_URL is required unless NEXT_DEPLOY_TARGET=gh-pages.');
+    throw new Error(
+      'Invalid environment configuration: DATABASE_URL is required unless NEXT_DEPLOY_TARGET=gh-pages.',
+    );
   }
 
   const siteUrl = deriveSiteUrl(raw);
   const authSecret =
     trimOptional(raw.AUTH_SECRET) ??
-    (raw.NODE_ENV === 'production' && deploymentTarget !== 'gh-pages' ? undefined : LOCAL_AUTH_SECRET);
+    (raw.NODE_ENV === 'production' && deploymentTarget !== 'gh-pages'
+      ? undefined
+      : LOCAL_AUTH_SECRET);
 
   if (!authSecret) {
-    throw new Error('Invalid environment configuration: AUTH_SECRET is required in production.');
+    throw new Error(
+      'Invalid environment configuration: AUTH_SECRET is required in production.',
+    );
   }
 
   const storageBucket = trimOptional(raw.PROFILE_IMAGE_STORAGE_BUCKET);
-  const storageAccessKeyId = trimOptional(raw.PROFILE_IMAGE_STORAGE_ACCESS_KEY_ID);
-  const storageSecretAccessKey = trimOptional(raw.PROFILE_IMAGE_STORAGE_SECRET_ACCESS_KEY);
+  const storageAccessKeyId = trimOptional(
+    raw.PROFILE_IMAGE_STORAGE_ACCESS_KEY_ID,
+  );
+  const storageSecretAccessKey = trimOptional(
+    raw.PROFILE_IMAGE_STORAGE_SECRET_ACCESS_KEY,
+  );
   const storagePublicBaseUrl = trimOptional(raw.PROFILE_IMAGE_PUBLIC_BASE_URL);
-  const storageConfigured = Boolean(storageBucket && storageAccessKeyId && storageSecretAccessKey && storagePublicBaseUrl);
-  const hasPartialStorageConfig = [storageBucket, storageAccessKeyId, storageSecretAccessKey, storagePublicBaseUrl].some(Boolean) && !storageConfigured;
+  const storageConfigured = Boolean(
+    storageBucket &&
+    storageAccessKeyId &&
+    storageSecretAccessKey &&
+    storagePublicBaseUrl,
+  );
+  const hasPartialStorageConfig =
+    [
+      storageBucket,
+      storageAccessKeyId,
+      storageSecretAccessKey,
+      storagePublicBaseUrl,
+    ].some(Boolean) && !storageConfigured;
 
   if (hasPartialStorageConfig) {
     throw new Error(
@@ -145,7 +183,8 @@ export function getEnv(): AppEnv {
     },
     auth: {
       secret: authSecret,
-      url: trimOptional(raw.AUTH_URL) ?? trimOptional(raw.NEXTAUTH_URL) ?? siteUrl,
+      url:
+        trimOptional(raw.AUTH_URL) ?? trimOptional(raw.NEXTAUTH_URL) ?? siteUrl,
     },
     site: {
       url: siteUrl,
@@ -153,7 +192,8 @@ export function getEnv(): AppEnv {
     email: {
       provider: raw.EMAIL_PROVIDER ?? 'console',
       from: raw.EMAIL_FROM ?? 'no-reply@example.com',
-      mailpitBaseUrl: trimOptional(raw.MAILPIT_BASE_URL) ?? DEFAULT_MAILPIT_BASE_URL,
+      mailpitBaseUrl:
+        trimOptional(raw.MAILPIT_BASE_URL) ?? DEFAULT_MAILPIT_BASE_URL,
     },
     storage: {
       region: trimOptional(raw.PROFILE_IMAGE_STORAGE_REGION) ?? 'auto',
@@ -172,7 +212,8 @@ export function getEnv(): AppEnv {
       internalCronSecret: trimOptional(raw.INTERNAL_CRON_SECRET),
     },
     observability: {
-      logLevel: raw.LOG_LEVEL ?? (raw.NODE_ENV === 'production' ? 'info' : 'debug'),
+      logLevel:
+        raw.LOG_LEVEL ?? (raw.NODE_ENV === 'production' ? 'info' : 'debug'),
     },
   };
 

@@ -24,5 +24,9 @@ export function SiteAnnouncementBanner({
     return content;
   }
 
-  return <LocalizedLink href={announcement.href} locale={locale} className="block">{content}</LocalizedLink>;
+  return (
+    <LocalizedLink href={announcement.href} locale={locale} className="block">
+      {content}
+    </LocalizedLink>
+  );
 }

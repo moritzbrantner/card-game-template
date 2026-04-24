@@ -3,6 +3,7 @@
 Copy this folder into a dedicated private repository when you are ready to publish shared packages for multiple app repositories.
 
 ## What this scaffold includes
+
 - Bun workspace root
 - Turbo pipeline
 - Changesets configuration
@@ -11,6 +12,7 @@ Copy this folder into a dedicated private repository when you are ready to publi
 - consumer `.npmrc` example
 
 ## First setup
+
 1. Create a new private repository, for example `platform-packages`.
 2. Copy this folder's contents to the new repository root.
 3. Replace every `YOUR_GITHUB_USERNAME` placeholder.

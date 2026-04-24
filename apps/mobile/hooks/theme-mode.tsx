@@ -1,4 +1,10 @@
-import { createContext, useContext, useMemo, useState, type PropsWithChildren } from 'react';
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  type PropsWithChildren,
+} from 'react';
 
 import { useColorScheme as useSystemColorScheme } from '@/hooks/use-color-scheme';
 
@@ -13,7 +19,9 @@ const ThemeModeContext = createContext<ThemeModeContextValue | null>(null);
 
 export function ThemeModeProvider({ children }: PropsWithChildren) {
   const systemTheme = useSystemColorScheme();
-  const [themeMode, setThemeMode] = useState<ThemeMode>(systemTheme === 'dark' ? 'dark' : 'light');
+  const [themeMode, setThemeMode] = useState<ThemeMode>(
+    systemTheme === 'dark' ? 'dark' : 'light',
+  );
 
   const value = useMemo(
     () => ({
@@ -23,7 +31,11 @@ export function ThemeModeProvider({ children }: PropsWithChildren) {
     [themeMode],
   );
 
-  return <ThemeModeContext.Provider value={value}>{children}</ThemeModeContext.Provider>;
+  return (
+    <ThemeModeContext.Provider value={value}>
+      {children}
+    </ThemeModeContext.Provider>
+  );
 }
 
 export function useThemeMode() {

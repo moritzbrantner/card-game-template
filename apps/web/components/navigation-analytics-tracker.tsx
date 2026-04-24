@@ -3,7 +3,10 @@
 import { useEffect, useEffectEvent } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
-import { parseConsentCookie, CONSENT_COOKIE_NAME } from '@/src/privacy/contracts';
+import {
+  parseConsentCookie,
+  CONSENT_COOKIE_NAME,
+} from '@/src/privacy/contracts';
 import {
   buildAnalyticsCookie,
   NAVIGATION_LAST_HREF_STORAGE_KEY,
@@ -30,16 +33,24 @@ function hasAnalyticsConsent(cookieString: string) {
     .map((chunk) => chunk.trim())
     .find((chunk) => chunk.startsWith(`${CONSENT_COOKIE_NAME}=`));
 
-  return parseConsentCookie(consentCookie?.slice(CONSENT_COOKIE_NAME.length + 1)).analytics;
+  return parseConsentCookie(
+    consentCookie?.slice(CONSENT_COOKIE_NAME.length + 1),
+  ).analytics;
 }
 
-export function NavigationAnalyticsTracker({ enabled }: NavigationAnalyticsTrackerProps) {
+export function NavigationAnalyticsTracker({
+  enabled,
+}: NavigationAnalyticsTrackerProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const search = searchParams.toString();
 
   const trackNavigation = useEffectEvent(async (href: string) => {
-    if (!enabled || typeof window === 'undefined' || typeof document === 'undefined') {
+    if (
+      !enabled ||
+      typeof window === 'undefined' ||
+      typeof document === 'undefined'
+    ) {
       return;
     }
 
@@ -51,8 +62,12 @@ export function NavigationAnalyticsTracker({ enabled }: NavigationAnalyticsTrack
     const trackerState = resolveNavigationTrackerState({
       cookieString: document.cookie,
       currentHref: href,
-      lastTrackedHref: window.sessionStorage.getItem(NAVIGATION_LAST_HREF_STORAGE_KEY),
-      lastTrackedAt: window.sessionStorage.getItem(NAVIGATION_LAST_TRACKED_AT_STORAGE_KEY),
+      lastTrackedHref: window.sessionStorage.getItem(
+        NAVIGATION_LAST_HREF_STORAGE_KEY,
+      ),
+      lastTrackedAt: window.sessionStorage.getItem(
+        NAVIGATION_LAST_TRACKED_AT_STORAGE_KEY,
+      ),
       now,
       createId: () => crypto.randomUUID(),
     });
@@ -62,7 +77,10 @@ export function NavigationAnalyticsTracker({ enabled }: NavigationAnalyticsTrack
     }
 
     window.sessionStorage.setItem(NAVIGATION_LAST_HREF_STORAGE_KEY, href);
-    window.sessionStorage.setItem(NAVIGATION_LAST_TRACKED_AT_STORAGE_KEY, String(now));
+    window.sessionStorage.setItem(
+      NAVIGATION_LAST_TRACKED_AT_STORAGE_KEY,
+      String(now),
+    );
     document.cookie = buildAnalyticsCookie(
       NAVIGATION_VISITOR_COOKIE_NAME,
       trackerState.visitorId,

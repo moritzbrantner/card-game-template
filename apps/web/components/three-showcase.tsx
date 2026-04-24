@@ -34,19 +34,25 @@ export function ThreeShowcase() {
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zinc-500 dark:text-zinc-400">
             Three.js lane
           </p>
-          <h2 className="mt-3 text-2xl font-semibold text-zinc-950 dark:text-zinc-50">Reserve a space for 3D work</h2>
+          <h2 className="mt-3 text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
+            Reserve a space for 3D work
+          </h2>
           <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-            Keep a dedicated route for lighting studies, model viewers, camera experiments, and interaction proofs before
-            they enter product flows.
+            Keep a dedicated route for lighting studies, model viewers, camera
+            experiments, and interaction proofs before they enter product flows.
           </p>
         </article>
 
         <article className="rounded-3xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-          <h3 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">What belongs here next</h3>
+          <h3 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+            What belongs here next
+          </h3>
           <ul className="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-300">
             <li>GLTF model previews with product annotations.</li>
             <li>Lighting and material comparisons for branded surfaces.</li>
-            <li>Scroll-tied scenes before they graduate into the story demo.</li>
+            <li>
+              Scroll-tied scenes before they graduate into the story demo.
+            </li>
           </ul>
         </article>
       </div>

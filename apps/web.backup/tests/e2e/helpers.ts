@@ -8,7 +8,9 @@ const DEFAULT_MAILPIT_BASE_URL = 'http://127.0.0.1:8025';
 const DEFAULT_E2E_BASE_URL = 'http://127.0.0.1:3006';
 const DEFAULT_INTERNAL_CRON_SECRET = 'e2e-internal-cron-secret';
 
-const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const PNG_SIGNATURE = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+]);
 const CRC32_TABLE = new Uint32Array(256);
 
 for (let index = 0; index < CRC32_TABLE.length; index += 1) {
@@ -22,18 +24,28 @@ for (let index = 0; index < CRC32_TABLE.length; index += 1) {
 }
 
 export async function waitForAppHydration(page: Page) {
-  await page.waitForFunction(() => document.documentElement.dataset.appHydrated === 'true');
+  await page.waitForFunction(
+    () => document.documentElement.dataset.appHydrated === 'true',
+  );
 }
 
 export async function waitForServiceWorkerReady(page: Page) {
-  await page.waitForFunction(() => document.documentElement.dataset.serviceWorker === 'ready');
+  await page.waitForFunction(
+    () => document.documentElement.dataset.serviceWorker === 'ready',
+  );
 }
 
 export async function dismissConsentBanner(page: Page) {
-  const necessaryOnlyButton = page.getByRole('button', { name: 'Necessary only' });
+  const necessaryOnlyButton = page.getByRole('button', {
+    name: 'Necessary only',
+  });
 
   for (let attempt = 0; attempt < 6; attempt += 1) {
-    if (!(await necessaryOnlyButton.isVisible({ timeout: 500 }).catch(() => false))) {
+    if (
+      !(await necessaryOnlyButton
+        .isVisible({ timeout: 500 })
+        .catch(() => false))
+    ) {
       await page.waitForTimeout(250);
       continue;
     }
@@ -48,7 +60,9 @@ export async function acceptAllConsent(page: Page) {
   const acceptAllButton = page.getByRole('button', { name: 'Accept all' });
 
   for (let attempt = 0; attempt < 6; attempt += 1) {
-    if (!(await acceptAllButton.isVisible({ timeout: 500 }).catch(() => false))) {
+    if (
+      !(await acceptAllButton.isVisible({ timeout: 500 }).catch(() => false))
+    ) {
       await page.waitForTimeout(250);
       continue;
     }
@@ -93,7 +107,11 @@ export function getSeededUser(email: string) {
   return user;
 }
 
-export async function loginWithCredentials(page: Page, email: string, password: string) {
+export async function loginWithCredentials(
+  page: Page,
+  email: string,
+  password: string,
+) {
   await gotoAndWaitForHydration(page, '/en/login');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(password);
@@ -124,7 +142,12 @@ function toPngChunk(type: string, data: Uint8Array) {
   const crcBuffer = Buffer.alloc(4);
   crcBuffer.writeUInt32BE((crc ^ 0xffffffff) >>> 0, 0);
 
-  return Buffer.concat([lengthBuffer, typeBuffer, Buffer.from(data), crcBuffer]);
+  return Buffer.concat([
+    lengthBuffer,
+    typeBuffer,
+    Buffer.from(data),
+    crcBuffer,
+  ]);
 }
 
 export function createSolidPngBuffer(input: {
@@ -204,17 +227,33 @@ function getMessageId(message: unknown) {
   }
 
   const record = message as Record<string, unknown>;
-  return typeof record.ID === 'string' ? record.ID : typeof record.id === 'string' ? record.id : '';
+  return typeof record.ID === 'string'
+    ? record.ID
+    : typeof record.id === 'string'
+      ? record.id
+      : '';
 }
 
-function messageMatches(message: unknown, input: { to: string; subject: string }) {
+function messageMatches(
+  message: unknown,
+  input: { to: string; subject: string },
+) {
   if (!message || typeof message !== 'object') {
     return false;
   }
 
   const record = message as Record<string, unknown>;
-  const subject = typeof record.Subject === 'string' ? record.Subject : typeof record.subject === 'string' ? record.subject : '';
-  const recipients = Array.isArray(record.To) ? record.To : Array.isArray(record.to) ? record.to : [];
+  const subject =
+    typeof record.Subject === 'string'
+      ? record.Subject
+      : typeof record.subject === 'string'
+        ? record.subject
+        : '';
+  const recipients = Array.isArray(record.To)
+    ? record.To
+    : Array.isArray(record.to)
+      ? record.to
+      : [];
 
   const hasRecipient = recipients.some((recipient) => {
     if (!recipient || typeof recipient !== 'object') {
@@ -222,14 +261,19 @@ function messageMatches(message: unknown, input: { to: string; subject: string }
     }
 
     const recipientRecord = recipient as Record<string, unknown>;
-    return recipientRecord.Address === input.to || recipientRecord.address === input.to;
+    return (
+      recipientRecord.Address === input.to ||
+      recipientRecord.address === input.to
+    );
   });
 
   return hasRecipient && subject === input.subject;
 }
 
 async function getMailpitMessageRaw(messageId: string) {
-  const response = await fetch(`${getMailpitBaseURL()}/api/v1/message/${messageId}/raw`);
+  const response = await fetch(
+    `${getMailpitBaseURL()}/api/v1/message/${messageId}/raw`,
+  );
 
   if (!response.ok) {
     throw new Error(`Unable to fetch Mailpit message ${messageId}.`);
@@ -265,14 +309,20 @@ export async function clearMailpitMessages() {
   }
 }
 
-export async function waitForMailpitMessage(input: { to: string; subject: string; timeoutMs?: number }) {
+export async function waitForMailpitMessage(input: {
+  to: string;
+  subject: string;
+  timeoutMs?: number;
+}) {
   const timeoutMs = input.timeoutMs ?? 15_000;
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
     await runQueuedJobs();
 
-    const response = await fetch(`${getMailpitBaseURL()}/api/v1/messages?limit=25`);
+    const response = await fetch(
+      `${getMailpitBaseURL()}/api/v1/messages?limit=25`,
+    );
 
     if (!response.ok) {
       throw new Error('Unable to list Mailpit messages.');
@@ -297,7 +347,9 @@ export async function waitForMailpitMessage(input: { to: string; subject: string
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
-  throw new Error(`Timed out waiting for Mailpit message "${input.subject}" to ${input.to}.`);
+  throw new Error(
+    `Timed out waiting for Mailpit message "${input.subject}" to ${input.to}.`,
+  );
 }
 
 export function extractFirstUrl(text: string) {

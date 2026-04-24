@@ -18,7 +18,12 @@ type AdminPageShellProps = {
   children: ReactNode;
 };
 
-export function AdminPageShell({ title, description, adminPages, children }: AdminPageShellProps) {
+export function AdminPageShell({
+  title,
+  description,
+  adminPages,
+  children,
+}: AdminPageShellProps) {
   const pathname = usePathname();
   const t = useTranslations('AdminPage');
 
@@ -27,16 +32,23 @@ export function AdminPageShell({ title, description, adminPages, children }: Adm
       <header className="space-y-3">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-          <Badge variant="outline" className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300">
+          <Badge
+            variant="outline"
+            className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
+          >
             {t('accessBadge')}
           </Badge>
         </div>
-        <p className="max-w-3xl text-sm text-zinc-600 dark:text-zinc-300">{description}</p>
+        <p className="max-w-3xl text-sm text-zinc-600 dark:text-zinc-300">
+          {description}
+        </p>
       </header>
 
       <nav className="flex flex-wrap gap-2 rounded-3xl border border-zinc-200 bg-white/70 p-2 dark:border-zinc-800 dark:bg-zinc-950/60">
         {adminPages.map((page) => {
-          const isActive = pathname === page.href || (page.href !== '/admin' && pathname.startsWith(`${page.href}/`));
+          const isActive =
+            pathname === page.href ||
+            (page.href !== '/admin' && pathname.startsWith(`${page.href}/`));
 
           return (
             <Link

@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 test('auth contract exposes the core shared auth interfaces', () => {
-  const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
+  const source = readFileSync(
+    new URL('../src/index.ts', import.meta.url),
+    'utf8',
+  );
 
   assert.match(source, /export type AuthUser = \{/);
   assert.match(source, /export type AuthSession = \{/);
@@ -14,9 +17,15 @@ test('auth contract exposes the core shared auth interfaces', () => {
 });
 
 test('auth contract includes helper functions for session state decisions', () => {
-  const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
+  const source = readFileSync(
+    new URL('../src/index.ts', import.meta.url),
+    'utf8',
+  );
 
   assert.match(source, /export function isSessionActive/);
   assert.match(source, /export function createAuthState/);
-  assert.match(source, /status: isSessionActive\(session\) \? 'authenticated' : 'unauthenticated'/);
+  assert.match(
+    source,
+    /status: isSessionActive\(session\) \? 'authenticated' : 'unauthenticated'/,
+  );
 });

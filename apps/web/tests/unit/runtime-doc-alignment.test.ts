@@ -14,10 +14,16 @@ const docs = [
 
 describe('runtime and docs alignment', () => {
   it('keeps canonical docs aligned on Next.js App Router and out of TanStack-era wording', () => {
-    const contents = docs.map((filePath) => readFileSync(path.join(process.cwd(), filePath), 'utf8'));
+    const contents = docs.map((filePath) =>
+      readFileSync(path.join(process.cwd(), filePath), 'utf8'),
+    );
 
     expect(contents.every((content) => content.includes('Next.js'))).toBe(true);
-    expect(contents.some((content) => content.includes('TanStack Start'))).toBe(false);
-    expect(contents.some((content) => content.includes('src/routes/**'))).toBe(false);
+    expect(contents.some((content) => content.includes('TanStack Start'))).toBe(
+      false,
+    );
+    expect(contents.some((content) => content.includes('src/routes/**'))).toBe(
+      false,
+    );
   });
 });

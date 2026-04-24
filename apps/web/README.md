@@ -77,10 +77,11 @@ Workspace package commands are also available directly:
 
 ```bash
 bun run packages:lint
-bun run packages:typecheck
-bun run packages:test
-bun run packages:build
+bun run packages:check-types
+bun run packages:test:unit
 ```
+
+These `apps/web/packages/*` workspaces are internal web modules. They stay source-first and are validated as part of the app, but they are not treated as separately publishable packages.
 
 ## GitHub Pages build with Unlighthouse
 

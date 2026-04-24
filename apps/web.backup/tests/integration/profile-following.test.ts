@@ -19,7 +19,9 @@ import {
   type ProfileUseCaseDeps,
 } from '@/src/domain/profile/use-cases';
 
-function createDeps(overrides: Partial<ProfileUseCaseDeps> = {}): ProfileUseCaseDeps {
+function createDeps(
+  overrides: Partial<ProfileUseCaseDeps> = {},
+): ProfileUseCaseDeps {
   return {
     findUserById: vi.fn(),
     findUserByTag: vi.fn(),
@@ -130,16 +132,27 @@ describe('profile follow use cases', () => {
         blocked: true,
       },
     });
-    expect(deps.createBlockRelationship).toHaveBeenCalledWith('user_1', 'user_2');
-    expect(deps.deleteFollowRelationshipsBetweenUsers).toHaveBeenCalledWith('user_1', 'user_2');
+    expect(deps.createBlockRelationship).toHaveBeenCalledWith(
+      'user_1',
+      'user_2',
+    );
+    expect(deps.deleteFollowRelationshipsBetweenUsers).toHaveBeenCalledWith(
+      'user_1',
+      'user_2',
+    );
 
-    await expect(unblockUserUseCase('user_1', 'user_2', deps)).resolves.toEqual({
-      ok: true,
-      data: {
-        blocked: false,
+    await expect(unblockUserUseCase('user_1', 'user_2', deps)).resolves.toEqual(
+      {
+        ok: true,
+        data: {
+          blocked: false,
+        },
       },
-    });
-    expect(deps.deleteBlockRelationship).toHaveBeenCalledWith('user_1', 'user_2');
+    );
+    expect(deps.deleteBlockRelationship).toHaveBeenCalledWith(
+      'user_1',
+      'user_2',
+    );
   });
 
   it('creates and removes follow relationships idempotently', async () => {
@@ -161,15 +174,23 @@ describe('profile follow use cases', () => {
         following: true,
       },
     });
-    expect(deps.createFollowRelationship).toHaveBeenCalledWith('user_1', 'user_2');
+    expect(deps.createFollowRelationship).toHaveBeenCalledWith(
+      'user_1',
+      'user_2',
+    );
 
-    await expect(unfollowUserUseCase('user_1', 'user_2', deps)).resolves.toEqual({
+    await expect(
+      unfollowUserUseCase('user_1', 'user_2', deps),
+    ).resolves.toEqual({
       ok: true,
       data: {
         following: false,
       },
     });
-    expect(deps.deleteFollowRelationship).toHaveBeenCalledWith('user_1', 'user_2');
+    expect(deps.deleteFollowRelationship).toHaveBeenCalledWith(
+      'user_1',
+      'user_2',
+    );
   });
 
   it('rejects follow attempts when the actor has already blocked the target', async () => {
@@ -216,7 +237,9 @@ describe('profile follow use cases', () => {
       }),
     });
 
-    await expect(getProfileViewUseCase('user_2', 'user_1', deps)).resolves.toEqual({
+    await expect(
+      getProfileViewUseCase('user_2', 'user_1', deps),
+    ).resolves.toEqual({
       ok: false,
       error: {
         code: 'FORBIDDEN',
@@ -391,35 +414,49 @@ describe('profile follow use cases', () => {
       }),
     });
 
-    await expect(getProfileSearchVisibilityUseCase('user_1', deps)).resolves.toEqual({
+    await expect(
+      getProfileSearchVisibilityUseCase('user_1', deps),
+    ).resolves.toEqual({
       ok: true,
       data: {
         isSearchable: false,
       },
     });
 
-    await expect(updateProfileSearchVisibilityUseCase('user_1', true, deps)).resolves.toEqual({
+    await expect(
+      updateProfileSearchVisibilityUseCase('user_1', true, deps),
+    ).resolves.toEqual({
       ok: true,
       data: {
         isSearchable: true,
       },
     });
-    expect(deps.updateUserSearchVisibility).toHaveBeenCalledWith('user_1', true);
+    expect(deps.updateUserSearchVisibility).toHaveBeenCalledWith(
+      'user_1',
+      true,
+    );
 
-    await expect(getProfileFollowerVisibilityUseCase('user_1', deps)).resolves.toEqual({
+    await expect(
+      getProfileFollowerVisibilityUseCase('user_1', deps),
+    ).resolves.toEqual({
       ok: true,
       data: {
         followerVisibility: 'MEMBERS',
       },
     });
 
-    await expect(updateProfileFollowerVisibilityUseCase('user_1', 'PRIVATE', deps)).resolves.toEqual({
+    await expect(
+      updateProfileFollowerVisibilityUseCase('user_1', 'PRIVATE', deps),
+    ).resolves.toEqual({
       ok: true,
       data: {
         followerVisibility: 'PRIVATE',
       },
     });
-    expect(deps.updateUserFollowerVisibility).toHaveBeenCalledWith('user_1', 'PRIVATE');
+    expect(deps.updateUserFollowerVisibility).toHaveBeenCalledWith(
+      'user_1',
+      'PRIVATE',
+    );
   });
 
   it('filters followers by their visibility role', async () => {
@@ -464,7 +501,9 @@ describe('profile follow use cases', () => {
       ]),
     });
 
-    await expect(listProfileFollowersByTagUseCase('owner', null, deps)).resolves.toEqual({
+    await expect(
+      listProfileFollowersByTagUseCase('owner', null, deps),
+    ).resolves.toEqual({
       ok: true,
       data: {
         profile: {
@@ -487,7 +526,9 @@ describe('profile follow use cases', () => {
       },
     });
 
-    await expect(listProfileFollowersByTagUseCase('owner', 'user_9', deps)).resolves.toEqual({
+    await expect(
+      listProfileFollowersByTagUseCase('owner', 'user_9', deps),
+    ).resolves.toEqual({
       ok: true,
       data: {
         profile: {
@@ -517,7 +558,9 @@ describe('profile follow use cases', () => {
       },
     });
 
-    await expect(listProfileFollowersByTagUseCase('owner', 'user_1', deps)).resolves.toEqual({
+    await expect(
+      listProfileFollowersByTagUseCase('owner', 'user_1', deps),
+    ).resolves.toEqual({
       ok: true,
       data: {
         profile: {
@@ -569,7 +612,9 @@ describe('profile follow use cases', () => {
       countFollowers: vi.fn().mockResolvedValue(2),
     });
 
-    await expect(getProfileViewByTagUseCase('person', null, deps)).resolves.toEqual({
+    await expect(
+      getProfileViewByTagUseCase('person', null, deps),
+    ).resolves.toEqual({
       ok: true,
       data: {
         userId: 'user_2',
@@ -598,7 +643,9 @@ describe('profile follow use cases', () => {
       findUserByTagExcludingId: vi.fn().mockResolvedValue(undefined),
     });
 
-    await expect(updateProfileTagUseCase('user_1', '@new-handle', deps)).resolves.toEqual({
+    await expect(
+      updateProfileTagUseCase('user_1', '@new-handle', deps),
+    ).resolves.toEqual({
       ok: true,
       data: {
         tag: 'new-handle',
@@ -629,7 +676,9 @@ describe('profile follow use cases', () => {
       }),
     });
 
-    await expect(updateProfileTagUseCase('user_1', 'new-handle', deps)).resolves.toEqual({
+    await expect(
+      updateProfileTagUseCase('user_1', 'new-handle', deps),
+    ).resolves.toEqual({
       ok: false,
       error: {
         code: 'CONFLICT',

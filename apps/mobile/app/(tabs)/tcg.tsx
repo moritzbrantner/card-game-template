@@ -1,16 +1,16 @@
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { Colors } from "@/constants/theme";
-import { useThemeColor } from "@/hooks/use-theme-color";
-import { defaultGameCatalog } from "@repo/game-catalog";
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { Colors } from '@/constants/theme';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { defaultGameCatalog } from '@repo/game-catalog';
 import {
   createLocalGameSession,
   type LocalGameSession,
-} from "@repo/game-session";
+} from '@repo/game-session';
 import {
   countTcgDeckCards,
   createDefaultTcgCollection,
@@ -31,7 +31,7 @@ import {
   type TcgMove,
   type TcgPlayerView,
   type TcgState,
-} from "@repo/game-tcg";
+} from '@repo/game-tcg';
 
 function createSession(
   presetId: TcgExamplePresetId,
@@ -57,11 +57,11 @@ function createSession(
 }
 
 export default function TcgScreen() {
-  const borderColor = useThemeColor({}, "border");
-  const mutedTextColor = useThemeColor({}, "mutedText");
-  const accentSurface = useThemeColor({}, "accentSurface");
-  const tintColor = useThemeColor({}, "tint");
-  const catalogEntry = defaultGameCatalog.get("arcane-duel");
+  const borderColor = useThemeColor({}, 'border');
+  const mutedTextColor = useThemeColor({}, 'mutedText');
+  const accentSurface = useThemeColor({}, 'accentSurface');
+  const tintColor = useThemeColor({}, 'tint');
+  const catalogEntry = defaultGameCatalog.get('arcane-duel');
   const [collection] = useState<TcgCollection>(() =>
     createDefaultTcgCollection(),
   );
@@ -71,17 +71,15 @@ export default function TcgScreen() {
   const [activeDeckList, setActiveDeckList] = useState<TcgDeckList>(() =>
     createStarterTcgDeckList(),
   );
-  const [presetId, setPresetId] = useState<TcgExamplePresetId>("duel");
+  const [presetId, setPresetId] = useState<TcgExamplePresetId>('duel');
   const sessionRef = useRef<LocalGameSession<
     TcgState,
     TcgMove,
     TcgPlayerView
   > | null>(null);
-  const [snapshot, setSnapshot] = useState(() => {
-    const session = createSession("duel", activeDeckList);
-    sessionRef.current = session;
-    return session.getSnapshot();
-  });
+  const [snapshot, setSnapshot] = useState(() =>
+    createSession('duel', activeDeckList).getSnapshot(),
+  );
   const deckValidation = useMemo(
     () => validateTcgDeck(deckList, collection),
     [collection, deckList],
@@ -154,7 +152,7 @@ export default function TcgScreen() {
 
   return (
     <ThemedView style={styles.page}>
-      <SafeAreaView edges={["top"]} style={styles.safeArea}>
+      <SafeAreaView edges={['top']} style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
           <ThemedView
             style={[styles.hero, { borderColor }]}
@@ -192,7 +190,7 @@ export default function TcgScreen() {
               darkColor={Colors.dark.surface}
             >
               <ThemedText type="defaultSemiBold">
-                Deck {deckValidation.deckSize}/{TCG_DECK_SIZE} ·{" "}
+                Deck {deckValidation.deckSize}/{TCG_DECK_SIZE} ·{' '}
                 {deckSummary.length} unique · Max {TCG_MAX_COPIES_PER_CARD}
               </ThemedText>
               <ThemedText
@@ -201,8 +199,8 @@ export default function TcgScreen() {
                 }}
               >
                 {deckValidation.valid
-                  ? "Ready to duel."
-                  : deckValidation.errors.slice(0, 2).join(" ")}
+                  ? 'Ready to duel.'
+                  : deckValidation.errors.slice(0, 2).join(' ')}
               </ThemedText>
               <ThemedView style={styles.buttonRow}>
                 <Pressable
@@ -260,8 +258,8 @@ export default function TcgScreen() {
                           {card.label}
                         </ThemedText>
                         <ThemedText style={{ color: mutedTextColor }}>
-                          Cost {card.cost} ·{" "}
-                          {card.kind === "creature"
+                          Cost {card.cost} ·{' '}
+                          {card.kind === 'creature'
                             ? `${card.attack}/${card.health}`
                             : card.effect}
                         </ThemedText>
@@ -297,7 +295,7 @@ export default function TcgScreen() {
                               borderColor,
                               backgroundColor: canAdd
                                 ? accentSurface
-                                : "transparent",
+                                : 'transparent',
                               opacity: !canAdd ? 0.34 : pressed ? 0.72 : 1,
                             },
                           ]}
@@ -324,8 +322,8 @@ export default function TcgScreen() {
                         {count}x {card.label}
                       </ThemedText>
                       <ThemedText style={{ color: mutedTextColor }}>
-                        Cost {card.cost} ·{" "}
-                        {card.kind === "creature"
+                        Cost {card.cost} ·{' '}
+                        {card.kind === 'creature'
                           ? `${card.attack}/${card.health}`
                           : card.effect}
                       </ThemedText>
@@ -361,7 +359,7 @@ export default function TcgScreen() {
                     {
                       borderColor,
                       backgroundColor:
-                        preset.id === presetId ? accentSurface : "transparent",
+                        preset.id === presetId ? accentSurface : 'transparent',
                       opacity: pressed ? 0.82 : 1,
                     },
                   ]}
@@ -455,8 +453,8 @@ export default function TcgScreen() {
                 </ThemedView>
                 {player.visibleHand.length > 0 ? (
                   <ThemedText style={{ color: mutedTextColor }}>
-                    Hand:{" "}
-                    {player.visibleHand.map((card) => card.label).join(", ")}
+                    Hand:{' '}
+                    {player.visibleHand.map((card) => card.label).join(', ')}
                   </ThemedText>
                 ) : null}
               </ThemedView>
@@ -521,8 +519,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   buttonRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
   },
   choiceButton: {
@@ -532,14 +530,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   primaryButton: {
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     borderRadius: 999,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   primaryButtonText: {
-    color: "#ffffff",
-    fontWeight: "600",
+    color: '#ffffff',
+    fontWeight: '600',
   },
   card: {
     gap: 10,
@@ -548,8 +546,8 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   handRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   handCard: {
@@ -565,21 +563,21 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardRow: {
-    alignItems: "center",
+    alignItems: 'center',
     borderRadius: 12,
     borderWidth: 1,
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 10,
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
     padding: 12,
   },
   deckRow: {
-    alignItems: "center",
+    alignItems: 'center',
     borderRadius: 12,
     borderWidth: 1,
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 10,
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
     padding: 12,
   },
   cardDetails: {
@@ -588,15 +586,15 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   stepper: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 8,
   },
   iconButton: {
-    alignItems: "center",
+    alignItems: 'center',
     aspectRatio: 1,
     borderRadius: 8,
     borderWidth: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
     width: 36,
   },
 });

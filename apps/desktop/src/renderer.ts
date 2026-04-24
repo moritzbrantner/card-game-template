@@ -2,7 +2,10 @@ import './index.css';
 
 import { createSharedButtonLabel } from '@moritzbrantner/ui';
 import { defaultGameCatalog } from '@repo/game-catalog';
-import { createLocalGameSession, type LocalGameSession } from '@repo/game-session';
+import {
+  createLocalGameSession,
+  type LocalGameSession,
+} from '@repo/game-session';
 import {
   createPokerAdapter,
   createPokerBots,
@@ -71,21 +74,31 @@ const unoRuntime = {
   presetId: 'mixed-table' as UnoExamplePresetId,
   rules: defaultUnoRules,
   session: null as LocalGameSession<UnoState, UnoMove, UnoPlayerView> | null,
-  snapshot: null as ReturnType<LocalGameSession<UnoState, UnoMove, UnoPlayerView>['getSnapshot']> | null,
+  snapshot: null as ReturnType<
+    LocalGameSession<UnoState, UnoMove, UnoPlayerView>['getSnapshot']
+  > | null,
   unsubscribe: null as (() => void) | null,
 };
 
 const pokerRuntime = {
   presetId: 'heads-up' as PokerExamplePresetId,
-  session: null as LocalGameSession<PokerState, PokerMove, PokerPlayerView> | null,
-  snapshot: null as ReturnType<LocalGameSession<PokerState, PokerMove, PokerPlayerView>['getSnapshot']> | null,
+  session: null as LocalGameSession<
+    PokerState,
+    PokerMove,
+    PokerPlayerView
+  > | null,
+  snapshot: null as ReturnType<
+    LocalGameSession<PokerState, PokerMove, PokerPlayerView>['getSnapshot']
+  > | null,
   unsubscribe: null as (() => void) | null,
 };
 
 const tcgRuntime = {
   presetId: 'duel' as TcgExamplePresetId,
   session: null as LocalGameSession<TcgState, TcgMove, TcgPlayerView> | null,
-  snapshot: null as ReturnType<LocalGameSession<TcgState, TcgMove, TcgPlayerView>['getSnapshot']> | null,
+  snapshot: null as ReturnType<
+    LocalGameSession<TcgState, TcgMove, TcgPlayerView>['getSnapshot']
+  > | null,
   unsubscribe: null as (() => void) | null,
 };
 
@@ -191,7 +204,10 @@ function ensureTcgSession() {
 }
 
 function applyTheme(preferences: DesktopPreferences) {
-  const theme = resolveThemePreference(preferences.appearance.theme, systemThemeQuery.matches);
+  const theme = resolveThemePreference(
+    preferences.appearance.theme,
+    systemThemeQuery.matches,
+  );
   document.documentElement.dataset.theme = theme;
 }
 
@@ -235,7 +251,11 @@ function getCurrentRoute(): AppRoute {
   return 'home';
 }
 
-function createScreenFrame(eyebrowText: string, titleText: string, descriptionText: string) {
+function createScreenFrame(
+  eyebrowText: string,
+  titleText: string,
+  descriptionText: string,
+) {
   const screen = document.createElement('section');
   screen.className = 'screen';
 
@@ -276,7 +296,9 @@ function createSessionActionsCard<TMove>(
   actionsCard.className = 'overview-card';
 
   const actionsTitle = document.createElement('h2');
-  actionsTitle.textContent = snapshot.pendingHotseatPlayerId ? 'Hotseat handoff' : 'Legal actions';
+  actionsTitle.textContent = snapshot.pendingHotseatPlayerId
+    ? 'Hotseat handoff'
+    : 'Legal actions';
   actionsCard.append(actionsTitle);
 
   if (snapshot.pendingHotseatPlayerId) {
@@ -342,9 +364,15 @@ function createHomeScreen() {
 
   const sharedPackageLabel = document.createElement('code');
   sharedPackageLabel.className = 'shared-package-label';
-  sharedPackageLabel.textContent = createSharedButtonLabel({ label: 'desktop-launch' });
+  sharedPackageLabel.textContent = createSharedButtonLabel({
+    label: 'desktop-launch',
+  });
 
-  sharedPackageCard.append(sharedPackageTitle, sharedPackageBody, sharedPackageLabel);
+  sharedPackageCard.append(
+    sharedPackageTitle,
+    sharedPackageBody,
+    sharedPackageLabel,
+  );
 
   const featuresCard = document.createElement('article');
   featuresCard.className = 'overview-card';
@@ -406,7 +434,8 @@ function createUnoScreen() {
 
   const presetCard = document.createElement('article');
   presetCard.className = 'overview-card';
-  presetCard.innerHTML = '<h2>Match presets</h2><p>Swap between hotseat and bot-heavy local sessions without changing the shared rules package.</p>';
+  presetCard.innerHTML =
+    '<h2>Match presets</h2><p>Swap between hotseat and bot-heavy local sessions without changing the shared rules package.</p>';
 
   const presetRow = document.createElement('div');
   presetRow.className = 'settings-toggle-group';
@@ -414,7 +443,10 @@ function createUnoScreen() {
   for (const preset of unoExamplePresets) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = preset.id === unoRuntime.presetId ? 'settings-chip is-active' : 'settings-chip';
+    button.className =
+      preset.id === unoRuntime.presetId
+        ? 'settings-chip is-active'
+        : 'settings-chip';
     button.textContent = preset.label;
     button.addEventListener('click', () => {
       unoRuntime.presetId = preset.id;
@@ -428,20 +460,25 @@ function createUnoScreen() {
 
   const rulesCard = document.createElement('article');
   rulesCard.className = 'overview-card';
-  rulesCard.innerHTML = '<h2>House rule toggles</h2><p>Enable draw stacking, jump-in, 7-0, or an explicit UNO call without changing app-specific code.</p>';
+  rulesCard.innerHTML =
+    '<h2>House rule toggles</h2><p>Enable draw stacking, jump-in, 7-0, or an explicit UNO call without changing app-specific code.</p>';
 
   const rulesRow = document.createElement('div');
   rulesRow.className = 'settings-toggle-group';
 
-  ([
-    ['drawStacking', 'Draw stacking'],
-    ['jumpIn', 'Jump-in'],
-    ['sevenZero', '7-0 swap'],
-    ['requireUnoCall', 'Require UNO call'],
-  ] as const).forEach(([ruleKey, label]) => {
+  (
+    [
+      ['drawStacking', 'Draw stacking'],
+      ['jumpIn', 'Jump-in'],
+      ['sevenZero', '7-0 swap'],
+      ['requireUnoCall', 'Require UNO call'],
+    ] as const
+  ).forEach(([ruleKey, label]) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = unoRuntime.rules[ruleKey] ? 'settings-chip is-active' : 'settings-chip';
+    button.className = unoRuntime.rules[ruleKey]
+      ? 'settings-chip is-active'
+      : 'settings-chip';
     button.textContent = label;
     button.addEventListener('click', () => {
       unoRuntime.rules = {
@@ -487,7 +524,9 @@ function createUnoScreen() {
 
   snapshot.view.players.forEach((player) => {
     const card = document.createElement('article');
-    card.className = player.isActive ? 'overview-card uno-seat-card is-active' : 'overview-card uno-seat-card';
+    card.className = player.isActive
+      ? 'overview-card uno-seat-card is-active'
+      : 'overview-card uno-seat-card';
 
     const title = document.createElement('h2');
     title.textContent = `${player.displayName} (${player.controller})`;
@@ -521,7 +560,9 @@ function createUnoScreen() {
   actionsCard.className = 'overview-card';
 
   const actionsTitle = document.createElement('h2');
-  actionsTitle.textContent = snapshot.view.pendingHotseatPlayerId ? 'Hotseat handoff' : 'Legal actions';
+  actionsTitle.textContent = snapshot.view.pendingHotseatPlayerId
+    ? 'Hotseat handoff'
+    : 'Legal actions';
   actionsCard.append(actionsTitle);
 
   if (snapshot.view.pendingHotseatPlayerId) {
@@ -596,7 +637,8 @@ function createPokerScreen() {
 
   const presetCard = document.createElement('article');
   presetCard.className = 'overview-card';
-  presetCard.innerHTML = '<h2>Table presets</h2><p>Switch between heads-up human play and a four-seat table with bots.</p>';
+  presetCard.innerHTML =
+    '<h2>Table presets</h2><p>Switch between heads-up human play and a four-seat table with bots.</p>';
 
   const presetRow = document.createElement('div');
   presetRow.className = 'settings-toggle-group';
@@ -604,7 +646,10 @@ function createPokerScreen() {
   for (const preset of pokerExamplePresets) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = preset.id === pokerRuntime.presetId ? 'settings-chip is-active' : 'settings-chip';
+    button.className =
+      preset.id === pokerRuntime.presetId
+        ? 'settings-chip is-active'
+        : 'settings-chip';
     button.textContent = preset.label;
     button.addEventListener('click', () => {
       pokerRuntime.presetId = preset.id;
@@ -623,7 +668,11 @@ function createPokerScreen() {
   [
     ['Phase', snapshot.view.phase],
     ['Pot', `${snapshot.view.pot}`],
-    ['Board', snapshot.view.communityCards.map((card) => card.label).join(', ') || 'No board cards'],
+    [
+      'Board',
+      snapshot.view.communityCards.map((card) => card.label).join(', ') ||
+        'No board cards',
+    ],
     ['Event', snapshot.view.status],
   ].forEach(([label, value]) => {
     const card = document.createElement('article');
@@ -646,7 +695,9 @@ function createPokerScreen() {
 
   snapshot.view.players.forEach((player) => {
     const card = document.createElement('article');
-    card.className = player.isActive ? 'overview-card uno-seat-card is-active' : 'overview-card uno-seat-card';
+    card.className = player.isActive
+      ? 'overview-card uno-seat-card is-active'
+      : 'overview-card uno-seat-card';
 
     const title = document.createElement('h2');
     title.textContent = `${player.displayName} (${player.controller})`;
@@ -711,7 +762,8 @@ function createTcgScreen() {
 
   const presetCard = document.createElement('article');
   presetCard.className = 'overview-card';
-  presetCard.innerHTML = '<h2>Duel presets</h2><p>Run a hotseat duel or practice against the deterministic bot player.</p>';
+  presetCard.innerHTML =
+    '<h2>Duel presets</h2><p>Run a hotseat duel or practice against the deterministic bot player.</p>';
 
   const presetRow = document.createElement('div');
   presetRow.className = 'settings-toggle-group';
@@ -719,7 +771,10 @@ function createTcgScreen() {
   for (const preset of tcgExamplePresets) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = preset.id === tcgRuntime.presetId ? 'settings-chip is-active' : 'settings-chip';
+    button.className =
+      preset.id === tcgRuntime.presetId
+        ? 'settings-chip is-active'
+        : 'settings-chip';
     button.textContent = preset.label;
     button.addEventListener('click', () => {
       tcgRuntime.presetId = preset.id;
@@ -742,7 +797,9 @@ function createTcgScreen() {
 
   snapshot.view.players.forEach((player) => {
     const card = document.createElement('article');
-    card.className = player.isActive ? 'overview-card uno-seat-card is-active' : 'overview-card uno-seat-card';
+    card.className = player.isActive
+      ? 'overview-card uno-seat-card is-active'
+      : 'overview-card uno-seat-card';
 
     const title = document.createElement('h2');
     title.textContent = `${player.displayName} (${player.controller})`;
@@ -767,9 +824,10 @@ function createTcgScreen() {
     }
 
     const hand = document.createElement('p');
-    hand.textContent = player.visibleHand.length > 0
-      ? `Hand: ${player.visibleHand.map((visibleCard) => visibleCard.label).join(', ')}`
-      : 'Hand hidden.';
+    hand.textContent =
+      player.visibleHand.length > 0
+        ? `Hand: ${player.visibleHand.map((visibleCard) => visibleCard.label).join(', ')}`
+        : 'Hand hidden.';
 
     card.append(title, summary, battlefield, hand);
     seatsGrid.append(card);
@@ -804,7 +862,9 @@ function createSettingsScreen() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className =
-      appState.preferences.appearance.theme === themeMode ? 'settings-chip is-active' : 'settings-chip';
+      appState.preferences.appearance.theme === themeMode
+        ? 'settings-chip is-active'
+        : 'settings-chip';
     button.textContent =
       themeMode === 'system'
         ? 'System theme'
@@ -832,7 +892,8 @@ function createSettingsScreen() {
 
   const developerCheckbox = document.createElement('input');
   developerCheckbox.type = 'checkbox';
-  developerCheckbox.checked = appState.preferences.developer.openDevToolsOnLaunch;
+  developerCheckbox.checked =
+    appState.preferences.developer.openDevToolsOnLaunch;
   developerCheckbox.addEventListener('change', () => {
     void window.desktop.preferences.set('developer', {
       openDevToolsOnLaunch: developerCheckbox.checked,
@@ -905,8 +966,12 @@ function createDocumentsScreen() {
   summary.className = 'document-summary';
 
   const statusBadge = document.createElement('span');
-  statusBadge.className = appState.documents.isDirty ? 'status-badge status-badge--warn' : 'status-badge';
-  statusBadge.textContent = appState.documents.isDirty ? 'Unsaved changes' : 'Saved';
+  statusBadge.className = appState.documents.isDirty
+    ? 'status-badge status-badge--warn'
+    : 'status-badge';
+  statusBadge.textContent = appState.documents.isDirty
+    ? 'Unsaved changes'
+    : 'Saved';
 
   const meta = document.createElement('div');
   meta.className = 'document-meta';
@@ -1020,10 +1085,22 @@ function createReactHookFormScreen() {
   grid.className = 'overview-grid';
 
   [
-    ['useForm', 'Creates the form API, default values, and formState for the rest of the tree.'],
-    ['register', 'Connects uncontrolled inputs and attaches validation rules at the field edge.'],
-    ['Controller', 'Bridges controlled components into the same dirty and validity model.'],
-    ['reset', 'Restores defaults, clears errors, and can establish a new clean baseline.'],
+    [
+      'useForm',
+      'Creates the form API, default values, and formState for the rest of the tree.',
+    ],
+    [
+      'register',
+      'Connects uncontrolled inputs and attaches validation rules at the field edge.',
+    ],
+    [
+      'Controller',
+      'Bridges controlled components into the same dirty and validity model.',
+    ],
+    [
+      'reset',
+      'Restores defaults, clears errors, and can establish a new clean baseline.',
+    ],
   ].forEach(([titleText, bodyText]) => {
     const card = document.createElement('article');
     card.className = 'overview-card';
@@ -1108,7 +1185,13 @@ function renderApp() {
   app.append(createNavbar(route));
 
   if (!appState.ready) {
-    app.append(createScreenFrame('Loading', 'Loading desktop services', 'Connecting to the preload bridge.'));
+    app.append(
+      createScreenFrame(
+        'Loading',
+        'Loading desktop services',
+        'Connecting to the preload bridge.',
+      ),
+    );
     return;
   }
 

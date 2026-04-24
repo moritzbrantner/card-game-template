@@ -4,4 +4,7 @@ export {
   unblockUserUseCase,
 } from './shared';
 
-export type { ProfileBlockMutationPayload, ProfileDirectoryEntry } from './shared';
+export type {
+  ProfileBlockMutationPayload,
+  ProfileDirectoryEntry,
+} from './shared';

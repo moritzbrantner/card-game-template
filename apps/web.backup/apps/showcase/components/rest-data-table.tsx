@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 type RowData = Record<string, string | number | boolean | null>;
 
@@ -42,9 +49,14 @@ function formatValue(value: RowData[keyof RowData], valueType: ValueType) {
   return String(value);
 }
 
-export function RestDataTable<T extends RowData>({ endpoint, columns }: RestDataTableProps<T>) {
+export function RestDataTable<T extends RowData>({
+  endpoint,
+  columns,
+}: RestDataTableProps<T>) {
   const [rows, setRows] = useState<T[]>([]);
-  const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading');
+  const [status, setStatus] = useState<'loading' | 'error' | 'ready'>(
+    'loading',
+  );
   const [sortConfig, setSortConfig] = useState<SortConfig<T> | null>(null);
   const [filters, setFilters] = useState<Partial<Record<keyof T, string>>>({});
 
@@ -75,7 +87,6 @@ export function RestDataTable<T extends RowData>({ endpoint, columns }: RestData
     return () => controller.abort();
   }, [endpoint]);
 
-
   function compareValues(
     left: RowData[keyof RowData],
     right: RowData[keyof RowData],
@@ -105,10 +116,17 @@ export function RestDataTable<T extends RowData>({ endpoint, columns }: RestData
     }
 
     if (valueType === 'date') {
-      return (new Date(String(left)).getTime() - new Date(String(right)).getTime()) * order;
+      return (
+        (new Date(String(left)).getTime() - new Date(String(right)).getTime()) *
+        order
+      );
     }
 
-    return String(left).localeCompare(String(right), undefined, { sensitivity: 'base' }) * order;
+    return (
+      String(left).localeCompare(String(right), undefined, {
+        sensitivity: 'base',
+      }) * order
+    );
   }
 
   const visibleRows = useMemo(() => {
@@ -130,7 +148,9 @@ export function RestDataTable<T extends RowData>({ endpoint, columns }: RestData
           return String(rowValue) === filterValue;
         }
 
-        return String(rowValue).toLowerCase().includes(filterValue.toLowerCase());
+        return String(rowValue)
+          .toLowerCase()
+          .includes(filterValue.toLowerCase());
       }),
     );
 
@@ -138,10 +158,17 @@ export function RestDataTable<T extends RowData>({ endpoint, columns }: RestData
       return filteredRows;
     }
 
-    const valueType = columns.find((column) => column.key === sortConfig.key)?.valueType ?? 'text';
+    const valueType =
+      columns.find((column) => column.key === sortConfig.key)?.valueType ??
+      'text';
 
     return [...filteredRows].sort((leftRow, rightRow) =>
-      compareValues(leftRow[sortConfig.key], rightRow[sortConfig.key], valueType, sortConfig.direction),
+      compareValues(
+        leftRow[sortConfig.key],
+        rightRow[sortConfig.key],
+        valueType,
+        sortConfig.direction,
+      ),
     );
   }, [columns, filters, rows, sortConfig]);
 
@@ -167,11 +194,19 @@ export function RestDataTable<T extends RowData>({ endpoint, columns }: RestData
   }
 
   if (status === 'loading') {
-    return <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading endpoint data...</p>;
+    return (
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        Loading endpoint data...
+      </p>
+    );
   }
 
   if (status === 'error') {
-    return <p className="text-sm text-red-600 dark:text-red-400">Unable to load endpoint data.</p>;
+    return (
+      <p className="text-sm text-red-600 dark:text-red-400">
+        Unable to load endpoint data.
+      </p>
+    );
   }
 
   return (
@@ -186,8 +221,15 @@ export function RestDataTable<T extends RowData>({ endpoint, columns }: RestData
                 type="button"
               >
                 {column.header}
-                <span aria-hidden="true" className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {sortConfig?.key === column.key ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
+                <span
+                  aria-hidden="true"
+                  className="text-xs text-zinc-500 dark:text-zinc-400"
+                >
+                  {sortConfig?.key === column.key
+                    ? sortConfig.direction === 'asc'
+                      ? '▲'
+                      : '▼'
+                    : '↕'}
                 </span>
               </button>
             </TableHead>
@@ -200,7 +242,9 @@ export function RestDataTable<T extends RowData>({ endpoint, columns }: RestData
                 <select
                   aria-label={`Filter ${column.header}`}
                   className="w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
-                  onChange={(event) => updateFilter(column.key, event.target.value)}
+                  onChange={(event) =>
+                    updateFilter(column.key, event.target.value)
+                  }
                   value={filters[column.key] ?? ''}
                 >
                   <option value="">All</option>
@@ -211,7 +255,9 @@ export function RestDataTable<T extends RowData>({ endpoint, columns }: RestData
                 <input
                   aria-label={`Filter ${column.header}`}
                   className="w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
-                  onChange={(event) => updateFilter(column.key, event.target.value)}
+                  onChange={(event) =>
+                    updateFilter(column.key, event.target.value)
+                  }
                   placeholder="Filter..."
                   type="text"
                   value={filters[column.key] ?? ''}

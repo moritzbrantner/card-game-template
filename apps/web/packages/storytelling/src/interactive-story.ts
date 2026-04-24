@@ -6,11 +6,11 @@ import type {
   StoryHistoryEntry,
   StoryNodeData,
   StoryTimeline,
-} from "./story-types";
+} from './story-types';
 
-const DEFAULT_CONTINUE_LABEL = "Continue";
+const DEFAULT_CONTINUE_LABEL = 'Continue';
 const DEFAULT_REMOTION_DURATION_IN_FRAMES = 120;
-const isDevelopment = process.env.NODE_ENV !== "production";
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 function invariant(condition: boolean, message: string) {
   if (!condition) {
@@ -35,7 +35,7 @@ export function createInteractiveStory<TData extends StoryNodeData>(
   const nodeIds = new Set<string>();
 
   for (const node of story.nodes) {
-    invariant(node.id.length > 0, "Story nodes must have a non-empty id.");
+    invariant(node.id.length > 0, 'Story nodes must have a non-empty id.');
     invariant(
       !nodeIds.has(node.id),
       `Story node ids must be unique. Duplicate id "${node.id}" found.`,
@@ -154,7 +154,11 @@ export function resolveStoryPath<TData extends StoryNodeData>(
       ? choices.find((choice) => choice.id === choiceIds[choiceIndex])
       : undefined;
 
-    if (!selectedChoice && autoAdvanceLinearNodes && !currentNode.choices?.length) {
+    if (
+      !selectedChoice &&
+      autoAdvanceLinearNodes &&
+      !currentNode.choices?.length
+    ) {
       selectedChoice = choices[0];
     }
 

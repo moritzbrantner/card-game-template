@@ -5,4 +5,7 @@ export {
   updateProfileSearchVisibilityUseCase,
 } from './shared';
 
-export type { ProfileFollowerVisibilityPayload, ProfileSearchVisibilityPayload } from './shared';
+export type {
+  ProfileFollowerVisibilityPayload,
+  ProfileSearchVisibilityPayload,
+} from './shared';

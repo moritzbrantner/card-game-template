@@ -4,7 +4,9 @@ import { classifyNavigationPathname } from '@/src/analytics/navigation-classific
 
 describe('navigation classification', () => {
   it('strips locales and classifies explicit app routes', () => {
-    expect(classifyNavigationPathname('/de/admin/reports/navigationJourneys')).toEqual({
+    expect(
+      classifyNavigationPathname('/de/admin/reports/navigationJourneys'),
+    ).toEqual({
       canonicalPath: '/admin/reports/[reportId]',
       routeGroup: 'admin',
       displayLabel: 'Admin report',

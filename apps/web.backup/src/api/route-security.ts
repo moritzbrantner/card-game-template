@@ -45,7 +45,10 @@ type RouteSecuritySuccess = {
   session: AppSession | null;
   actorId: string | null;
   json: (body: unknown, options?: JsonResponseOptions) => Promise<Response>;
-  respond: (body: BodyInit | null | undefined, options?: ResponseOptions) => Promise<Response>;
+  respond: (
+    body: BodyInit | null | undefined,
+    options?: ResponseOptions,
+  ) => Promise<Response>;
 };
 
 type RouteSecurityFailure = {
@@ -65,7 +68,11 @@ function mergeHeaders(baseHeaders: HeadersInit, extraHeaders?: HeadersInit) {
   return headers;
 }
 
-function withRateLimitHeaders(rateLimit: Extract<RateLimitResult, { ok: true }> | Extract<RateLimitResult, { ok: false }>) {
+function withRateLimitHeaders(
+  rateLimit:
+    | Extract<RateLimitResult, { ok: true }>
+    | Extract<RateLimitResult, { ok: false }>,
+) {
   const headers = new Headers();
   headers.set('x-ratelimit-reset', String(rateLimit.resetAt));
 
@@ -91,7 +98,9 @@ function defaultOutcomeForStatus(status: number): AuditOutcome {
 }
 
 export function createRouteSecurity(deps: SecurityDependencies) {
-  return async function secureRoute(options: RouteSecurityOptions): Promise<RouteSecuritySuccess | RouteSecurityFailure> {
+  return async function secureRoute(
+    options: RouteSecurityOptions,
+  ): Promise<RouteSecuritySuccess | RouteSecurityFailure> {
     const session = await deps.getSession();
     const actorId = session?.user?.id ?? null;
     const rateLimitKey = `${options.action}:${deps.getRateLimitKey(options.request, actorId)}`;
@@ -161,7 +170,10 @@ export function createRouteSecurity(deps: SecurityDependencies) {
         };
       }
 
-      if (!session.user.role || !options.allowedRoles.includes(session.user.role)) {
+      if (
+        !session.user.role ||
+        !options.allowedRoles.includes(session.user.role)
+      ) {
         await deps.auditAction({
           actorId,
           action: options.action,
@@ -189,8 +201,12 @@ export function createRouteSecurity(deps: SecurityDependencies) {
       actorId,
       json: async (body, responseOptions = {}) => {
         const status = responseOptions.status ?? 200;
-        const outcome = responseOptions.outcome ?? defaultOutcomeForStatus(status);
-        const headers = mergeHeaders(withRateLimitHeaders(rateLimit), responseOptions.headers);
+        const outcome =
+          responseOptions.outcome ?? defaultOutcomeForStatus(status);
+        const headers = mergeHeaders(
+          withRateLimitHeaders(rateLimit),
+          responseOptions.headers,
+        );
 
         await deps.auditAction({
           actorId,
@@ -210,8 +226,12 @@ export function createRouteSecurity(deps: SecurityDependencies) {
       },
       respond: async (body, responseOptions = {}) => {
         const status = responseOptions.status ?? 200;
-        const outcome = responseOptions.outcome ?? defaultOutcomeForStatus(status);
-        const headers = mergeHeaders(withRateLimitHeaders(rateLimit), responseOptions.headers);
+        const outcome =
+          responseOptions.outcome ?? defaultOutcomeForStatus(status);
+        const headers = mergeHeaders(
+          withRateLimitHeaders(rateLimit),
+          responseOptions.headers,
+        );
 
         await deps.auditAction({
           actorId,

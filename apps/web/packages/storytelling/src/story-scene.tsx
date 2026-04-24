@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { motion, useReducedMotion, useTransform } from "motion/react";
+import { motion, useReducedMotion, useTransform } from 'motion/react';
 
-import { cn } from "@moritzbrantner/ui";
+import { cn } from '@moritzbrantner/ui';
 
-import { useStoryContext } from "./story-context";
-import type { StorySceneProps } from "./story-types";
+import { useStoryContext } from './story-context';
+import type { StorySceneProps } from './story-types';
 
-const isDevelopment = process.env.NODE_ENV !== "production";
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 function StorySceneComponent({
   id,
@@ -16,9 +16,31 @@ function StorySceneComponent({
   children,
   className,
 }: StorySceneProps) {
-  const { sceneMeta, sceneProgress, activeIndex } = useStoryContext("StoryScene");
+  const { sceneMeta, sceneProgress, activeIndex } =
+    useStoryContext('StoryScene');
   const reducedMotion = useReducedMotion();
   const index = sceneMeta.findIndex((scene) => scene.id === id);
+  const transformIndex = index === -1 ? 0 : index;
+
+  const isActive = activeIndex === index;
+  const opacity = useTransform(
+    sceneProgress,
+    [transformIndex - 0.45, transformIndex, transformIndex + 0.45],
+    [0, 1, 0],
+    { clamp: true },
+  );
+  const y = useTransform(
+    sceneProgress,
+    [transformIndex - 0.45, transformIndex, transformIndex + 0.45],
+    [24, 0, -24],
+    { clamp: true },
+  );
+  const scale = useTransform(
+    sceneProgress,
+    [transformIndex - 0.45, transformIndex, transformIndex + 0.45],
+    [0.985, 1, 0.985],
+    { clamp: true },
+  );
 
   if (index === -1) {
     if (isDevelopment) {
@@ -28,31 +50,11 @@ function StorySceneComponent({
     return null;
   }
 
-  const isActive = activeIndex === index;
-  const opacity = useTransform(
-    sceneProgress,
-    [index - 0.45, index, index + 0.45],
-    [0, 1, 0],
-    { clamp: true },
-  );
-  const y = useTransform(
-    sceneProgress,
-    [index - 0.45, index, index + 0.45],
-    [24, 0, -24],
-    { clamp: true },
-  );
-  const scale = useTransform(
-    sceneProgress,
-    [index - 0.45, index, index + 0.45],
-    [0.985, 1, 0.985],
-    { clamp: true },
-  );
-
   return (
     <motion.article
       className={cn(
-        "absolute inset-0 flex flex-col justify-center p-6",
-        isActive ? "pointer-events-auto z-10" : "pointer-events-none z-0",
+        'absolute inset-0 flex flex-col justify-center p-6',
+        isActive ? 'pointer-events-auto z-10' : 'pointer-events-none z-0',
         className,
       )}
       style={reducedMotion ? undefined : { opacity, y, scale }}

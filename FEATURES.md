@@ -13,6 +13,7 @@
 - portable game contracts
 - deterministic shared rules engine
 - support for multiple game definitions
+- reusable card helpers layered separately from the generic engine
 
 ### Multiplayer
 
@@ -34,7 +35,7 @@
 
 - shared contracts for game state and moves
 - local-only game execution
-- one sample simple card game
+- one sample simple game
 
 ### Phase 2
 
@@ -44,7 +45,7 @@
 
 ### Phase 3
 
-- more advanced game example
+- more advanced game examples across different subgenres
 - richer player history and statistics
 - stronger reconnect and sync handling
 
@@ -53,3 +54,4 @@
 - rule execution behaves the same across platforms
 - online multiplayer does not trust clients for authoritative outcomes
 - new games can plug into the template without rewriting auth or persistence layers
+- simultaneous-action rule systems are intentionally out of scope

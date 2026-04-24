@@ -1,5 +1,10 @@
 import type { AppLocale } from '@moritzbrantner/app-pack';
-import { Card, CardDescription, CardHeader, CardTitle } from '@moritzbrantner/ui';
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@moritzbrantner/ui';
 
 import { UploadPlayground } from '@/apps/showcase/components/uploads/upload-playground';
 import { createTranslator } from '@/src/i18n/messages';

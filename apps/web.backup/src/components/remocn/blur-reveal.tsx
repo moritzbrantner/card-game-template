@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
 
 export interface BlurRevealProps {
   text: string;
@@ -17,7 +17,7 @@ export function BlurReveal({
   className,
   blur = 10,
   fontSize = 48,
-  color = "#171717",
+  color = '#171717',
   fontWeight = 600,
   speed = 1,
 }: BlurRevealProps) {
@@ -25,25 +25,25 @@ export function BlurReveal({
   const { durationInFrames } = useVideoConfig();
 
   const opacity = interpolate(frame, [0, durationInFrames * 0.6], [0, 1], {
-    extrapolateRight: "clamp",
+    extrapolateRight: 'clamp',
   });
 
   const blurAmount = interpolate(
     frame,
     [0, durationInFrames * 0.6],
     [blur, 0],
-    { extrapolateRight: "clamp" },
+    { extrapolateRight: 'clamp' },
   );
 
   return (
     <div
       style={{
-        position: "absolute",
+        position: 'absolute',
         inset: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "white",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'white',
       }}
     >
       <span
@@ -54,9 +54,9 @@ export function BlurReveal({
           fontSize,
           fontWeight,
           color,
-          letterSpacing: "-0.05em",
+          letterSpacing: '-0.05em',
           fontFamily:
-            "var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif",
+            'var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif',
         }}
       >
         {text}

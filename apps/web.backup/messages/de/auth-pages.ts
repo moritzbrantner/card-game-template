@@ -1,7 +1,8 @@
 export const authPages = {
   login: {
     eyebrow: 'Willkommen zurueck',
-    heroTitle: 'Melde dich an und arbeite dort weiter, wo du zuletzt aufgehoert hast.',
+    heroTitle:
+      'Melde dich an und arbeite dort weiter, wo du zuletzt aufgehoert hast.',
     heroDescription:
       'Greife mit deiner E-Mail-Adresse und deinem Passwort auf Profil, Einstellungen und geschuetzte Bereiche zu.',
     title: 'Anmelden',
@@ -25,7 +26,8 @@ export const authPages = {
     heroDescription:
       'Registriere dich mit einer gueltigen E-Mail-Adresse und einem starken Passwort. Danach wirst du direkt angemeldet.',
     title: 'Registrieren',
-    description: 'Lege dein Konto mit Zugangsdaten an, die die Sicherheitsregeln erfuellen.',
+    description:
+      'Lege dein Konto mit Zugangsdaten an, die die Sicherheitsregeln erfuellen.',
     form: {
       name: 'Anzeigename',
       email: 'E-Mail',
@@ -36,27 +38,34 @@ export const authPages = {
       requiredEmail: 'E-Mail ist erforderlich.',
       invalidEmail: 'Gib eine gueltige E-Mail-Adresse ein.',
       requiredPassword: 'Passwort ist erforderlich.',
-      weakPassword: 'Verwende mindestens 10 Zeichen mit Grossbuchstaben, Kleinbuchstaben und einer Zahl.',
+      weakPassword:
+        'Verwende mindestens 10 Zeichen mit Grossbuchstaben, Kleinbuchstaben und einer Zahl.',
       requiredConfirmPassword: 'Bitte bestaetige dein Passwort.',
       passwordMismatch: 'Die Passwoerter stimmen nicht ueberein.',
       nameTooLong: 'Der Anzeigename darf hoechstens 80 Zeichen lang sein.',
-      genericError: 'Konto erstellt, aber automatische Anmeldung fehlgeschlagen. Bitte manuell anmelden.',
+      genericError:
+        'Konto erstellt, aber automatische Anmeldung fehlgeschlagen. Bitte manuell anmelden.',
       loginPrompt: 'Bereits registriert?',
       loginCta: 'Anmelden',
       resetPasswordTitle: 'Passwort fuer ein bestehendes Konto zuruecksetzen?',
-      resetPasswordDescription: 'Sende einen sicheren Reset-Link, ohne diese Seite zu verlassen.',
+      resetPasswordDescription:
+        'Sende einen sicheren Reset-Link, ohne diese Seite zu verlassen.',
       resetPasswordEmail: 'Konto-E-Mail',
       resetPasswordSubmit: 'Reset-Link senden',
       resetPasswordSubmitting: 'Reset-Link wird gesendet...',
-      resetPasswordSuccess: 'Falls das Konto existiert, ist der Reset-Link unterwegs.',
-      resetPasswordGenericError: 'Der Reset-Link konnte gerade nicht gesendet werden.',
+      resetPasswordSuccess:
+        'Falls das Konto existiert, ist der Reset-Link unterwegs.',
+      resetPasswordGenericError:
+        'Der Reset-Link konnte gerade nicht gesendet werden.',
     },
   },
   resetPassword: {
     eyebrow: 'Kontowiederherstellung',
     title: 'Neues Passwort festlegen',
-    description: 'Nutze den sicheren Token aus deiner E-Mail, um ein neues Passwort zu setzen.',
-    missingToken: 'Dieser Reset-Link ist unvollstaendig oder wurde bereits verwendet.',
+    description:
+      'Nutze den sicheren Token aus deiner E-Mail, um ein neues Passwort zu setzen.',
+    missingToken:
+      'Dieser Reset-Link ist unvollstaendig oder wurde bereits verwendet.',
     success: 'Dein Passwort wurde aktualisiert. Du kannst dich jetzt anmelden.',
     loginCta: 'Zur Anmeldung',
     form: {
@@ -65,16 +74,19 @@ export const authPages = {
       submit: 'Passwort aktualisieren',
       submitting: 'Passwort wird aktualisiert...',
       requiredPassword: 'Passwort ist erforderlich.',
-      weakPassword: 'Verwende mindestens 10 Zeichen mit Grossbuchstaben, Kleinbuchstaben und einer Zahl.',
+      weakPassword:
+        'Verwende mindestens 10 Zeichen mit Grossbuchstaben, Kleinbuchstaben und einer Zahl.',
       requiredConfirmPassword: 'Bitte bestaetige dein Passwort.',
       passwordMismatch: 'Die Passwoerter stimmen nicht ueberein.',
-      genericError: 'Das Passwort konnte mit diesem Link nicht zurueckgesetzt werden.',
+      genericError:
+        'Das Passwort konnte mit diesem Link nicht zurueckgesetzt werden.',
     },
   },
   verifyEmail: {
     eyebrow: 'Kontobestaetigung',
     title: 'E-Mail bestaetigen',
-    description: 'Wir pruefen gerade den sicheren Bestaetigungslink aus deiner E-Mail.',
+    description:
+      'Wir pruefen gerade den sicheren Bestaetigungslink aus deiner E-Mail.',
     verifying: 'Deine E-Mail-Adresse wird bestaetigt...',
     success: 'Deine E-Mail ist bestaetigt. Du kannst dein Konto weiter nutzen.',
     error: 'Dieser Bestaetigungslink ist ungueltig oder abgelaufen.',

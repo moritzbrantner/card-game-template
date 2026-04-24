@@ -20,15 +20,55 @@ function makePng(width: number, height: number) {
 
 function makeJpeg(width: number, height: number) {
   return new Uint8Array([
-    0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01,
-    0x00, 0x00, 0xff, 0xc0, 0x00, 0x11, 0x08, (height >> 8) & 0xff, height & 0xff, (width >> 8) & 0xff, width & 0xff,
-    0x03, 0x01, 0x11, 0x00, 0x02, 0x11, 0x00, 0x03, 0x11, 0x00, 0xff, 0xd9,
+    0xff,
+    0xd8,
+    0xff,
+    0xe0,
+    0x00,
+    0x10,
+    0x4a,
+    0x46,
+    0x49,
+    0x46,
+    0x00,
+    0x01,
+    0x01,
+    0x00,
+    0x00,
+    0x01,
+    0x00,
+    0x01,
+    0x00,
+    0x00,
+    0xff,
+    0xc0,
+    0x00,
+    0x11,
+    0x08,
+    (height >> 8) & 0xff,
+    height & 0xff,
+    (width >> 8) & 0xff,
+    width & 0xff,
+    0x03,
+    0x01,
+    0x11,
+    0x00,
+    0x02,
+    0x11,
+    0x00,
+    0x03,
+    0x11,
+    0x00,
+    0xff,
+    0xd9,
   ]);
 }
 
 describe('validateImageUpload', () => {
   it('accepts a png with valid dimensions and size', async () => {
-    const file = new File([makePng(256, 256)], 'avatar.png', { type: 'image/png' });
+    const file = new File([makePng(256, 256)], 'avatar.png', {
+      type: 'image/png',
+    });
 
     const result = await validateImageUpload(file);
 
@@ -38,7 +78,9 @@ describe('validateImageUpload', () => {
   });
 
   it('accepts a jpeg with valid dimensions and size', async () => {
-    const file = new File([makeJpeg(200, 300)], 'avatar.jpg', { type: 'image/jpeg' });
+    const file = new File([makeJpeg(200, 300)], 'avatar.jpg', {
+      type: 'image/jpeg',
+    });
 
     const result = await validateImageUpload(file);
 
@@ -48,14 +90,22 @@ describe('validateImageUpload', () => {
   });
 
   it('rejects dimensions outside allowed range', async () => {
-    const file = new File([makePng(1024, 1024)], 'big.png', { type: 'image/png' });
+    const file = new File([makePng(1024, 1024)], 'big.png', {
+      type: 'image/png',
+    });
 
-    await expect(validateImageUpload(file)).rejects.toThrow('Image dimensions must be between 64x64 and 512x512.');
+    await expect(validateImageUpload(file)).rejects.toThrow(
+      'Image dimensions must be between 64x64 and 512x512.',
+    );
   });
 
   it('rejects unsupported mime type', async () => {
-    const file = new File([new Uint8Array([0x47, 0x49, 0x46])], 'avatar.gif', { type: 'image/gif' });
+    const file = new File([new Uint8Array([0x47, 0x49, 0x46])], 'avatar.gif', {
+      type: 'image/gif',
+    });
 
-    await expect(validateImageUpload(file)).rejects.toThrow('Only PNG and JPEG images are supported.');
+    await expect(validateImageUpload(file)).rejects.toThrow(
+      'Only PNG and JPEG images are supported.',
+    );
   });
 });

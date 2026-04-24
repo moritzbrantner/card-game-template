@@ -41,44 +41,81 @@ describe('app routes', () => {
       label: 'guests',
       input: { isAuthenticated: false, role: null },
       visibleKeys: ['home', 'about', 'forms', 'login', 'register'],
-      hiddenKeys: ['people', 'notifications', 'dataEntry', 'profile', 'settings', 'admin'],
+      hiddenKeys: [
+        'people',
+        'notifications',
+        'dataEntry',
+        'profile',
+        'settings',
+        'admin',
+      ],
     },
     {
       label: 'signed-in users',
       input: { isAuthenticated: true, role: 'USER' as const },
-      visibleKeys: ['home', 'people', 'notifications', 'dataEntry', 'profile', 'settings'],
+      visibleKeys: [
+        'home',
+        'people',
+        'notifications',
+        'dataEntry',
+        'profile',
+        'settings',
+      ],
       hiddenKeys: ['login', 'register', 'admin'],
     },
     {
       label: 'managers',
       input: { isAuthenticated: true, role: 'MANAGER' as const },
-      visibleKeys: ['home', 'people', 'notifications', 'dataEntry', 'profile', 'settings'],
+      visibleKeys: [
+        'home',
+        'people',
+        'notifications',
+        'dataEntry',
+        'profile',
+        'settings',
+      ],
       hiddenKeys: ['login', 'register', 'admin'],
     },
     {
       label: 'admins',
       input: { isAuthenticated: true, role: 'ADMIN' as const },
-      visibleKeys: ['people', 'notifications', 'dataEntry', 'profile', 'settings', 'admin'],
+      visibleKeys: [
+        'people',
+        'notifications',
+        'dataEntry',
+        'profile',
+        'settings',
+        'admin',
+      ],
       hiddenKeys: ['login', 'register'],
     },
     {
       label: 'superadmins',
       input: { isAuthenticated: true, role: 'SUPERADMIN' as const },
-      visibleKeys: ['people', 'notifications', 'dataEntry', 'profile', 'settings', 'admin'],
+      visibleKeys: [
+        'people',
+        'notifications',
+        'dataEntry',
+        'profile',
+        'settings',
+        'admin',
+      ],
       hiddenKeys: ['login', 'register'],
     },
   ] satisfies readonly VisibilityCase[])(
     'exposes the right hotkey destinations for $label',
     ({ input, visibleKeys, hiddenKeys }) => {
-    const visiblePageKeys = new Set(getVisibleAppPages(input).map((page) => page.key));
+      const visiblePageKeys = new Set(
+        getVisibleAppPages(input).map((page) => page.key),
+      );
 
-    for (const key of visibleKeys) {
-      expect(visiblePageKeys.has(key)).toBe(true);
-    }
+      for (const key of visibleKeys) {
+        expect(visiblePageKeys.has(key)).toBe(true);
+      }
 
-    for (const key of hiddenKeys) {
-      expect(visiblePageKeys.has(key)).toBe(false);
-    }
+      for (const key of hiddenKeys) {
+        expect(visiblePageKeys.has(key)).toBe(false);
+      }
     },
   );
 });

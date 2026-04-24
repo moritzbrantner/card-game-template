@@ -22,7 +22,9 @@ describe('readProblemDetail', () => {
       },
     );
 
-    await expect(readProblemDetail(response, 'Fallback error.')).resolves.toEqual({
+    await expect(
+      readProblemDetail(response, 'Fallback error.'),
+    ).resolves.toEqual({
       title: 'Invalid request body',
       detail: 'Email is already in use.',
       fieldErrors: {
@@ -52,29 +54,38 @@ describe('readProblemDetail', () => {
 
     const problem = await readProblemDetail(response, 'Fallback error.');
 
-    expect(problem.fieldErrors.password).toEqual(['Password must be at least 10 characters.']);
+    expect(problem.fieldErrors.password).toEqual([
+      'Password must be at least 10 characters.',
+    ]);
     expect(problem.formMessage).toBeUndefined();
     expect(problem.message).toBe('Password must be at least 10 characters.');
   });
 
   it('falls back to legacy error fields and then to the provided fallback text', async () => {
-    const legacyResponse = new Response(JSON.stringify({ error: 'Legacy error.' }), {
-      status: 400,
-      headers: {
-        'content-type': 'application/json',
+    const legacyResponse = new Response(
+      JSON.stringify({ error: 'Legacy error.' }),
+      {
+        status: 400,
+        headers: {
+          'content-type': 'application/json',
+        },
       },
-    });
+    );
 
     const emptyResponse = new Response(null, {
       status: 500,
     });
 
-    await expect(readProblemDetail(legacyResponse, 'Fallback error.')).resolves.toMatchObject({
+    await expect(
+      readProblemDetail(legacyResponse, 'Fallback error.'),
+    ).resolves.toMatchObject({
       formMessage: 'Legacy error.',
       message: 'Legacy error.',
     });
 
-    await expect(readProblemDetail(emptyResponse, 'Fallback error.')).resolves.toMatchObject({
+    await expect(
+      readProblemDetail(emptyResponse, 'Fallback error.'),
+    ).resolves.toMatchObject({
       formMessage: undefined,
       message: 'Fallback error.',
     });

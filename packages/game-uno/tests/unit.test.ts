@@ -1,8 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createMatchReplay, type MatchState, type PlayerProfile } from '../../game-contracts/src/index.ts';
-import { createGameEngine, IllegalMoveError } from '../../game-engine/src/index.ts';
+import {
+  createMatchReplay,
+  type MatchState,
+  type PlayerProfile,
+} from '../../game-contracts/src/index.ts';
+import {
+  createGameEngine,
+  IllegalMoveError,
+} from '../../game-engine/src/index.ts';
 import {
   createUnoAdapter,
   createUnoBots,
@@ -27,7 +34,12 @@ const tablePlayers: readonly PlayerProfile[] = [
   { playerId: 'p4', displayName: 'Dana', seat: 4 },
 ];
 
-function createCard(color: UnoCard['color'], kind: UnoCard['kind'], id: string, value?: number): UnoCard {
+function createCard(
+  color: UnoCard['color'],
+  kind: UnoCard['kind'],
+  id: string,
+  value?: number,
+): UnoCard {
   return {
     color,
     kind,
@@ -75,7 +87,10 @@ function createState(
   };
 }
 
-function createReplay(initialState: MatchState<UnoState>, moves: readonly UnoMove[]) {
+function createReplay(
+  initialState: MatchState<UnoState>,
+  moves: readonly UnoMove[],
+) {
   let latestState = initialState;
 
   const acceptedMoves = moves.map((move, index) => {
@@ -89,7 +104,9 @@ function createReplay(initialState: MatchState<UnoState>, moves: readonly UnoMov
   });
 
   const result = adapter.getResult?.(latestState) ?? null;
-  const finishedAt = result ? acceptedMoves[acceptedMoves.length - 1]?.acceptedAt ?? null : null;
+  const finishedAt = result
+    ? (acceptedMoves[acceptedMoves.length - 1]?.acceptedAt ?? null)
+    : null;
 
   return createMatchReplay({
     startedAt: '2026-04-17T12:00:00.000Z',
@@ -131,56 +148,81 @@ test('JSON round-tripped legal UNO play-card moves remain legal', () => {
       p2: [createCard('blue', 'number', 'blue-1', 1)],
     },
   });
-  const move = adapter.listLegalMoves(state).find((candidate) => candidate.kind === 'play-card');
+  const move = adapter
+    .listLegalMoves(state)
+    .find((candidate) => candidate.kind === 'play-card');
 
   assert.ok(move);
   assert.equal(adapter.isLegalMove(state, move), true);
-  assert.equal(adapter.isLegalMove(state, JSON.parse(JSON.stringify(move))), true);
+  assert.equal(
+    adapter.isLegalMove(state, JSON.parse(JSON.stringify(move))),
+    true,
+  );
 });
 
 test('UNO runtime parsers reject invalid setup and move payloads', () => {
-  assert.throws(() => parseUnoSetup({ rules: { drawStacking: 'yes' } }), /drawStacking must be a boolean/);
-  assert.throws(() => parseUnoSetup({ seed: Number.POSITIVE_INFINITY }), /seed must be a string or finite number/);
-  assert.throws(() => parseUnoMove({
-    playerId: 'p1',
-    kind: 'teleport',
-    createdAt: '2026-04-17T12:00:00.000Z',
-    payload: {},
-  }), /Unsupported UNO move kind/);
-  assert.throws(() => parseUnoMove({
-    playerId: 'p1',
-    kind: 'play-card',
-    createdAt: '2026-04-17T12:00:00.000Z',
-    payload: {
-      cardId: 'wild',
-      chosenColor: 'purple',
-    },
-  }), /chosenColor/);
+  assert.throws(
+    () => parseUnoSetup({ rules: { drawStacking: 'yes' } }),
+    /drawStacking must be a boolean/,
+  );
+  assert.throws(
+    () => parseUnoSetup({ seed: Number.POSITIVE_INFINITY }),
+    /seed must be a string or finite number/,
+  );
+  assert.throws(
+    () =>
+      parseUnoMove({
+        playerId: 'p1',
+        kind: 'teleport',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: {},
+      }),
+    /Unsupported UNO move kind/,
+  );
+  assert.throws(
+    () =>
+      parseUnoMove({
+        playerId: 'p1',
+        kind: 'play-card',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: {
+          cardId: 'wild',
+          chosenColor: 'purple',
+        },
+      }),
+    /chosenColor/,
+  );
 });
 
 test('UNO runtime parser accepts valid draw and pass moves with empty payloads', () => {
-  assert.deepEqual(parseUnoMove({
-    playerId: 'p1',
-    kind: 'draw-card',
-    createdAt: '2026-04-17T12:00:00.000Z',
-    payload: {},
-  }), {
-    playerId: 'p1',
-    kind: 'draw-card',
-    createdAt: '2026-04-17T12:00:00.000Z',
-    payload: {},
-  });
-  assert.deepEqual(parseUnoMove({
-    playerId: 'p1',
-    kind: 'pass',
-    createdAt: '2026-04-17T12:00:01.000Z',
-    payload: {},
-  }), {
-    playerId: 'p1',
-    kind: 'pass',
-    createdAt: '2026-04-17T12:00:01.000Z',
-    payload: {},
-  });
+  assert.deepEqual(
+    parseUnoMove({
+      playerId: 'p1',
+      kind: 'draw-card',
+      createdAt: '2026-04-17T12:00:00.000Z',
+      payload: {},
+    }),
+    {
+      playerId: 'p1',
+      kind: 'draw-card',
+      createdAt: '2026-04-17T12:00:00.000Z',
+      payload: {},
+    },
+  );
+  assert.deepEqual(
+    parseUnoMove({
+      playerId: 'p1',
+      kind: 'pass',
+      createdAt: '2026-04-17T12:00:01.000Z',
+      payload: {},
+    }),
+    {
+      playerId: 'p1',
+      kind: 'pass',
+      createdAt: '2026-04-17T12:00:01.000Z',
+      payload: {},
+    },
+  );
 });
 
 test('wild draw four is illegal when the player holds the active color', () => {
@@ -258,9 +300,14 @@ test('draw penalties respect the stacking rule toggle', () => {
     },
   });
 
-  assert.deepEqual(adapter.listLegalMoves(noStacking).map((move) => move.kind), ['draw-card']);
+  assert.deepEqual(
+    adapter.listLegalMoves(noStacking).map((move) => move.kind),
+    ['draw-card'],
+  );
   assert.equal(
-    adapter.listLegalMoves(withStacking).some((move) => move.kind === 'play-card'),
+    adapter
+      .listLegalMoves(withStacking)
+      .some((move) => move.kind === 'play-card'),
     true,
   );
 });
@@ -279,7 +326,12 @@ test('jump-in exposes out-of-turn play for the matching face', () => {
 
   const legalMoves = adapter.listLegalMoves(jumpInState);
 
-  assert.equal(legalMoves.some((move) => move.playerId === 'p2' && move.kind === 'play-card'), true);
+  assert.equal(
+    legalMoves.some(
+      (move) => move.playerId === 'p2' && move.kind === 'play-card',
+    ),
+    true,
+  );
 });
 
 test('jump-in selects one out-of-turn actor in table order', () => {
@@ -322,18 +374,24 @@ test('engine rejects jump-in moves from non-selected jump-in actors', () => {
     'p1',
     tablePlayers,
   );
-  const p3JumpInMove = adapter.listLegalMoves(jumpInState).find(
-    (move) => move.playerId === 'p3' && move.kind === 'play-card',
-  );
+  const p3JumpInMove = adapter
+    .listLegalMoves(jumpInState)
+    .find((move) => move.playerId === 'p3' && move.kind === 'play-card');
 
   assert.ok(p3JumpInMove);
-  assert.throws(() => {
-    engine.submitMove(jumpInState, p3JumpInMove);
-  }, (error) => {
-    assert.equal(error instanceof IllegalMoveError, true);
-    assert.equal(error.reason, 'player is not the selected actor in the current match state');
-    return true;
-  });
+  assert.throws(
+    () => {
+      engine.submitMove(jumpInState, p3JumpInMove);
+    },
+    (error) => {
+      assert.equal(error instanceof IllegalMoveError, true);
+      assert.equal(
+        error.reason,
+        'player is not the selected actor in the current match state',
+      );
+      return true;
+    },
+  );
 });
 
 test('selected jump-in actor can submit the matching-face move', () => {
@@ -346,7 +404,10 @@ test('selected jump-in actor can submit the matching-face move', () => {
       },
       hands: {
         p1: [createCard('blue', 'number', 'blue-4', 4)],
-        p2: [createCard('red', 'number', 'p2-matching-face', 5), createCard('green', 'number', 'green-1', 1)],
+        p2: [
+          createCard('red', 'number', 'p2-matching-face', 5),
+          createCard('green', 'number', 'green-1', 1),
+        ],
         p3: [createCard('red', 'number', 'p3-matching-face', 5)],
         p4: [createCard('green', 'number', 'green-4', 4)],
       },
@@ -354,15 +415,18 @@ test('selected jump-in actor can submit the matching-face move', () => {
     'p1',
     tablePlayers,
   );
-  const p2JumpInMove = adapter.listLegalMoves(jumpInState).find(
-    (move) => move.playerId === 'p2' && move.kind === 'play-card',
-  );
+  const p2JumpInMove = adapter
+    .listLegalMoves(jumpInState)
+    .find((move) => move.playerId === 'p2' && move.kind === 'play-card');
 
   assert.ok(p2JumpInMove);
 
-  const next = engine.submitMove(jumpInState, p2JumpInMove);
+  const next = engine.submitMove(jumpInState, p2JumpInMove).nextState;
 
-  assert.equal(next.state.discardPile[next.state.discardPile.length - 1]?.id, 'p2-matching-face');
+  assert.equal(
+    next.state.discardPile[next.state.discardPile.length - 1]?.id,
+    'p2-matching-face',
+  );
   assert.equal(next.turn, 2);
 });
 
@@ -374,7 +438,10 @@ test('seven-zero rotates hands when zero is played', () => {
     },
     hands: {
       p1: [createCard('red', 'number', 'zero-card', 0)],
-      p2: [createCard('blue', 'number', 'blue-9', 9), createCard('yellow', 'number', 'yellow-1', 1)],
+      p2: [
+        createCard('blue', 'number', 'blue-9', 9),
+        createCard('yellow', 'number', 'yellow-1', 1),
+      ],
     },
   });
 
@@ -522,7 +589,10 @@ test('UNO replay analysis tracks penalties, wild color choices, and wins', () =>
           createCard('wild', 'wild-draw-four', 'wdf'),
           createCard('red', 'number', 'red-7', 7),
         ],
-        p2: [createCard('blue', 'number', 'blue-1', 1), createCard('green', 'number', 'green-2', 2)],
+        p2: [
+          createCard('blue', 'number', 'blue-1', 1),
+          createCard('green', 'number', 'green-2', 2),
+        ],
       },
       rules: {
         ...defaultUnoRules,
@@ -593,7 +663,10 @@ test('UNO replay analysis tracks missed UNO calls as penalties', () => {
   const replay = createReplay(
     createState({
       hands: {
-        p1: [createCard('red', 'number', 'red-5', 5), createCard('blue', 'number', 'blue-1', 1)],
+        p1: [
+          createCard('red', 'number', 'red-5', 5),
+          createCard('blue', 'number', 'blue-1', 1),
+        ],
         p2: [createCard('yellow', 'number', 'yellow-9', 9)],
       },
       rules: {

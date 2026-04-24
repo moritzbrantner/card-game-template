@@ -3,11 +3,11 @@ import {
   isValidElement,
   type ReactElement,
   type ReactNode,
-} from "react";
+} from 'react';
 
-import type { StorySceneMeta, StorySceneProps } from "./story-types";
+import type { StorySceneMeta, StorySceneProps } from './story-types';
 
-const isDevelopment = process.env.NODE_ENV !== "production";
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 function invariant(condition: boolean, message: string) {
   if (!condition && isDevelopment) {
@@ -20,12 +20,12 @@ export function getStorySeriesElement(children: ReactNode) {
 
   invariant(
     childArray.length === 1,
-    "StoryContainer expects exactly one direct StorySeries child.",
+    'StoryContainer expects exactly one direct StorySeries child.',
   );
 
   const firstChild = childArray[0];
   if (!isValidElement(firstChild)) {
-    invariant(false, "StoryContainer expects a StorySeries React element.");
+    invariant(false, 'StoryContainer expects a StorySeries React element.');
     return null;
   }
 
@@ -40,15 +40,12 @@ export function getStorySceneElements(children: ReactNode) {
   for (const child of childArray) {
     const isScene =
       isValidElement(child) &&
-      typeof child.props === "object" &&
+      typeof child.props === 'object' &&
       child.props !== null &&
-      typeof (child.props as StorySceneProps).id === "string" &&
-      typeof (child.props as StorySceneProps).title === "string";
+      typeof (child.props as StorySceneProps).id === 'string' &&
+      typeof (child.props as StorySceneProps).title === 'string';
 
-    invariant(
-      isScene,
-      "StorySeries only accepts direct StoryScene children.",
-    );
+    invariant(isScene, 'StorySeries only accepts direct StoryScene children.');
 
     if (isScene) {
       sceneElements.push(child as ReactElement<StorySceneProps>);

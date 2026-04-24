@@ -7,8 +7,14 @@ import { settingsScript, themeScript } from '@/src/runtime/bootstrap-scripts';
 export function DocumentBootstrap() {
   useServerInsertedHTML(() => (
     <>
-      <script id="theme-script" dangerouslySetInnerHTML={{ __html: themeScript }} />
-      <script id="settings-script" dangerouslySetInnerHTML={{ __html: settingsScript }} />
+      <script
+        id="theme-script"
+        dangerouslySetInnerHTML={{ __html: themeScript }}
+      />
+      <script
+        id="settings-script"
+        dangerouslySetInnerHTML={{ __html: settingsScript }}
+      />
     </>
   ));
 

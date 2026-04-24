@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -23,39 +19,17 @@
       }
     ],
     "paths": {
-      "@/app/*": [
-        "./app/*"
-      ],
-      "@/apps/*": [
-        "./apps/*"
-      ],
-      "@/components/*": [
-        "./components/*"
-      ],
-      "@/src/*": [
-        "./src/*"
-      ],
-      "@/lib/*": [
-        "./lib/*"
-      ],
-      "@/i18n/*": [
-        "./i18n/*"
-      ],
-      "@/tests/*": [
-        "./tests/*"
-      ],
-      "@/scripts/*": [
-        "./scripts/*"
-      ],
-      "@/messages/*": [
-        "./messages/*"
-      ],
-      "@/emails/*": [
-        "./emails/*"
-      ],
-      "@/db-schema.json": [
-        "./db-schema.json"
-      ]
+      "@/app/*": ["./app/*"],
+      "@/apps/*": ["./apps/*"],
+      "@/components/*": ["./components/*"],
+      "@/src/*": ["./src/*"],
+      "@/lib/*": ["./lib/*"],
+      "@/i18n/*": ["./i18n/*"],
+      "@/tests/*": ["./tests/*"],
+      "@/scripts/*": ["./scripts/*"],
+      "@/messages/*": ["./messages/*"],
+      "@/emails/*": ["./emails/*"],
+      "@/db-schema.json": ["./db-schema.json"]
     }
   },
   "include": [

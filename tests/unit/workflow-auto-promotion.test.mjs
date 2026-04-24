@@ -1,36 +1,36 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 const workflowSources = {
   develop: readFileSync(
-    new URL("../../.github/workflows/develop.yml", import.meta.url),
-    "utf8",
+    new URL('../../.github/workflows/develop.yml', import.meta.url),
+    'utf8',
   ),
   nightly: readFileSync(
-    new URL("../../.github/workflows/nightly.yml", import.meta.url),
-    "utf8",
+    new URL('../../.github/workflows/nightly.yml', import.meta.url),
+    'utf8',
   ),
   beta: readFileSync(
-    new URL("../../.github/workflows/beta.yml", import.meta.url),
-    "utf8",
+    new URL('../../.github/workflows/beta.yml', import.meta.url),
+    'utf8',
   ),
   staging: readFileSync(
-    new URL("../../.github/workflows/staging.yml", import.meta.url),
-    "utf8",
+    new URL('../../.github/workflows/staging.yml', import.meta.url),
+    'utf8',
   ),
   snapshotStage: readFileSync(
-    new URL("../../.github/workflows/snapshot-stage.yml", import.meta.url),
-    "utf8",
+    new URL('../../.github/workflows/snapshot-stage.yml', import.meta.url),
+    'utf8',
   ),
 };
 
 const readmeSource = readFileSync(
-  new URL("../../README.md", import.meta.url),
-  "utf8",
+  new URL('../../README.md', import.meta.url),
+  'utf8',
 );
 
-test("branch workflows delegate to the reusable direct-promotion pipeline", () => {
+test('branch workflows delegate to the reusable direct-promotion pipeline', () => {
   assert.match(
     workflowSources.develop,
     /uses:\s+\.\/\.github\/workflows\/snapshot-stage\.yml/,
@@ -54,7 +54,7 @@ test("branch workflows delegate to the reusable direct-promotion pipeline", () =
   assert.match(workflowSources.staging, /promote:\s+false/);
 });
 
-test("direct promotion removes temporary promotion branches and pull request automation", () => {
+test('direct promotion removes temporary promotion branches and pull request automation', () => {
   for (const source of Object.values(workflowSources)) {
     assert.doesNotMatch(source, /auto-promote\//);
     assert.doesNotMatch(source, /create-pull-request@v\d+/);
@@ -63,7 +63,7 @@ test("direct promotion removes temporary promotion branches and pull request aut
   }
 });
 
-test("reusable workflow requires the promotion token and pushes the tested commit directly", () => {
+test('reusable workflow requires the promotion token and pushes the tested commit directly', () => {
   assert.match(workflowSources.snapshotStage, /GH_PROMOTION_TOKEN:/);
   assert.match(
     workflowSources.snapshotStage,
@@ -81,7 +81,7 @@ test("reusable workflow requires the promotion token and pushes the tested commi
   );
 });
 
-test("reusable workflow guards snapshot branches from drift before promotion", () => {
+test('reusable workflow guards snapshot branches from drift before promotion', () => {
   assert.match(workflowSources.snapshotStage, /git merge-base --is-ancestor/);
   assert.match(
     workflowSources.snapshotStage,
@@ -89,7 +89,7 @@ test("reusable workflow guards snapshot branches from drift before promotion", (
   );
 });
 
-test("README documents the automation token required for release branch promotion", () => {
+test('README documents the automation token required for release branch promotion', () => {
   assert.match(readmeSource, /GH_PROMOTION_TOKEN/);
   assert.match(readmeSource, /develop -> nightly -> beta -> staging/);
   assert.match(readmeSource, /directly push snapshot branch updates/i);

@@ -8,7 +8,9 @@ export type ServiceResult<TSuccess, TError> =
       error: TError;
     };
 
-export function success<TSuccess>(data: TSuccess): ServiceResult<TSuccess, never> {
+export function success<TSuccess>(
+  data: TSuccess,
+): ServiceResult<TSuccess, never> {
   return { ok: true, data };
 }
 

@@ -9,10 +9,13 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "lint": "oxfmt --check . && bun run lint:code",
+    "lint:code": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "test:unit": "../../scripts/run-with-node.sh --experimental-strip-types --test ./tests/unit.test.ts"
   },
   "dependencies": {
+    "@repo/card-kit": "workspace:*",
     "@repo/game-contracts": "workspace:*",
     "@repo/game-engine": "workspace:*",
     "@repo/game-session": "workspace:*"

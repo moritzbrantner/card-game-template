@@ -1,25 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type { GameMove, MatchState, PlayerProfile } from '../../game-contracts/src/index.ts';
-
+import type {
+  GameMove,
+  MatchState,
+  PlayerProfile,
+} from '../../game-contracts/src/index.ts';
 import {
   addCards,
-  areMovesEquivalent,
-  canonicalizeMove,
-  canonicalizeSerializableValue,
-  createGameEngine,
-  createReplayMetadata,
-  createSeededRandom,
-  DEFAULT_RNG_VERSION,
   drawCardsBetweenStacks,
   drawCardsFromSources,
   drawCardsFromBottom,
   drawCardsFromTop,
-  type GameAdapter,
   hideAllCards,
   hideCardById,
-  IllegalMoveError,
   moveCardById,
   moveCardsBetweenStacks,
   removeCardById,
@@ -30,6 +24,18 @@ import {
   shuffleWithSeed,
   sortCards,
   sortCardsByRankAndSuit,
+} from '../../card-kit/src/index.ts';
+
+import {
+  areMovesEquivalent,
+  canonicalizeMove,
+  canonicalizeSerializableValue,
+  createGameEngine,
+  createReplayMetadata,
+  createSeededRandom,
+  DEFAULT_RNG_VERSION,
+  type GameAdapter,
+  IllegalMoveError,
 } from '../src/index.ts';
 
 type CounterState = {
@@ -86,13 +92,20 @@ const counterAdapter = {
     ];
   },
   isLegalMove(state: MatchState<CounterState>, move: CounterMove): boolean {
-    return counterAdapter.listLegalMoves(state).some((candidate) => areMovesEquivalent(candidate, move));
+    return counterAdapter
+      .listLegalMoves(state)
+      .some((candidate) => areMovesEquivalent(candidate, move));
   },
-  applyMove(state: MatchState<CounterState>, move: CounterMove): MatchState<CounterState> {
+  applyMove(
+    state: MatchState<CounterState>,
+    move: CounterMove,
+  ): MatchState<CounterState> {
     return {
       ...state,
       turn: state.turn + 1,
-      activePlayerId: state.players.find((player) => player.playerId !== move.playerId)?.playerId ?? move.playerId,
+      activePlayerId:
+        state.players.find((player) => player.playerId !== move.playerId)
+          ?.playerId ?? move.playerId,
       state: {
         total: state.state.total + move.payload.amount,
       },
@@ -114,7 +127,11 @@ const counterAdapter = {
 };
 
 function createSelectableCounterAdapter(
-  selectActor?: GameAdapter<{ target: number }, CounterState, CounterMove>['selectActor'],
+  selectActor?: GameAdapter<
+    { target: number },
+    CounterState,
+    CounterMove
+  >['selectActor'],
 ): GameAdapter<{ target: number }, CounterState, CounterMove> {
   return {
     ...counterAdapter,
@@ -127,7 +144,9 @@ function createSelectableCounterAdapter(
       }));
     },
     isLegalMove(state: MatchState<CounterState>, move: CounterMove): boolean {
-      return this.listLegalMoves(state).some((candidate) => areMovesEquivalent(candidate, move));
+      return this.listLegalMoves(state).some((candidate) =>
+        areMovesEquivalent(candidate, move),
+      );
     },
     ...(selectActor ? { selectActor } : {}),
   };
@@ -150,9 +169,12 @@ test('createGameEngine starts matches and applies legal moves', () => {
   });
 
   assert.equal(initial.executionMode, 'server-authoritative');
-  assert.equal(next.state.total, 1);
-  assert.equal(next.activePlayerId, 'p2');
-  assert.deepEqual(engine.finalizeMatch(next), {
+  assert.equal(next.nextState.state.total, 1);
+  assert.equal(next.nextState.activePlayerId, 'p2');
+  assert.equal(next.actorPlayerId, 'p1');
+  assert.equal(next.legalMovesBefore.length, 1);
+  assert.equal(next.legalMovesAfter.length, 0);
+  assert.deepEqual(engine.finalize(next.nextState), {
     matchId: 'match-1',
     gameId: 'counter',
     winnerIds: ['p1'],
@@ -160,6 +182,88 @@ test('createGameEngine starts matches and applies legal moves', () => {
     finishedAt: '2026-04-17T12:00:01.000Z',
     executionMode: 'server-authoritative',
   });
+});
+
+test('createGameEngine inspect reports the selected actor, legal moves, and status', () => {
+  const engine = createGameEngine(counterAdapter);
+  const initial = engine.startMatch({
+    matchId: 'match-inspect',
+    players,
+    setup: { target: 1 },
+  });
+
+  assert.deepEqual(engine.inspect(initial), {
+    actorPlayerId: 'p1',
+    legalMoves: [
+      {
+        playerId: 'p1',
+        kind: 'increment',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: { amount: 1 },
+      },
+    ],
+    status: 'in_progress',
+  });
+
+  const complete = engine.submitMove(initial, {
+    playerId: 'p1',
+    kind: 'increment',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: { amount: 1 },
+  }).nextState;
+
+  assert.deepEqual(engine.inspect(complete), {
+    actorPlayerId: null,
+    legalMoves: [],
+    status: 'completed',
+  });
+});
+
+test('createGameEngine validates initial and accepted states', () => {
+  const invalidInitial = createGameEngine({
+    ...counterAdapter,
+    validateState(state) {
+      if (state.turn < 2) {
+        throw new Error('turn must be at least 2');
+      }
+    },
+  });
+
+  assert.throws(
+    () =>
+      invalidInitial.startMatch({
+        matchId: 'match-invalid-initial',
+        players,
+        setup: { target: 1 },
+      }),
+    /turn must be at least 2/,
+  );
+
+  const invalidNext = createGameEngine({
+    ...counterAdapter,
+    validateState(state) {
+      if (state.state.total > 0) {
+        throw new Error('total must stay at zero');
+      }
+    },
+  });
+
+  const initial = invalidNext.startMatch({
+    matchId: 'match-invalid-next',
+    players,
+    setup: { target: 1 },
+  });
+
+  assert.throws(
+    () =>
+      invalidNext.submitMove(initial, {
+        playerId: 'p1',
+        kind: 'increment',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: { amount: 1 },
+      }),
+    /total must stay at zero/,
+  );
 });
 
 test('createGameEngine rejects illegal moves', () => {
@@ -170,23 +274,29 @@ test('createGameEngine rejects illegal moves', () => {
     setup: { target: 1 },
   });
 
-  assert.throws(() => {
-    engine.submitMove(initial, {
-      playerId: 'p1',
-      kind: 'skip',
-      createdAt: '2026-04-17T12:00:00.000Z',
-      payload: { amount: 0 },
-    });
-  }, (error) => {
-    assert.equal(error instanceof IllegalMoveError, true);
-    const illegalMoveError = error as IllegalMoveError;
-    assert.equal(illegalMoveError.gameId, 'counter');
-    assert.equal(illegalMoveError.matchId, 'match-2');
-    assert.equal(illegalMoveError.playerId, 'p1');
-    assert.equal(illegalMoveError.moveKind, 'skip');
-    assert.equal(illegalMoveError.reason, 'move is not legal in the current match state');
-    return true;
-  });
+  assert.throws(
+    () => {
+      engine.submitMove(initial, {
+        playerId: 'p1',
+        kind: 'skip',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: { amount: 0 },
+      });
+    },
+    (error) => {
+      assert.equal(error instanceof IllegalMoveError, true);
+      const illegalMoveError = error as IllegalMoveError;
+      assert.equal(illegalMoveError.gameId, 'counter');
+      assert.equal(illegalMoveError.matchId, 'match-2');
+      assert.equal(illegalMoveError.playerId, 'p1');
+      assert.equal(illegalMoveError.moveKind, 'skip');
+      assert.equal(
+        illegalMoveError.reason,
+        'move is not legal in the current match state',
+      );
+      return true;
+    },
+  );
 });
 
 test('createGameEngine defaults selected actor to the active player', () => {
@@ -197,19 +307,25 @@ test('createGameEngine defaults selected actor to the active player', () => {
     setup: { target: 1 },
   });
 
-  assert.throws(() => {
-    engine.submitMove(initial, {
-      playerId: 'p2',
-      kind: 'increment',
-      createdAt: '2026-04-17T12:00:00.000Z',
-      payload: { amount: 1 },
-    });
-  }, (error) => {
-    assert.equal(error instanceof IllegalMoveError, true);
-    const illegalMoveError = error as IllegalMoveError;
-    assert.equal(illegalMoveError.reason, 'player is not the selected actor in the current match state');
-    return true;
-  });
+  assert.throws(
+    () => {
+      engine.submitMove(initial, {
+        playerId: 'p2',
+        kind: 'increment',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: { amount: 1 },
+      });
+    },
+    (error) => {
+      assert.equal(error instanceof IllegalMoveError, true);
+      const illegalMoveError = error as IllegalMoveError;
+      assert.equal(
+        illegalMoveError.reason,
+        'player is not the selected actor in the current match state',
+      );
+      return true;
+    },
+  );
 });
 
 test('createGameEngine allows a custom non-active selected actor', () => {
@@ -228,7 +344,7 @@ test('createGameEngine allows a custom non-active selected actor', () => {
   });
 
   assert.equal(initial.activePlayerId, 'p1');
-  assert.equal(next.state.total, 1);
+  assert.equal(next.nextState.state.total, 1);
 });
 
 test('createGameEngine rejects legal moves from non-selected actors', () => {
@@ -239,25 +355,34 @@ test('createGameEngine rejects legal moves from non-selected actors', () => {
     setup: { target: 1 },
   });
 
-  assert.equal(counterAdapter.isLegalMove(initial, {
-    playerId: 'p1',
-    kind: 'increment',
-    createdAt: '2026-04-17T12:00:00.000Z',
-    payload: { amount: 1 },
-  }), true);
-  assert.throws(() => {
-    engine.submitMove(initial, {
+  assert.equal(
+    counterAdapter.isLegalMove(initial, {
       playerId: 'p1',
       kind: 'increment',
       createdAt: '2026-04-17T12:00:00.000Z',
       payload: { amount: 1 },
-    });
-  }, (error) => {
-    assert.equal(error instanceof IllegalMoveError, true);
-    const illegalMoveError = error as IllegalMoveError;
-    assert.equal(illegalMoveError.reason, 'player is not the selected actor in the current match state');
-    return true;
-  });
+    }),
+    true,
+  );
+  assert.throws(
+    () => {
+      engine.submitMove(initial, {
+        playerId: 'p1',
+        kind: 'increment',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: { amount: 1 },
+      });
+    },
+    (error) => {
+      assert.equal(error instanceof IllegalMoveError, true);
+      const illegalMoveError = error as IllegalMoveError;
+      assert.equal(
+        illegalMoveError.reason,
+        'player is not the selected actor in the current match state',
+      );
+      return true;
+    },
+  );
 });
 
 test('createGameEngine rejects moves when no actor is selected', () => {
@@ -280,7 +405,10 @@ test('createGameEngine rejects moves when no actor is selected', () => {
     (error) => {
       assert.equal(error instanceof IllegalMoveError, true);
       const illegalMoveError = error as IllegalMoveError;
-      assert.equal(illegalMoveError.reason, 'no actor is selected in the current match state');
+      assert.equal(
+        illegalMoveError.reason,
+        'no actor is selected in the current match state',
+      );
       return true;
     },
   );
@@ -305,7 +433,7 @@ test('createGameEngine falls back to an empty result when adapters return none',
     payload: { amount: 1 },
   });
 
-  const result = engine.finalizeMatch(complete);
+  const result = engine.finalize(complete.nextState);
 
   assert.ok(result);
   assert.equal(result.matchId, 'match-fallback-result');
@@ -370,9 +498,18 @@ test('canonicalizeSerializableValue strips nested undefined object keys', () => 
 });
 
 test('canonicalizeSerializableValue rejects non-serializable values', () => {
-  assert.throws(() => canonicalizeSerializableValue({ amount: Number.NaN }), /finite number/);
-  assert.throws(() => canonicalizeSerializableValue({ callback() {} }), /JSON-serializable/);
-  assert.throws(() => canonicalizeSerializableValue([undefined]), /JSON-serializable/);
+  assert.throws(
+    () => canonicalizeSerializableValue({ amount: Number.NaN }),
+    /finite number/,
+  );
+  assert.throws(
+    () => canonicalizeSerializableValue({ callback() {} }),
+    /JSON-serializable/,
+  );
+  assert.throws(
+    () => canonicalizeSerializableValue([undefined]),
+    /JSON-serializable/,
+  );
 });
 
 test('createGameEngine uses setup validation, move validation, and move canonicalization hooks', () => {
@@ -408,7 +545,7 @@ test('createGameEngine uses setup validation, move validation, and move canonica
     payload: { amount: 1 },
   });
 
-  assert.equal(next.state.total, 1);
+  assert.equal(next.nextState.state.total, 1);
 });
 
 test('createReplayMetadata derives stable adapter metadata', () => {
@@ -436,8 +573,14 @@ test('createReplayMetadata derives stable adapter metadata', () => {
 test('shuffleWithSeed is deterministic for the same seed', () => {
   const deck = ['a', 'b', 'c', 'd', 'e'];
 
-  assert.deepEqual(shuffleWithSeed(deck, 'uno-seed'), shuffleWithSeed(deck, 'uno-seed'));
-  assert.notDeepEqual(shuffleWithSeed(deck, 'uno-seed'), shuffleWithSeed(deck, 'other-seed'));
+  assert.deepEqual(
+    shuffleWithSeed(deck, 'uno-seed'),
+    shuffleWithSeed(deck, 'uno-seed'),
+  );
+  assert.notDeepEqual(
+    shuffleWithSeed(deck, 'uno-seed'),
+    shuffleWithSeed(deck, 'other-seed'),
+  );
 });
 
 test('card stack helpers add, remove, draw, and move cards immutably', () => {
@@ -740,8 +883,5 @@ test('createSeededRandom produces a stable sequence', () => {
   const first = createSeededRandom(42);
   const second = createSeededRandom(42);
 
-  assert.deepEqual(
-    [first(), first(), first()],
-    [second(), second(), second()],
-  );
+  assert.deepEqual([first(), first(), first()], [second(), second(), second()]);
 });

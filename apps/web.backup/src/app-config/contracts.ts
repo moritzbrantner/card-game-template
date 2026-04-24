@@ -11,7 +11,13 @@ export type AppFeatureConfig = Partial<Record<FoundationFeatureKey, boolean>>;
 
 export type AppContentRoots = Record<ContentCollection, readonly string[]>;
 
-export type AppMessageValue = string | number | boolean | null | undefined | AppMessageTree;
+export type AppMessageValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | AppMessageTree;
 
 export type AppMessageTree = {
   [key: string]: AppMessageValue;
@@ -36,7 +42,9 @@ export type PublicPageDefinition = {
   namespace: string;
   aliases?: string[];
   render: (props: PublicPageRenderProps) => ReactNode | Promise<ReactNode>;
-  generateMetadata?: (props: PublicPageRenderProps) => Metadata | Promise<Metadata>;
+  generateMetadata?: (
+    props: PublicPageRenderProps,
+  ) => Metadata | Promise<Metadata>;
 };
 
 export type PublicNavigationItem = {
@@ -47,7 +55,12 @@ export type PublicNavigationItem = {
   order: number;
 };
 
-export type AppExampleApiRouteModule = Partial<Record<'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', (request: Request) => Response | Promise<Response>>>;
+export type AppExampleApiRouteModule = Partial<
+  Record<
+    'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    (request: Request) => Response | Promise<Response>
+  >
+>;
 
 export type AppExampleApiDefinition = {
   featureKey?: FoundationFeatureKey;
@@ -68,6 +81,9 @@ export type AppManifest = {
   publicNavigation: readonly PublicNavigationItem[];
   contentRoots: AppContentRoots;
   loadMessages: AppMessageCatalogLoader;
-  resolveOgImage?: (locale: AppLocale, pageId: string) => string | null | undefined;
+  resolveOgImage?: (
+    locale: AppLocale,
+    pageId: string,
+  ) => string | null | undefined;
   exampleApis: AppExampleApiRegistry;
 };

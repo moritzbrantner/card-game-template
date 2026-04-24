@@ -1,9 +1,14 @@
 import { expect, test } from '@playwright/test';
 
-import { gotoAndWaitForHydration, waitForMailpitMessage } from '@/tests/e2e/helpers';
+import {
+  gotoAndWaitForHydration,
+  waitForMailpitMessage,
+} from '@/tests/e2e/helpers';
 
 test.describe('communication page', () => {
-  test('subscribes to the newsletter and sends a welcome email', async ({ page }) => {
+  test('subscribes to the newsletter and sends a welcome email', async ({
+    page,
+  }) => {
     const email = `newsletter-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
 
     await gotoAndWaitForHydration(page, '/en/examples/communication');

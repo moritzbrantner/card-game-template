@@ -27,9 +27,7 @@ function parseEnvExample(source: string) {
     }
 
     const key = trimmed.slice(0, separatorIndex);
-    const value = trimmed
-      .slice(separatorIndex + 1)
-      .replace(/^"|"$/g, '');
+    const value = trimmed.slice(separatorIndex + 1).replace(/^"|"$/g, '');
 
     entries.set(key, value);
   }

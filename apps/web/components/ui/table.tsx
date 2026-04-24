@@ -1,22 +1,56 @@
-import type { HTMLAttributes, TableHTMLAttributes, ThHTMLAttributes, TdHTMLAttributes } from 'react';
+import type {
+  HTMLAttributes,
+  TableHTMLAttributes,
+  ThHTMLAttributes,
+  TdHTMLAttributes,
+} from 'react';
 
-export function Table({ className, ...props }: TableHTMLAttributes<HTMLTableElement>) {
+export function Table({
+  className,
+  ...props
+}: TableHTMLAttributes<HTMLTableElement>) {
   return (
     <div className="relative w-full overflow-auto">
-      <table className={['w-full caption-bottom text-sm', className].filter(Boolean).join(' ')} {...props} />
+      <table
+        className={['w-full caption-bottom text-sm', className]
+          .filter(Boolean)
+          .join(' ')}
+        {...props}
+      />
     </div>
   );
 }
 
-export function TableHeader({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={['[&_tr]:border-b', className].filter(Boolean).join(' ')} {...props} />;
+export function TableHeader({
+  className,
+  ...props
+}: HTMLAttributes<HTMLTableSectionElement>) {
+  return (
+    <thead
+      className={['[&_tr]:border-b', className].filter(Boolean).join(' ')}
+      {...props}
+    />
+  );
 }
 
-export function TableBody({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={['[&_tr:last-child]:border-0', className].filter(Boolean).join(' ')} {...props} />;
+export function TableBody({
+  className,
+  ...props
+}: HTMLAttributes<HTMLTableSectionElement>) {
+  return (
+    <tbody
+      className={['[&_tr:last-child]:border-0', className]
+        .filter(Boolean)
+        .join(' ')}
+      {...props}
+    />
+  );
 }
 
-export function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
+export function TableRow({
+  className,
+  ...props
+}: HTMLAttributes<HTMLTableRowElement>) {
   return (
     <tr
       className={[
@@ -30,7 +64,10 @@ export function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowEle
   );
 }
 
-export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
+export function TableHead({
+  className,
+  ...props
+}: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
     <th
       className={[
@@ -44,6 +81,14 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
   );
 }
 
-export function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={['p-4 align-middle', className].filter(Boolean).join(' ')} {...props} />;
+export function TableCell({
+  className,
+  ...props
+}: TdHTMLAttributes<HTMLTableCellElement>) {
+  return (
+    <td
+      className={['p-4 align-middle', className].filter(Boolean).join(' ')}
+      {...props}
+    />
+  );
 }

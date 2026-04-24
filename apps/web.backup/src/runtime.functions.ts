@@ -1,5 +1,8 @@
 import { getAuthSession } from '@/src/auth.server';
-import { getNotificationPreviewUseCase, type NotificationPreview } from '@/src/domain/notifications/use-cases';
+import {
+  getNotificationPreviewUseCase,
+  type NotificationPreview,
+} from '@/src/domain/notifications/use-cases';
 import { isGithubPagesBuild } from '@/src/runtime/build-target';
 
 export type AppRouteContext = {
@@ -21,6 +24,8 @@ export async function loadAppContext(): Promise<AppRouteContext> {
 
   return {
     session,
-    notificationCenter: session?.user.id ? await getNotificationPreviewUseCase(session.user.id, 3) : null,
+    notificationCenter: session?.user.id
+      ? await getNotificationPreviewUseCase(session.user.id, 3)
+      : null,
   };
 }

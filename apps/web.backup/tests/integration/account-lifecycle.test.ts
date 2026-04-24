@@ -82,7 +82,10 @@ describe('account lifecycle', () => {
         },
         deps,
       ),
-    ).resolves.toEqual({ ok: false, error: 'Password must be at least 10 characters.' });
+    ).resolves.toEqual({
+      ok: false,
+      error: 'Password must be at least 10 characters.',
+    });
 
     await expect(
       signUpWithCredentialsLifecycle(
@@ -106,7 +109,10 @@ describe('account lifecycle', () => {
         },
         deps,
       ),
-    ).resolves.toEqual({ ok: false, error: 'Display name must be 80 characters or fewer.' });
+    ).resolves.toEqual({
+      ok: false,
+      error: 'Display name must be 80 characters or fewer.',
+    });
 
     expect(deps.createUser).not.toHaveBeenCalled();
     expect(deps.issueToken).not.toHaveBeenCalled();
@@ -127,7 +133,10 @@ describe('account lifecycle', () => {
         },
         duplicateDeps,
       ),
-    ).resolves.toEqual({ ok: false, error: 'An account already exists for this email.' });
+    ).resolves.toEqual({
+      ok: false,
+      error: 'An account already exists for this email.',
+    });
 
     expect(duplicateDeps.createUser).not.toHaveBeenCalled();
     expect(duplicateDeps.issueToken).not.toHaveBeenCalled();
@@ -151,8 +160,14 @@ describe('account lifecycle', () => {
       expires: new Date(Date.now() - 1),
     });
 
-    const expiredResult = await verifyEmailByTokenLifecycle('expired-raw-token', deps);
-    expect(expiredResult).toEqual({ ok: false, error: 'Verification token has expired.' });
+    const expiredResult = await verifyEmailByTokenLifecycle(
+      'expired-raw-token',
+      deps,
+    );
+    expect(expiredResult).toEqual({
+      ok: false,
+      error: 'Verification token has expired.',
+    });
     expect(deps.deleteToken).toHaveBeenCalledWith('expired-token');
   });
 
@@ -160,12 +175,20 @@ describe('account lifecycle', () => {
     const deps = createDeps();
     deps.findToken.mockResolvedValue(undefined);
 
-    await expect(verifyEmailByTokenLifecycle('missing-token', deps)).resolves.toEqual({
+    await expect(
+      verifyEmailByTokenLifecycle('missing-token', deps),
+    ).resolves.toEqual({
       ok: false,
       error: 'Invalid verification token.',
     });
 
-    await expect(resetPasswordWithTokenLifecycle('missing-reset', 'AnotherSecure123', deps)).resolves.toEqual({
+    await expect(
+      resetPasswordWithTokenLifecycle(
+        'missing-reset',
+        'AnotherSecure123',
+        deps,
+      ),
+    ).resolves.toEqual({
       ok: false,
       error: 'Invalid password reset token.',
     });
@@ -180,7 +203,10 @@ describe('account lifecycle', () => {
       lockoutUntil: null,
     });
 
-    const requestResult = await requestPasswordResetLifecycle('person@example.com', deps);
+    const requestResult = await requestPasswordResetLifecycle(
+      'person@example.com',
+      deps,
+    );
     expect(requestResult.ok).toBe(true);
     expect(requestResult.token).toBeDefined();
     expect(deps.issueToken).toHaveBeenCalledTimes(1);
@@ -191,10 +217,17 @@ describe('account lifecycle', () => {
       expires: new Date(Date.now() + 60_000),
     });
 
-    const resetResult = await resetPasswordWithTokenLifecycle('raw-reset', 'AnotherSecure123', deps);
+    const resetResult = await resetPasswordWithTokenLifecycle(
+      'raw-reset',
+      'AnotherSecure123',
+      deps,
+    );
     expect(resetResult).toEqual({ ok: true });
     expect(deps.hashPassword).toHaveBeenCalledWith('AnotherSecure123');
-    expect(deps.updatePassword).toHaveBeenCalledWith('user_2', 'hashed-password');
+    expect(deps.updatePassword).toHaveBeenCalledWith(
+      'user_2',
+      'hashed-password',
+    );
     expect(deps.deleteToken).toHaveBeenCalledWith('stored-reset-token');
   });
 
@@ -202,8 +235,12 @@ describe('account lifecycle', () => {
     const deps = createDeps();
     deps.findUserByEmail.mockResolvedValue(undefined);
 
-    await expect(requestPasswordResetLifecycle('not-an-email', deps)).resolves.toEqual({ ok: true });
-    await expect(requestPasswordResetLifecycle('missing@example.com', deps)).resolves.toEqual({ ok: true });
+    await expect(
+      requestPasswordResetLifecycle('not-an-email', deps),
+    ).resolves.toEqual({ ok: true });
+    await expect(
+      requestPasswordResetLifecycle('missing@example.com', deps),
+    ).resolves.toEqual({ ok: true });
 
     expect(deps.issueToken).not.toHaveBeenCalled();
   });
@@ -235,8 +272,14 @@ describe('account lifecycle', () => {
       },
     });
 
-    expect(deps.verifyPassword).toHaveBeenCalledWith('ValidPassword123', 'stored-hash');
-    expect(deps.updateEmail).toHaveBeenCalledWith('user_3', 'newemail@example.com');
+    expect(deps.verifyPassword).toHaveBeenCalledWith(
+      'ValidPassword123',
+      'stored-hash',
+    );
+    expect(deps.updateEmail).toHaveBeenCalledWith(
+      'user_3',
+      'newemail@example.com',
+    );
   });
 
   it('rejects account email updates when the password is wrong or the email is already used', async () => {
@@ -325,6 +368,8 @@ describe('account lifecycle', () => {
     });
 
     expect(deps.performAccountDeletion).toHaveBeenCalledWith('user_5');
-    expect(deps.deleteProfileImage).toHaveBeenCalledWith('local-profile-images/user_5/avatar.jpg');
+    expect(deps.deleteProfileImage).toHaveBeenCalledWith(
+      'local-profile-images/user_5/avatar.jpg',
+    );
   });
 });

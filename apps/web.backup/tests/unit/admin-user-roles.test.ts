@@ -67,7 +67,10 @@ describe('admin user role management', () => {
         nextRole: 'ADMIN',
       },
       Promise.resolve({
-        findUserById: async (userId) => ({ id: userId, role: 'SUPERADMIN' as const }),
+        findUserById: async (userId) => ({
+          id: userId,
+          role: 'SUPERADMIN' as const,
+        }),
         countUsersByRole: async () => 1,
         updateUserRole,
       }),
@@ -91,7 +94,10 @@ describe('admin user role management', () => {
         nextRole: 'ADMIN',
       },
       Promise.resolve({
-        findUserById: async () => ({ id: 'superadmin_1', role: 'SUPERADMIN' as const }),
+        findUserById: async () => ({
+          id: 'superadmin_1',
+          role: 'SUPERADMIN' as const,
+        }),
         countUsersByRole: async () => 2,
         updateUserRole: async () => undefined,
       }),

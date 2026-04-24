@@ -6,8 +6,13 @@ import path from 'node:path';
 const repoRoot = process.cwd();
 const stashRoot = path.join(repoRoot, '.gh-pages-build-stash');
 const reportOutputPath = path.join(repoRoot, '.generated', 'unlighthouse');
-const previewPort = Number.parseInt(process.env.GH_PAGES_PREVIEW_PORT ?? '4173', 10);
-const githubPagesBasePath = normalizeBasePath(process.env.GITHUB_PAGES_BASE_PATH);
+const previewPort = Number.parseInt(
+  process.env.GH_PAGES_PREVIEW_PORT ?? '4173',
+  10,
+);
+const githubPagesBasePath = normalizeBasePath(
+  process.env.GITHUB_PAGES_BASE_PATH,
+);
 const previewOrigin = `http://127.0.0.1:${previewPort}`;
 const previewCheckUrl = `${previewOrigin}${githubPagesBasePath}/en/`;
 
@@ -71,7 +76,12 @@ async function movePath(from, to) {
     await rename(from, to);
     movedPaths.push({ from, to });
   } catch (error) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'ENOENT'
+    ) {
       return;
     }
 
@@ -145,7 +155,9 @@ async function resolveStaticFile(rootDir, pathname) {
       if (fileStat.isFile()) {
         return absolutePath;
       }
-    } catch {}
+    } catch {
+      continue;
+    }
   }
 
   return path.join(rootDir, '404.html');
@@ -168,11 +180,18 @@ function createStaticExportServer(rootDir) {
       const extension = path.extname(filePath);
 
       response.statusCode = filePath.endsWith('404.html') ? 404 : 200;
-      response.setHeader('content-type', mimeTypes[extension] ?? 'application/octet-stream');
+      response.setHeader(
+        'content-type',
+        mimeTypes[extension] ?? 'application/octet-stream',
+      );
       response.end(contents);
     } catch (error) {
       response.statusCode = 500;
-      response.end(error instanceof Error ? error.message : 'Failed to serve static export');
+      response.end(
+        error instanceof Error
+          ? error.message
+          : 'Failed to serve static export',
+      );
     }
   });
 
@@ -209,7 +228,9 @@ async function waitForStaticExport(url, timeoutMs = 60_000) {
       if (response.ok) {
         return;
       }
-    } catch {}
+    } catch {
+      // Retry until the timeout elapses.
+    }
 
     await new Promise((resolve) => setTimeout(resolve, 1_000));
   }
@@ -234,7 +255,11 @@ function runNextBuild() {
         return;
       }
 
-      reject(new Error(`gh-pages build failed with code ${code ?? 'null'} and signal ${signal ?? 'null'}`));
+      reject(
+        new Error(
+          `gh-pages build failed with code ${code ?? 'null'} and signal ${signal ?? 'null'}`,
+        ),
+      );
     });
 
     child.on('error', reject);
@@ -273,7 +298,11 @@ function runUnlighthouse() {
         return;
       }
 
-      reject(new Error(`unlighthouse scan failed with code ${code ?? 'null'} and signal ${signal ?? 'null'}`));
+      reject(
+        new Error(
+          `unlighthouse scan failed with code ${code ?? 'null'} and signal ${signal ?? 'null'}`,
+        ),
+      );
     });
 
     child.on('error', reject);

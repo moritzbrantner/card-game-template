@@ -3,7 +3,10 @@
 import { useState } from 'react';
 
 import { readProblemDetail } from '@/src/http/problem-client';
-import { type FollowerVisibilityRole, followerVisibilityRoles } from '@/src/profile/follower-visibility';
+import {
+  type FollowerVisibilityRole,
+  followerVisibilityRoles,
+} from '@/src/profile/follower-visibility';
 
 type ProfileFollowerVisibilityFormProps = {
   initialFollowerVisibility: FollowerVisibilityRole;
@@ -11,7 +14,10 @@ type ProfileFollowerVisibilityFormProps = {
     saving: string;
     success: string;
     error: string;
-    options: Record<FollowerVisibilityRole, { title: string; description: string }>;
+    options: Record<
+      FollowerVisibilityRole,
+      { title: string; description: string }
+    >;
   };
 };
 
@@ -19,12 +25,16 @@ export function ProfileFollowerVisibilityForm({
   initialFollowerVisibility,
   labels,
 }: ProfileFollowerVisibilityFormProps) {
-  const [followerVisibility, setFollowerVisibility] = useState(initialFollowerVisibility);
+  const [followerVisibility, setFollowerVisibility] = useState(
+    initialFollowerVisibility,
+  );
   const [isPending, setIsPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleVisibilityChange(nextVisibility: FollowerVisibilityRole) {
+  async function handleVisibilityChange(
+    nextVisibility: FollowerVisibilityRole,
+  ) {
     if (nextVisibility === followerVisibility) {
       return;
     }
@@ -89,9 +99,19 @@ export function ProfileFollowerVisibilityForm({
         })}
       </div>
 
-      {isPending ? <p className="text-sm text-zinc-600 dark:text-zinc-300">{labels.saving}</p> : null}
-      {message ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{message}</p> : null}
-      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
+      {isPending ? (
+        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          {labels.saving}
+        </p>
+      ) : null}
+      {message ? (
+        <p className="text-sm text-emerald-600 dark:text-emerald-400">
+          {message}
+        </p>
+      ) : null}
+      {error ? (
+        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+      ) : null}
     </div>
   );
 }

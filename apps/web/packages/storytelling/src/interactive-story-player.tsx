@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 
-import { Button, cn } from "@moritzbrantner/ui";
+import { Button, cn } from '@moritzbrantner/ui';
 
 import {
   createInteractiveStory,
@@ -12,8 +12,8 @@ import {
   getStoryNode,
   isStoryEnding,
   resolveStoryPath,
-} from "./interactive-story";
-import { StoryDefaultStage } from "./story-default-stage";
+} from './interactive-story';
+import { StoryDefaultStage } from './story-default-stage';
 import type {
   InteractiveStoryDefinition,
   StoryChoiceDefinition,
@@ -21,7 +21,7 @@ import type {
   StoryNodeData,
   StoryRenderProps,
   StoryStageComponent,
-} from "./story-types";
+} from './story-types';
 
 export type InteractiveStoryPlayerProps<
   TData extends StoryNodeData = StoryNodeData,
@@ -43,8 +43,11 @@ function buildInitialHistory<TData extends StoryNodeData>(
   story: InteractiveStoryDefinition<TData>,
   initialChoiceIds: string[],
 ) {
-  return resolveStoryPath(story, initialChoiceIds).history as StoryHistoryEntry<TData>[];
+  return resolveStoryPath(story, initialChoiceIds)
+    .history as StoryHistoryEntry<TData>[];
 }
+
+const EMPTY_INITIAL_CHOICE_IDS: string[] = [];
 
 export function InteractiveStoryPlayer<
   TData extends StoryNodeData = StoryNodeData,
@@ -59,29 +62,42 @@ export function InteractiveStoryPlayer<
   onPathChange,
 }: InteractiveStoryPlayerProps<TData>) {
   const story = useMemo(() => createInteractiveStory(input), [input]);
-  const initialChoiceKey = initialChoiceIds.join("|");
-  const [history, setHistory] = useState<StoryHistoryEntry<TData>[]>(() =>
-    buildInitialHistory(story, initialChoiceIds),
+  const initialChoiceKey = initialChoiceIds.join('|');
+  const normalizedInitialChoiceIds = useMemo(
+    () =>
+      initialChoiceKey ? initialChoiceKey.split('|') : EMPTY_INITIAL_CHOICE_IDS,
+    [initialChoiceKey],
+  );
+  const initialHistory = useMemo(
+    () => buildInitialHistory(story, normalizedInitialChoiceIds),
+    [normalizedInitialChoiceIds, story],
+  );
+  const [history, setHistory] = useState<StoryHistoryEntry<TData>[]>(
+    () => initialHistory,
   );
   const reducedMotion = useReducedMotion();
-  const currentNodeId = history[history.length - 1]?.nodeId ?? story.openingNodeId;
+  const currentNodeId =
+    history[history.length - 1]?.nodeId ?? story.openingNodeId;
   const currentNode = getStoryNode(story, currentNodeId);
   const choices = getStoryChoices(currentNode);
   const ending = isStoryEnding(currentNode);
   const progress = history.length / Math.max(story.nodes.length, 1);
   const canGoBack = history.length > 1;
-  const StageRenderer = (stageRenderer ?? StoryDefaultStage) as StoryStageComponent<TData>;
+  const StageRenderer = (stageRenderer ??
+    StoryDefaultStage) as StoryStageComponent<TData>;
 
   useEffect(() => {
-    setHistory(buildInitialHistory(story, initialChoiceIds));
-  }, [initialChoiceKey, story]);
+    setHistory(initialHistory);
+  }, [initialHistory]);
 
   useEffect(() => {
     onPathChange?.(history);
   }, [history, onPathChange]);
 
   const choose = (choiceId: string) => {
-    const choice = choices.find((entry) => entry.id === choiceId && !entry.disabled);
+    const choice = choices.find(
+      (entry) => entry.id === choiceId && !entry.disabled,
+    );
     if (!choice) return;
 
     const nextNode = getStoryNode(story, choice.target);
@@ -126,7 +142,7 @@ export function InteractiveStoryPlayer<
     <section
       role="region"
       className={cn(
-        "overflow-hidden rounded-[2rem] border bg-card/70 shadow-2xl shadow-black/5 backdrop-blur",
+        'overflow-hidden rounded-[2rem] border bg-card/70 shadow-2xl shadow-black/5 backdrop-blur',
         className,
       )}
       aria-label={ariaLabel ?? story.title}
@@ -163,7 +179,10 @@ export function InteractiveStoryPlayer<
               initial={reducedMotion ? undefined : { opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reducedMotion ? undefined : { opacity: 0, y: -12 }}
-              transition={{ duration: reducedMotion ? 0 : 0.35, ease: "easeOut" }}
+              transition={{
+                duration: reducedMotion ? 0 : 0.35,
+                ease: 'easeOut',
+              }}
             >
               <StageRenderer {...renderProps} />
             </motion.div>
@@ -172,7 +191,7 @@ export function InteractiveStoryPlayer<
 
         <div
           className={cn(
-            "border-t border-border/60 bg-background/70 p-6 lg:border-l lg:border-t-0 md:p-8",
+            'border-t border-border/60 bg-background/70 p-6 lg:border-l lg:border-t-0 md:p-8',
             panelClassName,
             currentNode.panelClassName,
           )}
@@ -183,8 +202,11 @@ export function InteractiveStoryPlayer<
               initial={reducedMotion ? undefined : { opacity: 0, x: 12 }}
               animate={{ opacity: 1, x: 0 }}
               exit={reducedMotion ? undefined : { opacity: 0, x: -8 }}
-              transition={{ duration: reducedMotion ? 0 : 0.3, ease: "easeOut" }}
-              className={cn("flex h-full flex-col", currentNode.className)}
+              transition={{
+                duration: reducedMotion ? 0 : 0.3,
+                ease: 'easeOut',
+              }}
+              className={cn('flex h-full flex-col', currentNode.className)}
             >
               {currentNode.eyebrow ? (
                 <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
@@ -201,7 +223,10 @@ export function InteractiveStoryPlayer<
               ) : null}
               <div className="mt-8 rounded-[1.5rem] border bg-card/70 p-5">
                 <p className="text-sm font-medium">
-                  {currentNode.prompt ?? (ending ? "This branch is complete." : "Choose what happens next.")}
+                  {currentNode.prompt ??
+                    (ending
+                      ? 'This branch is complete.'
+                      : 'Choose what happens next.')}
                 </p>
                 <div className="mt-4 space-y-3">
                   {choices.length > 0 ? (
@@ -212,9 +237,9 @@ export function InteractiveStoryPlayer<
                         onClick={() => choose(choice.id)}
                         disabled={choice.disabled}
                         className={cn(
-                          "w-full rounded-[1.25rem] border bg-background px-4 py-3 text-left transition-colors",
-                          "hover:border-foreground/40 hover:bg-accent",
-                          "disabled:cursor-not-allowed disabled:opacity-50",
+                          'w-full rounded-[1.25rem] border bg-background px-4 py-3 text-left transition-colors',
+                          'hover:border-foreground/40 hover:bg-accent',
+                          'disabled:cursor-not-allowed disabled:opacity-50',
                         )}
                       >
                         <span className="block text-sm font-medium">
@@ -229,7 +254,8 @@ export function InteractiveStoryPlayer<
                     ))
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      Restart to explore another branch, or go back to choose a different path.
+                      Restart to explore another branch, or go back to choose a
+                      different path.
                     </p>
                   )}
                 </div>
@@ -242,10 +268,10 @@ export function InteractiveStoryPlayer<
                   onClick={goBack}
                   disabled={!canGoBack}
                 >
-                  {story.backLabel ?? "Go back"}
+                  {story.backLabel ?? 'Go back'}
                 </Button>
                 <Button type="button" variant="secondary" onClick={restart}>
-                  {story.restartLabel ?? "Restart"}
+                  {story.restartLabel ?? 'Restart'}
                 </Button>
               </div>
 
@@ -254,7 +280,10 @@ export function InteractiveStoryPlayer<
                   <motion.div
                     className="h-2 rounded-full bg-foreground"
                     animate={{ width: `${Math.max(progress * 100, 10)}%` }}
-                    transition={{ duration: reducedMotion ? 0 : 0.3, ease: "easeOut" }}
+                    transition={{
+                      duration: reducedMotion ? 0 : 0.3,
+                      ease: 'easeOut',
+                    }}
                   />
                 </div>
                 <ol className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
@@ -265,10 +294,10 @@ export function InteractiveStoryPlayer<
                       <li
                         key={`${entry.nodeId}-${index}`}
                         className={cn(
-                          "rounded-full border px-3 py-1",
+                          'rounded-full border px-3 py-1',
                           index === history.length - 1
-                            ? "border-foreground text-foreground"
-                            : "border-border",
+                            ? 'border-foreground text-foreground'
+                            : 'border-border',
                         )}
                       >
                         {node.title}

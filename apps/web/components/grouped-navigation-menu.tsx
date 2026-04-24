@@ -28,7 +28,9 @@ function matchesPath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function GroupedNavigationMenu({ categories }: GroupedNavigationMenuProps) {
+export function GroupedNavigationMenu({
+  categories,
+}: GroupedNavigationMenuProps) {
   const pathname = usePathname();
   const { settings } = useAppSettings();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -38,7 +40,9 @@ export function GroupedNavigationMenu({ categories }: GroupedNavigationMenuProps
   } | null>(null);
 
   const activeCategoryKey =
-    categories.find((category) => category.links.some((link) => matchesPath(pathname, link.href)))?.key ?? null;
+    categories.find((category) =>
+      category.links.some((link) => matchesPath(pathname, link.href)),
+    )?.key ?? null;
 
   const openCategoryKey =
     openState &&
@@ -47,7 +51,8 @@ export function GroupedNavigationMenu({ categories }: GroupedNavigationMenuProps
       ? openState.key
       : null;
 
-  const openCategory = categories.find((category) => category.key === openCategoryKey) ?? null;
+  const openCategory =
+    categories.find((category) => category.key === openCategoryKey) ?? null;
 
   const handlePointerDown = useEffectEvent((event: PointerEvent) => {
     if (!containerRef.current?.contains(event.target as Node)) {
@@ -104,7 +109,8 @@ export function GroupedNavigationMenu({ categories }: GroupedNavigationMenuProps
                 ].join(' ')}
                 onClick={() => {
                   setOpenState((currentOpenState) =>
-                    currentOpenState?.key === category.key && currentOpenState.pathname === pathname
+                    currentOpenState?.key === category.key &&
+                    currentOpenState.pathname === pathname
                       ? null
                       : { key: category.key, pathname },
                   );
@@ -114,7 +120,10 @@ export function GroupedNavigationMenu({ categories }: GroupedNavigationMenuProps
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 16 16"
-                  className={['h-3.5 w-3.5 transition-transform duration-200', isOpen ? 'rotate-180' : undefined]
+                  className={[
+                    'h-3.5 w-3.5 transition-transform duration-200',
+                    isOpen ? 'rotate-180' : undefined,
+                  ]
                     .filter(Boolean)
                     .join(' ')}
                 >

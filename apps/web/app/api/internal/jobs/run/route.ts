@@ -10,7 +10,14 @@ export const POST = createApiRoute({
     const providedSecret = request.headers.get('x-internal-cron-secret');
 
     if (!secret || providedSecret !== secret) {
-      throw new ProblemError(problem('/problems/internal-cron-auth', 'Forbidden', 403, 'Invalid cron secret.'));
+      throw new ProblemError(
+        problem(
+          '/problems/internal-cron-auth',
+          'Forbidden',
+          403,
+          'Invalid cron secret.',
+        ),
+      );
     }
 
     const result = await runDueJobs();

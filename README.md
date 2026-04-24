@@ -1,8 +1,8 @@
-# Card Game Template
+# Turn-Based Game Template
 
-This repository is a cross-platform template for building card games that can run on web, desktop, and mobile.
+This repository is a cross-platform template for building deterministic turn-based games that can run on web, desktop, and mobile.
 
-The target is not only simple games like UNO-style variants, but also more complex card games with richer rules, multiplayer state, and persistent player progression.
+The target includes simple card and board games as well as more complex turn-based games with richer rules, multiplayer state, and persistent player progression.
 
 It is still a starter template repository, so the original template bootstrap and promotion automation flows remain part of the contract for generated repositories.
 
@@ -51,6 +51,12 @@ Important details:
 - accounts and match history are first-class features, not add-ons
 - the template should make it easy to add new games without rewriting the platform
 
+## Workspace classes
+
+- `active apps`: `apps/web`, `apps/mobile`, and `apps/desktop` are part of the default workspace graph and must satisfy the standard `lint`, `check-types`, `test:unit`, `test:integration`, and `test:e2e` contract
+- `reference apps`: `apps/web.backup` stays in the repository as a preserved reference workspace, but it is excluded from default root commands and CI unless explicitly invoked through `backup:*` scripts
+- `app-private modules`: `apps/web/packages/*` and `apps/desktop/packages/*` stay tied to their owning apps; they are internal modules rather than publishable template packages
+
 ## Automation notes
 
 - release promotion still follows `develop -> nightly -> beta -> staging`
@@ -62,20 +68,20 @@ Important details:
 
 The repository should evolve toward:
 
-- a shared game engine package for deterministic card game rules
+- a shared game engine package for deterministic turn-based rules
 - platform apps for desktop, web, and mobile
 - server-side services for authentication, matchmaking or room management, and match persistence
 - reusable contracts for moves, game state, players, and results
 
 ## Current status
 
-The repository structure supports a monorepo with platform-specific apps and shared packages for reusable card-game logic.
+The repository structure supports a monorepo with platform-specific apps and shared packages for reusable turn-based game logic.
 
 Implemented foundation:
 
 - shared contracts for players, games, moves, match state, replay logs, and persisted match summaries
-- deterministic game engine helpers plus local and server-authoritative session runtimes
-- local UNO-style, Texas Hold'em, and Arcane Duel samples shared across mobile and desktop
+- deterministic game engine helpers plus local and server-authoritative session runtimes for one accepted action at a time
+- local UNO-style, Texas Hold'em, Arcane Duel, and Tic-Tac-Toe samples shared through the reusable game packages
 - web UNO-style server-authoritative matches with guest/account ownership, persisted move logs, replay inspection, and match history
 
 Next platform work should focus on generic multi-game persistence, private online rooms, realtime fan-out, and bringing the persisted server-authoritative path to poker and TCG.

@@ -1,8 +1,22 @@
 'use client';
 
 import type { ChartConfig } from '@moritzbrantner/ui';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@moritzbrantner/ui';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@moritzbrantner/ui';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 import type { AdminReportSeries } from '@/src/domain/admin-reports/use-cases';
 
@@ -33,7 +47,11 @@ function hasSeriesData(series: AdminReportSeries) {
 
 export function AdminReportChart({ series }: AdminReportChartProps) {
   if (!hasSeriesData(series)) {
-    return <p className="text-sm text-zinc-600 dark:text-zinc-300">{series.emptyMessage}</p>;
+    return (
+      <p className="text-sm text-zinc-600 dark:text-zinc-300">
+        {series.emptyMessage}
+      </p>
+    );
   }
 
   const config = buildChartConfig(series);
@@ -50,7 +68,10 @@ export function AdminReportChart({ series }: AdminReportChartProps) {
           <CartesianGrid vertical={false} strokeDasharray="3 3" />
           <XAxis dataKey={series.xKey} minTickGap={24} {...commonAxisProps} />
           <YAxis allowDecimals={false} width={32} {...commonAxisProps} />
-          <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
+          <ChartTooltip
+            cursor={false}
+            content={<ChartTooltipContent indicator="line" />}
+          />
           {series.categories.map((category) => (
             <Bar
               key={category.key}
@@ -65,7 +86,10 @@ export function AdminReportChart({ series }: AdminReportChartProps) {
           <CartesianGrid vertical={false} strokeDasharray="3 3" />
           <XAxis dataKey={series.xKey} minTickGap={24} {...commonAxisProps} />
           <YAxis allowDecimals={false} width={32} {...commonAxisProps} />
-          <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
+          <ChartTooltip
+            cursor={false}
+            content={<ChartTooltipContent indicator="line" />}
+          />
           {series.categories.map((category) => (
             <Area
               key={category.key}
@@ -80,12 +104,28 @@ export function AdminReportChart({ series }: AdminReportChartProps) {
         </AreaChart>
       ) : (
         <LineChart data={series.data} margin={{ left: 0, right: 12, top: 8 }}>
-          {series.type === 'sparkline' ? null : <CartesianGrid vertical={false} strokeDasharray="3 3" />}
-          <XAxis dataKey={series.xKey} hide={series.type === 'sparkline'} minTickGap={24} {...commonAxisProps} />
-          <YAxis hide={series.type === 'sparkline'} allowDecimals={false} width={32} {...commonAxisProps} />
+          {series.type === 'sparkline' ? null : (
+            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+          )}
+          <XAxis
+            dataKey={series.xKey}
+            hide={series.type === 'sparkline'}
+            minTickGap={24}
+            {...commonAxisProps}
+          />
+          <YAxis
+            hide={series.type === 'sparkline'}
+            allowDecimals={false}
+            width={32}
+            {...commonAxisProps}
+          />
           <ChartTooltip
             cursor={series.type === 'sparkline' ? false : undefined}
-            content={<ChartTooltipContent indicator={series.type === 'sparkline' ? 'dot' : 'line'} />}
+            content={
+              <ChartTooltipContent
+                indicator={series.type === 'sparkline' ? 'dot' : 'line'}
+              />
+            }
           />
           {series.categories.map((category) => (
             <Line

@@ -1,7 +1,11 @@
 import { TableEntryForm } from '@/components/data-entry/table-entry-form';
 import { getTablePermissionViews } from '@/src/domain/data-entry/use-cases';
 import { createTranslator } from '@/src/i18n/messages';
-import { notFoundUnlessFeatureEnabled, requireWorkspaceAccess, resolveLocale } from '@/src/server/page-guards';
+import {
+  notFoundUnlessFeatureEnabled,
+  requireWorkspaceAccess,
+  resolveLocale,
+} from '@/src/server/page-guards';
 
 export default async function DataEntryPage({
   params,
@@ -19,14 +23,17 @@ export default async function DataEntryPage({
     <section className="mx-auto max-w-4xl space-y-6">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">{t('description')}</p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          {t('description')}
+        </p>
       </header>
 
       <div className="grid gap-4 md:grid-cols-2">
         {readableTables.map((table) => (
           <article key={table.table} className="space-y-2">
             <p className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              {t('permissions.read')}: {table.readRoles.join(', ')} · {t('permissions.write')}: {table.writeRoles.join(', ')}
+              {t('permissions.read')}: {table.readRoles.join(', ')} ·{' '}
+              {t('permissions.write')}: {table.writeRoles.join(', ')}
             </p>
             {table.canWrite ? (
               <TableEntryForm
@@ -52,7 +59,9 @@ export default async function DataEntryPage({
                 }}
               />
             ) : (
-              <div className="rounded-lg border p-4 text-sm dark:border-zinc-800">{t('permissions.noWrite')}</div>
+              <div className="rounded-lg border p-4 text-sm dark:border-zinc-800">
+                {t('permissions.noWrite')}
+              </div>
             )}
           </article>
         ))}

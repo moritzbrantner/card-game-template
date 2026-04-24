@@ -7,7 +7,11 @@ import {
 import { sanitizeTrackedQueryParameters } from '@/src/privacy/consent';
 
 const TRACKED_PAGE_BASE_URL = 'https://page-visit.local';
-const NON_TRACKABLE_PAGE_PATH_PREFIXES = ['/api', '/_build', '/_serverFn'] as const;
+const NON_TRACKABLE_PAGE_PATH_PREFIXES = [
+  '/api',
+  '/_build',
+  '/_serverFn',
+] as const;
 
 export type NormalizedPageVisit = {
   href: string;
@@ -22,7 +26,9 @@ export type NormalizedPageVisit = {
 export type PageVisitReferrerType = 'direct' | 'internal' | 'external';
 
 export function isTrackablePageVisitPathname(pathname: string): boolean {
-  return !NON_TRACKABLE_PAGE_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return !NON_TRACKABLE_PAGE_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 }
 
 export function normalizeTrackedPageVisit(href: string): NormalizedPageVisit {
@@ -70,13 +76,17 @@ export function resolveTrackedPageVisitReferrer(input: {
   documentReferrer?: string | null;
 }) {
   const currentVisit = normalizeTrackedPageVisit(input.href);
-  const currentUrl = new URL(currentVisit.href, input.requestUrl ?? TRACKED_PAGE_BASE_URL);
+  const currentUrl = new URL(
+    currentVisit.href,
+    input.requestUrl ?? TRACKED_PAGE_BASE_URL,
+  );
   const previousVisit = tryNormalizeTrackedPageVisit(input.previousHref);
 
   if (previousVisit && isTrackablePageVisitPathname(previousVisit.pathname)) {
     return {
       previousPathname: previousVisit.pathname,
-      previousCanonicalPath: classifyNavigationPathname(previousVisit.pathname).canonicalPath,
+      previousCanonicalPath: classifyNavigationPathname(previousVisit.pathname)
+        .canonicalPath,
       referrerType: 'internal' as const,
       referrerHost: null,
     };
@@ -92,12 +102,19 @@ export function resolveTrackedPageVisitReferrer(input: {
   }
 
   try {
-    const referrerUrl = new URL(input.documentReferrer, input.requestUrl ?? TRACKED_PAGE_BASE_URL);
+    const referrerUrl = new URL(
+      input.documentReferrer,
+      input.requestUrl ?? TRACKED_PAGE_BASE_URL,
+    );
 
-    if (referrerUrl.origin === currentUrl.origin && isTrackablePageVisitPathname(referrerUrl.pathname)) {
+    if (
+      referrerUrl.origin === currentUrl.origin &&
+      isTrackablePageVisitPathname(referrerUrl.pathname)
+    ) {
       return {
         previousPathname: referrerUrl.pathname,
-        previousCanonicalPath: classifyNavigationPathname(referrerUrl.pathname).canonicalPath,
+        previousCanonicalPath: classifyNavigationPathname(referrerUrl.pathname)
+          .canonicalPath,
         referrerType: 'internal' as const,
         referrerHost: null,
       };

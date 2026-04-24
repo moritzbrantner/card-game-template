@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 
 import {
   useMotionValueEvent,
@@ -8,12 +8,12 @@ import {
   useScroll,
   useSpring,
   useTransform,
-} from "motion/react";
+} from 'motion/react';
 
-import { cn } from "@moritzbrantner/ui";
+import { cn } from '@moritzbrantner/ui';
 
-import { useStoryContext } from "./story-context";
-import { getStorySceneElements } from "./story-introspection";
+import { useStoryContext } from './story-context';
+import { getStorySceneElements } from './story-introspection';
 
 export type StorySeriesProps = {
   children: ReactNode;
@@ -28,18 +28,17 @@ const clamp = (value: number, min: number, max: number) =>
 function StorySeriesComponent({
   children,
   className,
-  viewportClassName = "h-[26rem] md:h-[70vh]",
+  viewportClassName = 'h-[26rem] md:h-[70vh]',
   ariaLabel,
 }: StorySeriesProps) {
-  const {
-    sceneCount,
-    setActiveIndex,
-    sceneProgress,
-    registerScrollToScene,
-  } = useStoryContext("StorySeries");
+  const { sceneCount, setActiveIndex, sceneProgress, registerScrollToScene } =
+    useStoryContext('StorySeries');
   const seriesRef = useRef<HTMLDivElement | null>(null);
   const reducedMotion = useReducedMotion();
-  const sceneElements = useMemo(() => getStorySceneElements(children), [children]);
+  const sceneElements = useMemo(
+    () => getStorySceneElements(children),
+    [children],
+  );
   const maxSceneIndex = Math.max(sceneCount - 1, 0);
   const { scrollYProgress } = useScroll({ container: seriesRef });
   const springProgress = useSpring(scrollYProgress, {
@@ -51,14 +50,13 @@ function StorySeriesComponent({
     springProgress,
     (value) => value * maxSceneIndex,
   );
-  const reducedMotionProgress = useTransform(
-    scrollYProgress,
-    (value) => Math.round(value * maxSceneIndex),
+  const reducedMotionProgress = useTransform(scrollYProgress, (value) =>
+    Math.round(value * maxSceneIndex),
   );
 
   useMotionValueEvent(
     reducedMotion ? reducedMotionProgress : smoothSceneProgress,
-    "change",
+    'change',
     (latest) => {
       const nextProgress = clamp(latest, 0, maxSceneIndex);
       const nextActiveIndex = clamp(Math.round(nextProgress), 0, maxSceneIndex);
@@ -76,13 +74,16 @@ function StorySeriesComponent({
       if (!element) return;
 
       const nextIndex = clamp(index, 0, maxSceneIndex);
-      const maxScroll = Math.max(element.scrollHeight - element.clientHeight, 0);
+      const maxScroll = Math.max(
+        element.scrollHeight - element.clientHeight,
+        0,
+      );
       const target =
         maxSceneIndex === 0 ? 0 : (nextIndex / maxSceneIndex) * maxScroll;
 
       element.scrollTo({
         top: target,
-        behavior: reducedMotion ? "auto" : "smooth",
+        behavior: reducedMotion ? 'auto' : 'smooth',
       });
     },
     [maxSceneIndex, reducedMotion],
@@ -102,7 +103,7 @@ function StorySeriesComponent({
       role="region"
       aria-label={ariaLabel}
       className={cn(
-        "story-steps-scrollbar-hidden relative overflow-y-auto overscroll-contain",
+        'story-steps-scrollbar-hidden relative overflow-y-auto overscroll-contain',
         viewportClassName,
         className,
       )}
@@ -113,7 +114,7 @@ function StorySeriesComponent({
       >
         <div
           className={cn(
-            "sticky top-0 z-10 overflow-hidden rounded-xl border bg-background",
+            'sticky top-0 z-10 overflow-hidden rounded-xl border bg-background',
             viewportClassName,
           )}
         >

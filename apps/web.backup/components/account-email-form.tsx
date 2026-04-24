@@ -21,7 +21,10 @@ type AccountEmailFormProps = {
   };
 };
 
-export function AccountEmailForm({ currentEmail, labels }: AccountEmailFormProps) {
+export function AccountEmailForm({
+  currentEmail,
+  labels,
+}: AccountEmailFormProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [displayEmail, setDisplayEmail] = useState(currentEmail);
@@ -60,7 +63,13 @@ export function AccountEmailForm({ currentEmail, labels }: AccountEmailFormProps
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="current-account-email">{labels.currentEmail}</Label>
-        <Input id="current-account-email" type="email" value={displayEmail} readOnly className="bg-zinc-50 dark:bg-zinc-900" />
+        <Input
+          id="current-account-email"
+          type="email"
+          value={displayEmail}
+          readOnly
+          className="bg-zinc-50 dark:bg-zinc-900"
+        />
       </div>
 
       <div className="space-y-2">
@@ -91,8 +100,16 @@ export function AccountEmailForm({ currentEmail, labels }: AccountEmailFormProps
       </Button>
 
       <div role="status" className="space-y-1">
-        {state.error ? <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p> : null}
-        {state.success ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{labels.success}</p> : null}
+        {state.error ? (
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {state.error}
+          </p>
+        ) : null}
+        {state.success ? (
+          <p className="text-sm text-emerald-600 dark:text-emerald-400">
+            {labels.success}
+          </p>
+        ) : null}
       </div>
     </form>
   );

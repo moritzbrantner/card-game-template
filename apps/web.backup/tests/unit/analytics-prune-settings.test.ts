@@ -22,7 +22,9 @@ describe('analytics prune retention', () => {
   });
 
   it('prefers the job payload override when provided', async () => {
-    const resolved = await resolvePruneAnalyticsOlderThanDays({ olderThanDays: 30 });
+    const resolved = await resolvePruneAnalyticsOlderThanDays({
+      olderThanDays: 30,
+    });
 
     expect(resolved).toBe(30);
   });

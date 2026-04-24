@@ -24,7 +24,9 @@ function walkFiles(root) {
 const [scanRoot, ...blockedPrefixes] = process.argv.slice(2);
 
 if (!scanRoot) {
-  console.error('Usage: bun ./scripts/verify-package-imports.mjs <root> <blocked-prefix> [...]');
+  console.error(
+    'Usage: bun ./scripts/verify-package-imports.mjs <root> <blocked-prefix> [...]',
+  );
   process.exit(1);
 }
 
@@ -49,7 +51,9 @@ for (const filePath of walkFiles(resolvedRoot)) {
     }
 
     if (blockedPrefixes.some((prefix) => specifier.startsWith(prefix))) {
-      violations.push(`${path.relative(process.cwd(), filePath)} -> ${specifier}`);
+      violations.push(
+        `${path.relative(process.cwd(), filePath)} -> ${specifier}`,
+      );
     }
   }
 }

@@ -1,8 +1,13 @@
 import type { AppLocale } from '@/i18n/routing';
-import type { AppManifest, PublicPageDefinition } from '@/src/app-config/contracts';
+import type {
+  AppManifest,
+  PublicPageDefinition,
+} from '@/src/app-config/contracts';
 import { isFeatureEnabled } from '@/src/foundation/features/runtime';
 
-function normalizeSlugValue(slug: readonly string[] | string | undefined | null) {
+function normalizeSlugValue(
+  slug: readonly string[] | string | undefined | null,
+) {
   if (!slug) {
     return '';
   }
@@ -51,7 +56,10 @@ export function resolveEnabledPublicRoute(
     return null;
   }
 
-  if (resolvedRoute.page.featureKey && !isFeatureEnabled(resolvedRoute.page.featureKey, manifest)) {
+  if (
+    resolvedRoute.page.featureKey &&
+    !isFeatureEnabled(resolvedRoute.page.featureKey, manifest)
+  ) {
     return null;
   }
 
@@ -66,7 +74,10 @@ function slugToSegments(slug: string) {
   return slug.split('/').filter(Boolean);
 }
 
-export function generatePublicRouteParams(locales: readonly AppLocale[], manifest: AppManifest) {
+export function generatePublicRouteParams(
+  locales: readonly AppLocale[],
+  manifest: AppManifest,
+) {
   return locales.flatMap((locale) =>
     manifest.publicPages.flatMap((page) =>
       listRouteSlugs(page).map((slug) => ({
@@ -78,5 +89,7 @@ export function generatePublicRouteParams(locales: readonly AppLocale[], manifes
 }
 
 export function getPublicPageNamespaces(manifest: AppManifest) {
-  return Array.from(new Set(manifest.publicPages.map((page) => page.namespace)));
+  return Array.from(
+    new Set(manifest.publicPages.map((page) => page.namespace)),
+  );
 }

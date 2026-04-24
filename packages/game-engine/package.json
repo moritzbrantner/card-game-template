@@ -9,6 +9,8 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "lint": "oxfmt --check . && bun run lint:code",
+    "lint:code": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "test:integration": "../../scripts/run-with-node.sh --experimental-strip-types --test ./tests/integration.test.ts",
     "test:unit": "../../scripts/run-with-node.sh --experimental-strip-types --test ./tests/unit.test.ts"

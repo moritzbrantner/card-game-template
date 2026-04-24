@@ -23,7 +23,9 @@ export function sanitizeProfileTagBase(value: string) {
   );
 }
 
-export function validateProfileTag(tag: string): { ok: true } | { ok: false; message: string } {
+export function validateProfileTag(
+  tag: string,
+): { ok: true } | { ok: false; message: string } {
   if (tag.length < PROFILE_TAG_MIN_LENGTH) {
     return {
       ok: false,
@@ -41,7 +43,8 @@ export function validateProfileTag(tag: string): { ok: true } | { ok: false; mes
   if (!TAG_ALLOWED_PATTERN.test(tag)) {
     return {
       ok: false,
-      message: 'Tag can only contain lowercase letters, numbers, hyphens, and underscores, and cannot start or end with punctuation.',
+      message:
+        'Tag can only contain lowercase letters, numbers, hyphens, and underscores, and cannot start or end with punctuation.',
     };
   }
 
@@ -93,7 +96,11 @@ export function getInitialProfileTagCandidates(input: {
   email: string;
   name?: string | null;
 }) {
-  const baseCandidates = [input.name ?? '', input.email.split('@')[0] ?? '', 'user']
+  const baseCandidates = [
+    input.name ?? '',
+    input.email.split('@')[0] ?? '',
+    'user',
+  ]
     .map(sanitizeProfileTagBase)
     .filter((candidate) => candidate.length > 0);
   const fallbackTag = getFallbackProfileTag(input.userId);

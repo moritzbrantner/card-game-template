@@ -18,14 +18,16 @@ export default function SettingsScreen() {
           <ThemedView style={styles.header}>
             <ThemedText type="title">Settings</ThemedText>
             <ThemedText>
-              Adjust application preferences from one place across web, desktop, and mobile.
+              Adjust application preferences from one place across web, desktop,
+              and mobile.
             </ThemedText>
           </ThemedView>
 
           <ThemedView
             style={[styles.card, { borderColor }]}
             lightColor={Colors.light.surface}
-            darkColor={Colors.dark.surface}>
+            darkColor={Colors.dark.surface}
+          >
             <ThemeModeToggle />
             <ThemedText style={[styles.hint, { color: mutedTextColor }]}>
               Theme changes are applied immediately throughout the app.

@@ -1,13 +1,15 @@
 export const communicationPage = {
   eyebrow: 'Communication category',
   title: 'Realtime communication',
-  description: 'A quick reference for the collaboration primitives that matter once multiple clients must share state.',
+  description:
+    'A quick reference for the collaboration primitives that matter once multiple clients must share state.',
   intro:
     'Use this page as a template stub when you need to compare transport choices against shared-state choices. WebSockets move events quickly; CRDTs keep replicas convergent when edits happen concurrently.',
   newsletter: {
     eyebrow: 'Email channel',
     title: 'Newsletter',
-    description: 'Capture an email address and send a real message through Mailpit during local and e2e testing.',
+    description:
+      'Capture an email address and send a real message through Mailpit during local and e2e testing.',
     email: 'Email address',
     submit: 'Subscribe',
     submitting: 'Subscribing...',

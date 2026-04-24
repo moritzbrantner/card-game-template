@@ -1,13 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type { GameMove, MatchState, PlayerId, PlayerProfile } from '../../game-contracts/src/index.ts';
+import type {
+  GameMove,
+  MatchState,
+  PlayerId,
+  PlayerProfile,
+} from '../../game-contracts/src/index.ts';
+import {
+  drawCardsBetweenStacks,
+  moveCardsBetweenStacks,
+} from '../../card-kit/src/index.ts';
 
 import {
   areMovesEquivalent,
   createGameEngine,
-  drawCardsBetweenStacks,
-  moveCardsBetweenStacks,
   type GameAdapter,
 } from '../src/index.ts';
 
@@ -51,11 +58,18 @@ function handStackId(playerId: PlayerId) {
   return `hand:${playerId}`;
 }
 
-function createStacks(state: BattleState): Record<string, readonly BattleCard[]> {
+function createStacks(
+  state: BattleState,
+): Record<string, readonly BattleCard[]> {
   return {
     deck: state.deck,
     discard: state.discard,
-    ...Object.fromEntries(Object.entries(state.hands).map(([playerId, cards]) => [handStackId(playerId), cards])),
+    ...Object.fromEntries(
+      Object.entries(state.hands).map(([playerId, cards]) => [
+        handStackId(playerId),
+        cards,
+      ]),
+    ),
   };
 }
 
@@ -69,11 +83,18 @@ const battleAdapter: GameAdapter<BattleSetup, BattleState, BattleMove> = {
     supportsOnline: true,
     tags: ['test', 'cards'],
   },
-  createInitialState({ executionMode, matchId, players: currentPlayers, setup }): MatchState<BattleState> {
+  createInitialState({
+    executionMode,
+    matchId,
+    players: currentPlayers,
+    setup,
+  }): MatchState<BattleState> {
     let stacks: Record<string, readonly BattleCard[]> = {
       deck: setup.deck,
       discard: [],
-      ...Object.fromEntries(currentPlayers.map((player) => [handStackId(player.playerId), []])),
+      ...Object.fromEntries(
+        currentPlayers.map((player) => [handStackId(player.playerId), []]),
+      ),
     };
 
     for (const player of currentPlayers) {
@@ -95,9 +116,14 @@ const battleAdapter: GameAdapter<BattleSetup, BattleState, BattleMove> = {
         deck: stacks.deck ?? [],
         discard: stacks.discard ?? [],
         hands: Object.fromEntries(
-          currentPlayers.map((player) => [player.playerId, stacks[handStackId(player.playerId)] ?? []]),
+          currentPlayers.map((player) => [
+            player.playerId,
+            stacks[handStackId(player.playerId)] ?? [],
+          ]),
         ),
-        scores: Object.fromEntries(currentPlayers.map((player) => [player.playerId, 0])),
+        scores: Object.fromEntries(
+          currentPlayers.map((player) => [player.playerId, 0]),
+        ),
         targetScore: setup.targetScore,
         winnerPlayerId: null,
       },
@@ -118,7 +144,9 @@ const battleAdapter: GameAdapter<BattleSetup, BattleState, BattleMove> = {
     }));
   },
   isLegalMove(state, move): boolean {
-    return this.listLegalMoves(state).some((candidate) => areMovesEquivalent(candidate, move));
+    return this.listLegalMoves(state).some((candidate) =>
+      areMovesEquivalent(candidate, move),
+    );
   },
   applyMove(state, move): MatchState<BattleState> {
     const moved = moveCardsBetweenStacks(createStacks(state.state), {
@@ -130,30 +158,47 @@ const battleAdapter: GameAdapter<BattleSetup, BattleState, BattleMove> = {
     const playedCard = moved.movedCards[0];
 
     if (!playedCard) {
-      throw new Error(`Card ${move.payload.cardId} is not in hand for ${move.playerId}`);
+      throw new Error(
+        `Card ${move.payload.cardId} is not in hand for ${move.playerId}`,
+      );
     }
 
     const nextScores = {
       ...state.state.scores,
-      [move.playerId]: (state.state.scores[move.playerId] ?? 0) + playedCard.rank,
+      [move.playerId]:
+        (state.state.scores[move.playerId] ?? 0) + playedCard.rank,
     };
     const nextPlayer =
-      state.players[(state.players.findIndex((player) => player.playerId === move.playerId) + 1) % state.players.length]
-        ?.playerId ?? move.playerId;
+      state.players[
+        (state.players.findIndex(
+          (player) => player.playerId === move.playerId,
+        ) +
+          1) %
+          state.players.length
+      ]?.playerId ?? move.playerId;
 
     return {
       ...state,
-      activePlayerId: nextScores[move.playerId]! >= state.state.targetScore ? move.playerId : nextPlayer,
+      activePlayerId:
+        nextScores[move.playerId]! >= state.state.targetScore
+          ? move.playerId
+          : nextPlayer,
       turn: state.turn + 1,
       state: {
         ...state.state,
         deck: moved.stacks.deck ?? [],
         discard: moved.stacks.discard ?? [],
         hands: Object.fromEntries(
-          state.players.map((player) => [player.playerId, moved.stacks[handStackId(player.playerId)] ?? []]),
+          state.players.map((player) => [
+            player.playerId,
+            moved.stacks[handStackId(player.playerId)] ?? [],
+          ]),
         ),
         scores: nextScores,
-        winnerPlayerId: nextScores[move.playerId]! >= state.state.targetScore ? move.playerId : null,
+        winnerPlayerId:
+          nextScores[move.playerId]! >= state.state.targetScore
+            ? move.playerId
+            : null,
       },
     };
   },
@@ -172,7 +217,8 @@ const battleAdapter: GameAdapter<BattleSetup, BattleState, BattleMove> = {
       rankings: [...state.players]
         .sort(
           (left, right) =>
-            (state.state.scores[right.playerId] ?? 0) - (state.state.scores[left.playerId] ?? 0) ||
+            (state.state.scores[right.playerId] ?? 0) -
+              (state.state.scores[left.playerId] ?? 0) ||
             left.seat - right.seat,
         )
         .map((player, index) => ({
@@ -209,26 +255,26 @@ test('engine runs a complete card-game adapter lifecycle', () => {
     ['green-2', 'yellow-1'],
   );
   assert.deepEqual(initial.state.deck, []);
-  assert.equal(engine.finalizeMatch(initial), null);
+  assert.equal(engine.finalize(initial), null);
 
   const afterP1 = engine.submitMove(initial, {
     playerId: 'p1',
     kind: 'play-card',
     createdAt: '2026-04-17T12:00:01.000Z',
     payload: { cardId: 'red-3' },
-  });
+  }).nextState;
   const afterP2 = engine.submitMove(afterP1, {
     playerId: 'p2',
     kind: 'play-card',
     createdAt: '2026-04-17T12:00:02.000Z',
     payload: { cardId: 'green-2' },
-  });
+  }).nextState;
   const complete = engine.submitMove(afterP2, {
     playerId: 'p1',
     kind: 'play-card',
     createdAt: '2026-04-17T12:00:03.000Z',
     payload: { cardId: 'blue-4' },
-  });
+  }).nextState;
 
   assert.equal(initial.state.hands.p1.length, 2);
   assert.equal(complete.turn, 4);
@@ -244,7 +290,7 @@ test('engine runs a complete card-game adapter lifecycle', () => {
     ['yellow-1'],
   );
 
-  assert.deepEqual(engine.finalizeMatch(complete), {
+  assert.deepEqual(engine.finalize(complete), {
     matchId: 'battle-1',
     gameId: 'engine-battle',
     winnerIds: ['p1'],

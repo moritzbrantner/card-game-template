@@ -2,14 +2,26 @@ import { notFound } from 'next/navigation';
 
 import { ProfileFollowPanel } from '@/components/profile-follow-panel';
 import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { LocalizedLink } from '@/i18n/server-link';
 import { getAuthSession } from '@/src/auth.server';
 import { getProfileViewByTagUseCase } from '@/src/domain/profile/use-cases';
 import { isFeatureEnabled } from '@/src/foundation/features/runtime';
 import { createTranslator } from '@/src/i18n/messages';
-import { buildPublicProfileBlogPath, parseProfileTagSegment } from '@/src/profile/tags';
-import { notFoundUnlessFeatureEnabled, resolveLocale } from '@/src/server/page-guards';
+import {
+  buildPublicProfileBlogPath,
+  parseProfileTagSegment,
+} from '@/src/profile/tags';
+import {
+  notFoundUnlessFeatureEnabled,
+  resolveLocale,
+} from '@/src/server/page-guards';
 
 export default async function PublicProfilePage({
   params,
@@ -42,7 +54,9 @@ export default async function PublicProfilePage({
   return (
     <section className="space-y-4">
       <div className="mx-auto max-w-3xl space-y-1 px-1">
-        <h1 className="text-3xl font-semibold tracking-tight">{t('view.title')}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {t('view.title')}
+        </h1>
         <CardDescription>{t('view.description')}</CardDescription>
       </div>
 
@@ -80,7 +94,11 @@ export default async function PublicProfilePage({
           <CardHeader className="gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
               <CardTitle>{blogT('profileCard.title')}</CardTitle>
-              <CardDescription>{blogT('profileCard.description', { name: profile.displayName })}</CardDescription>
+              <CardDescription>
+                {blogT('profileCard.description', {
+                  name: profile.displayName,
+                })}
+              </CardDescription>
             </div>
 
             <LocalizedLink
@@ -93,7 +111,9 @@ export default async function PublicProfilePage({
           </CardHeader>
 
           <CardContent>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">{blogT('profileCard.caption')}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              {blogT('profileCard.caption')}
+            </p>
           </CardContent>
         </Card>
       ) : null}

@@ -7,6 +7,7 @@ import {
   createMatchResult,
   isOnlineCapable,
   summarizeMatchReplay,
+  type MatchInspection,
   type GameDefinition,
 } from '../src/index.ts';
 
@@ -27,6 +28,25 @@ test('createMatchResult derives rankings from winner order when omitted', () => 
     { playerId: 'p1', position: 1 },
     { playerId: 'p2', position: 2 },
   ]);
+});
+
+test('match inspection contract models actor, legal moves, and status generically', () => {
+  const inspection: MatchInspection = {
+    actorPlayerId: 'p1',
+    legalMoves: [
+      {
+        playerId: 'p1',
+        kind: 'place-mark',
+        createdAt: '2026-04-17T12:00:00.000Z',
+        payload: { row: 0, column: 0 },
+      },
+    ],
+    status: 'in_progress',
+  };
+
+  assert.equal(inspection.actorPlayerId, 'p1');
+  assert.equal(inspection.legalMoves.length, 1);
+  assert.equal(inspection.status, 'in_progress');
 });
 
 test('isOnlineCapable requires multiplayer and explicit online support', () => {

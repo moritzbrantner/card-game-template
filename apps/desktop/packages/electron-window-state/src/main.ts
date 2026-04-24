@@ -2,7 +2,11 @@ import type { BrowserWindow } from 'electron';
 
 import type { JsonStore } from '@moritzbrantner/electron-json-store/main';
 
-import type { StoredWindowBounds, StoredWindowState, StoredWindowStateMap } from './shared.ts';
+import type {
+  StoredWindowBounds,
+  StoredWindowState,
+  StoredWindowStateMap,
+} from './shared.ts';
 
 const defaultWindowBounds: StoredWindowBounds = {
   height: 720,

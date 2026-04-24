@@ -2,7 +2,10 @@ import { notFound } from 'next/navigation';
 
 import type { AppLocale } from '@moritzbrantner/app-pack';
 import { createUnoAdapter } from '@repo/game-uno';
-import { reconstructMatchHistoryFromReplay, type SessionParticipant } from '@repo/game-session';
+import {
+  reconstructMatchHistoryFromReplay,
+  type SessionParticipant,
+} from '@repo/game-session';
 
 import { PastGameReplayPageClient } from '@/components/past-game-replay-page-client';
 import { getAuthSession } from '@/src/auth.server';
@@ -13,15 +16,22 @@ import {
 } from '@/src/domain/game-matches/replay-inspection';
 import { getUnoReplayUseCase } from '@/src/domain/game-matches/use-cases';
 
-function toReplayParticipants(participants: readonly GameMatchParticipantRecord[]) {
-  return participants.map((participant) => ({
-    playerId: participant.playerId,
-    displayName: participant.displayName,
-    seat: participant.seat,
-    controller: participant.isBot ? 'bot' : 'human',
-    ...(participant.identity.kind === 'account' ? { accountId: participant.identity.accountId } : {}),
-    ...(participant.identity.kind === 'guest' ? { isGuest: true } : {}),
-  }) satisfies SessionParticipant);
+function toReplayParticipants(
+  participants: readonly GameMatchParticipantRecord[],
+) {
+  return participants.map(
+    (participant) =>
+      ({
+        playerId: participant.playerId,
+        displayName: participant.displayName,
+        seat: participant.seat,
+        controller: participant.isBot ? 'bot' : 'human',
+        ...(participant.identity.kind === 'account'
+          ? { accountId: participant.identity.accountId }
+          : {}),
+        ...(participant.identity.kind === 'guest' ? { isGuest: true } : {}),
+      }) satisfies SessionParticipant,
+  );
 }
 
 export default async function PastGameReplayPage({
@@ -54,7 +64,9 @@ export default async function PastGameReplayPage({
   });
 
   const timeline = replay.moves.map((move, index) => {
-    const player = replay.summary.participants.find((participant) => participant.playerId === move.move.playerId);
+    const player = replay.summary.participants.find(
+      (participant) => participant.playerId === move.move.playerId,
+    );
     return {
       id: `${move.sequence}`,
       acceptedAt: move.acceptedAt,
@@ -68,7 +80,9 @@ export default async function PastGameReplayPage({
   return (
     <PastGameReplayPageClient
       backHref={`/${locale}/past-games`}
-      summaryTitle={replay.summary.participants.map((participant) => participant.displayName).join(', ')}
+      summaryTitle={replay.summary.participants
+        .map((participant) => participant.displayName)
+        .join(', ')}
       summaryDescription={`Replay ${replay.summary.status} match ${replay.summary.matchId}.`}
       perspectives={perspectives.map((perspective) => ({
         id: perspective.id,
@@ -78,9 +92,18 @@ export default async function PastGameReplayPage({
       steps={steps}
       timeline={timeline}
       analysisCards={[
-        { label: 'Accepted moves', value: `${replay.analysis.acceptedMoveCount}` },
-        { label: 'Turns completed', value: `${replay.analysis.turnsCompleted}` },
-        { label: 'Top player', value: topUnoPlayer ? topUnoPlayer.displayName : 'None' },
+        {
+          label: 'Accepted moves',
+          value: `${replay.analysis.acceptedMoveCount}`,
+        },
+        {
+          label: 'Turns completed',
+          value: `${replay.analysis.turnsCompleted}`,
+        },
+        {
+          label: 'Top player',
+          value: topUnoPlayer ? topUnoPlayer.displayName : 'None',
+        },
         { label: 'Wilds played', value: `${topUnoPlayer?.wildsPlayed ?? 0}` },
       ]}
     />

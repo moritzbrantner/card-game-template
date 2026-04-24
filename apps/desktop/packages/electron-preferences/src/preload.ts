@@ -3,7 +3,7 @@ import type { IpcRenderer } from 'electron';
 import type { PreferencesBridge } from './shared.ts';
 import { preferencesChannels } from './shared.ts';
 
-export function createPreferencesBridge<TPreferences extends Record<string, unknown>>(
+export function createPreferencesBridge<TPreferences extends object>(
   ipcRenderer: IpcRenderer,
 ): PreferencesBridge<TPreferences> {
   return {
@@ -27,7 +27,10 @@ export function createPreferencesBridge<TPreferences extends Record<string, unkn
       ipcRenderer.on(preferencesChannels.updated, wrappedListener);
 
       return () => {
-        ipcRenderer.removeListener(preferencesChannels.updated, wrappedListener);
+        ipcRenderer.removeListener(
+          preferencesChannels.updated,
+          wrappedListener,
+        );
       };
     },
   };

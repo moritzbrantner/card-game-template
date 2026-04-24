@@ -82,22 +82,26 @@ export const uploadTypeGroups: UploadTypeGroup[] = [
   {
     title: 'Images',
     examples: 'png, jpg, heic, svg',
-    handling: 'Preview locally, preserve EXIF only when needed, and upload the original asset separately from generated thumbnails.',
+    handling:
+      'Preview locally, preserve EXIF only when needed, and upload the original asset separately from generated thumbnails.',
   },
   {
     title: 'Documents',
     examples: 'pdf, docx, txt, md',
-    handling: 'Validate size and mime type early, then queue OCR or text indexing after the binary lands.',
+    handling:
+      'Validate size and mime type early, then queue OCR or text indexing after the binary lands.',
   },
   {
     title: 'Media',
     examples: 'mp3, wav, mp4, mov',
-    handling: 'Stream or chunk large binaries and surface background processing states such as transcoding.',
+    handling:
+      'Stream or chunk large binaries and surface background processing states such as transcoding.',
   },
   {
     title: 'Structured data',
     examples: 'csv, json, zip',
-    handling: 'Parse enough metadata before upload to reject malformed imports and route archives through extra inspection.',
+    handling:
+      'Parse enough metadata before upload to reject malformed imports and route archives through extra inspection.',
   },
 ];
 
@@ -168,15 +172,24 @@ export function inferUploadKind(fileName: string, mimeType = ''): UploadKind {
   const normalizedName = fileName.toLowerCase();
   const normalizedType = mimeType.toLowerCase();
 
-  if (normalizedType.startsWith('image/') || /\.(png|jpe?g|gif|webp|heic|svg)$/.test(normalizedName)) {
+  if (
+    normalizedType.startsWith('image/') ||
+    /\.(png|jpe?g|gif|webp|heic|svg)$/.test(normalizedName)
+  ) {
     return 'image';
   }
 
-  if (normalizedType.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg)$/.test(normalizedName)) {
+  if (
+    normalizedType.startsWith('audio/') ||
+    /\.(mp3|wav|m4a|aac|ogg)$/.test(normalizedName)
+  ) {
     return 'audio';
   }
 
-  if (normalizedType.startsWith('video/') || /\.(mp4|mov|webm|mkv)$/.test(normalizedName)) {
+  if (
+    normalizedType.startsWith('video/') ||
+    /\.(mp4|mov|webm|mkv)$/.test(normalizedName)
+  ) {
     return 'video';
   }
 
@@ -212,37 +225,46 @@ export function getUploadManagementHint(
   kind: UploadKind,
   sizeInBytes: number,
 ): UploadManagementHint {
-  if (kind === 'video' || kind === 'archive' || sizeInBytes >= 20 * 1024 * 1024) {
+  if (
+    kind === 'video' ||
+    kind === 'archive' ||
+    sizeInBytes >= 20 * 1024 * 1024
+  ) {
     return {
       label: 'Chunk before transfer',
-      detail: 'Large binaries should stream in parts so retries can resume instead of restarting from zero.',
+      detail:
+        'Large binaries should stream in parts so retries can resume instead of restarting from zero.',
     };
   }
 
   if (kind === 'image') {
     return {
       label: 'Preview immediately',
-      detail: 'Generate a lightweight local preview first and keep the original binary for the final upload.',
+      detail:
+        'Generate a lightweight local preview first and keep the original binary for the final upload.',
     };
   }
 
   if (kind === 'document') {
     return {
       label: 'Scan and index',
-      detail: 'Documents usually need text extraction, virus scanning, or search indexing after the upload completes.',
+      detail:
+        'Documents usually need text extraction, virus scanning, or search indexing after the upload completes.',
     };
   }
 
   if (kind === 'data') {
     return {
       label: 'Validate schema',
-      detail: 'Structured imports should be parsed early so broken rows fail before they hit downstream systems.',
+      detail:
+        'Structured imports should be parsed early so broken rows fail before they hit downstream systems.',
     };
   }
 
   return {
     label: 'Queue for review',
-    detail: 'Keep the file in a normalized queue until the app decides how to validate and store it.',
+    detail:
+      'Keep the file in a normalized queue until the app decides how to validate and store it.',
   };
 }
 

@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -147,21 +154,25 @@ test('manage-subtree-secrets lists configured subtree secrets across monorepo an
   );
 
   try {
-    const output = execFileSync('bash', [scriptPath, 'list', '--config', configPath], {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        GIT_BIN: gitPath,
-        GH_BIN: ghPath,
-        MOCK_REPO_ROOT: repoRoot,
-        MOCK_GH_LOG: ghLogPath,
-        MOCK_GH_SECRET_STDIN_DIR: stdinDir,
-        MOCK_SECRETS_MONOREPO: 'GH_SUBTREE_SYNC_TOKEN',
-        MOCK_SECRETS_NEXT_TEMPLATE: 'MONOREPO_SUBTREE_DISPATCH_TOKEN',
-        MOCK_SECRETS_EXPO_TEMPLATE: 'MONOREPO_SUBTREE_DISPATCH_TOKEN',
+    const output = execFileSync(
+      'bash',
+      [scriptPath, 'list', '--config', configPath],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          GIT_BIN: gitPath,
+          GH_BIN: ghPath,
+          MOCK_REPO_ROOT: repoRoot,
+          MOCK_GH_LOG: ghLogPath,
+          MOCK_GH_SECRET_STDIN_DIR: stdinDir,
+          MOCK_SECRETS_MONOREPO: 'GH_SUBTREE_SYNC_TOKEN',
+          MOCK_SECRETS_NEXT_TEMPLATE: 'MONOREPO_SUBTREE_DISPATCH_TOKEN',
+          MOCK_SECRETS_EXPO_TEMPLATE: 'MONOREPO_SUBTREE_DISPATCH_TOKEN',
+        },
+        encoding: 'utf8',
       },
-      encoding: 'utf8',
-    });
+    );
 
     const ghLog = readFileSync(ghLogPath, 'utf8');
 
@@ -214,13 +225,19 @@ test('manage-subtree-secrets sets the correct secret values for monorepo and ups
     });
 
     const ghLog = readFileSync(ghLogPath, 'utf8');
-    const syncStdin = readFileSync(join(stdinDir, 'GH_SUBTREE_SYNC_TOKEN.txt'), 'utf8');
+    const syncStdin = readFileSync(
+      join(stdinDir, 'GH_SUBTREE_SYNC_TOKEN.txt'),
+      'utf8',
+    );
     const dispatchStdin = readFileSync(
       join(stdinDir, 'MONOREPO_SUBTREE_DISPATCH_TOKEN.txt'),
       'utf8',
     );
 
-    assert.match(ghLog, /^secret set GH_SUBTREE_SYNC_TOKEN --repo moritzbrantner\/monorepo$/m);
+    assert.match(
+      ghLog,
+      /^secret set GH_SUBTREE_SYNC_TOKEN --repo moritzbrantner\/monorepo$/m,
+    );
     assert.match(
       ghLog,
       /^secret set MONOREPO_SUBTREE_DISPATCH_TOKEN --repo moritzbrantner\/next-template$/m,
@@ -237,7 +254,9 @@ test('manage-subtree-secrets sets the correct secret values for monorepo and ups
 });
 
 test('manage-subtree-secrets rejects set when the required token values are missing', () => {
-  const tempDir = mkdtempSync(join(tmpdir(), 'manage-subtree-secrets-missing-'));
+  const tempDir = mkdtempSync(
+    join(tmpdir(), 'manage-subtree-secrets-missing-'),
+  );
   const ghLogPath = join(tempDir, 'gh.log');
   const stdinDir = join(tempDir, 'stdin');
   const configPath = join(tempDir, 'subtrees.config.sh');
@@ -257,18 +276,22 @@ test('manage-subtree-secrets rejects set when the required token values are miss
   );
 
   try {
-    const result = spawnSync('bash', [scriptPath, 'set', '--scope', 'upstreams', '--config', configPath], {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        GIT_BIN: gitPath,
-        GH_BIN: ghPath,
-        MOCK_REPO_ROOT: repoRoot,
-        MOCK_GH_LOG: ghLogPath,
-        MOCK_GH_SECRET_STDIN_DIR: stdinDir,
+    const result = spawnSync(
+      'bash',
+      [scriptPath, 'set', '--scope', 'upstreams', '--config', configPath],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          GIT_BIN: gitPath,
+          GH_BIN: ghPath,
+          MOCK_REPO_ROOT: repoRoot,
+          MOCK_GH_LOG: ghLogPath,
+          MOCK_GH_SECRET_STDIN_DIR: stdinDir,
+        },
+        encoding: 'utf8',
       },
-      encoding: 'utf8',
-    });
+    );
 
     assert.equal(result.status, 1);
     assert.match(
@@ -301,22 +324,29 @@ test('manage-subtree-secrets deletes secrets for the requested scope', () => {
   );
 
   try {
-    execFileSync('bash', [scriptPath, 'delete', '--scope', 'upstreams', '--config', configPath], {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        GIT_BIN: gitPath,
-        GH_BIN: ghPath,
-        MOCK_REPO_ROOT: repoRoot,
-        MOCK_GH_LOG: ghLogPath,
-        MOCK_GH_SECRET_STDIN_DIR: stdinDir,
+    execFileSync(
+      'bash',
+      [scriptPath, 'delete', '--scope', 'upstreams', '--config', configPath],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          GIT_BIN: gitPath,
+          GH_BIN: ghPath,
+          MOCK_REPO_ROOT: repoRoot,
+          MOCK_GH_LOG: ghLogPath,
+          MOCK_GH_SECRET_STDIN_DIR: stdinDir,
+        },
+        encoding: 'utf8',
       },
-      encoding: 'utf8',
-    });
+    );
 
     const ghLog = readFileSync(ghLogPath, 'utf8');
 
-    assert.match(ghLog, /^secret list --repo moritzbrantner\/electron-template --json name --jq \.\[\]\.name$/m);
+    assert.match(
+      ghLog,
+      /^secret list --repo moritzbrantner\/electron-template --json name --jq \.\[\]\.name$/m,
+    );
     assert.doesNotMatch(ghLog, /^secret delete GH_SUBTREE_SYNC_TOKEN/m);
     assert.match(
       ghLog,
@@ -328,7 +358,9 @@ test('manage-subtree-secrets deletes secrets for the requested scope', () => {
 });
 
 test('manage-subtree-secrets delete is idempotent when a secret is already absent', () => {
-  const tempDir = mkdtempSync(join(tmpdir(), 'manage-subtree-secrets-delete-absent-'));
+  const tempDir = mkdtempSync(
+    join(tmpdir(), 'manage-subtree-secrets-delete-absent-'),
+  );
   const ghLogPath = join(tempDir, 'gh.log');
   const stdinDir = join(tempDir, 'stdin');
   const configPath = join(tempDir, 'subtrees.config.sh');
@@ -348,25 +380,38 @@ test('manage-subtree-secrets delete is idempotent when a secret is already absen
   );
 
   try {
-    const output = execFileSync('bash', [scriptPath, 'delete', '--scope', 'upstreams', '--config', configPath], {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        GIT_BIN: gitPath,
-        GH_BIN: ghPath,
-        MOCK_REPO_ROOT: repoRoot,
-        MOCK_GH_LOG: ghLogPath,
-        MOCK_GH_SECRET_STDIN_DIR: stdinDir,
-        MOCK_SECRETS_NEXT_TEMPLATE: '',
+    const output = execFileSync(
+      'bash',
+      [scriptPath, 'delete', '--scope', 'upstreams', '--config', configPath],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          GIT_BIN: gitPath,
+          GH_BIN: ghPath,
+          MOCK_REPO_ROOT: repoRoot,
+          MOCK_GH_LOG: ghLogPath,
+          MOCK_GH_SECRET_STDIN_DIR: stdinDir,
+          MOCK_SECRETS_NEXT_TEMPLATE: '',
+        },
+        encoding: 'utf8',
       },
-      encoding: 'utf8',
-    });
+    );
 
     const ghLog = readFileSync(ghLogPath, 'utf8');
 
-    assert.match(output, /MONOREPO_SUBTREE_DISPATCH_TOKEN is already absent in moritzbrantner\/next-template/);
-    assert.match(ghLog, /^secret list --repo moritzbrantner\/next-template --json name --jq \.\[\]\.name$/m);
-    assert.doesNotMatch(ghLog, /^secret delete MONOREPO_SUBTREE_DISPATCH_TOKEN --repo moritzbrantner\/next-template$/m);
+    assert.match(
+      output,
+      /MONOREPO_SUBTREE_DISPATCH_TOKEN is already absent in moritzbrantner\/next-template/,
+    );
+    assert.match(
+      ghLog,
+      /^secret list --repo moritzbrantner\/next-template --json name --jq \.\[\]\.name$/m,
+    );
+    assert.doesNotMatch(
+      ghLog,
+      /^secret delete MONOREPO_SUBTREE_DISPATCH_TOKEN --repo moritzbrantner\/next-template$/m,
+    );
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }

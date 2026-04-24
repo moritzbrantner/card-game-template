@@ -14,7 +14,9 @@ export function StaticRedirectPage({
   return (
     <section className="mx-auto flex min-h-[50vh] max-w-xl flex-col items-center justify-center gap-4 px-6 text-center">
       <script dangerouslySetInnerHTML={{ __html: redirectScript }} />
-      <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">{title}</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+        {title}
+      </h1>
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         <a
           href={href}

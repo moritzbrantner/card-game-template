@@ -1,6 +1,7 @@
 export const dataEntryPage = {
   title: 'Schema data entry',
-  description: 'Create rows for allowed tables. Access is controlled per table and role.',
+  description:
+    'Create rows for allowed tables. Access is controlled per table and role.',
   permissions: {
     read: 'Read',
     write: 'Write',

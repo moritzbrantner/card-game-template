@@ -136,14 +136,20 @@ function hrefFromSlug(slug: string) {
   return slug ? `/${slug}` : '/';
 }
 
-export function getAppPublicPageDefinitionsForManifest(manifest = loadActiveApp()): AppPageDefinition[] {
-  const pagesById = new Map(manifest.publicPages.map((page) => [page.id, page]));
+export function getAppPublicPageDefinitionsForManifest(
+  manifest = loadActiveApp(),
+): AppPageDefinition[] {
+  const pagesById = new Map(
+    manifest.publicPages.map((page) => [page.id, page]),
+  );
 
   return manifest.publicNavigation.map((item) => {
     const page = pagesById.get(item.pageId);
 
     if (!page) {
-      throw new Error(`Public navigation item "${item.pageId}" does not match any public page in manifest "${manifest.id}".`);
+      throw new Error(
+        `Public navigation item "${item.pageId}" does not match any public page in manifest "${manifest.id}".`,
+      );
     }
 
     return {
@@ -160,13 +166,21 @@ export function getAppPublicPageDefinitionsForManifest(manifest = loadActiveApp(
   });
 }
 
-export function composeAppPageDefinitions(manifest = loadActiveApp()): AppPageDefinition[] {
-  return [...getAppPublicPageDefinitionsForManifest(manifest), ...foundationPageDefinitions]
-    .filter((page) => !page.featureKey || isFeatureEnabled(page.featureKey, manifest))
+export function composeAppPageDefinitions(
+  manifest = loadActiveApp(),
+): AppPageDefinition[] {
+  return [
+    ...getAppPublicPageDefinitionsForManifest(manifest),
+    ...foundationPageDefinitions,
+  ]
+    .filter(
+      (page) => !page.featureKey || isFeatureEnabled(page.featureKey, manifest),
+    )
     .sort((left, right) => left.order - right.order);
 }
 
-export const appPageDefinitions: readonly AppPageDefinition[] = composeAppPageDefinitions();
+export const appPageDefinitions: readonly AppPageDefinition[] =
+  composeAppPageDefinitions();
 
 export function formatAppHotkey(hotkey: AppHotkey) {
   return hotkey.map((part) => part.toUpperCase()).join('+');
@@ -174,7 +188,10 @@ export function formatAppHotkey(hotkey: AppHotkey) {
 
 export function canViewAppPage(
   page: AppPageDefinition,
-  { isAuthenticated, role }: { isAuthenticated: boolean; role: AppRole | null | undefined },
+  {
+    isAuthenticated,
+    role,
+  }: { isAuthenticated: boolean; role: AppRole | null | undefined },
 ) {
   if (page.visibility === 'guest') {
     return !isAuthenticated;
@@ -202,5 +219,7 @@ export function getVisibleAppPages({
   isAuthenticated: boolean;
   role: AppRole | null | undefined;
 }) {
-  return appPageDefinitions.filter((page) => canViewAppPage(page, { isAuthenticated, role }));
+  return appPageDefinitions.filter((page) =>
+    canViewAppPage(page, { isAuthenticated, role }),
+  );
 }

@@ -206,12 +206,11 @@ function buildPlayerRecentMatch(
     (summary) => summary.playerId === participant.playerId,
   );
   const winnerDisplayNames =
-    match.result?.winnerIds
-      .map(
-        (winnerId) =>
-          match.participants.find((candidate) => candidate.playerId === winnerId)
-            ?.displayName ?? winnerId,
-      ) ?? [];
+    match.result?.winnerIds.map(
+      (winnerId) =>
+        match.participants.find((candidate) => candidate.playerId === winnerId)
+          ?.displayName ?? winnerId,
+    ) ?? [];
 
   return {
     matchId: match.matchId,
@@ -225,7 +224,8 @@ function buildPlayerRecentMatch(
     playerDisplayName: participant.displayName,
     outcome,
     replayHref: resolveReplayHref(match),
-    acceptedMoveCount: match.analysis?.generic.acceptedMoveCount ?? match.lastSequence,
+    acceptedMoveCount:
+      match.analysis?.generic.acceptedMoveCount ?? match.lastSequence,
     turnsCompleted: match.analysis?.generic.turnsCompleted ?? 0,
     durationMs: match.analysis?.generic.durationMs ?? null,
     playerMovesAccepted: playerAnalysis?.movesAccepted ?? 0,
@@ -252,12 +252,11 @@ function buildPlayerGameHistory(
     recent.push(recentMatch);
     incrementHistoryTotals(totals, recentMatch.outcome);
 
-    const gameTotals =
-      byGame.get(recentMatch.gameId) ?? {
-        ...createEmptyHistoryTotals(),
-        gameId: recentMatch.gameId,
-        gameName: recentMatch.gameName,
-      };
+    const gameTotals = byGame.get(recentMatch.gameId) ?? {
+      ...createEmptyHistoryTotals(),
+      gameId: recentMatch.gameId,
+      gameName: recentMatch.gameName,
+    };
     incrementHistoryTotals(gameTotals, recentMatch.outcome);
     byGame.set(recentMatch.gameId, gameTotals);
   }
@@ -267,7 +266,8 @@ function buildPlayerGameHistory(
     totals,
     byGame: [...byGame.values()].sort(
       (left, right) =>
-        right.matches - left.matches || left.gameName.localeCompare(right.gameName),
+        right.matches - left.matches ||
+        left.gameName.localeCompare(right.gameName),
     ),
     recent: recent.slice(0, 10),
   };
@@ -353,7 +353,10 @@ function buildMatchRealtimeDto<TSnapshot>(input: {
   const hasSequenceChanges = input.match.lastSequence > afterSequence;
   const hasTimestampChanges =
     input.realtimeInput?.sinceUpdatedAt != null
-      ? isNewerTimestamp(input.match.updatedAt, input.realtimeInput.sinceUpdatedAt)
+      ? isNewerTimestamp(
+          input.match.updatedAt,
+          input.realtimeInput.sinceUpdatedAt,
+        )
       : false;
   const hasChanges = !hasCursor || hasSequenceChanges || hasTimestampChanges;
   const moveEvents = input.match.acceptedMoves

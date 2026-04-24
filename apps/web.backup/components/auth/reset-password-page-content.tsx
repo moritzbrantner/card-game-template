@@ -32,7 +32,11 @@ export function ResetPasswordPageContent({
   const token = searchParams.get('token') ?? '';
 
   if (!token) {
-    return <p className="text-sm text-red-600 dark:text-red-400">{missingTokenLabel}</p>;
+    return (
+      <p className="text-sm text-red-600 dark:text-red-400">
+        {missingTokenLabel}
+      </p>
+    );
   }
 
   return <ResetPasswordForm locale={locale} token={token} labels={labels} />;

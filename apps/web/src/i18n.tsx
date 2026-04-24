@@ -63,7 +63,10 @@ export function useTranslations(namespace?: string) {
     throw new Error('useTranslations must be used inside I18nProvider');
   }
 
-  return (key: string, values?: Record<string, string | number | boolean | null | undefined>) => {
+  return (
+    key: string,
+    values?: Record<string, string | number | boolean | null | undefined>,
+  ) => {
     const messageKey = namespace ? `${namespace}.${key}` : key;
     const value = messageKey.split('.').reduce<unknown>((current, segment) => {
       if (!current || typeof current !== 'object' || Array.isArray(current)) {
@@ -83,7 +86,9 @@ export function useTranslations(namespace?: string) {
 
     return value.replace(/\{(\w+)\}/g, (_match, name: string) => {
       const replacement = values[name];
-      return replacement === null || replacement === undefined ? '' : String(replacement);
+      return replacement === null || replacement === undefined
+        ? ''
+        : String(replacement);
     });
   };
 }

@@ -45,7 +45,9 @@ export interface AuthClient {
 }
 
 export interface AuthServerAdapter<ReadInput = unknown, WriteInput = unknown> {
-  readSession(input: ReadInput): Promise<AuthSession | null> | AuthSession | null;
+  readSession(
+    input: ReadInput,
+  ): Promise<AuthSession | null> | AuthSession | null;
   writeSession(input: WriteInput, session: AuthSession): Promise<void> | void;
   clearSession(input: WriteInput): Promise<void> | void;
   requireAuth?(input: ReadInput): Promise<AuthSession> | AuthSession;

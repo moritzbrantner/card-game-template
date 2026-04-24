@@ -14,10 +14,18 @@ type AuthNavigationProps = {
 export function AuthNavigation({ locale, labels }: AuthNavigationProps) {
   return (
     <>
-      <LocalizedLink href="/login" locale={locale} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+      <LocalizedLink
+        href="/login"
+        locale={locale}
+        className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+      >
         {labels.login}
       </LocalizedLink>
-      <LocalizedLink href="/register" locale={locale} className={buttonVariants({ size: 'sm' })}>
+      <LocalizedLink
+        href="/register"
+        locale={locale}
+        className={buttonVariants({ size: 'sm' })}
+      >
         {labels.register}
       </LocalizedLink>
     </>

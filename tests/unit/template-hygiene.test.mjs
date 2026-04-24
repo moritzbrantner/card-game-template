@@ -13,15 +13,29 @@ test('template README documents the supported creation helper flow', () => {
     readmeSource,
     /python3 scripts\/create_from_template\.py my-app --with-main/,
   );
-  assert.match(readmeSource, /bash scripts\/setup-promotion-branches\.sh --with-main/);
+  assert.match(
+    readmeSource,
+    /bash scripts\/setup-promotion-branches\.sh --with-main/,
+  );
   assert.match(readmeSource, /intentionally avoids `--include-all-branches`/i);
   assert.match(readmeSource, /generated repositories do not inherit secrets/i);
   assert.match(readmeSource, /bun run setup:subtree-remotes/);
 });
 
 test('README referenced root docs exist', () => {
-  for (const path of ['PLANS.md', 'INFRASTRUCTURE.md', 'AGENT_WORKFLOW.md', 'ARCHITECTURE.md', 'OPERATIONS.md', 'DECISIONS.md']) {
-    assert.equal(existsSync(resolve(repoRoot, path)), true, `${path} should exist`);
+  for (const path of [
+    'PLANS.md',
+    'INFRASTRUCTURE.md',
+    'AGENT_WORKFLOW.md',
+    'ARCHITECTURE.md',
+    'OPERATIONS.md',
+    'DECISIONS.md',
+  ]) {
+    assert.equal(
+      existsSync(resolve(repoRoot, path)),
+      true,
+      `${path} should exist`,
+    );
   }
 });
 

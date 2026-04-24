@@ -1,7 +1,13 @@
 'use client';
 
 import { liveQuery } from 'dexie';
-import { startTransition, useEffect, useEffectEvent, useRef, useState } from 'react';
+import {
+  startTransition,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from 'react';
 
 import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
@@ -14,8 +20,14 @@ import {
   listLocalBlogDraftsForUser,
   saveLocalBlogDraft,
 } from '@/src/local-first/blog/drafts';
-import { flushBlogPublishOutbox, queueBlogDraftForPublish } from '@/src/local-first/blog/outbox';
-import type { BlogDraftStatus, LocalBlogDraft } from '@/src/local-first/blog/types';
+import {
+  flushBlogPublishOutbox,
+  queueBlogDraftForPublish,
+} from '@/src/local-first/blog/outbox';
+import type {
+  BlogDraftStatus,
+  LocalBlogDraft,
+} from '@/src/local-first/blog/types';
 
 type BlogPostComposerProps = {
   userId: string;
@@ -42,7 +54,10 @@ type BlogPostComposerProps = {
   };
 };
 
-function resolveDraftStatusLabel(status: BlogDraftStatus, labels: BlogPostComposerProps['labels']) {
+function resolveDraftStatusLabel(
+  status: BlogDraftStatus,
+  labels: BlogPostComposerProps['labels'],
+) {
   switch (status) {
     case 'queued_publish':
       return labels.queuedToPublish;
@@ -70,7 +85,11 @@ function formatDraftDate(locale: string, date: Date) {
   }).format(date);
 }
 
-export function BlogPostComposer({ userId, locale, labels }: BlogPostComposerProps) {
+export function BlogPostComposer({
+  userId,
+  locale,
+  labels,
+}: BlogPostComposerProps) {
   const router = useRouter();
   const [drafts, setDrafts] = useState<LocalBlogDraft[]>([]);
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
@@ -83,7 +102,9 @@ export function BlogPostComposer({ userId, locale, labels }: BlogPostComposerPro
   const outboxRunningRef = useRef(false);
 
   useEffect(() => {
-    const subscription = liveQuery(() => listLocalBlogDraftsForUser(userId)).subscribe({
+    const subscription = liveQuery(() =>
+      listLocalBlogDraftsForUser(userId),
+    ).subscribe({
       next(result) {
         setDrafts(result);
       },
@@ -97,7 +118,8 @@ export function BlogPostComposer({ userId, locale, labels }: BlogPostComposerPro
     };
   }, [userId]);
 
-  const activeDraft = drafts.find((draft) => draft.id === activeDraftId) ?? null;
+  const activeDraft =
+    drafts.find((draft) => draft.id === activeDraftId) ?? null;
 
   useEffect(() => {
     if (activeDraftId && drafts.some((draft) => draft.id === activeDraftId)) {
@@ -228,7 +250,10 @@ export function BlogPostComposer({ userId, locale, labels }: BlogPostComposerPro
       return;
     }
 
-    if (activeDraft?.status === 'published' || activeDraft?.status === 'publishing') {
+    if (
+      activeDraft?.status === 'published' ||
+      activeDraft?.status === 'publishing'
+    ) {
       return;
     }
 
@@ -247,7 +272,10 @@ export function BlogPostComposer({ userId, locale, labels }: BlogPostComposerPro
       return;
     }
 
-    if (activeDraft?.status === 'published' || activeDraft?.status === 'publishing') {
+    if (
+      activeDraft?.status === 'published' ||
+      activeDraft?.status === 'publishing'
+    ) {
       return;
     }
 
@@ -336,17 +364,32 @@ export function BlogPostComposer({ userId, locale, labels }: BlogPostComposerPro
     }
   }
 
-  const statusText = activeDraft ? resolveDraftStatusLabel(activeDraft.status, labels) : null;
-  const detailText = activeDraft?.lastError ?? localError ?? (activeDraft?.status === 'published' ? labels.publishedReadonly : null);
-  const inputsDisabled = activeDraft?.status === 'published' || activeDraft?.status === 'publishing';
-  const hasEditorContent = editorTitle.trim().length > 0 || editorContent.trim().length > 0;
+  const statusText = activeDraft
+    ? resolveDraftStatusLabel(activeDraft.status, labels)
+    : null;
+  const detailText =
+    activeDraft?.lastError ??
+    localError ??
+    (activeDraft?.status === 'published' ? labels.publishedReadonly : null);
+  const inputsDisabled =
+    activeDraft?.status === 'published' || activeDraft?.status === 'publishing';
+  const hasEditorContent =
+    editorTitle.trim().length > 0 || editorContent.trim().length > 0;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <aside className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold tracking-tight">{labels.draftsTitle}</h3>
-          <Button type="button" size="sm" variant="outline" onClick={() => void handleCreateDraft()} disabled={draftActionPending}>
+          <h3 className="text-sm font-semibold tracking-tight">
+            {labels.draftsTitle}
+          </h3>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => void handleCreateDraft()}
+            disabled={draftActionPending}
+          >
             {labels.newDraft}
           </Button>
         </div>
@@ -372,9 +415,15 @@ export function BlogPostComposer({ userId, locale, labels }: BlogPostComposerPro
                   ].join(' ')}
                 >
                   <div className="space-y-1">
-                    <p className="truncate text-sm font-medium">{getDraftDisplayTitle(draft, labels.untitledDraft)}</p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">{resolveDraftStatusLabel(draft.status, labels)}</p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-500">{formatDraftDate(locale, draft.updatedAt)}</p>
+                    <p className="truncate text-sm font-medium">
+                      {getDraftDisplayTitle(draft, labels.untitledDraft)}
+                    </p>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                      {resolveDraftStatusLabel(draft.status, labels)}
+                    </p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-500">
+                      {formatDraftDate(locale, draft.updatedAt)}
+                    </p>
                   </div>
                 </button>
               );
@@ -404,11 +453,24 @@ export function BlogPostComposer({ userId, locale, labels }: BlogPostComposerPro
           </div>
 
           <div className="flex items-end justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => void handleDeleteDraft()} disabled={draftActionPending || publishPending}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void handleDeleteDraft()}
+              disabled={draftActionPending || publishPending}
+            >
               {labels.deleteDraft}
             </Button>
-            <Button type="button" onClick={() => void handlePublish()} disabled={publishPending || draftActionPending || !hasEditorContent}>
-              {publishPending || activeDraft?.status === 'publishing' ? labels.publishing : labels.publish}
+            <Button
+              type="button"
+              onClick={() => void handlePublish()}
+              disabled={
+                publishPending || draftActionPending || !hasEditorContent
+              }
+            >
+              {publishPending || activeDraft?.status === 'publishing'
+                ? labels.publishing
+                : labels.publish}
             </Button>
           </div>
         </div>
@@ -432,7 +494,11 @@ export function BlogPostComposer({ userId, locale, labels }: BlogPostComposerPro
           <p role="status" className="text-sm text-zinc-700 dark:text-zinc-300">
             {statusText ?? labels.emptyEditor}
           </p>
-          {detailText ? <p className="text-sm text-zinc-600 dark:text-zinc-400">{detailText}</p> : null}
+          {detailText ? (
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              {detailText}
+            </p>
+          ) : null}
         </div>
       </div>
     </div>

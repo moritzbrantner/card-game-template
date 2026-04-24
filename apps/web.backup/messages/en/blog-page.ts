@@ -3,14 +3,16 @@ export const blogPage = {
     title: 'Write blog posts',
     description: 'Publish updates for your public profile blog.',
     cardTitle: 'Your blog',
-    cardDescription: 'Open the blog editor or review the public page visitors can read.',
+    cardDescription:
+      'Open the blog editor or review the public page visitors can read.',
     openComposer: 'Write a post',
     backToProfile: 'Back to profile',
     viewPublicBlog: 'View public blog',
   },
   composer: {
     title: 'Local drafts',
-    description: 'Write Markdown locally, keep drafts offline, and publish when you are ready.',
+    description:
+      'Write Markdown locally, keep drafts offline, and publish when you are ready.',
     drafts: {
       title: 'Drafts',
       empty: 'No local drafts yet. Start typing or create one manually.',
@@ -18,7 +20,8 @@ export const blogPage = {
     },
     editor: {
       empty: 'Start typing to create a local draft.',
-      publishedReadonly: 'Published drafts are read-only locally. Create a new draft for your next post.',
+      publishedReadonly:
+        'Published drafts are read-only locally. Create a new draft for your next post.',
     },
     actions: {
       newDraft: 'New draft',
@@ -42,7 +45,8 @@ export const blogPage = {
   },
   posts: {
     title: 'Published posts',
-    description: 'Everything you publish here appears on your public blog page.',
+    description:
+      'Everything you publish here appears on your public blog page.',
     publishedAt: 'Published {date}',
     updatedAt: 'Updated {date}',
     empty: 'No posts published yet.',

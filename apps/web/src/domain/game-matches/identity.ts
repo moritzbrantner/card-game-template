@@ -19,7 +19,9 @@ function base64UrlDecode(value: string) {
 }
 
 function sign(value: string) {
-  return createHmac('sha256', getEnv().auth.secret).update(value).digest('base64url');
+  return createHmac('sha256', getEnv().auth.secret)
+    .update(value)
+    .digest('base64url');
 }
 
 export function serializeGuestIdCookieValue(guestId: string) {
@@ -56,10 +58,14 @@ export function parseGuestIdCookieValue(value: string | undefined) {
 }
 
 function getSessionDisplayName(session: AppSession | null) {
-  return session?.user.name?.trim() || session?.user.tag?.trim() || 'Player One';
+  return (
+    session?.user.name?.trim() || session?.user.tag?.trim() || 'Player One'
+  );
 }
 
-export async function resolveExistingMatchOwnerIdentity(session: AppSession | null): Promise<{
+export async function resolveExistingMatchOwnerIdentity(
+  session: AppSession | null,
+): Promise<{
   identity: MatchOwnerIdentity | null;
   displayName: string | null;
 }> {
@@ -74,7 +80,9 @@ export async function resolveExistingMatchOwnerIdentity(session: AppSession | nu
   }
 
   const cookieStore = await cookies();
-  const guestId = parseGuestIdCookieValue(cookieStore.get(GUEST_COOKIE_NAME)?.value);
+  const guestId = parseGuestIdCookieValue(
+    cookieStore.get(GUEST_COOKIE_NAME)?.value,
+  );
 
   return {
     identity: guestId
@@ -87,7 +95,9 @@ export async function resolveExistingMatchOwnerIdentity(session: AppSession | nu
   };
 }
 
-export async function resolveOrCreateMatchOwnerIdentity(session: AppSession | null): Promise<{
+export async function resolveOrCreateMatchOwnerIdentity(
+  session: AppSession | null,
+): Promise<{
   identity: MatchOwnerIdentity;
   displayName: string | null;
 }> {

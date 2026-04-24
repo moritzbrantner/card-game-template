@@ -3,8 +3,15 @@ import { isAdmin, isSuperAdmin } from '@/lib/authorization';
 import type { FoundationFeatureKey } from '@/src/app-config/feature-keys';
 import { getDb } from '@/src/db/client';
 import { users } from '@/src/db/schema';
-import { canApplyUserFeatureOverrides, saveUserFeatureOverride } from '@/src/foundation/features/access';
-import { failure, success, type ServiceResult } from '@/src/domain/shared/result';
+import {
+  canApplyUserFeatureOverrides,
+  saveUserFeatureOverride,
+} from '@/src/foundation/features/access';
+import {
+  failure,
+  success,
+  type ServiceResult,
+} from '@/src/domain/shared/result';
 import { eq } from 'drizzle-orm';
 
 export type RoleManagementError =
@@ -52,7 +59,11 @@ type UpdateAdminUserRoleDependencies = {
 
 type UpdateAdminUserFeatureDependencies = {
   findUserById: (userId: string) => Promise<UserRoleRecord | undefined>;
-  saveUserFeatureOverride: (input: { userId: string; featureKey: FoundationFeatureKey; enabled: boolean }) => Promise<void>;
+  saveUserFeatureOverride: (input: {
+    userId: string;
+    featureKey: FoundationFeatureKey;
+    enabled: boolean;
+  }) => Promise<void>;
 };
 
 async function createDefaultDependencies(): Promise<UpdateAdminUserRoleDependencies> {
@@ -188,7 +199,8 @@ export async function updateAdminUserFeatureAccessUseCase(
   if (isAdmin(target.role)) {
     return failure({
       code: 'CONFLICT',
-      message: 'Per-user functionality controls are only available for non-admin accounts.',
+      message:
+        'Per-user functionality controls are only available for non-admin accounts.',
     });
   }
 

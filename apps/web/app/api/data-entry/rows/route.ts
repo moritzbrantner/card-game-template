@@ -1,6 +1,11 @@
 import { secureRoute } from '@/src/api/route-security';
 import { getDb } from '@/src/db/client';
-import { profiles, securityAuditLogs, securityRateLimitCounters, users } from '@/src/db/schema';
+import {
+  profiles,
+  securityAuditLogs,
+  securityRateLimitCounters,
+  users,
+} from '@/src/db/schema';
 import { canWriteTable } from '@/src/domain/data-entry/table-permissions';
 import { isManagedTable } from '@/src/domain/data-entry/use-cases';
 import { getFallbackProfileTag } from '@/src/profile/tags';
@@ -23,13 +28,19 @@ export async function POST(request: Request) {
   const rawTable = formData.get('table');
 
   if (typeof rawTable !== 'string' || !isManagedTable(rawTable)) {
-    return guard.json({ error: 'A target table is required.' }, { status: 400 });
+    return guard.json(
+      { error: 'A target table is required.' },
+      { status: 400 },
+    );
   }
 
   const table = rawTable;
 
   if (!canWriteTable(role, table)) {
-    return guard.json({ error: `Your role does not have write access to ${table}.` }, { status: 403 });
+    return guard.json(
+      { error: `Your role does not have write access to ${table}.` },
+      { status: 403 },
+    );
   }
 
   const db = getDb();
@@ -48,7 +59,10 @@ export async function POST(request: Request) {
         timezone,
       });
 
-      return guard.json({ success: 'Profile row created.' }, { metadata: { table } });
+      return guard.json(
+        { success: 'Profile row created.' },
+        { metadata: { table } },
+      );
     }
 
     if (table === 'User') {
@@ -58,7 +72,10 @@ export async function POST(request: Request) {
       const normalizedRole = newRole === 'ADMIN' ? 'ADMIN' : 'USER';
 
       if (!email) {
-        return guard.json({ error: 'Email is required for User rows.' }, { status: 400 });
+        return guard.json(
+          { error: 'Email is required for User rows.' },
+          { status: 400 },
+        );
       }
 
       const newUserId = crypto.randomUUID();
@@ -71,7 +88,10 @@ export async function POST(request: Request) {
         role: normalizedRole,
       });
 
-      return guard.json({ success: 'User row created.' }, { metadata: { table } });
+      return guard.json(
+        { success: 'User row created.' },
+        { metadata: { table } },
+      );
     }
 
     if (table === 'SecurityAuditLog') {
@@ -81,7 +101,10 @@ export async function POST(request: Request) {
       const metadata = toNullableString(formData.get('metadata'));
 
       if (!action || !outcome || Number.isNaN(statusCode)) {
-        return guard.json({ error: 'Action, outcome, and a numeric status code are required.' }, { status: 400 });
+        return guard.json(
+          { error: 'Action, outcome, and a numeric status code are required.' },
+          { status: 400 },
+        );
       }
 
       const parsedMetadata = parseMetadata(metadata);
@@ -98,7 +121,10 @@ export async function POST(request: Request) {
         metadata: parsedMetadata.value,
       });
 
-      return guard.json({ success: 'SecurityAuditLog row created.' }, { metadata: { table } });
+      return guard.json(
+        { success: 'SecurityAuditLog row created.' },
+        { metadata: { table } },
+      );
     }
 
     if (table === 'SecurityRateLimitCounter') {
@@ -107,12 +133,18 @@ export async function POST(request: Request) {
       const resetAtRaw = toNullableString(formData.get('resetAt'));
 
       if (!key || Number.isNaN(count) || !resetAtRaw) {
-        return guard.json({ error: 'Key, count, and resetAt are required.' }, { status: 400 });
+        return guard.json(
+          { error: 'Key, count, and resetAt are required.' },
+          { status: 400 },
+        );
       }
 
       const resetAt = new Date(resetAtRaw);
       if (Number.isNaN(resetAt.getTime())) {
-        return guard.json({ error: 'resetAt must be a valid date.' }, { status: 400 });
+        return guard.json(
+          { error: 'resetAt must be a valid date.' },
+          { status: 400 },
+        );
       }
 
       await db.insert(securityRateLimitCounters).values({
@@ -121,12 +153,18 @@ export async function POST(request: Request) {
         resetAt,
       });
 
-      return guard.json({ success: 'SecurityRateLimitCounter row created.' }, { metadata: { table } });
+      return guard.json(
+        { success: 'SecurityRateLimitCounter row created.' },
+        { metadata: { table } },
+      );
     }
 
     return guard.json({ error: 'Unsupported table.' }, { status: 400 });
   } catch {
-    return guard.json({ error: 'Unable to insert row. Check values and constraints.' }, { status: 500 });
+    return guard.json(
+      { error: 'Unable to insert row. Check values and constraints.' },
+      { status: 500 },
+    );
   }
 }
 
@@ -139,9 +177,9 @@ function toNullableString(value: FormDataEntryValue | null): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function parseMetadata(rawMetadata: string | null):
-  | { ok: true; value: Record<string, unknown> }
-  | { ok: false; error: string } {
+function parseMetadata(
+  rawMetadata: string | null,
+): { ok: true; value: Record<string, unknown> } | { ok: false; error: string } {
   if (!rawMetadata) {
     return { ok: true, value: {} };
   }

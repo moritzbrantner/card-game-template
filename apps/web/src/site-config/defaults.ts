@@ -1,6 +1,4 @@
-export {
-  siteAnnouncementStatuses,
-} from './shared';
+export { siteAnnouncementStatuses } from './shared';
 
 export type {
   AdminAnalyticsSettings,

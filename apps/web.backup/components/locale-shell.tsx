@@ -48,7 +48,11 @@ export function LocaleShell({
           <DeferredConsentBanner />
           {announcements ? (
             announcements.map((announcement) => (
-              <SiteAnnouncementBanner key={announcement.id} announcement={announcement} locale={locale} />
+              <SiteAnnouncementBanner
+                key={announcement.id}
+                announcement={announcement}
+                locale={locale}
+              />
             ))
           ) : (
             <Suspense fallback={null}>

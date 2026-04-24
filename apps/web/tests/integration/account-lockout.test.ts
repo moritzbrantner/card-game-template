@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { clearCredentialFailuresForUser, registerCredentialFailureForUser } from '@/src/auth/account-lifecycle';
+import {
+  clearCredentialFailuresForUser,
+  registerCredentialFailureForUser,
+} from '@/src/auth/account-lifecycle';
 
 describe('account lockout controls', () => {
   it('increments failures and applies lockout after threshold', async () => {
@@ -27,7 +30,11 @@ describe('account lockout controls', () => {
 
     await registerCredentialFailureForUser('user_3', deps);
 
-    expect(deps.updateFailureState).toHaveBeenCalledWith('user_3', 5, expect.any(Date));
+    expect(deps.updateFailureState).toHaveBeenCalledWith(
+      'user_3',
+      5,
+      expect.any(Date),
+    );
   });
 
   it('clears lockout state after successful sign-in', async () => {

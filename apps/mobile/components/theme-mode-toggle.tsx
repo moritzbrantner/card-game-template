@@ -10,6 +10,8 @@ export function ThemeModeToggle() {
   const activeBorderColor = useThemeColor({}, 'accent');
   const activeBackgroundColor = useThemeColor({}, 'accentSurface');
   const mutedTextColor = useThemeColor({}, 'mutedText');
+  const isLightActive = activeTheme === 'light';
+  const isDarkActive = activeTheme === 'dark';
 
   return (
     <View style={styles.container}>
@@ -20,28 +22,36 @@ export function ThemeModeToggle() {
       <View style={styles.buttonRow}>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel="Activate light theme"
+          accessibilityState={{ selected: isLightActive }}
+          testID="theme-light-button"
           style={[
             styles.button,
             { borderColor },
-            activeTheme === 'light' && {
+            isLightActive && {
               borderColor: activeBorderColor,
               backgroundColor: activeBackgroundColor,
             },
           ]}
-          onPress={() => setThemeMode('light')}>
+          onPress={() => setThemeMode('light')}
+        >
           <ThemedText style={styles.buttonLabel}>Light</ThemedText>
         </Pressable>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel="Activate dark theme"
+          accessibilityState={{ selected: isDarkActive }}
+          testID="theme-dark-button"
           style={[
             styles.button,
             { borderColor },
-            activeTheme === 'dark' && {
+            isDarkActive && {
               borderColor: activeBorderColor,
               backgroundColor: activeBackgroundColor,
             },
           ]}
-          onPress={() => setThemeMode('dark')}>
+          onPress={() => setThemeMode('dark')}
+        >
           <ThemedText style={styles.buttonLabel}>Dark</ThemedText>
         </Pressable>
       </View>

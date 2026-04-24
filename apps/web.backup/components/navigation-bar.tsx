@@ -4,7 +4,10 @@ import { LocalizedLink } from '@/i18n/server-link';
 import type { AppLocale } from '@/i18n/routing';
 import type { AppSession } from '@/src/auth';
 import type { NotificationPreview } from '@/src/domain/notifications/use-cases';
-import { formatAppHotkey, getVisibleAppPages } from '@/src/navigation/app-routes';
+import {
+  formatAppHotkey,
+  getVisibleAppPages,
+} from '@/src/navigation/app-routes';
 import { buildNavigationCategories } from '@/src/navigation/navigation-categories';
 import { createTranslator } from '@/src/i18n/messages';
 import { loadAppContext } from '@/src/runtime.functions';
@@ -43,7 +46,12 @@ function getHotkeyGroupLabel(
   return t('hotkeys.accountGroup');
 }
 
-export function NavigationBar({ locale, siteName, session, notificationCenter }: NavigationBarProps) {
+export function NavigationBar({
+  locale,
+  siteName,
+  session,
+  notificationCenter,
+}: NavigationBarProps) {
   const t = createTranslator(locale, 'NavigationBar');
   const guestNavigationCategories = buildNavigationCategories({
     isAuthenticated: false,
@@ -79,7 +87,11 @@ export function NavigationBar({ locale, siteName, session, notificationCenter }:
   return (
     <header className="sticky top-0 z-10 overflow-visible border-b border-zinc-200 bg-white/95 dark:border-zinc-800 dark:bg-zinc-950/95">
       <nav className="mx-auto grid w-full max-w-5xl gap-3 overflow-visible px-4 py-3 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
-        <LocalizedLink href="/" locale={locale} className="text-lg font-semibold tracking-tight">
+        <LocalizedLink
+          href="/"
+          locale={locale}
+          className="text-lg font-semibold tracking-tight"
+        >
           {siteName || t('brand')}
         </LocalizedLink>
 
@@ -242,7 +254,8 @@ function NavigationBarContent({
       groupLabel,
       hotkey: page.hotkey,
       hotkeyLabel,
-      searchText: `${groupLabel} ${label} ${page.hotkey.join(' ')} ${hotkeyLabel}`.toLowerCase(),
+      searchText:
+        `${groupLabel} ${label} ${page.hotkey.join(' ')} ${hotkeyLabel}`.toLowerCase(),
     };
   });
 
@@ -253,10 +266,17 @@ function NavigationBarContent({
       <div className="flex flex-wrap items-center gap-2 md:justify-self-end">
         {session?.user?.id ? (
           <>
-            <NotificationBell items={notificationCenter?.items ?? []} unreadCount={notificationCenter?.unreadCount ?? 0} />
+            <NotificationBell
+              items={notificationCenter?.items ?? []}
+              unreadCount={notificationCenter?.unreadCount ?? 0}
+            />
             <ProfileMenu
               locale={locale}
-              profileHref={session.user.tag ? buildPublicProfilePath(session.user.tag) : '/profile'}
+              profileHref={
+                session.user.tag
+                  ? buildPublicProfilePath(session.user.tag)
+                  : '/profile'
+              }
               settingsHref="/settings"
               imageUrl={session.user.image ?? null}
               displayName={session.user.name ?? 'User'}

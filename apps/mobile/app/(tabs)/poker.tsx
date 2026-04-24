@@ -7,7 +7,10 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { defaultGameCatalog } from '@repo/game-catalog';
-import { createLocalGameSession, type LocalGameSession } from '@repo/game-session';
+import {
+  createLocalGameSession,
+  type LocalGameSession,
+} from '@repo/game-session';
 import {
   createPokerAdapter,
   createPokerBots,
@@ -21,7 +24,9 @@ import {
   type PokerState,
 } from '@repo/game-poker';
 
-function createSession(presetId: PokerExamplePresetId): LocalGameSession<PokerState, PokerMove, PokerPlayerView> {
+function createSession(
+  presetId: PokerExamplePresetId,
+): LocalGameSession<PokerState, PokerMove, PokerPlayerView> {
   const preset = getPokerExamplePreset(presetId);
   const seed = `mobile-poker:${presetId}`;
 
@@ -46,12 +51,14 @@ export default function PokerScreen() {
   const tintColor = useThemeColor({}, 'tint');
   const catalogEntry = defaultGameCatalog.get('texas-holdem');
   const [presetId, setPresetId] = useState<PokerExamplePresetId>('heads-up');
-  const sessionRef = useRef<LocalGameSession<PokerState, PokerMove, PokerPlayerView> | null>(null);
-  const [snapshot, setSnapshot] = useState(() => {
-    const session = createSession('heads-up');
-    sessionRef.current = session;
-    return session.getSnapshot();
-  });
+  const sessionRef = useRef<LocalGameSession<
+    PokerState,
+    PokerMove,
+    PokerPlayerView
+  > | null>(null);
+  const [snapshot, setSnapshot] = useState(() =>
+    createSession('heads-up').getSnapshot(),
+  );
 
   useEffect(() => {
     const session = createSession(presetId);
@@ -74,10 +81,12 @@ export default function PokerScreen() {
           <ThemedView
             style={[styles.hero, { borderColor }]}
             lightColor={Colors.light.surface}
-            darkColor={Colors.dark.surface}>
+            darkColor={Colors.dark.surface}
+          >
             <ThemedText type="title">Texas Hold&apos;em</ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
-              MVP poker table with deterministic deals, betting rounds, folding, and showdown scoring.
+              MVP poker table with deterministic deals, betting rounds, folding,
+              and showdown scoring.
             </ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
               Catalog route: {catalogEntry?.metadata?.route}
@@ -89,8 +98,11 @@ export default function PokerScreen() {
               style={({ pressed }) => [
                 styles.primaryButton,
                 { backgroundColor: tintColor, opacity: pressed ? 0.82 : 1 },
-              ]}>
-              <ThemedText style={styles.primaryButtonText}>Restart hand</ThemedText>
+              ]}
+            >
+              <ThemedText style={styles.primaryButtonText}>
+                Restart hand
+              </ThemedText>
             </Pressable>
           </ThemedView>
 
@@ -107,10 +119,12 @@ export default function PokerScreen() {
                     styles.choiceButton,
                     {
                       borderColor,
-                      backgroundColor: preset.id === presetId ? accentSurface : 'transparent',
+                      backgroundColor:
+                        preset.id === presetId ? accentSurface : 'transparent',
                       opacity: pressed ? 0.82 : 1,
                     },
-                  ]}>
+                  ]}
+                >
                   <ThemedText type="defaultSemiBold">{preset.label}</ThemedText>
                 </Pressable>
               ))}
@@ -120,16 +134,28 @@ export default function PokerScreen() {
           <ThemedView
             style={[styles.card, { borderColor }]}
             lightColor={Colors.light.surface}
-            darkColor={Colors.dark.surface}>
+            darkColor={Colors.dark.surface}
+          >
             <ThemedText type="subtitle">Table status</ThemedText>
-            <ThemedText style={{ color: mutedTextColor }}>Phase: {snapshot.view.phase}</ThemedText>
-            <ThemedText style={{ color: mutedTextColor }}>Pot: {snapshot.view.pot}</ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
-              Board: {snapshot.view.communityCards.map((card) => card.label).join(', ') || 'No board cards'}
+              Phase: {snapshot.view.phase}
             </ThemedText>
-            <ThemedText style={{ color: mutedTextColor }}>{snapshot.view.status}</ThemedText>
+            <ThemedText style={{ color: mutedTextColor }}>
+              Pot: {snapshot.view.pot}
+            </ThemedText>
+            <ThemedText style={{ color: mutedTextColor }}>
+              Board:{' '}
+              {snapshot.view.communityCards
+                .map((card) => card.label)
+                .join(', ') || 'No board cards'}
+            </ThemedText>
+            <ThemedText style={{ color: mutedTextColor }}>
+              {snapshot.view.status}
+            </ThemedText>
             {snapshot.view.matchResultBanner ? (
-              <ThemedText type="defaultSemiBold">{snapshot.view.matchResultBanner}</ThemedText>
+              <ThemedText type="defaultSemiBold">
+                {snapshot.view.matchResultBanner}
+              </ThemedText>
             ) : null}
           </ThemedView>
 
@@ -137,10 +163,12 @@ export default function PokerScreen() {
             <ThemedView
               style={[styles.card, { borderColor }]}
               lightColor={Colors.light.surface}
-              darkColor={Colors.dark.surface}>
+              darkColor={Colors.dark.surface}
+            >
               <ThemedText type="subtitle">Hotseat handoff</ThemedText>
               <ThemedText style={{ color: mutedTextColor }}>
-                Waiting for {snapshot.pendingHotseatPlayerId} to take over this device.
+                Waiting for {snapshot.pendingHotseatPlayerId} to take over this
+                device.
               </ThemedText>
               <Pressable
                 onPress={() => {
@@ -149,8 +177,11 @@ export default function PokerScreen() {
                 style={({ pressed }) => [
                   styles.primaryButton,
                   { backgroundColor: tintColor, opacity: pressed ? 0.82 : 1 },
-                ]}>
-                <ThemedText style={styles.primaryButtonText}>Reveal next seat</ThemedText>
+                ]}
+              >
+                <ThemedText style={styles.primaryButtonText}>
+                  Reveal next seat
+                </ThemedText>
               </Pressable>
             </ThemedView>
           ) : null}
@@ -162,12 +193,18 @@ export default function PokerScreen() {
                 key={player.playerId}
                 style={[styles.card, { borderColor }]}
                 lightColor={Colors.light.surface}
-                darkColor={Colors.dark.surface}>
+                darkColor={Colors.dark.surface}
+              >
                 <ThemedText type="defaultSemiBold">
                   {player.displayName} · {player.controller}
                 </ThemedText>
                 <ThemedText style={{ color: mutedTextColor }}>
-                  Stack {player.stack} · {player.hasFolded ? 'Folded' : player.isActive ? 'Active' : 'Waiting'}
+                  Stack {player.stack} ·{' '}
+                  {player.hasFolded
+                    ? 'Folded'
+                    : player.isActive
+                      ? 'Active'
+                      : 'Waiting'}
                 </ThemedText>
                 <ThemedView style={styles.handRow}>
                   {player.visibleCards.length > 0 ? (
@@ -176,12 +213,15 @@ export default function PokerScreen() {
                         key={card.id}
                         style={[styles.handCard, { borderColor }]}
                         lightColor={Colors.light.background}
-                        darkColor={Colors.dark.background}>
+                        darkColor={Colors.dark.background}
+                      >
                         <ThemedText>{card.label}</ThemedText>
                       </ThemedView>
                     ))
                   ) : (
-                    <ThemedText style={{ color: mutedTextColor }}>Hole cards hidden.</ThemedText>
+                    <ThemedText style={{ color: mutedTextColor }}>
+                      Hole cards hidden.
+                    </ThemedText>
                   )}
                 </ThemedView>
               </ThemedView>
@@ -202,12 +242,17 @@ export default function PokerScreen() {
                       style={({ pressed }) => [
                         styles.choiceButton,
                         { borderColor, opacity: pressed ? 0.82 : 1 },
-                      ]}>
-                      <ThemedText type="defaultSemiBold">{action.label}</ThemedText>
+                      ]}
+                    >
+                      <ThemedText type="defaultSemiBold">
+                        {action.label}
+                      </ThemedText>
                     </Pressable>
                   ))
                 ) : (
-                  <ThemedText style={{ color: mutedTextColor }}>No visible actions right now.</ThemedText>
+                  <ThemedText style={{ color: mutedTextColor }}>
+                    No visible actions right now.
+                  </ThemedText>
                 )}
               </ThemedView>
             </ThemedView>

@@ -18,7 +18,10 @@ function isEnvelope(value: unknown): value is JsonStoreEnvelope<unknown> {
     return false;
   }
 
-  return typeof (value as JsonStoreEnvelope<unknown>).version === 'number' && 'data' in value;
+  return (
+    typeof (value as JsonStoreEnvelope<unknown>).version === 'number' &&
+    'data' in value
+  );
 }
 
 export class JsonStore<TValue> {
@@ -113,7 +116,12 @@ export class JsonStore<TValue> {
   }
 
   private isMissingFileError(error: unknown): boolean {
-    return Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT');
+    return Boolean(
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'ENOENT',
+    );
   }
 
   private migrateValue(parsed: unknown): {

@@ -3,7 +3,10 @@ import { join } from 'node:path';
 
 import { getTableColumns } from 'drizzle-orm';
 
-import type { DbSchemaDocument, DbSchemaFieldType } from '@/src/dynamic-db/schema';
+import type {
+  DbSchemaDocument,
+  DbSchemaFieldType,
+} from '@/src/dynamic-db/schema';
 import { writableTableConfigs } from '@/src/dynamic-db/config';
 
 function toFieldType(dataType: string, columnType: string): DbSchemaFieldType {
@@ -53,7 +56,10 @@ async function main() {
           return false;
         }
 
-        if (!config.includeDefaultedFields && (column as { hasDefault?: boolean }).hasDefault) {
+        if (
+          !config.includeDefaultedFields &&
+          (column as { hasDefault?: boolean }).hasDefault
+        ) {
           return false;
         }
 
@@ -74,7 +80,9 @@ async function main() {
           label: titleCase(name),
           type: fieldType,
           required: Boolean(typedColumn.notNull),
-          ...(dataType === 'json' ? { format: 'json' as const, placeholder: '{"key":"value"}' } : {}),
+          ...(dataType === 'json'
+            ? { format: 'json' as const, placeholder: '{"key":"value"}' }
+            : {}),
         };
       });
 
@@ -88,8 +96,14 @@ async function main() {
 
   const output: DbSchemaDocument = { tables };
 
-  await writeFile(join(process.cwd(), 'db-schema.json'), `${JSON.stringify(output, null, 2)}\n`, 'utf8');
-  console.log(`Generated db-schema.json with ${tables.length} table definitions.`);
+  await writeFile(
+    join(process.cwd(), 'db-schema.json'),
+    `${JSON.stringify(output, null, 2)}\n`,
+    'utf8',
+  );
+  console.log(
+    `Generated db-schema.json with ${tables.length} table definitions.`,
+  );
 }
 
 main().catch((error) => {

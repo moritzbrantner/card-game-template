@@ -1,7 +1,12 @@
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
-export const unlighthouseReportPath = path.join(process.cwd(), '.generated', 'unlighthouse', 'ci-result.json');
+export const unlighthouseReportPath = path.join(
+  process.cwd(),
+  '.generated',
+  'unlighthouse',
+  'ci-result.json',
+);
 
 type UnlighthouseCategorySummary = {
   score?: number;
@@ -28,7 +33,10 @@ export type UnlighthouseExpandedReport = {
   }>;
   metadata: {
     categories: Record<string, { id: string; title: string }>;
-    metrics: Record<string, { id: string; title: string; description: string; numericUnit: string }>;
+    metrics: Record<
+      string,
+      { id: string; title: string; description: string; numericUnit: string }
+    >;
   };
 };
 
@@ -73,7 +81,12 @@ export async function loadUnlighthouseReport(): Promise<LoadedUnlighthouseReport
       updatedAt: metadata.mtime,
     };
   } catch (error) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'ENOENT'
+    ) {
       return null;
     }
 
@@ -81,8 +94,12 @@ export async function loadUnlighthouseReport(): Promise<LoadedUnlighthouseReport
   }
 }
 
-export function summarizeUnlighthouseReport(report: UnlighthouseExpandedReport): UnlighthouseReportSummary {
-  const routes = [...report.routes].sort((left, right) => right.score - left.score);
+export function summarizeUnlighthouseReport(
+  report: UnlighthouseExpandedReport,
+): UnlighthouseReportSummary {
+  const routes = [...report.routes].sort(
+    (left, right) => right.score - left.score,
+  );
   const categories = Object.entries(report.summary.categories)
     .map(([key, value]) => ({
       key,
@@ -103,21 +120,32 @@ export function summarizeUnlighthouseReport(report: UnlighthouseExpandedReport):
   return {
     routeCount: report.routes.length,
     averageScore: report.summary.score,
-    bestRoute: routes[0] ? { path: routes[0].path, score: routes[0].score } : null,
-    worstRoute: worstRoute ? { path: worstRoute.path, score: worstRoute.score } : null,
+    bestRoute: routes[0]
+      ? { path: routes[0].path, score: routes[0].score }
+      : null,
+    worstRoute: worstRoute
+      ? { path: worstRoute.path, score: worstRoute.score }
+      : null,
     categories,
     metrics,
   };
 }
 
-export function formatUnlighthouseScore(score: number | undefined, locale: string) {
+export function formatUnlighthouseScore(
+  score: number | undefined,
+  locale: string,
+) {
   return new Intl.NumberFormat(locale, {
     style: 'percent',
     maximumFractionDigits: 0,
   }).format(score ?? 0);
 }
 
-export function formatUnlighthouseMetric(value: number, numericUnit: string, locale: string) {
+export function formatUnlighthouseMetric(
+  value: number,
+  numericUnit: string,
+  locale: string,
+) {
   if (numericUnit === 'millisecond') {
     if (value >= 1000) {
       return `${new Intl.NumberFormat(locale, {

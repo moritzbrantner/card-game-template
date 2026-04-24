@@ -5,7 +5,10 @@ import { getMessages } from '@/src/i18n/messages';
 import { protectedWebsiteNamespaces } from '@/src/i18n/namespaces';
 import { loadAppContext } from '@/src/runtime.functions';
 import { redirectToLocaleHome, resolveLocale } from '@/src/server/page-guards';
-import { getActiveAnnouncements, getPublicSiteConfig } from '@/src/site-config/service';
+import {
+  getActiveAnnouncements,
+  getPublicSiteConfig,
+} from '@/src/site-config/service';
 
 export default async function ProtectedLocaleLayout({
   children,

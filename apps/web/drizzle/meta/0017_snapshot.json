@@ -97,12 +97,8 @@
           "name": "Account_userId_User_id_fk",
           "tableFrom": "Account",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -110,10 +106,7 @@
       "compositePrimaryKeys": {
         "Account_pkey": {
           "name": "Account_pkey",
-          "columns": [
-            "provider",
-            "providerAccountId"
-          ]
+          "columns": ["provider", "providerAccountId"]
         }
       },
       "uniqueConstraints": {},
@@ -240,12 +233,8 @@
           "name": "BlogPost_userId_User_id_fk",
           "tableFrom": "BlogPost",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -672,12 +661,8 @@
           "name": "Notification_userId_User_id_fk",
           "tableFrom": "Notification",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
@@ -685,12 +670,8 @@
           "name": "Notification_actorId_User_id_fk",
           "tableFrom": "Notification",
           "tableTo": "User",
-          "columnsFrom": [
-            "actorId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["actorId"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "cascade"
         }
@@ -794,12 +775,8 @@
           "name": "PageVisitQueryParameter_pageVisitId_PageVisit_id_fk",
           "tableFrom": "PageVisitQueryParameter",
           "tableTo": "PageVisit",
-          "columnsFrom": [
-            "pageVisitId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pageVisitId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -1093,12 +1070,8 @@
           "name": "PageVisit_userId_User_id_fk",
           "tableFrom": "PageVisit",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "cascade"
         }
@@ -1180,12 +1153,8 @@
           "name": "Profile_userId_User_id_fk",
           "tableFrom": "Profile",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -1367,12 +1336,8 @@
           "name": "Session_userId_User_id_fk",
           "tableFrom": "Session",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -1590,12 +1555,8 @@
           "name": "UserBlock_blockerId_User_id_fk",
           "tableFrom": "UserBlock",
           "tableTo": "User",
-          "columnsFrom": [
-            "blockerId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["blockerId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
@@ -1603,12 +1564,8 @@
           "name": "UserBlock_blockedId_User_id_fk",
           "tableFrom": "UserBlock",
           "tableTo": "User",
-          "columnsFrom": [
-            "blockedId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["blockedId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -1616,10 +1573,7 @@
       "compositePrimaryKeys": {
         "UserBlock_pkey": {
           "name": "UserBlock_pkey",
-          "columns": [
-            "blockerId",
-            "blockedId"
-          ]
+          "columns": ["blockerId", "blockedId"]
         }
       },
       "uniqueConstraints": {},
@@ -1695,12 +1649,8 @@
           "name": "UserFeatureOverride_userId_User_id_fk",
           "tableFrom": "UserFeatureOverride",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -1708,10 +1658,7 @@
       "compositePrimaryKeys": {
         "UserFeatureOverride_pkey": {
           "name": "UserFeatureOverride_pkey",
-          "columns": [
-            "userId",
-            "featureKey"
-          ]
+          "columns": ["userId", "featureKey"]
         }
       },
       "uniqueConstraints": {},
@@ -1780,12 +1727,8 @@
           "name": "UserFollow_followerId_User_id_fk",
           "tableFrom": "UserFollow",
           "tableTo": "User",
-          "columnsFrom": [
-            "followerId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["followerId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
@@ -1793,12 +1736,8 @@
           "name": "UserFollow_followingId_User_id_fk",
           "tableFrom": "UserFollow",
           "tableTo": "User",
-          "columnsFrom": [
-            "followingId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["followingId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -1806,10 +1745,7 @@
       "compositePrimaryKeys": {
         "UserFollow_pkey": {
           "name": "UserFollow_pkey",
-          "columns": [
-            "followerId",
-            "followingId"
-          ]
+          "columns": ["followerId", "followingId"]
         }
       },
       "uniqueConstraints": {},
@@ -2072,10 +2008,7 @@
       "compositePrimaryKeys": {
         "VerificationToken_pkey": {
           "name": "VerificationToken_pkey",
-          "columns": [
-            "identifier",
-            "token"
-          ]
+          "columns": ["identifier", "token"]
         }
       },
       "uniqueConstraints": {},
@@ -2088,59 +2021,32 @@
     "public.FollowerVisibility": {
       "name": "FollowerVisibility",
       "schema": "public",
-      "values": [
-        "PUBLIC",
-        "MEMBERS",
-        "PRIVATE"
-      ]
+      "values": ["PUBLIC", "MEMBERS", "PRIVATE"]
     },
     "public.JobOutboxStatus": {
       "name": "JobOutboxStatus",
       "schema": "public",
-      "values": [
-        "pending",
-        "running",
-        "retrying",
-        "completed",
-        "failed"
-      ]
+      "values": ["pending", "running", "retrying", "completed", "failed"]
     },
     "public.NotificationAudience": {
       "name": "NotificationAudience",
       "schema": "public",
-      "values": [
-        "user",
-        "role",
-        "all"
-      ]
+      "values": ["user", "role", "all"]
     },
     "public.NotificationStatus": {
       "name": "NotificationStatus",
       "schema": "public",
-      "values": [
-        "unread",
-        "read"
-      ]
+      "values": ["unread", "read"]
     },
     "public.Role": {
       "name": "Role",
       "schema": "public",
-      "values": [
-        "SUPERADMIN",
-        "ADMIN",
-        "MANAGER",
-        "USER"
-      ]
+      "values": ["SUPERADMIN", "ADMIN", "MANAGER", "USER"]
     },
     "public.SiteAnnouncementStatus": {
       "name": "SiteAnnouncementStatus",
       "schema": "public",
-      "values": [
-        "draft",
-        "scheduled",
-        "published",
-        "archived"
-      ]
+      "values": ["draft", "scheduled", "published", "archived"]
     }
   },
   "schemas": {},

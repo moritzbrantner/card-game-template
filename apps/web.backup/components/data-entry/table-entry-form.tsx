@@ -46,13 +46,18 @@ export function TableEntryForm({ table, labels }: TableEntryFormProps) {
     });
 
     if (!response.ok) {
-      const problem = await readProblemDetail(response, 'Unable to insert row. Check values and constraints.');
+      const problem = await readProblemDetail(
+        response,
+        'Unable to insert row. Check values and constraints.',
+      );
       setState({ error: problem.message });
       setPending(false);
       return;
     }
 
-    const body = (await response.json().catch(() => null)) as { success?: string } | null;
+    const body = (await response.json().catch(() => null)) as {
+      success?: string;
+    } | null;
 
     setState({ success: body?.success ?? 'Row created.' });
     setPending(false);
@@ -60,7 +65,10 @@ export function TableEntryForm({ table, labels }: TableEntryFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border p-4 dark:border-zinc-800">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-3 rounded-lg border p-4 dark:border-zinc-800"
+    >
       <input type="hidden" name="table" value={table.table} />
       <h3 className="text-base font-semibold">{table.label}</h3>
 
@@ -68,17 +76,29 @@ export function TableEntryForm({ table, labels }: TableEntryFormProps) {
         <>
           <Field label={labels.fields.bio} name="bio" />
           <Field label={labels.fields.locale} name="locale" placeholder="en" />
-          <Field label={labels.fields.timezone} name="timezone" placeholder="Europe/Berlin" />
+          <Field
+            label={labels.fields.timezone}
+            name="timezone"
+            placeholder="Europe/Berlin"
+          />
         </>
       ) : null}
 
       {table.table === 'User' ? (
         <>
-          <Field label={labels.fields.email} name="email" type="email" required />
+          <Field
+            label={labels.fields.email}
+            name="email"
+            type="email"
+            required
+          />
           <Field label={labels.fields.name} name="name" />
           <label className="block space-y-1 text-sm">
             <span className="font-medium">{labels.fields.role}</span>
-            <select name="role" className="w-full rounded-md border border-zinc-300 p-2 dark:border-zinc-700">
+            <select
+              name="role"
+              className="w-full rounded-md border border-zinc-300 p-2 dark:border-zinc-700"
+            >
               <option value="USER">USER</option>
               <option value="ADMIN">ADMIN</option>
             </select>
@@ -90,16 +110,35 @@ export function TableEntryForm({ table, labels }: TableEntryFormProps) {
         <>
           <Field label={labels.fields.action} name="action" required />
           <Field label={labels.fields.outcome} name="outcome" required />
-          <Field label={labels.fields.statusCode} name="statusCode" type="number" required />
-          <Field label={labels.fields.metadataJson} name="metadata" placeholder='{"key":"value"}' />
+          <Field
+            label={labels.fields.statusCode}
+            name="statusCode"
+            type="number"
+            required
+          />
+          <Field
+            label={labels.fields.metadataJson}
+            name="metadata"
+            placeholder='{"key":"value"}'
+          />
         </>
       ) : null}
 
       {table.table === 'SecurityRateLimitCounter' ? (
         <>
           <Field label={labels.fields.key} name="key" required />
-          <Field label={labels.fields.count} name="count" type="number" required />
-          <Field label={labels.fields.resetAt} name="resetAt" type="datetime-local" required />
+          <Field
+            label={labels.fields.count}
+            name="count"
+            type="number"
+            required
+          />
+          <Field
+            label={labels.fields.resetAt}
+            name="resetAt"
+            type="datetime-local"
+            required
+          />
         </>
       ) : null}
 
@@ -107,8 +146,14 @@ export function TableEntryForm({ table, labels }: TableEntryFormProps) {
         {pending ? labels.creating : labels.createRow}
       </Button>
 
-      {state.error ? <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p> : null}
-      {state.success ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{state.success}</p> : null}
+      {state.error ? (
+        <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>
+      ) : null}
+      {state.success ? (
+        <p className="text-sm text-emerald-600 dark:text-emerald-400">
+          {state.success}
+        </p>
+      ) : null}
     </form>
   );
 }
@@ -121,7 +166,13 @@ type FieldProps = {
   required?: boolean;
 };
 
-function Field({ label, name, type = 'text', placeholder, required = false }: FieldProps) {
+function Field({
+  label,
+  name,
+  type = 'text',
+  placeholder,
+  required = false,
+}: FieldProps) {
   return (
     <label className="block space-y-1 text-sm">
       <span className="font-medium">{label}</span>

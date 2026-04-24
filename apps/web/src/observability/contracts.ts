@@ -7,7 +7,10 @@ export interface Logger {
 }
 
 export interface ErrorReporter {
-  captureException: (error: unknown, context?: Record<string, unknown>) => void | Promise<void>;
+  captureException: (
+    error: unknown,
+    context?: Record<string, unknown>,
+  ) => void | Promise<void>;
 }
 
 export type RequestContext = {

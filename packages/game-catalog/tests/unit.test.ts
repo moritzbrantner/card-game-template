@@ -34,7 +34,9 @@ test('createGameCatalog lists entries in a stable name order', () => {
     ['alpha', 'zebra'],
   );
   assert.deepEqual(
-    catalog.listPlayable(2, 'server-authoritative').map((entry) => entry.definition.gameId),
+    catalog
+      .listPlayable(2, 'server-authoritative')
+      .map((entry) => entry.definition.gameId),
     ['zebra'],
   );
 });
@@ -71,10 +73,11 @@ test('createGameCatalog rejects duplicate registrations', () => {
   );
 });
 
-test('defaultGameCatalog registers the card game samples', () => {
+test('defaultGameCatalog registers card and board game samples', () => {
   const unoEntry = defaultGameCatalog.get('uno-style');
   const pokerEntry = defaultGameCatalog.get('texas-holdem');
   const tcgEntry = defaultGameCatalog.get('arcane-duel');
+  const ticTacToeEntry = defaultGameCatalog.get('tic-tac-toe');
 
   assert.equal(unoEntry?.definition.name, 'UNO-style');
   assert.equal(unoEntry?.metadata?.route, '/uno');
@@ -82,4 +85,6 @@ test('defaultGameCatalog registers the card game samples', () => {
   assert.equal(pokerEntry?.metadata?.route, '/poker');
   assert.equal(tcgEntry?.definition.name, 'Arcane Duel');
   assert.equal(tcgEntry?.metadata?.route, '/tcg');
+  assert.equal(ticTacToeEntry?.definition.name, 'Tic-Tac-Toe');
+  assert.equal(ticTacToeEntry?.metadata?.route, '/tic-tac-toe');
 });

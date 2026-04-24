@@ -5,9 +5,17 @@ import type { FoundationFeatureKey } from '@/src/app-config/feature-keys';
 import type { AppSession } from '@/src/auth';
 import { getAuthSession } from '@/src/auth.server';
 import { isFeatureEnabled } from '@/src/foundation/features/runtime';
-import { auditAction, enforceRateLimit, getRateLimitKey } from '@/src/api/security';
+import {
+  auditAction,
+  enforceRateLimit,
+  getRateLimitKey,
+} from '@/src/api/security';
 import { errorReporter, getLogger } from '@/src/observability/logger';
-import { createRequestContext, setRequestActorId, withRequestContext } from '@/src/observability/request-context';
+import {
+  createRequestContext,
+  setRequestActorId,
+  withRequestContext,
+} from '@/src/observability/request-context';
 import {
   authenticationRequiredProblem,
   createProblemResponse,
@@ -42,7 +50,9 @@ type CreateApiRouteOptions<TBody, TQuery, TResult> = {
   roles?: readonly AppRole[];
   bodySchema?: BodySchema<TBody>;
   querySchema?: QuerySchema<TQuery>;
-  handler: (context: HandlerContext<TBody, TQuery>) => Promise<Response | TResult> | Response | TResult;
+  handler: (
+    context: HandlerContext<TBody, TQuery>,
+  ) => Promise<Response | TResult> | Response | TResult;
 };
 
 function defaultOutcomeForStatus(status: number) {
@@ -57,8 +67,13 @@ function defaultOutcomeForStatus(status: number) {
   return 'allowed' as const;
 }
 
-function toMultiValueRecord(entries: Iterable<[string, FormDataEntryValue | string]>) {
-  const record: Record<string, FormDataEntryValue | string | Array<FormDataEntryValue | string>> = {};
+function toMultiValueRecord(
+  entries: Iterable<[string, FormDataEntryValue | string]>,
+) {
+  const record: Record<
+    string,
+    FormDataEntryValue | string | Array<FormDataEntryValue | string>
+  > = {};
 
   for (const [key, value] of entries) {
     const existing = record[key];
@@ -104,12 +119,18 @@ function toQueryRecord(searchParams: URLSearchParams): QueryRecord {
 async function parseRequestBody(request: Request) {
   const contentType = request.headers.get('content-type') ?? '';
 
-  if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
+  if (
+    contentType.includes('multipart/form-data') ||
+    contentType.includes('application/x-www-form-urlencoded')
+  ) {
     const formData = await request.formData();
     return toMultiValueRecord(formData.entries());
   }
 
-  if (contentType.includes('application/json') || contentType.includes('text/json')) {
+  if (
+    contentType.includes('application/json') ||
+    contentType.includes('text/json')
+  ) {
     return request.json();
   }
 
@@ -120,7 +141,11 @@ async function parseRequestBody(request: Request) {
   return request.json();
 }
 
-function withStandardHeaders(response: Response, requestId: string, extraHeaders?: HeadersInit) {
+function withStandardHeaders(
+  response: Response,
+  requestId: string,
+  extraHeaders?: HeadersInit,
+) {
   const headers = new Headers(response.headers);
   headers.set('x-request-id', requestId);
 
@@ -137,9 +162,11 @@ function withStandardHeaders(response: Response, requestId: string, extraHeaders
   });
 }
 
-export function createApiRoute<TBody = undefined, TQuery = undefined, TResult = unknown>(
-  options: CreateApiRouteOptions<TBody, TQuery, TResult>,
-) {
+export function createApiRoute<
+  TBody = undefined,
+  TQuery = undefined,
+  TResult = unknown,
+>(options: CreateApiRouteOptions<TBody, TQuery, TResult>) {
   return async function routeHandler(request: Request) {
     const requestContext = createRequestContext(request);
 
@@ -149,15 +176,23 @@ export function createApiRoute<TBody = undefined, TQuery = undefined, TResult = 
       const actorId = session?.user.id ?? null;
       setRequestActorId(actorId);
 
-      const rateLimit = await enforceRateLimit(`${options.action}:${getRateLimitKey(request, actorId)}`);
+      const rateLimit = await enforceRateLimit(
+        `${options.action}:${getRateLimitKey(request, actorId)}`,
+      );
       const rateLimitHeaders = new Headers({
         'x-ratelimit-reset': String(rateLimit.resetAt),
       });
 
       if (rateLimit.ok) {
-        rateLimitHeaders.set('x-ratelimit-remaining', String(rateLimit.remaining));
+        rateLimitHeaders.set(
+          'x-ratelimit-remaining',
+          String(rateLimit.remaining),
+        );
       } else {
-        rateLimitHeaders.set('retry-after', String(rateLimit.retryAfterSeconds));
+        rateLimitHeaders.set(
+          'retry-after',
+          String(rateLimit.retryAfterSeconds),
+        );
       }
 
       const audit = async (status: number) => {
@@ -211,7 +246,10 @@ export function createApiRoute<TBody = undefined, TQuery = undefined, TResult = 
             });
           }
 
-          if (!session?.user.role || !options.roles.includes(session.user.role)) {
+          if (
+            !session?.user.role ||
+            !options.roles.includes(session.user.role)
+          ) {
             await audit(403);
             return createProblemResponse(forbiddenProblem(), {
               headers: new Headers({
@@ -229,12 +267,15 @@ export function createApiRoute<TBody = undefined, TQuery = undefined, TResult = 
 
         if (!parsedQuery.success) {
           await audit(400);
-          return createProblemResponse(invalidQueryProblem(undefined, zodFieldErrors(parsedQuery.error)), {
-            headers: new Headers({
-              ...Object.fromEntries(rateLimitHeaders.entries()),
-              'x-request-id': requestContext.requestId,
-            }),
-          });
+          return createProblemResponse(
+            invalidQueryProblem(undefined, zodFieldErrors(parsedQuery.error)),
+            {
+              headers: new Headers({
+                ...Object.fromEntries(rateLimitHeaders.entries()),
+                'x-request-id': requestContext.requestId,
+              }),
+            },
+          );
         }
 
         let parsedBody: TBody | undefined;
@@ -246,24 +287,32 @@ export function createApiRoute<TBody = undefined, TQuery = undefined, TResult = 
             rawBody = await parseRequestBody(request);
           } catch {
             await audit(400);
-            return createProblemResponse(invalidBodyProblem('Request body must be valid JSON or form data.'), {
-              headers: new Headers({
-                ...Object.fromEntries(rateLimitHeaders.entries()),
-                'x-request-id': requestContext.requestId,
-              }),
-            });
+            return createProblemResponse(
+              invalidBodyProblem(
+                'Request body must be valid JSON or form data.',
+              ),
+              {
+                headers: new Headers({
+                  ...Object.fromEntries(rateLimitHeaders.entries()),
+                  'x-request-id': requestContext.requestId,
+                }),
+              },
+            );
           }
 
           const bodyResult = options.bodySchema.safeParse(rawBody);
 
           if (!bodyResult.success) {
             await audit(400);
-            return createProblemResponse(invalidBodyProblem(undefined, zodFieldErrors(bodyResult.error)), {
-              headers: new Headers({
-                ...Object.fromEntries(rateLimitHeaders.entries()),
-                'x-request-id': requestContext.requestId,
-              }),
-            });
+            return createProblemResponse(
+              invalidBodyProblem(undefined, zodFieldErrors(bodyResult.error)),
+              {
+                headers: new Headers({
+                  ...Object.fromEntries(rateLimitHeaders.entries()),
+                  'x-request-id': requestContext.requestId,
+                }),
+              },
+            );
           }
 
           parsedBody = bodyResult.data;
@@ -285,13 +334,22 @@ export function createApiRoute<TBody = undefined, TQuery = undefined, TResult = 
               });
 
         await audit(response.status);
-        return withStandardHeaders(response, requestContext.requestId, rateLimitHeaders);
+        return withStandardHeaders(
+          response,
+          requestContext.requestId,
+          rateLimitHeaders,
+        );
       } catch (error) {
-        const problem = error instanceof ProblemError ? error.problem : internalServerProblem();
+        const problem =
+          error instanceof ProblemError
+            ? error.problem
+            : internalServerProblem();
 
         if (problem.status >= 500) {
           logger.error({ err: error }, 'API route failed');
-          await errorReporter.captureException(error, { action: options.action });
+          await errorReporter.captureException(error, {
+            action: options.action,
+          });
         }
 
         await audit(problem.status);

@@ -2,7 +2,11 @@ import type { AppRole } from '@/lib/authorization';
 import { isSuperAdmin } from '@/lib/authorization';
 import { getDb } from '@/src/db/client';
 import { users } from '@/src/db/schema';
-import { failure, success, type ServiceResult } from '@/src/domain/shared/result';
+import {
+  failure,
+  success,
+  type ServiceResult,
+} from '@/src/domain/shared/result';
 import { eq } from 'drizzle-orm';
 
 export type RoleManagementError =

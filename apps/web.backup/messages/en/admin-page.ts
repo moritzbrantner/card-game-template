@@ -10,10 +10,13 @@ export const adminPage = {
   },
   overview: {
     title: 'Admin overview',
-    description: 'Use these workspaces for privileged reporting, user operations, platform configuration, and schema-driven tools.',
+    description:
+      'Use these workspaces for privileged reporting, user operations, platform configuration, and schema-driven tools.',
     layoutTitle: 'Workspace layout',
-    layoutDescription: 'Arrange the overview cards to match the order your team uses most.',
-    editHint: 'Drag cards by their handle, then save the arrangement when the layout feels right.',
+    layoutDescription:
+      'Arrange the overview cards to match the order your team uses most.',
+    editHint:
+      'Drag cards by their handle, then save the arrangement when the layout feels right.',
     editLayout: 'Edit layout',
     saveLayout: 'Save layout',
     cancelEditing: 'Cancel',
@@ -24,11 +27,13 @@ export const adminPage = {
   },
   content: {
     title: 'Content operations',
-    description: 'Manage localized announcements and operational content that should stay database-backed.',
+    description:
+      'Manage localized announcements and operational content that should stay database-backed.',
   },
   reports: {
     title: 'Reports',
-    description: 'Review platform health, security posture, and adoption signals from one place.',
+    description:
+      'Review platform health, security posture, and adoption signals from one place.',
     ready: 'Ready for review',
     columns: {
       report: 'Report',
@@ -45,92 +50,110 @@ export const adminPage = {
       coverage: {
         label: 'Authorization coverage',
         value: '100%',
-        detail: 'All privileged admin routes now require the ADMIN or SUPERADMIN role.',
+        detail:
+          'All privileged admin routes now require the ADMIN or SUPERADMIN role.',
       },
       auditTrail: {
         label: 'Audit trail window',
         value: '24h',
-        detail: 'Security-sensitive activity can be reviewed quickly after changes or incidents.',
+        detail:
+          'Security-sensitive activity can be reviewed quickly after changes or incidents.',
       },
       refreshCadence: {
         label: 'Refresh cadence',
         value: '5 min',
-        detail: 'Operational summaries are staged frequently for rapid decision-making.',
+        detail:
+          'Operational summaries are staged frequently for rapid decision-making.',
       },
     },
     catalogTitle: 'Report catalog',
-    catalogDescription: 'Each report below has a clear owner, refresh cadence, and action path for admins.',
+    catalogDescription:
+      'Each report below has a clear owner, refresh cadence, and action path for admins.',
     catalog: {
       securityAccess: {
         title: 'Security access review',
-        description: 'Track privileged role changes, recent denials, and sign-in anomalies.',
+        description:
+          'Track privileged role changes, recent denials, and sign-in anomalies.',
         owner: 'Security operations',
         cadence: 'Every 4 hours',
       },
       auditActivity: {
         title: 'Audit activity log',
-        description: 'Inspect admin actions, account changes, and high-risk endpoints in one stream.',
+        description:
+          'Inspect admin actions, account changes, and high-risk endpoints in one stream.',
         owner: 'Platform team',
         cadence: 'Live feed',
       },
       workspaceAdoption: {
         title: 'Workspace adoption',
-        description: 'Measure active teams, repeat visits, and drop-offs across admin workspaces.',
+        description:
+          'Measure active teams, repeat visits, and drop-offs across admin workspaces.',
         owner: 'Operations',
         cadence: 'Daily at 06:00',
       },
       schemaHealth: {
         title: 'Schema health',
-        description: 'Review validation failures, ingestion mismatches, and write integrity issues.',
+        description:
+          'Review validation failures, ingestion mismatches, and write integrity issues.',
         owner: 'Data engineering',
         cadence: 'On every deployment',
       },
       navigationJourneys: {
         title: 'Navigation journeys',
-        description: 'Track entry pages, common next steps, exits, and bounce behavior across consented visitors.',
+        description:
+          'Track entry pages, common next steps, exits, and bounce behavior across consented visitors.',
         owner: 'Product analytics',
         cadence: 'Live feed',
       },
     },
     alertsTitle: 'Scheduled alerts',
-    alertsDescription: 'Admins can keep the most important report outputs pushed to the right audience.',
+    alertsDescription:
+      'Admins can keep the most important report outputs pushed to the right audience.',
     alerts: {
       dailyDigest: {
         title: 'Daily admin digest',
-        description: 'Sends the latest platform and security summaries to the admin rotation.',
+        description:
+          'Sends the latest platform and security summaries to the admin rotation.',
         channel: 'Email',
       },
       weeklyExecutive: {
         title: 'Weekly executive snapshot',
-        description: 'Bundles adoption, risk, and operational highlights into a leadership brief.',
+        description:
+          'Bundles adoption, risk, and operational highlights into a leadership brief.',
         channel: 'PDF',
       },
       failedIngestion: {
         title: 'Failed ingestion warning',
-        description: 'Escalates schema or record write failures as soon as they cross the threshold.',
+        description:
+          'Escalates schema or record write failures as soon as they cross the threshold.',
         channel: 'Slack',
       },
     },
   },
   users: {
     title: 'User management',
-    description: 'Inspect individual accounts, review recent activity, and send in-app notifications to one user or a broader audience.',
+    description:
+      'Inspect individual accounts, review recent activity, and send in-app notifications to one user or a broader audience.',
     metrics: {
       privileged: {
         label: 'Privileged users',
-        detail: 'Accounts with direct access to admin-only workspaces and approvals.',
+        detail:
+          'Accounts with direct access to admin-only workspaces and approvals.',
       },
       operational: {
         label: 'Managers',
-        detail: 'Operational users coordinating teams without full admin privileges.',
+        detail:
+          'Operational users coordinating teams without full admin privileges.',
       },
       member: {
         label: 'Members',
-        detail: 'Standard workspace users currently assigned to product workflows.',
+        detail:
+          'Standard workspace users currently assigned to product workflows.',
       },
     },
     tableTitle: 'User directory',
-    tableDescription: 'Use the live directory to inspect account state, recent activity, and notification delivery for each user.',
+    tableDescription:
+      'Use the live directory to inspect account state, recent activity, and notification delivery for each user.',
     columns: {
       user: 'User',
       role: 'Role',
@@ -150,7 +173,8 @@ export const adminPage = {
     },
     notifications: {
       title: 'Send notifications',
-      description: 'Broadcast updates to one user, a role-based cohort, or every registered account.',
+      description:
+        'Broadcast updates to one user, a role-based cohort, or every registered account.',
       fields: {
         audience: 'Audience',
         user: 'Recipient',
@@ -185,49 +209,59 @@ export const adminPage = {
       unread: '{count} unread',
     },
     workflowTitle: 'Admin workflows',
-    workflowDescription: 'Core operating patterns for reviewing user accounts and communicating changes safely.',
+    workflowDescription:
+      'Core operating patterns for reviewing user accounts and communicating changes safely.',
     workflows: {
       inspect: {
         title: 'Inspect',
-        description: 'Open a dedicated user view with profile data, activity history, and delivery context.',
+        description:
+          'Open a dedicated user view with profile data, activity history, and delivery context.',
       },
       broadcast: {
         title: 'Broadcast',
-        description: 'Send in-app notices to one user, a role cohort, or the entire workspace from the admin panel.',
+        description:
+          'Send in-app notices to one user, a role cohort, or the entire workspace from the admin panel.',
       },
       suspend: {
         title: 'Suspend',
-        description: 'Pause access immediately when an account should be investigated or archived.',
+        description:
+          'Pause access immediately when an account should be investigated or archived.',
       },
     },
     detail: {
       title: 'User inspection',
-      description: 'Inspect account state, recent activity, and notification history for {name}.',
+      description:
+        'Inspect account state, recent activity, and notification history for {name}.',
       back: 'Back to users',
       fallback: 'Selected user',
       pending: 'Pending verification',
       none: 'None',
       notProvided: 'Not provided',
       profileTitle: 'Profile and account state',
-      profileDescription: 'Core profile fields and verification details available to administrators.',
+      profileDescription:
+        'Core profile fields and verification details available to administrators.',
       activityTitle: 'Recent activity',
       activityDescription: 'Latest tracked routes for this account.',
       noActivity: 'No tracked page visits yet.',
       notificationsTitle: 'Recent notifications',
-      notificationsDescription: 'Newest in-app notifications delivered to this user.',
+      notificationsDescription:
+        'Newest in-app notifications delivered to this user.',
       noNotifications: 'No notifications have been delivered yet.',
       directNotificationTitle: 'Send a direct notification',
-      directNotificationDescription: 'Compose a message that will land directly in this user’s notification inbox.',
+      directNotificationDescription:
+        'Compose a message that will land directly in this user’s notification inbox.',
       roleManager: {
         title: 'Role management',
-        description: 'Superadmins can assign and revoke privileged workspace access here.',
+        description:
+          'Superadmins can assign and revoke privileged workspace access here.',
         currentRole: 'Current role',
         nextRole: 'Assigned role',
         submit: 'Save role',
         saving: 'Saving...',
         success: 'Role updated to {role}.',
         genericError: 'Unable to update the role right now.',
-        selfChangeHint: 'Use another superadmin account to change your own role safely.',
+        selfChangeHint:
+          'Use another superadmin account to change your own role safely.',
       },
       accountHealthTitle: 'Account health',
       accountHealthDescription: 'Operational signals tied to this account.',
@@ -260,7 +294,8 @@ export const adminPage = {
   },
   systemSettings: {
     title: 'System settings',
-    description: 'Control platform-wide policies that should stay in admin hands, not personal user preferences.',
+    description:
+      'Control platform-wide policies that should stay in admin hands, not personal user preferences.',
     actions: {
       edit: 'Edit',
       audit: 'Audit log',
@@ -268,15 +303,18 @@ export const adminPage = {
     groups: {
       sessions: {
         title: 'Session controls',
-        description: 'Define session lifetime, rotation cadence, and forced re-authentication windows.',
+        description:
+          'Define session lifetime, rotation cadence, and forced re-authentication windows.',
       },
       notifications: {
         title: 'Notification defaults',
-        description: 'Set digest cadence, escalation routing, and admin broadcast expectations.',
+        description:
+          'Set digest cadence, escalation routing, and admin broadcast expectations.',
       },
       storage: {
         title: 'Storage and retention',
-        description: 'Review upload limits, local asset handling, and cleanup windows.',
+        description:
+          'Review upload limits, local asset handling, and cleanup windows.',
       },
     },
     settings: {
@@ -292,17 +330,20 @@ export const adminPage = {
       },
       mfaPolicy: {
         label: 'MFA policy',
-        value: 'Required for ADMIN and SUPERADMIN accounts and optional for all others.',
+        value:
+          'Required for ADMIN and SUPERADMIN accounts and optional for all others.',
         scope: 'Access',
       },
       digestCadence: {
         label: 'Digest cadence',
-        value: 'Two daily summaries for admin notifications and report digests.',
+        value:
+          'Two daily summaries for admin notifications and report digests.',
         scope: 'Communication',
       },
       incidentRouting: {
         label: 'Incident routing',
-        value: 'Critical issues fan out to the security channel and on-call alias.',
+        value:
+          'Critical issues fan out to the security channel and on-call alias.',
         scope: 'Escalation',
       },
       maintenanceWindow: {
@@ -327,23 +368,28 @@ export const adminPage = {
       },
     },
     checklistTitle: 'Change checklist',
-    checklistDescription: 'Use the same review pattern whenever a platform-level setting is changed.',
+    checklistDescription:
+      'Use the same review pattern whenever a platform-level setting is changed.',
     checklist: {
-      review: 'Review the operational impact before making a platform-wide change.',
-      announce: 'Communicate setting changes to affected teams when behavior will shift.',
+      review:
+        'Review the operational impact before making a platform-wide change.',
+      announce:
+        'Communicate setting changes to affected teams when behavior will shift.',
       verify: 'Verify audit logs, error rates, and user impact after rollout.',
     },
   },
   dataStudio: {
     title: 'Data studio',
-    description: 'Insert records through schema-driven forms generated from db-schema.json. Access is restricted to ADMIN and SUPERADMIN users.',
+    description:
+      'Insert records through schema-driven forms generated from db-schema.json. Access is restricted to ADMIN and SUPERADMIN users.',
     summary: {
       tables: 'Writable tables',
       fields: 'Available fields',
       required: 'Required fields in selected table',
     },
     explorerTitle: 'Schema explorer',
-    explorerDescription: 'Select a table to inspect its shape and compose a record from the generated form.',
+    explorerDescription:
+      'Select a table to inspect its shape and compose a record from the generated form.',
     emptyState: 'No table selected',
     noDescription: 'No description available for this table.',
     details: {
@@ -352,12 +398,14 @@ export const adminPage = {
       endpoint: 'Write endpoint',
     },
     formTitle: 'Generated form',
-    formDescription: 'Submit the generated form to create a record in the selected database table.',
+    formDescription:
+      'Submit the generated form to create a record in the selected database table.',
     fieldListTitle: 'Field inventory',
     fieldType: 'Field type',
     fieldRequired: 'Required',
     fieldOptional: 'Optional',
     guideTitle: 'Studio guide',
-    guideDescription: 'Pick a table, complete the required fields, and submit the generated form to create a new record through the admin API.',
+    guideDescription:
+      'Pick a table, complete the required fields, and submit the generated form to create a new record through the admin API.',
   },
 };

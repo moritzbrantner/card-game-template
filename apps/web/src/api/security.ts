@@ -1,9 +1,9 @@
-import { eq, lte, sql } from "drizzle-orm";
+import { eq, lte, sql } from 'drizzle-orm';
 
-import { getDb } from "@/src/db/client";
-import { securityAuditLogs, securityRateLimitCounters } from "@/src/db/schema";
+import { getDb } from '@/src/db/client';
+import { securityAuditLogs, securityRateLimitCounters } from '@/src/db/schema';
 
-export type AuditOutcome = "allowed" | "denied" | "error" | "rate_limited";
+export type AuditOutcome = 'allowed' | 'denied' | 'error' | 'rate_limited';
 
 export type AuditRecord = {
   actorId: string | null;
@@ -46,8 +46,16 @@ export interface SecurityService {
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 30;
 
-const REDACTED = "[REDACTED]";
-const BLOCKED_METADATA_KEYS = [/pass(word)?/i, /secret/i, /token/i, /authorization/i, /cookie/i, /email/i, /phone/i];
+const REDACTED = '[REDACTED]';
+const BLOCKED_METADATA_KEYS = [
+  /pass(word)?/i,
+  /secret/i,
+  /token/i,
+  /authorization/i,
+  /cookie/i,
+  /email/i,
+  /phone/i,
+];
 
 function isSensitiveKey(key: string): boolean {
   return BLOCKED_METADATA_KEYS.some((pattern) => pattern.test(key));
@@ -58,14 +66,16 @@ function sanitizeMetadata(value: unknown): unknown {
     return value.map((item) => sanitizeMetadata(item));
   }
 
-  if (value && typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>).map(([key, nested]) => {
-      if (isSensitiveKey(key)) {
-        return [key, REDACTED] as const;
-      }
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).map(
+      ([key, nested]) => {
+        if (isSensitiveKey(key)) {
+          return [key, REDACTED] as const;
+        }
 
-      return [key, sanitizeMetadata(nested)] as const;
-    });
+        return [key, sanitizeMetadata(nested)] as const;
+      },
+    );
 
     return Object.fromEntries(entries);
   }
@@ -74,18 +84,21 @@ function sanitizeMetadata(value: unknown): unknown {
 }
 
 function getClientIp(request: Request): string {
-  const forwardedFor = request.headers.get("x-forwarded-for");
+  const forwardedFor = request.headers.get('x-forwarded-for');
   if (forwardedFor) {
-    return forwardedFor.split(",")[0]?.trim() ?? "unknown";
+    return forwardedFor.split(',')[0]?.trim() ?? 'unknown';
   }
 
-  return request.headers.get("x-real-ip") ?? "unknown";
+  return request.headers.get('x-real-ip') ?? 'unknown';
 }
 
 export class RedisRateLimitAdapter implements RateLimitAdapter {
   constructor(
     private readonly redisClient: {
-      eval(script: string, options: { keys: string[]; arguments: string[] }): Promise<(number | string)[]>;
+      eval(
+        script: string,
+        options: { keys: string[]; arguments: string[] },
+      ): Promise<(number | string)[]>;
     },
   ) {}
 
@@ -114,7 +127,11 @@ return {nextCount, tonumber(ARGV[1]) + ttl}
 
     const [count, resetAt] = await this.redisClient.eval(script, {
       keys: [input.key],
-      arguments: [String(input.now), String(input.windowMs), String(input.maxRequests)],
+      arguments: [
+        String(input.now),
+        String(input.windowMs),
+        String(input.maxRequests),
+      ],
     });
 
     return { count: Number(count), resetAt: Number(resetAt) };
@@ -240,7 +257,9 @@ export class DefaultSecurityService implements SecurityService {
       action: record.action,
       outcome: record.outcome,
       statusCode: record.statusCode,
-      metadata: (sanitizeMetadata(record.metadata ?? {}) as Record<string, unknown>) ?? {},
+      metadata:
+        (sanitizeMetadata(record.metadata ?? {}) as Record<string, unknown>) ??
+        {},
       timestamp: new Date(),
     });
   }
@@ -251,7 +270,10 @@ const securityService = new DefaultSecurityService(
   new PostgresAuditPersistenceAdapter(),
 );
 
-export function getRateLimitKey(request: Request, userId: string | null): string {
+export function getRateLimitKey(
+  request: Request,
+  userId: string | null,
+): string {
   return securityService.getRateLimitKey(request, userId);
 }
 
@@ -268,5 +290,9 @@ export function createSecurityService(adapters: {
   audit: AuditPersistenceAdapter;
   config?: { maxRequests: number; windowMs: number };
 }): SecurityService {
-  return new DefaultSecurityService(adapters.rateLimit, adapters.audit, adapters.config);
+  return new DefaultSecurityService(
+    adapters.rateLimit,
+    adapters.audit,
+    adapters.config,
+  );
 }

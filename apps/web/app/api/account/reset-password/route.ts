@@ -15,7 +15,14 @@ export const POST = createApiRoute({
     const result = await resetPasswordWithToken(body.token, body.password);
 
     if (!result.ok) {
-      throw new ProblemError(problem('/problems/password-reset', 'Unable to reset password', 400, result.error));
+      throw new ProblemError(
+        problem(
+          '/problems/password-reset',
+          'Unable to reset password',
+          400,
+          result.error,
+        ),
+      );
     }
 
     return { ok: true };

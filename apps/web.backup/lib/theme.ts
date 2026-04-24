@@ -7,7 +7,9 @@ export function isTheme(value: string | null | undefined): value is Theme {
   return value === 'light' || value === 'dark';
 }
 
-export function parseThemeFromCookieHeader(cookieHeader: string | null | undefined): Theme {
+export function parseThemeFromCookieHeader(
+  cookieHeader: string | null | undefined,
+): Theme {
   if (!cookieHeader) {
     return 'light';
   }

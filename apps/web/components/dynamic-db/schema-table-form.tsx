@@ -22,7 +22,10 @@ function inputTypeForField(type: DbSchemaTable['fields'][number]['type']) {
 }
 
 export function SchemaTableForm({ table }: SchemaTableFormProps) {
-  const [state, setState] = useState<{ ok: boolean; message: string }>({ ok: false, message: '' });
+  const [state, setState] = useState<{ ok: boolean; message: string }>({
+    ok: false,
+    message: '',
+  });
   const [isPending, setIsPending] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -36,26 +39,42 @@ export function SchemaTableForm({ table }: SchemaTableFormProps) {
     });
 
     if (!response.ok) {
-      const problem = await readProblemDetail(response, 'Unable to save record.');
+      const problem = await readProblemDetail(
+        response,
+        'Unable to save record.',
+      );
       setState({ ok: false, message: problem.message });
       setIsPending(false);
       return;
     }
 
-    const body = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
+    const body = (await response.json().catch(() => null)) as {
+      ok?: boolean;
+      message?: string;
+    } | null;
 
-    setState({ ok: body?.ok ?? true, message: body?.message ?? `${table.label} record created successfully.` });
+    setState({
+      ok: body?.ok ?? true,
+      message: body?.message ?? `${table.label} record created successfully.`,
+    });
     setIsPending(false);
     event.currentTarget.reset();
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border p-4 dark:border-zinc-800">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 rounded-xl border p-4 dark:border-zinc-800"
+    >
       <input type="hidden" name="tableName" value={table.name} />
 
       <div>
         <h3 className="text-lg font-semibold">{table.label}</h3>
-        {table.description ? <p className="text-sm text-zinc-600 dark:text-zinc-300">{table.description}</p> : null}
+        {table.description ? (
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">
+            {table.description}
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-3">
@@ -94,7 +113,13 @@ export function SchemaTableForm({ table }: SchemaTableFormProps) {
       </div>
 
       {state.message ? (
-        <p className={state.ok ? 'text-sm text-emerald-600 dark:text-emerald-400' : 'text-sm text-red-600 dark:text-red-400'}>
+        <p
+          className={
+            state.ok
+              ? 'text-sm text-emerald-600 dark:text-emerald-400'
+              : 'text-sm text-red-600 dark:text-red-400'
+          }
+        >
           {state.message}
         </p>
       ) : null}

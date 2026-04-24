@@ -8,8 +8,23 @@ import {
 } from '@/src/privacy/contracts';
 
 export const REDACTED_QUERY_VALUE = '[REDACTED]';
-export const TRACKED_QUERY_ALLOWLIST = new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'ref']);
-export const ALWAYS_REDACT_QUERY_KEYS = [/token/i, /^code$/i, /^state$/i, /email/i, /invite/i, /secret/i, /password/i];
+export const TRACKED_QUERY_ALLOWLIST = new Set([
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'utm_term',
+  'utm_content',
+  'ref',
+]);
+export const ALWAYS_REDACT_QUERY_KEYS = [
+  /token/i,
+  /^code$/i,
+  /^state$/i,
+  /email/i,
+  /invite/i,
+  /secret/i,
+  /password/i,
+];
 
 export async function getConsentState() {
   if (isGithubPagesBuild) {
@@ -29,7 +44,10 @@ export async function getConsentState() {
 }
 
 function shouldRedactQueryKey(key: string) {
-  return ALWAYS_REDACT_QUERY_KEYS.some((pattern) => pattern.test(key)) || !TRACKED_QUERY_ALLOWLIST.has(key);
+  return (
+    ALWAYS_REDACT_QUERY_KEYS.some((pattern) => pattern.test(key)) ||
+    !TRACKED_QUERY_ALLOWLIST.has(key)
+  );
 }
 
 export function sanitizeTrackedQueryParameters(searchParams: URLSearchParams) {
