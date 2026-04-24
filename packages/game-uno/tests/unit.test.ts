@@ -18,6 +18,7 @@ import {
   parseUnoSetup,
   summarizeUnoReplay,
   type UnoCard,
+  type UnoEvent,
   type UnoMove,
   type UnoState,
 } from '../src/index.ts';
@@ -94,7 +95,7 @@ function createReplay(
   let latestState = initialState;
 
   const acceptedMoves = moves.map((move, index) => {
-    latestState = adapter.applyMove(latestState, move);
+    latestState = applyMove(latestState, move).state;
 
     return {
       sequence: index + 1,
@@ -121,6 +122,22 @@ function createReplay(
         }
       : null,
   });
+}
+
+function applyMove(state: MatchState<UnoState>, move: UnoMove) {
+  const result = adapter.applyMove(state, move);
+
+  if ('matchId' in result) {
+    return {
+      state: result,
+      events: [] as readonly UnoEvent[],
+    };
+  }
+
+  return {
+    state: result.state,
+    events: result.events ?? [],
+  };
 }
 
 test('UNO-style initial state is deterministic for the same seed', () => {
@@ -269,7 +286,27 @@ test('reverse acts like skip in a two-player match', () => {
     },
   });
 
-  assert.equal(next.activePlayerId, 'p1');
+  assert.equal(next.state.activePlayerId, 'p1');
+  assert.deepEqual(next.events, [
+    {
+      type: 'card-played',
+      playerId: 'p1',
+      cardId: 'reverse-card',
+      cardKind: 'reverse',
+      cardColor: 'red',
+      resultingColor: 'red',
+      saidUno: true,
+    },
+    {
+      type: 'player-skipped',
+      playerId: 'p1',
+      skippedPlayerId: 'p2',
+    },
+    {
+      type: 'winner-declared',
+      playerId: 'p1',
+    },
+  ]);
 });
 
 test('draw penalties respect the stacking rule toggle', () => {
@@ -445,7 +482,7 @@ test('seven-zero rotates hands when zero is played', () => {
     },
   });
 
-  const next = adapter.applyMove(zeroState, {
+  const next = applyMove(zeroState, {
     playerId: 'p1',
     kind: 'play-card',
     createdAt: '2026-04-17T12:00:00.000Z',
@@ -455,7 +492,23 @@ test('seven-zero rotates hands when zero is played', () => {
     },
   });
 
-  assert.equal(next.state.hands.p1.length, 2);
+  assert.equal(next.state.state.hands.p1.length, 2);
+  assert.deepEqual(next.events, [
+    {
+      type: 'card-played',
+      playerId: 'p1',
+      cardId: 'zero-card',
+      cardKind: 'number',
+      cardColor: 'red',
+      resultingColor: 'red',
+      saidUno: true,
+    },
+    {
+      type: 'hands-rotated',
+      playerId: 'p1',
+      direction: 1,
+    },
+  ]);
 });
 
 test('match completes when a player empties their hand', () => {
@@ -466,7 +519,7 @@ test('match completes when a player empties their hand', () => {
     },
   });
 
-  const next = adapter.applyMove(winningState, {
+  const next = applyMove(winningState, {
     playerId: 'p1',
     kind: 'play-card',
     createdAt: '2026-04-17T12:00:00.000Z',
@@ -476,8 +529,99 @@ test('match completes when a player empties their hand', () => {
     },
   });
 
-  assert.equal(adapter.isMatchComplete(next), true);
-  assert.deepEqual(adapter.getResult?.(next)?.winnerIds, ['p1']);
+  assert.equal(adapter.isMatchComplete(next.state), true);
+  assert.deepEqual(adapter.getResult?.(next.state)?.winnerIds, ['p1']);
+  assert.deepEqual(next.events, [
+    {
+      type: 'card-played',
+      playerId: 'p1',
+      cardId: 'winning-card',
+      cardKind: 'number',
+      cardColor: 'red',
+      resultingColor: 'red',
+      saidUno: true,
+    },
+    {
+      type: 'winner-declared',
+      playerId: 'p1',
+    },
+  ]);
+});
+
+test('engine submitMove exposes UNO transition events for stacked penalties', () => {
+  const engine = createGameEngine(adapter);
+  const stackingState = createState({
+    pendingDrawAmount: 2,
+    pendingDrawSource: 'draw-two',
+    rules: {
+      ...defaultUnoRules,
+      drawStacking: true,
+    },
+    hands: {
+      p1: [createCard('red', 'draw-two', 'stack-draw-two')],
+      p2: [createCard('blue', 'number', 'blue-1', 1)],
+    },
+  });
+
+  const transition = engine.submitMove(stackingState, {
+    playerId: 'p1',
+    kind: 'play-card',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: {
+      cardId: 'stack-draw-two',
+      sayUno: true,
+    },
+  });
+
+  assert.deepEqual(transition.events, [
+    {
+      type: 'card-played',
+      playerId: 'p1',
+      cardId: 'stack-draw-two',
+      cardKind: 'draw-two',
+      cardColor: 'red',
+      resultingColor: 'red',
+      saidUno: true,
+    },
+    {
+      type: 'draw-penalty-stacked',
+      playerId: 'p1',
+      targetPlayerId: 'p2',
+      source: 'draw-two',
+      amount: 4,
+    },
+    {
+      type: 'winner-declared',
+      playerId: 'p1',
+    },
+  ]);
+});
+
+test('UNO draw moves emit drawn-card transition events', () => {
+  const drawn = applyMove(
+    createState({
+      hands: {
+        p1: [createCard('blue', 'number', 'blue-1', 1)],
+        p2: [createCard('green', 'number', 'green-1', 1)],
+      },
+    }),
+    {
+      playerId: 'p1',
+      kind: 'draw-card',
+      createdAt: '2026-04-17T12:00:00.000Z',
+      payload: {},
+    },
+  );
+
+  assert.deepEqual(drawn.events, [
+    {
+      type: 'cards-drawn',
+      playerId: 'p1',
+      amount: 1,
+      source: 'draw',
+      cardIds: ['draw-1'],
+    },
+  ]);
 });
 
 test('bot selection prefers the majority color when choosing a wild', () => {

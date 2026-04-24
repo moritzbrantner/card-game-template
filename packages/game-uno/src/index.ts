@@ -15,6 +15,7 @@ import {
   areMovesEquivalent,
   createSeededRandom,
   type GameAdapter,
+  type TransitionResult,
 } from '@repo/game-engine';
 import type {
   LocalGameSessionBot,
@@ -77,6 +78,59 @@ export type UnoPlayCardMove = GameMove<{
 export type UnoDrawCardMove = GameMove<Record<string, never>>;
 export type UnoPassMove = GameMove<Record<string, never>>;
 export type UnoMove = UnoPlayCardMove | UnoDrawCardMove | UnoPassMove;
+export type UnoEvent =
+  | {
+      type: 'card-played';
+      playerId: PlayerId;
+      cardId: string;
+      cardKind: UnoCardKind;
+      cardColor: UnoCard['color'];
+      resultingColor: UnoColor;
+      saidUno: boolean;
+      targetPlayerId?: PlayerId;
+    }
+  | {
+      type: 'cards-drawn';
+      playerId: PlayerId;
+      amount: number;
+      source: 'draw' | 'draw-two' | 'wild-draw-four' | 'uno-penalty';
+      cardIds: readonly string[];
+    }
+  | {
+      type: 'turn-passed';
+      playerId: PlayerId;
+    }
+  | {
+      type: 'direction-reversed';
+      playerId: PlayerId;
+      direction: 1 | -1;
+    }
+  | {
+      type: 'player-skipped';
+      playerId: PlayerId;
+      skippedPlayerId: PlayerId;
+    }
+  | {
+      type: 'draw-penalty-stacked';
+      playerId: PlayerId;
+      targetPlayerId: PlayerId;
+      source: 'draw-two' | 'wild-draw-four';
+      amount: number;
+    }
+  | {
+      type: 'hands-swapped';
+      playerId: PlayerId;
+      targetPlayerId: PlayerId;
+    }
+  | {
+      type: 'hands-rotated';
+      playerId: PlayerId;
+      direction: 1 | -1;
+    }
+  | {
+      type: 'winner-declared';
+      playerId: PlayerId;
+    };
 
 export type UnoPlayerView = {
   activeColor: UnoColor;
@@ -879,7 +933,12 @@ export function summarizeUnoReplay(
   };
 }
 
-export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
+export function createUnoAdapter(): GameAdapter<
+  UnoSetup,
+  UnoState,
+  UnoMove,
+  UnoEvent
+> {
   return {
     definition: unoDefinition,
     metadata: {
@@ -1039,10 +1098,11 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
         areMovesEquivalent(candidate, move),
       );
     },
-    applyMove(state, move): MatchState<UnoState> {
+    applyMove(state, move): TransitionResult<UnoState, UnoEvent> {
       const nextHands = cloneHands(state.state.hands);
 
       if (move.kind === 'draw-card') {
+        const events: UnoEvent[] = [];
         const amount =
           state.state.pendingDrawAmount > 0 ? state.state.pendingDrawAmount : 1;
         const drawn = drawCards(state.state, amount);
@@ -1050,6 +1110,13 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
           ...(nextHands[move.playerId] ?? []),
           ...drawn.drawnCards,
         ];
+        events.push({
+          type: 'cards-drawn',
+          playerId: move.playerId,
+          amount: drawn.drawnCards.length,
+          source: state.state.pendingDrawSource ?? 'draw',
+          cardIds: drawn.drawnCards.map((card) => card.id),
+        });
 
         const endsTurn = amount > 1 || state.state.pendingDrawAmount > 0;
         const drawnCard = drawn.drawnCards[0] ?? null;
@@ -1070,46 +1137,57 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
           );
 
         return {
-          ...state,
-          turn: state.turn + 1,
-          activePlayerId:
-            endsTurn || !canPlayDrawnCard
-              ? nextPlayerId(
-                  state.players,
-                  move.playerId,
-                  state.state.direction,
-                )
-              : move.playerId,
+          events,
           state: {
-            ...state.state,
-            discardPile: drawn.discardPile,
-            drawPile: drawn.drawPile,
-            drawnCardThisTurnId:
-              endsTurn || !canPlayDrawnCard ? null : drawnCard!.id,
-            hands: nextHands,
-            lastEvent:
-              amount > 1
-                ? `${move.playerId} drew ${amount} cards`
-                : `${move.playerId} drew ${drawnCard?.label ?? 'a card'}`,
-            pendingDrawAmount: 0,
-            pendingDrawSource: null,
+            ...state,
+            turn: state.turn + 1,
+            activePlayerId:
+              endsTurn || !canPlayDrawnCard
+                ? nextPlayerId(
+                    state.players,
+                    move.playerId,
+                    state.state.direction,
+                  )
+                : move.playerId,
+            state: {
+              ...state.state,
+              discardPile: drawn.discardPile,
+              drawPile: drawn.drawPile,
+              drawnCardThisTurnId:
+                endsTurn || !canPlayDrawnCard ? null : drawnCard!.id,
+              hands: nextHands,
+              lastEvent:
+                amount > 1
+                  ? `${move.playerId} drew ${amount} cards`
+                  : `${move.playerId} drew ${drawnCard?.label ?? 'a card'}`,
+              pendingDrawAmount: 0,
+              pendingDrawSource: null,
+            },
           },
         };
       }
 
       if (move.kind === 'pass') {
         return {
-          ...state,
-          turn: state.turn + 1,
-          activePlayerId: nextPlayerId(
-            state.players,
-            move.playerId,
-            state.state.direction,
-          ),
+          events: [
+            {
+              type: 'turn-passed',
+              playerId: move.playerId,
+            },
+          ],
           state: {
-            ...state.state,
-            drawnCardThisTurnId: null,
-            lastEvent: `${move.playerId} passed`,
+            ...state,
+            turn: state.turn + 1,
+            activePlayerId: nextPlayerId(
+              state.players,
+              move.playerId,
+              state.state.direction,
+            ),
+            state: {
+              ...state.state,
+              drawnCardThisTurnId: null,
+              lastEvent: `${move.playerId} passed`,
+            },
           },
         };
       }
@@ -1143,6 +1221,23 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
         move.playerId,
         direction,
       );
+      const events: UnoEvent[] = [
+        {
+          type: 'card-played',
+          playerId: move.playerId,
+          cardId: card.id,
+          cardKind: card.kind,
+          cardColor: card.color,
+          resultingColor:
+            card.color === 'wild'
+              ? (move.payload.chosenColor ?? 'red')
+              : card.color,
+          saidUno: Boolean(move.payload.sayUno),
+          ...(move.payload.targetPlayerId
+            ? { targetPlayerId: move.payload.targetPlayerId }
+            : {}),
+        },
+      ];
 
       if (
         state.state.rules.sevenZero &&
@@ -1154,6 +1249,11 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
         const playerHand = nextHands[move.playerId] ?? [];
         nextHands[move.playerId] = [...(nextHands[targetPlayerId] ?? [])];
         nextHands[targetPlayerId] = [...playerHand];
+        events.push({
+          type: 'hands-swapped',
+          playerId: move.playerId,
+          targetPlayerId,
+        });
         lastEvent = `${move.playerId} swapped hands with ${targetPlayerId}`;
       }
 
@@ -1164,15 +1264,34 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
       ) {
         const rotated = rotateHands(state.players, nextHands, direction);
         Object.assign(nextHands, rotated);
+        events.push({
+          type: 'hands-rotated',
+          playerId: move.playerId,
+          direction,
+        });
         lastEvent = `${move.playerId} rotated every hand`;
       }
 
       if (card.kind === 'reverse') {
         if (state.players.length === 2) {
+          events.push({
+            type: 'player-skipped',
+            playerId: move.playerId,
+            skippedPlayerId: nextPlayerId(
+              state.players,
+              move.playerId,
+              direction,
+            ),
+          });
           activePlayerId = move.playerId;
           lastEvent = `${move.playerId} reversed play and skipped the opponent`;
         } else {
           direction = state.state.direction === 1 ? -1 : 1;
+          events.push({
+            type: 'direction-reversed',
+            playerId: move.playerId,
+            direction,
+          });
           activePlayerId = nextPlayerId(
             state.players,
             move.playerId,
@@ -1183,6 +1302,15 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
       }
 
       if (card.kind === 'skip') {
+        events.push({
+          type: 'player-skipped',
+          playerId: move.playerId,
+          skippedPlayerId: nextPlayerId(
+            state.players,
+            move.playerId,
+            direction,
+          ),
+        });
         activePlayerId = nextPlayerId(
           state.players,
           move.playerId,
@@ -1193,9 +1321,21 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
       }
 
       if (card.kind === 'draw-two') {
+        const targetPlayerId = nextPlayerId(
+          state.players,
+          move.playerId,
+          direction,
+        );
         if (state.state.rules.drawStacking) {
           pendingDrawAmount = state.state.pendingDrawAmount + 2;
           pendingDrawSource = 'draw-two';
+          events.push({
+            type: 'draw-penalty-stacked',
+            playerId: move.playerId,
+            targetPlayerId,
+            source: 'draw-two',
+            amount: pendingDrawAmount,
+          });
           activePlayerId = nextPlayerId(
             state.players,
             move.playerId,
@@ -1203,11 +1343,6 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
           );
           lastEvent = `${move.playerId} stacked a draw two`;
         } else {
-          const targetPlayerId = nextPlayerId(
-            state.players,
-            move.playerId,
-            direction,
-          );
           const drawn = drawCards(
             {
               ...state.state,
@@ -1223,6 +1358,13 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
             ...(nextHands[targetPlayerId] ?? []),
             ...drawn.drawnCards,
           ];
+          events.push({
+            type: 'cards-drawn',
+            playerId: targetPlayerId,
+            amount: drawn.drawnCards.length,
+            source: 'draw-two',
+            cardIds: drawn.drawnCards.map((drawnCard) => drawnCard.id),
+          });
           activePlayerId = nextPlayerId(
             state.players,
             targetPlayerId,
@@ -1237,9 +1379,21 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
       }
 
       if (card.kind === 'wild-draw-four') {
+        const targetPlayerId = nextPlayerId(
+          state.players,
+          move.playerId,
+          direction,
+        );
         if (state.state.rules.drawStacking) {
           pendingDrawAmount = state.state.pendingDrawAmount + 4;
           pendingDrawSource = 'wild-draw-four';
+          events.push({
+            type: 'draw-penalty-stacked',
+            playerId: move.playerId,
+            targetPlayerId,
+            source: 'wild-draw-four',
+            amount: pendingDrawAmount,
+          });
           activePlayerId = nextPlayerId(
             state.players,
             move.playerId,
@@ -1247,11 +1401,6 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
           );
           lastEvent = `${move.playerId} stacked a wild draw four`;
         } else {
-          const targetPlayerId = nextPlayerId(
-            state.players,
-            move.playerId,
-            direction,
-          );
           const drawn = drawCards(
             {
               ...state.state,
@@ -1267,6 +1416,13 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
             ...(nextHands[targetPlayerId] ?? []),
             ...drawn.drawnCards,
           ];
+          events.push({
+            type: 'cards-drawn',
+            playerId: targetPlayerId,
+            amount: drawn.drawnCards.length,
+            source: 'wild-draw-four',
+            cardIds: drawn.drawnCards.map((drawnCard) => drawnCard.id),
+          });
           activePlayerId = nextPlayerId(
             state.players,
             targetPlayerId,
@@ -1296,28 +1452,44 @@ export function createUnoAdapter(): GameAdapter<UnoSetup, UnoState, UnoMove> {
           ...(nextHands[move.playerId] ?? []),
           ...penalty.drawnCards,
         ];
+        events.push({
+          type: 'cards-drawn',
+          playerId: move.playerId,
+          amount: penalty.drawnCards.length,
+          source: 'uno-penalty',
+          cardIds: penalty.drawnCards.map((drawnCard) => drawnCard.id),
+        });
         lastEvent = `${move.playerId} forgot to call UNO and drew 2 cards`;
       }
 
       const winnerPlayerId =
         (nextHands[move.playerId] ?? []).length === 0 ? move.playerId : null;
+      if (winnerPlayerId) {
+        events.push({
+          type: 'winner-declared',
+          playerId: winnerPlayerId,
+        });
+      }
 
       return {
-        ...state,
-        activePlayerId,
-        turn: state.turn + 1,
+        events,
         state: {
-          ...state.state,
-          currentColor,
-          direction,
-          discardPile,
-          drawPile,
-          drawnCardThisTurnId: null,
-          hands: nextHands,
-          lastEvent,
-          pendingDrawAmount,
-          pendingDrawSource,
-          winnerPlayerId,
+          ...state,
+          activePlayerId,
+          turn: state.turn + 1,
+          state: {
+            ...state.state,
+            currentColor,
+            direction,
+            discardPile,
+            drawPile,
+            drawnCardThisTurnId: null,
+            hands: nextHands,
+            lastEvent,
+            pendingDrawAmount,
+            pendingDrawSource,
+            winnerPlayerId,
+          },
         },
       };
     },

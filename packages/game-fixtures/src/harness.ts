@@ -22,10 +22,15 @@ export type EngineFixtureStep<TState, TMove extends GameMove> = {
   }): TMove;
 };
 
-export type EngineFixtureCase<TSetup, TState, TMove extends GameMove> = {
+export type EngineFixtureCase<
+  TSetup,
+  TState,
+  TMove extends GameMove,
+  TEvent = never,
+> = {
   id: string;
   gameId: GameId;
-  adapter: GameAdapter<TSetup, TState, TMove>;
+  adapter: GameAdapter<TSetup, TState, TMove, TEvent>;
   players: readonly PlayerProfile[];
   setup: TSetup;
   steps: readonly EngineFixtureStep<TState, TMove>[];
@@ -111,8 +116,13 @@ function assertMovesAreSerializable<TMove extends GameMove>(
   }
 }
 
-function assertRejectsWrongActor<TSetup, TState, TMove extends GameMove>(
-  fixture: EngineFixtureCase<TSetup, TState, TMove>,
+function assertRejectsWrongActor<
+  TSetup,
+  TState,
+  TMove extends GameMove,
+  TEvent,
+>(
+  fixture: EngineFixtureCase<TSetup, TState, TMove, TEvent>,
   state: MatchState<TState>,
   move: TMove,
 ) {
@@ -141,8 +151,13 @@ function assertRejectsWrongActor<TSetup, TState, TMove extends GameMove>(
   throw new Error(`${fixture.id} accepted a move submitted by the wrong actor`);
 }
 
-export function runEngineFixtureCase<TSetup, TState, TMove extends GameMove>(
-  fixture: EngineFixtureCase<TSetup, TState, TMove>,
+export function runEngineFixtureCase<
+  TSetup,
+  TState,
+  TMove extends GameMove,
+  TEvent = never,
+>(
+  fixture: EngineFixtureCase<TSetup, TState, TMove, TEvent>,
 ): EngineFixtureRunResult<TState, TMove> {
   const engine = createGameEngine(fixture.adapter);
   const firstInitialState = engine.startMatch({

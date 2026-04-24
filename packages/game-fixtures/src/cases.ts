@@ -31,6 +31,7 @@ import {
   createUnoAdapter,
   defaultUnoRules,
   type UnoCard,
+  type UnoEvent,
   type UnoMove,
   type UnoSetup,
   type UnoState,
@@ -52,14 +53,14 @@ type TcgSetup = {
 };
 
 type CardGameFixtureCase =
-  | EngineFixtureCase<UnoSetup, UnoState, UnoMove>
+  | EngineFixtureCase<UnoSetup, UnoState, UnoMove, UnoEvent>
   | EngineFixtureCase<PokerSetup, PokerState, PokerMove>
   | EngineFixtureCase<TicTacToeSetup, TicTacToeState, TicTacToeMove>
   | EngineFixtureCase<TcgSetup, TcgState, TcgMove>;
 
 function defineUnoFixture(
-  fixture: EngineFixtureCase<UnoSetup, UnoState, UnoMove>,
-): EngineFixtureCase<UnoSetup, UnoState, UnoMove> {
+  fixture: EngineFixtureCase<UnoSetup, UnoState, UnoMove, UnoEvent>,
+): EngineFixtureCase<UnoSetup, UnoState, UnoMove, UnoEvent> {
   return fixture;
 }
 
@@ -175,7 +176,7 @@ function tcgUnit(
 
 function withUnoInitialState(
   override: (state: MatchState<UnoState>) => MatchState<UnoState>,
-): GameAdapter<UnoSetup, UnoState, UnoMove> {
+): GameAdapter<UnoSetup, UnoState, UnoMove, UnoEvent> {
   const adapter = createUnoAdapter();
 
   return {
@@ -200,7 +201,7 @@ function withTcgInitialState(
 }
 
 function digestUno(
-  adapter: GameAdapter<UnoSetup, UnoState, UnoMove>,
+  adapter: GameAdapter<UnoSetup, UnoState, UnoMove, UnoEvent>,
   state: MatchState<UnoState>,
 ) {
   return {

@@ -106,8 +106,9 @@ export type CreateLocalGameSessionInput<
   TState,
   TMove extends GameMove,
   TView,
+  TEvent = never,
 > = {
-  adapter: GameAdapter<TSetup, TState, TMove>;
+  adapter: GameAdapter<TSetup, TState, TMove, TEvent>;
   bots?: Partial<Record<PlayerId, LocalGameSessionBot<TState, TMove>>>;
   executionMode?: MatchExecutionMode;
   hotseat?: boolean;
@@ -151,8 +152,9 @@ export type CreateServerGameSessionInput<
   TSetup,
   TState,
   TMove extends GameMove,
+  TEvent = never,
 > = {
-  adapter: GameAdapter<TSetup, TState, TMove>;
+  adapter: GameAdapter<TSetup, TState, TMove, TEvent>;
   executionMode?: Extract<MatchExecutionMode, 'server-authoritative'>;
   matchId: string;
   now?: () => string;
@@ -166,8 +168,9 @@ export type ResumeServerGameSessionInput<
   TSetup,
   TState,
   TMove extends GameMove,
+  TEvent = never,
 > = {
-  adapter: GameAdapter<TSetup, TState, TMove>;
+  adapter: GameAdapter<TSetup, TState, TMove, TEvent>;
   now?: () => string;
   participants: readonly PlayerProfile[];
   persistence?: ServerGameSessionPersistence<TState, TMove>;
@@ -219,10 +222,12 @@ function withAcceptedFinishedAt(
     : null;
 }
 
-function canonicalizeAdapterMove<TSetup, TState, TMove extends GameMove>(
-  adapter: GameAdapter<TSetup, TState, TMove>,
-  move: TMove,
-): TMove {
+function canonicalizeAdapterMove<
+  TSetup,
+  TState,
+  TMove extends GameMove,
+  TEvent,
+>(adapter: GameAdapter<TSetup, TState, TMove, TEvent>, move: TMove): TMove {
   const validatedMove = adapter.validateMove
     ? adapter.validateMove(move)
     : move;
@@ -233,8 +238,8 @@ function canonicalizeAdapterMove<TSetup, TState, TMove extends GameMove>(
   );
 }
 
-function expectedReplayVersions<TSetup, TState, TMove extends GameMove>(
-  adapter: GameAdapter<TSetup, TState, TMove>,
+function expectedReplayVersions<TSetup, TState, TMove extends GameMove, TEvent>(
+  adapter: GameAdapter<TSetup, TState, TMove, TEvent>,
 ) {
   return {
     gameVersion: adapter.metadata?.gameVersion ?? adapter.definition.gameId,
@@ -244,13 +249,13 @@ function expectedReplayVersions<TSetup, TState, TMove extends GameMove>(
   };
 }
 
-type RebuildReplayInput<TSetup, TState, TMove extends GameMove> = {
-  adapter: GameAdapter<TSetup, TState, TMove>;
+type RebuildReplayInput<TSetup, TState, TMove extends GameMove, TEvent> = {
+  adapter: GameAdapter<TSetup, TState, TMove, TEvent>;
   replay: MatchReplay<TState, TMove>;
 };
 
-function rebuildServerReplay<TSetup, TState, TMove extends GameMove>(
-  input: RebuildReplayInput<TSetup, TState, TMove>,
+function rebuildServerReplay<TSetup, TState, TMove extends GameMove, TEvent>(
+  input: RebuildReplayInput<TSetup, TState, TMove, TEvent>,
 ) {
   const engine = createGameEngine(input.adapter);
   let currentState = cloneState(input.replay.initialState);
@@ -310,8 +315,9 @@ export function createLocalGameSession<
   TState,
   TMove extends GameMove,
   TView,
+  TEvent = never,
 >(
-  input: CreateLocalGameSessionInput<TSetup, TState, TMove, TView>,
+  input: CreateLocalGameSessionInput<TSetup, TState, TMove, TView, TEvent>,
 ): LocalGameSession<TState, TMove, TView> {
   const engine = createGameEngine(input.adapter);
   const listeners = new Set<
@@ -513,8 +519,9 @@ export function reconstructMatchHistoryFromReplay<
   TSetup,
   TState,
   TMove extends GameMove,
+  TEvent = never,
 >(input: {
-  adapter: GameAdapter<TSetup, TState, TMove>;
+  adapter: GameAdapter<TSetup, TState, TMove, TEvent>;
   replay: MatchReplay<TState, TMove>;
 }): MatchState<TState>[] {
   return rebuildServerReplay(input).history;
@@ -524,8 +531,9 @@ function createServerSessionRuntime<
   TSetup,
   TState,
   TMove extends GameMove,
+  TEvent = never,
 >(input: {
-  adapter: GameAdapter<TSetup, TState, TMove>;
+  adapter: GameAdapter<TSetup, TState, TMove, TEvent>;
   now: () => string;
   participants: readonly PlayerProfile[];
   persistence?: ServerGameSessionPersistence<TState, TMove>;
@@ -659,8 +667,9 @@ export function verifyReplayIntegrity<
   TSetup,
   TState,
   TMove extends GameMove,
+  TEvent = never,
 >(input: {
-  adapter: GameAdapter<TSetup, TState, TMove>;
+  adapter: GameAdapter<TSetup, TState, TMove, TEvent>;
   replay: MatchReplay<TState, TMove>;
 }): ReplayIntegrityCheck {
   if (input.replay.metadata) {
@@ -758,8 +767,13 @@ export function verifyReplayIntegrity<
   return { ok: true };
 }
 
-export function createServerGameSession<TSetup, TState, TMove extends GameMove>(
-  input: CreateServerGameSessionInput<TSetup, TState, TMove>,
+export function createServerGameSession<
+  TSetup,
+  TState,
+  TMove extends GameMove,
+  TEvent = never,
+>(
+  input: CreateServerGameSessionInput<TSetup, TState, TMove, TEvent>,
 ): ServerGameSession<TState, TMove> {
   const engine = createGameEngine(input.adapter);
   const orderedParticipants = sortPlayersBySeat(input.participants);
@@ -786,8 +800,13 @@ export function createServerGameSession<TSetup, TState, TMove extends GameMove>(
   });
 }
 
-export function resumeServerGameSession<TSetup, TState, TMove extends GameMove>(
-  input: ResumeServerGameSessionInput<TSetup, TState, TMove>,
+export function resumeServerGameSession<
+  TSetup,
+  TState,
+  TMove extends GameMove,
+  TEvent = never,
+>(
+  input: ResumeServerGameSessionInput<TSetup, TState, TMove, TEvent>,
 ): ServerGameSession<TState, TMove> {
   const integrity = verifyReplayIntegrity({
     adapter: input.adapter,
