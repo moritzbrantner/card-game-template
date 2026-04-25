@@ -69,6 +69,7 @@ function mapRoomRecord(input: {
     executionMode: input.room
       .executionMode as PersistedGameRoomRecord['executionMode'],
     maxPlayers: input.room.maxPlayers,
+    botCount: input.room.botCount,
     hostPlayerId: input.room.hostPlayerId,
     activeMatchId: input.room.activeMatchId,
     createdAt: toIsoString(input.room.createdAt),

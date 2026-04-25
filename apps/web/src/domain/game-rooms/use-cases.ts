@@ -1,10 +1,23 @@
 import { randomUUID } from 'node:crypto';
 
 import { defaultGameCatalog } from '@repo/game-catalog';
-import { canStartRoom } from '@repo/multiplayer-contract';
 
 import type { AppSession } from '@/src/auth';
 import { getDb } from '@/src/db/client';
+import { listUnoBotAiProfiles } from '@/src/domain/game-bot-ai/service';
+import {
+  type PersistedGameMatchRecord,
+  type PersistedPokerMatchRecord,
+  type PersistedUnoMatchRecord,
+} from '@/src/domain/game-matches/contracts';
+import { createGameMatch } from '@/src/domain/game-matches/repository';
+import {
+  buildPersistedPokerMatchRecord,
+  buildPersistedUnoMatchRecord,
+  buildRoomMatchParticipants,
+  createPokerMatchSessionFromParticipants,
+  createUnoMatchSessionFromParticipants,
+} from '@/src/domain/game-matches/service';
 import {
   failure,
   success,
@@ -92,20 +105,126 @@ function toSeatRows(room: PersistedGameRoomRecord): GameRoomDto['seats'] {
   }));
 }
 
+function getHumanSeatCapacity(input: { maxPlayers: number; botCount: number }) {
+  return input.maxPlayers - input.botCount;
+}
+
 function roomCanStart(room: PersistedGameRoomRecord) {
-  if (room.status !== 'open') {
+  const game = defaultGameCatalog.get(room.gameId);
+
+  if (!game || room.status !== 'open') {
     return false;
   }
 
-  return canStartRoom({
-    roomId: room.roomId,
-    gameId: room.gameId,
-    hostPlayerId: room.hostPlayerId,
-    maxPlayers: room.maxPlayers,
-    visibility: room.visibility,
-    executionMode: room.executionMode,
-    seats: toSeatRows(room),
+  const humanParticipants = room.participants;
+  const totalParticipants = humanParticipants.length + room.botCount;
+
+  return (
+    humanParticipants.length > 0 &&
+    totalParticipants >= game.definition.minPlayers &&
+    totalParticipants <= game.definition.maxPlayers &&
+    humanParticipants.every((seat) => seat.ready)
+  );
+}
+
+function buildMatchInsert(input: PersistedGameMatchRecord) {
+  return {
+    id: input.matchId,
+    gameId: input.gameId,
+    status: input.status,
+    executionMode: input.executionMode,
+    replayFormatVersion: input.replayFormatVersion,
+    startedAt: new Date(input.startedAt),
+    finishedAt: input.finishedAt ? new Date(input.finishedAt) : null,
+    updatedAt: new Date(input.updatedAt),
+    createdAt: new Date(input.createdAt),
+    createdByKind: input.createdBy.kind,
+    createdByAccountId:
+      input.createdBy.kind === 'account' ? input.createdBy.accountId : null,
+    createdByGuestId:
+      input.createdBy.kind === 'guest' ? input.createdBy.guestId : null,
+    initialStateJson: input.initialState,
+    latestStateJson: input.latestState,
+    resultJson: input.result,
+    analysisJson: input.analysis,
+    lastSequence: input.lastSequence,
+  };
+}
+
+function buildParticipantRows(input: PersistedGameMatchRecord) {
+  return input.participants.map((participant) => ({
+    matchId: input.matchId,
+    playerId: participant.playerId,
+    seat: participant.seat,
+    displayName: participant.displayName,
+    identityKind: participant.identity.kind,
+    accountId:
+      participant.identity.kind === 'account'
+        ? participant.identity.accountId
+        : null,
+    guestId:
+      participant.identity.kind === 'guest'
+        ? participant.identity.guestId
+        : null,
+    isBot: participant.isBot,
+  }));
+}
+
+function buildMoveRows(input: PersistedGameMatchRecord) {
+  return input.acceptedMoves.map((acceptedMove) => ({
+    matchId: input.matchId,
+    sequence: acceptedMove.sequence,
+    acceptedAt: new Date(acceptedMove.acceptedAt),
+    playerId: acceptedMove.move.playerId,
+    moveKind: acceptedMove.move.kind,
+    moveJson: acceptedMove.move,
+  }));
+}
+
+async function buildPersistedMatchFromRoom(input: {
+  room: PersistedGameRoomRecord;
+  createdAt: string;
+}) {
+  const participants = buildRoomMatchParticipants({
+    seats: input.room.participants,
+    maxPlayers: input.room.maxPlayers,
+    botCount: input.room.botCount,
   });
+
+  if (input.room.gameId === 'uno-style') {
+    const { session } = createUnoMatchSessionFromParticipants({
+      matchId: randomUUID(),
+      participants,
+      botAiProfiles: await listUnoBotAiProfiles(),
+      now: () => input.createdAt,
+    });
+
+    return buildPersistedUnoMatchRecord({
+      createdAt: input.createdAt,
+      createdBy: input.room.createdBy,
+      participants,
+      session,
+    }) satisfies PersistedUnoMatchRecord;
+  }
+
+  if (input.room.gameId === 'texas-holdem') {
+    const { session } = createPokerMatchSessionFromParticipants({
+      matchId: randomUUID(),
+      participants,
+      now: () => input.createdAt,
+    });
+
+    return buildPersistedPokerMatchRecord({
+      createdAt: input.createdAt,
+      createdBy: input.room.createdBy,
+      participants,
+      session,
+    }) satisfies PersistedPokerMatchRecord;
+  }
+
+  throw new Error(
+    `Online room start is not supported for ${input.room.gameId}.`,
+  );
 }
 
 function buildGameRoomDto(
@@ -126,6 +245,7 @@ function buildGameRoomDto(
     visibility: room.visibility,
     executionMode: room.executionMode,
     maxPlayers: room.maxPlayers,
+    botCount: room.botCount,
     hostPlayerId: room.hostPlayerId,
     activeMatchId: room.activeMatchId,
     createdAt: room.createdAt,
@@ -171,9 +291,14 @@ function assertValidRoomInput(input: CreatePrivateGameRoomInput) {
   }
 
   const maxPlayers = input.maxPlayers ?? game.definition.maxPlayers;
+  const botCount = input.botCount ?? 0;
 
   if (!Number.isInteger(maxPlayers)) {
     throw new Error('Room size must be a whole number.');
+  }
+
+  if (!Number.isInteger(botCount)) {
+    throw new Error('Bot amount must be a whole number.');
   }
 
   if (
@@ -185,9 +310,16 @@ function assertValidRoomInput(input: CreatePrivateGameRoomInput) {
     );
   }
 
+  if (botCount < 0 || botCount >= maxPlayers) {
+    throw new Error(
+      `Bot amount must be between 0 and ${maxPlayers - 1} for ${game.definition.name}.`,
+    );
+  }
+
   return {
     game,
     maxPlayers,
+    botCount,
   };
 }
 
@@ -195,10 +327,12 @@ function getNextOpenSeat(room: PersistedGameRoomRecord) {
   const occupiedSeats = new Set(
     room.participants.map((participant) => participant.seat),
   );
+  const humanSeatCapacity = getHumanSeatCapacity(room);
 
-  return Array.from({ length: room.maxPlayers }, (_, index) => index + 1).find(
-    (seat) => !occupiedSeats.has(seat),
-  );
+  return Array.from(
+    { length: humanSeatCapacity },
+    (_, index) => index + 1,
+  ).find((seat) => !occupiedSeats.has(seat));
 }
 
 function buildSeatInsert(input: {
@@ -249,7 +383,7 @@ export async function createPrivateGameRoomUseCase(
   const identity = resolvedIdentity.identity as MatchOwnerIdentity;
 
   try {
-    const { game, maxPlayers } = assertValidRoomInput(input);
+    const { game, maxPlayers, botCount } = assertValidRoomInput(input);
     const created = await getDb().transaction(async (tx) => {
       const createdAt = isoNow();
       const roomId = randomUUID();
@@ -268,6 +402,7 @@ export async function createPrivateGameRoomUseCase(
           visibility: 'private',
           executionMode: 'server-authoritative',
           maxPlayers,
+          botCount,
           hostPlayerId: playerId,
           activeMatchId: null,
           createdAt: new Date(createdAt),
@@ -400,7 +535,7 @@ export async function joinPrivateGameRoomUseCase(
         });
       }
 
-      if (room.participants.length >= room.maxPlayers) {
+      if (room.participants.length >= getHumanSeatCapacity(room)) {
         throw failure<GameRoomUseCaseError>({
           code: 'CONFLICT',
           message: 'This room is already full.',
@@ -577,10 +712,22 @@ export async function startGameRoomUseCase(
         });
       }
 
+      const createdAt = isoNow();
+      const persistedMatch = await buildPersistedMatchFromRoom({
+        room,
+        createdAt,
+      });
+
+      await createGameMatch(tx, {
+        match: buildMatchInsert(persistedMatch),
+        participants: buildParticipantRows(persistedMatch),
+        moves: buildMoveRows(persistedMatch),
+      });
+
       await startPersistedGameRoom(tx, {
         roomId,
-        activeMatchId: randomUUID(),
-        updatedAt: new Date(isoNow()),
+        activeMatchId: persistedMatch.matchId,
+        updatedAt: new Date(createdAt),
       });
 
       const updatedRoom = await loadGameRoom(tx, roomId);

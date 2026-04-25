@@ -15,9 +15,13 @@ const labels = {
   activeMatchTitle: 'Active match',
   activeMatchesTitle: 'Your active matches',
   analysisTitle: 'Analysis',
-  createAction: 'Create match',
-  createHint: 'Create a match.',
-  createTitle: 'Create a match',
+  botAmountHint: 'Reserved bot seats fill automatically when the lobby starts.',
+  botAmountLabel: 'Bots',
+  copyInviteAction: 'Copy invite link',
+  copyInviteStatus: 'Invite link copied.',
+  createAction: 'Create lobby',
+  createHint: 'Create a lobby.',
+  createTitle: 'Create a lobby',
   description: 'UNO showcase.',
   emptyOpenLobbies: 'No lobbies.',
   emptyRecentMatches: 'No recent matches.',
@@ -25,21 +29,27 @@ const labels = {
   exitedGameStatus: 'Match abandoned.',
   finishGame: 'Finish demo match',
   hostBadge: 'Host',
+  inviteDescription: 'Join the invited lobby.',
+  inviteLinkLabel: 'Invite link',
+  inviteTitle: 'Join invited lobby',
   joinAction: 'Join lobby',
-  joinedLobbyStatus: 'Match created.',
+  joinedLobbyStatus: 'Lobby joined.',
   leaveLobby: 'Leave lobby',
   leftLobbyStatus: 'You left the lobby.',
   legalActionsTitle: 'Legal actions',
-  lobbyReadyTitle: 'No active match',
+  lobbyReadyTitle: 'Current lobby',
   nameLabel: 'Player name',
   noActiveMatch: 'Create or resume a match.',
   openLobbiesTitle: 'Recent matches',
   pastGamesCta: 'Past games',
-  presetLabel: 'Preset',
+  readyAction: 'Ready up',
   readyToStart: 'Ready to start.',
   recentMatchesTitle: 'Recent matches',
   reloadAction: 'Reload',
+  reservedBotsLabel: 'Reserved bots',
   resumeAction: 'Resume',
+  roomSizeLabel: 'Table size',
+  shareInviteHint: 'Share the invite link.',
   startGame: 'Start game',
   startedGameStatus: 'Game started.',
   title: 'UNO-style matches',
@@ -231,6 +241,10 @@ describe('UnoPageClient live updates', () => {
 
       if (url === '/api/games/uno/matches') {
         return Response.json(listResult);
+      }
+
+      if (url === '/api/games/rooms') {
+        return Response.json([]);
       }
 
       if (url === `/api/games/uno/matches/${activeSnapshot.matchId}`) {

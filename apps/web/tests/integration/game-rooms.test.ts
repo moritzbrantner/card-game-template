@@ -3,10 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 
 import { getDb } from '@/src/db/client';
-import { gameRoomSeats, gameRooms } from '@/src/db/schema';
+import {
+  gameMatchParticipants,
+  gameMatches,
+  gameRoomSeats,
+  gameRooms,
+} from '@/src/db/schema';
 
 async function clearRoomTables() {
   const db = getDb();
+  await db.delete(gameMatchParticipants);
+  await db.delete(gameMatches);
   await db.delete(gameRoomSeats);
   await db.delete(gameRooms);
 }
@@ -201,6 +208,134 @@ describe('game rooms', () => {
     expect(room?.activeMatchId).toBeTruthy();
     expect(seats).toHaveLength(2);
     expect(seats.every((seat) => seat.ready)).toBe(true);
+  });
+
+  it('reserves bot seats and turns a startable room into a persisted authoritative UNO match', async () => {
+    mockGuestIdentity('guest-host', 'Host Player');
+    const { createPrivateGameRoomUseCase } =
+      await import('@/src/domain/game-rooms/use-cases');
+
+    const created = await createPrivateGameRoomUseCase(null, {
+      gameId: 'uno-style',
+      displayName: 'Alice',
+      maxPlayers: 4,
+      botCount: 2,
+    });
+
+    expect(created).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        gameId: 'uno-style',
+        maxPlayers: 4,
+        botCount: 2,
+        canStart: false,
+      }),
+    });
+    if (!created.ok) {
+      return;
+    }
+
+    vi.resetModules();
+    mockGuestIdentity('guest-joiner', 'Joiner Player');
+    const { joinPrivateGameRoomUseCase } =
+      await import('@/src/domain/game-rooms/use-cases');
+    const joined = await joinPrivateGameRoomUseCase(null, created.data.roomId, {
+      displayName: 'Bob',
+    });
+
+    expect(joined).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        roomId: created.data.roomId,
+        botCount: 2,
+        canStart: false,
+      }),
+    });
+
+    vi.resetModules();
+    mockGuestIdentity('guest-third', 'Third Player');
+    const { joinPrivateGameRoomUseCase: joinThirdSeat } =
+      await import('@/src/domain/game-rooms/use-cases');
+    const fullForHumans = await joinThirdSeat(null, created.data.roomId, {
+      displayName: 'Cara',
+    });
+
+    expect(fullForHumans).toEqual({
+      ok: false,
+      error: expect.objectContaining({
+        code: 'CONFLICT',
+        message: 'This room is already full.',
+      }),
+    });
+
+    vi.resetModules();
+    mockGuestIdentity('guest-host', 'Host Player');
+    const { setGameRoomReadyUseCase: setHostReady } =
+      await import('@/src/domain/game-rooms/use-cases');
+    const hostReady = await setHostReady(null, created.data.roomId, {
+      ready: true,
+    });
+    expect(hostReady.ok).toBe(true);
+
+    vi.resetModules();
+    mockGuestIdentity('guest-joiner', 'Joiner Player');
+    const { setGameRoomReadyUseCase: setJoinerReady } =
+      await import('@/src/domain/game-rooms/use-cases');
+    const joinerReady = await setJoinerReady(null, created.data.roomId, {
+      ready: true,
+    });
+    expect(joinerReady).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        canStart: true,
+      }),
+    });
+
+    vi.resetModules();
+    mockGuestIdentity('guest-host', 'Host Player');
+    const { startGameRoomUseCase: startAsHost } =
+      await import('@/src/domain/game-rooms/use-cases');
+    const started = await startAsHost(null, created.data.roomId);
+
+    expect(started).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        roomId: created.data.roomId,
+        status: 'active',
+        activeMatchId: expect.any(String),
+        botCount: 2,
+      }),
+    });
+    if (!started.ok) {
+      return;
+    }
+
+    const db = getDb();
+    const [room] = await db
+      .select()
+      .from(gameRooms)
+      .where(eq(gameRooms.id, created.data.roomId));
+    const [match] = await db
+      .select()
+      .from(gameMatches)
+      .where(eq(gameMatches.id, started.data.activeMatchId ?? ''));
+    const participants = await db
+      .select()
+      .from(gameMatchParticipants)
+      .where(
+        eq(gameMatchParticipants.matchId, started.data.activeMatchId ?? ''),
+      );
+
+    expect(room?.status).toBe('active');
+    expect(room?.activeMatchId).toBe(started.data.activeMatchId);
+    expect(match?.gameId).toBe('uno-style');
+    expect(participants).toHaveLength(4);
+    expect(
+      participants.filter((participant) => participant.isBot),
+    ).toHaveLength(2);
+    expect(participants.map((participant) => participant.displayName)).toEqual(
+      expect.arrayContaining(['Alice', 'Bob']),
+    );
   });
 
   it('rejects non-host start attempts and start attempts before every player is ready', async () => {

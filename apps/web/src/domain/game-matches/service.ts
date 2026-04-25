@@ -43,6 +43,7 @@ import {
   resolveUnoBotAiProfileForParticipant,
   type UnoBotAiProfile,
 } from '@/src/domain/game-bot-ai/service';
+import type { GameRoomParticipantRecord } from '@/src/domain/game-rooms/contracts';
 
 import type {
   CreatePokerMatchInput,
@@ -364,6 +365,43 @@ function buildParticipantDisplayName(input: {
   throw new Error('A player display name is required.');
 }
 
+export function buildRoomMatchParticipants(input: {
+  seats: readonly Pick<
+    GameRoomParticipantRecord,
+    'seat' | 'playerId' | 'displayName' | 'identity'
+  >[];
+  maxPlayers: number;
+  botCount: number;
+}): readonly GameMatchParticipantRecord[] {
+  const sortedSeats = [...input.seats].sort(
+    (left, right) => left.seat - right.seat,
+  );
+  const occupiedSeats = new Set(sortedSeats.map((seat) => seat.seat));
+  const botSeats = Array.from(
+    { length: input.maxPlayers },
+    (_, index) => index + 1,
+  )
+    .filter((seat) => !occupiedSeats.has(seat))
+    .slice(0, input.botCount);
+
+  return [
+    ...sortedSeats.map((seat) => ({
+      playerId: seat.playerId,
+      seat: seat.seat,
+      displayName: seat.displayName,
+      identity: seat.identity,
+      isBot: false,
+    })),
+    ...botSeats.map((seat, index) => ({
+      playerId: `bot-room-seat-${seat}`,
+      seat,
+      displayName: `Bot ${index + 1}`,
+      identity: { kind: 'bot' } satisfies PlayerIdentityRef,
+      isBot: true,
+    })),
+  ].sort((left, right) => left.seat - right.seat);
+}
+
 export function buildUnoParticipants(input: {
   identity: MatchOwnerIdentity;
   fallbackDisplayName: string | null;
@@ -470,6 +508,30 @@ export function createUnoMatchSession(input: {
   };
 }
 
+export function createUnoMatchSessionFromParticipants(input: {
+  matchId: string;
+  participants: readonly GameMatchParticipantRecord[];
+  botAiProfiles?: readonly UnoBotAiProfile[];
+  now?: () => string;
+}) {
+  const session = createServerGameSession({
+    adapter: unoAdapter,
+    matchId: input.matchId,
+    participants: toSessionParticipants(input.participants),
+    setup: {
+      seed: input.matchId,
+    },
+    now: input.now,
+  });
+
+  processUnoBots(session, input.participants, input.botAiProfiles);
+
+  return {
+    participants: input.participants,
+    session,
+  };
+}
+
 export function createPokerMatchSession(input: {
   matchId: string;
   identity: MatchOwnerIdentity;
@@ -501,6 +563,29 @@ export function createPokerMatchSession(input: {
 
   return {
     participants,
+    session,
+  };
+}
+
+export function createPokerMatchSessionFromParticipants(input: {
+  matchId: string;
+  participants: readonly GameMatchParticipantRecord[];
+  now?: () => string;
+}) {
+  const session = createServerGameSession({
+    adapter: pokerAdapter,
+    matchId: input.matchId,
+    participants: toSessionParticipants(input.participants),
+    setup: {
+      seed: input.matchId,
+    },
+    now: input.now,
+  });
+
+  processPokerBots(session, input.participants);
+
+  return {
+    participants: input.participants,
     session,
   };
 }

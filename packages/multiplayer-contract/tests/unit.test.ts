@@ -168,6 +168,7 @@ test('online game API client can rotate auth and call room endpoints', async () 
     gameId: 'uno-style',
     displayName: 'Ada',
     maxPlayers: 4,
+    botCount: 2,
   });
   client.setAuth({
     kind: 'bearer',
@@ -184,6 +185,7 @@ test('online game API client can rotate auth and call room endpoints', async () 
         gameId: 'uno-style',
         displayName: 'Ada',
         maxPlayers: 4,
+        botCount: 2,
       },
       authorization: 'Bearer token-a',
     },

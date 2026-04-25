@@ -35,6 +35,7 @@ export type PersistedGameRoomRecord = {
   visibility: RoomVisibility;
   executionMode: Extract<MatchExecutionMode, 'server-authoritative'>;
   maxPlayers: number;
+  botCount: number;
   hostPlayerId: PlayerId;
   activeMatchId: string | null;
   createdAt: string;
@@ -59,6 +60,7 @@ export type GameRoomDto = {
   visibility: RoomVisibility;
   executionMode: Extract<MatchExecutionMode, 'server-authoritative'>;
   maxPlayers: number;
+  botCount: number;
   hostPlayerId: PlayerId;
   activeMatchId: string | null;
   createdAt: string;
@@ -88,6 +90,7 @@ export type CreatePrivateGameRoomInput = {
   gameId: GameId;
   displayName?: string | null;
   maxPlayers?: number | null;
+  botCount?: number | null;
 };
 
 export type JoinPrivateGameRoomInput = {

@@ -15,42 +15,56 @@ import type {
   ListUnoMatchesResult,
   PersistedUnoMatchSnapshotDto,
 } from '@/src/domain/game-matches/contracts';
+import type {
+  GameRoomDto,
+  GameRoomRealtimeDto,
+} from '@/src/domain/game-rooms/contracts';
 import { readProblemDetail } from '@/src/http/problem-client';
 
 type UnoPageLabels = {
   activeMatchDescription: string;
   activeMatchTitle: string;
+  activeMatchesTitle: string;
+  analysisTitle: string;
+  botAmountHint: string;
+  botAmountLabel: string;
+  copyInviteAction: string;
+  copyInviteStatus: string;
   createAction: string;
   createHint: string;
   createTitle: string;
   description: string;
   emptyOpenLobbies: string;
+  emptyRecentMatches: string;
   exitGame: string;
   exitedGameStatus: string;
   finishGame: string;
   hostBadge: string;
+  inviteDescription: string;
+  inviteLinkLabel: string;
+  inviteTitle: string;
   joinAction: string;
   joinedLobbyStatus: string;
   leaveLobby: string;
   leftLobbyStatus: string;
   lobbyReadyTitle: string;
   nameLabel: string;
+  noActiveMatch: string;
   openLobbiesTitle: string;
   pastGamesCta: string;
+  readyAction: string;
   readyToStart: string;
+  recentMatchesTitle: string;
+  reloadAction: string;
+  reservedBotsLabel: string;
+  resumeAction: string;
+  roomSizeLabel: string;
+  shareInviteHint: string;
   startGame: string;
   startedGameStatus: string;
   title: string;
   waitingForPlayers: string;
-  presetLabel: string;
-  resumeAction: string;
-  reloadAction: string;
-  emptyRecentMatches: string;
-  recentMatchesTitle: string;
-  activeMatchesTitle: string;
-  noActiveMatch: string;
   legalActionsTitle: string;
-  analysisTitle: string;
 };
 
 async function readJson<T>(response: Response) {
@@ -68,6 +82,41 @@ async function loadMatchList() {
   }
 
   return readJson<ListUnoMatchesResult>(response);
+}
+
+async function loadRoomList() {
+  const response = await fetch('/api/games/rooms', {
+    method: 'GET',
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error('Unable to load rooms.');
+  }
+
+  return readJson<readonly GameRoomDto[]>(response);
+}
+
+async function loadRoomEvents(roomId: string, sinceUpdatedAt?: string | null) {
+  const params = new URLSearchParams();
+
+  if (sinceUpdatedAt) {
+    params.set('sinceUpdatedAt', sinceUpdatedAt);
+  }
+
+  const response = await fetch(
+    `/api/games/rooms/${roomId}/events${params.size > 0 ? `?${params.toString()}` : ''}`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    },
+  );
+
+  if (!response.ok) {
+    throw await readProblemDetail(response, 'Unable to load lobby updates.');
+  }
+
+  return readJson<GameRoomRealtimeDto>(response);
 }
 
 async function loadMatchSnapshot(matchId: string) {
@@ -97,6 +146,16 @@ function winnerLabel(match: ListUnoMatchesResult['recent'][number]) {
   );
 }
 
+function buildInviteUrl(roomId: string) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('invite', roomId);
+  return url.toString();
+}
+
+function getOpenRooms(rooms: readonly GameRoomDto[]) {
+  return rooms.filter((room) => room.status === 'open');
+}
+
 export function UnoPageClient({
   labels,
   pastGamesHref,
@@ -108,12 +167,14 @@ export function UnoPageClient({
     active: [],
     recent: [],
   });
+  const [rooms, setRooms] = useState<readonly GameRoomDto[]>([]);
+  const [currentRoom, setCurrentRoom] = useState<GameRoomDto | null>(null);
   const [currentMatch, setCurrentMatch] =
     useState<PersistedUnoMatchSnapshotDto | null>(null);
   const [draftName, setDraftName] = useState('');
-  const [presetId, setPresetId] = useState<
-    'hotseat-duo' | 'mixed-table' | 'bot-duel'
-  >('bot-duel');
+  const [roomSize, setRoomSize] = useState('4');
+  const [botCount, setBotCount] = useState('1');
+  const [inviteRoomId, setInviteRoomId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [state, setState] = useState<{ announcement?: string; error?: string }>(
     {},
@@ -127,6 +188,49 @@ export function UnoPageClient({
   useEffect(() => {
     currentMatchRef.current = currentMatch;
   }, [currentMatch]);
+
+  async function refresh(matchId?: string, roomId?: string) {
+    const [nextMatches, nextRooms] = await Promise.all([
+      loadMatchList(),
+      loadRoomList(),
+    ]);
+
+    setMatches(nextMatches);
+    setRooms(nextRooms);
+
+    const openRooms = getOpenRooms(nextRooms);
+    const nextCurrentRoom =
+      (roomId ? openRooms.find((room) => room.roomId === roomId) : null) ??
+      (currentRoom
+        ? openRooms.find((room) => room.roomId === currentRoom.roomId)
+        : null) ??
+      openRooms[0] ??
+      null;
+    setCurrentRoom(nextCurrentRoom);
+
+    const activeRoomMatchId =
+      nextRooms.find((room) => room.status === 'active' && room.activeMatchId)
+        ?.activeMatchId ?? null;
+    const targetMatchId =
+      matchId ??
+      currentMatchRef.current?.matchId ??
+      nextMatches.active[0]?.matchId ??
+      activeRoomMatchId;
+
+    if (!targetMatchId) {
+      setCurrentMatch(null);
+      return;
+    }
+
+    const snapshot = await loadMatchSnapshot(targetMatchId);
+    setCurrentMatch(snapshot);
+  }
+
+  const refreshFromEffects = useEffectEvent(
+    async (matchId?: string, roomId?: string) => {
+      await refresh(matchId, roomId);
+    },
+  );
 
   const handleLiveUpdate = useEffectEvent(
     async (snapshot: PersistedUnoMatchSnapshotDto) => {
@@ -150,42 +254,11 @@ export function UnoPageClient({
     },
   );
 
-  async function refresh(matchId?: string) {
-    const nextMatches = await loadMatchList();
-    setMatches(nextMatches);
-
-    const targetMatchId =
-      matchId ??
-      currentMatch?.matchId ??
-      nextMatches.active[0]?.matchId ??
-      null;
-
-    if (!targetMatchId) {
-      setCurrentMatch(null);
-      return;
-    }
-
-    const snapshot = await loadMatchSnapshot(targetMatchId);
-    setCurrentMatch(snapshot);
-  }
-
   useEffect(() => {
-    async function bootstrap() {
-      const nextMatches = await loadMatchList();
-      setMatches(nextMatches);
-
-      const targetMatchId = nextMatches.active[0]?.matchId ?? null;
-      if (!targetMatchId) {
-        setCurrentMatch(null);
-        return;
-      }
-
-      const snapshot = await loadMatchSnapshot(targetMatchId);
-      setCurrentMatch(snapshot);
-    }
+    setInviteRoomId(new URL(window.location.href).searchParams.get('invite'));
 
     startTransition(() => {
-      void bootstrap().catch((error) => {
+      void refreshFromEffects().catch((error) => {
         setState({
           error:
             error instanceof Error ? error.message : 'Unable to load matches.',
@@ -193,6 +266,65 @@ export function UnoPageClient({
       });
     });
   }, []);
+
+  useEffect(() => {
+    if (
+      !currentRoom ||
+      currentRoom.status !== 'open' ||
+      !currentRoom.updatedAt ||
+      typeof window === 'undefined'
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    const intervalId = window.setInterval(() => {
+      void (async () => {
+        try {
+          const realtime = await loadRoomEvents(
+            currentRoom.roomId,
+            currentRoom.updatedAt,
+          );
+
+          if (!realtime.hasChanges || cancelled) {
+            return;
+          }
+
+          setRooms((existing) =>
+            existing.map((room) =>
+              room.roomId === realtime.room.roomId ? realtime.room : room,
+            ),
+          );
+          setCurrentRoom(
+            realtime.room.status === 'open' ? realtime.room : null,
+          );
+
+          if (realtime.room.activeMatchId) {
+            const snapshot = await loadMatchSnapshot(
+              realtime.room.activeMatchId,
+            );
+            if (!cancelled) {
+              setCurrentMatch(snapshot);
+            }
+          }
+        } catch (error) {
+          if (!cancelled) {
+            setState({
+              error:
+                error instanceof Error
+                  ? error.message
+                  : 'Unable to load lobby updates.',
+            });
+          }
+        }
+      })();
+    }, 1000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [currentRoom]);
 
   useEffect(() => {
     if (
@@ -266,17 +398,58 @@ export function UnoPageClient({
     };
   }, [activeMatchId, activeMatchStatus]);
 
-  async function handleCreateMatch() {
+  async function handleCreateLobby() {
     setPending(true);
     setState({});
 
-    const response = await fetch('/api/games/uno/matches', {
+    const response = await fetch('/api/games/rooms', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        presetId,
+        gameId: 'uno-style',
+        displayName: draftName.trim() || undefined,
+        maxPlayers: Number(roomSize),
+        botCount: Number(botCount),
+      }),
+    });
+
+    if (!response.ok) {
+      const problem = await readProblemDetail(
+        response,
+        'Unable to create a lobby.',
+      );
+      setState({ error: problem.message });
+      setPending(false);
+      return;
+    }
+
+    const room = await readJson<GameRoomDto>(response);
+    setRooms((existing) => [
+      room,
+      ...existing.filter((existingRoom) => existingRoom.roomId !== room.roomId),
+    ]);
+    setCurrentRoom(room);
+    setCurrentMatch(null);
+    setState({ announcement: labels.joinedLobbyStatus });
+    setPending(false);
+  }
+
+  async function handleJoinInvite() {
+    if (!inviteRoomId) {
+      return;
+    }
+
+    setPending(true);
+    setState({});
+
+    const response = await fetch(`/api/games/rooms/${inviteRoomId}/join`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
         displayName: draftName.trim() || undefined,
       }),
     });
@@ -284,18 +457,132 @@ export function UnoPageClient({
     if (!response.ok) {
       const problem = await readProblemDetail(
         response,
-        'Unable to create a match.',
+        'Unable to join lobby.',
       );
       setState({ error: problem.message });
       setPending(false);
       return;
     }
 
-    const snapshot = await readJson<PersistedUnoMatchSnapshotDto>(response);
-    setCurrentMatch(snapshot);
+    const room = await readJson<GameRoomDto>(response);
+    setInviteRoomId(null);
+    setRooms((existing) => [
+      room,
+      ...existing.filter((existingRoom) => existingRoom.roomId !== room.roomId),
+    ]);
+    setCurrentRoom(room);
     setState({ announcement: labels.joinedLobbyStatus });
-    await refresh(snapshot.matchId);
     setPending(false);
+  }
+
+  async function handleToggleReady() {
+    if (!currentRoom) {
+      return;
+    }
+
+    const viewerSeat = currentRoom.seats.find(
+      (seat) => seat.playerId === currentRoom.viewerPlayerId,
+    );
+
+    if (!viewerSeat) {
+      return;
+    }
+
+    setPending(true);
+    setState({});
+
+    const response = await fetch(
+      `/api/games/rooms/${currentRoom.roomId}/ready`,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          ready: !viewerSeat.ready,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const problem = await readProblemDetail(
+        response,
+        'Unable to update ready state.',
+      );
+      setState({ error: problem.message });
+      setPending(false);
+      return;
+    }
+
+    const room = await readJson<GameRoomDto>(response);
+    setRooms((existing) =>
+      existing.map((existingRoom) =>
+        existingRoom.roomId === room.roomId ? room : existingRoom,
+      ),
+    );
+    setCurrentRoom(room);
+    setPending(false);
+  }
+
+  async function handleStartRoom() {
+    if (!currentRoom) {
+      return;
+    }
+
+    setPending(true);
+    setState({});
+
+    const response = await fetch(
+      `/api/games/rooms/${currentRoom.roomId}/start`,
+      {
+        method: 'POST',
+      },
+    );
+
+    if (!response.ok) {
+      const problem = await readProblemDetail(
+        response,
+        'Unable to start lobby.',
+      );
+      setState({ error: problem.message });
+      setPending(false);
+      return;
+    }
+
+    const room = await readJson<GameRoomDto>(response);
+    setRooms((existing) =>
+      existing.map((existingRoom) =>
+        existingRoom.roomId === room.roomId ? room : existingRoom,
+      ),
+    );
+    setCurrentRoom(null);
+    setState({ announcement: labels.startedGameStatus });
+
+    if (room.activeMatchId) {
+      const snapshot = await loadMatchSnapshot(room.activeMatchId);
+      setCurrentMatch(snapshot);
+      await refresh(snapshot.matchId);
+    } else {
+      await refresh(undefined, room.roomId);
+    }
+
+    setPending(false);
+  }
+
+  async function handleCopyInviteLink() {
+    if (!currentRoom || typeof navigator === 'undefined') {
+      return;
+    }
+
+    const inviteUrl = buildInviteUrl(currentRoom.roomId);
+
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(inviteUrl);
+      setState({ announcement: labels.copyInviteStatus });
+      return;
+    }
+
+    setState({ announcement: inviteUrl });
   }
 
   async function handleResume(matchId: string) {
@@ -305,6 +592,7 @@ export function UnoPageClient({
     try {
       const snapshot = await loadMatchSnapshot(matchId);
       setCurrentMatch(snapshot);
+      setCurrentRoom(null);
     } catch (error) {
       setState({
         error:
@@ -388,6 +676,12 @@ export function UnoPageClient({
     setPending(false);
   }
 
+  const openRooms = getOpenRooms(rooms);
+  const inviteLink = currentRoom ? buildInviteUrl(currentRoom.roomId) : '';
+  const viewerSeat = currentRoom?.seats.find(
+    (seat) => seat.playerId === currentRoom.viewerPlayerId,
+  );
+
   return (
     <section className="space-y-6">
       <div className="rounded-[2rem] border border-zinc-200 bg-zinc-50 p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -432,51 +726,171 @@ export function UnoPageClient({
 
       <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <article className="rounded-[1.75rem] border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
-              {labels.createTitle}
-            </h2>
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              {labels.createHint}
-            </p>
+          {inviteRoomId && !currentRoom ? (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
+                  {labels.inviteTitle}
+                </h2>
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                  {labels.inviteDescription}
+                </p>
+              </div>
+
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                {labels.nameLabel}
+                <input
+                  className="mt-2 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+                  value={draftName}
+                  onChange={(event) => {
+                    setDraftName(event.target.value);
+                  }}
+                />
+              </label>
+
+              <button
+                type="button"
+                className={buttonVariants({ variant: 'default' })}
+                disabled={pending}
+                onClick={() => {
+                  void handleJoinInvite();
+                }}
+              >
+                {labels.joinAction}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
+                  {labels.createTitle}
+                </h2>
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                  {labels.createHint}
+                </p>
+              </div>
+
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                {labels.nameLabel}
+                <input
+                  className="mt-2 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+                  value={draftName}
+                  onChange={(event) => {
+                    setDraftName(event.target.value);
+                  }}
+                />
+              </label>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  {labels.roomSizeLabel}
+                  <select
+                    className="mt-2 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+                    value={roomSize}
+                    onChange={(event) => {
+                      const nextRoomSize = event.target.value;
+                      setRoomSize(nextRoomSize);
+                      setBotCount((current) =>
+                        String(
+                          Math.min(
+                            Number(current),
+                            Math.max(Number(nextRoomSize) - 1, 0),
+                          ),
+                        ),
+                      );
+                    }}
+                  >
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                  </select>
+                </label>
+
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  {labels.botAmountLabel}
+                  <select
+                    className="mt-2 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+                    value={botCount}
+                    onChange={(event) => {
+                      setBotCount(event.target.value);
+                    }}
+                  >
+                    {Array.from(
+                      { length: Math.max(Number(roomSize), 2) },
+                      (_, index) => index,
+                    )
+                      .filter((value) => value < Number(roomSize))
+                      .map((value) => (
+                        <option key={value} value={String(value)}>
+                          {value}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              </div>
+
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                {labels.botAmountHint}
+              </p>
+
+              <button
+                type="button"
+                className={buttonVariants({ variant: 'default' })}
+                disabled={pending}
+                onClick={() => {
+                  void handleCreateLobby();
+                }}
+              >
+                {labels.createAction}
+              </button>
+            </div>
+          )}
+
+          <div className="mt-8 space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+              {labels.openLobbiesTitle}
+            </h3>
+            {openRooms.length > 0 ? (
+              openRooms.map((room) => (
+                <div
+                  key={room.roomId}
+                  className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-zinc-950 dark:text-zinc-50">
+                        {room.roomName}
+                      </p>
+                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                        {room.seats
+                          .map((seat) => seat.displayName)
+                          .filter(Boolean)
+                          .join(', ')}
+                      </p>
+                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                        {labels.reservedBotsLabel}: {room.botCount}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className={buttonVariants({ variant: 'outline' })}
+                      disabled={pending}
+                      onClick={() => {
+                        setCurrentRoom(room);
+                        setCurrentMatch(null);
+                      }}
+                    >
+                      {labels.resumeAction}
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                {labels.emptyOpenLobbies}
+              </p>
+            )}
           </div>
-
-          <label className="mt-6 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-            {labels.nameLabel}
-            <input
-              className="mt-2 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-              value={draftName}
-              onChange={(event) => {
-                setDraftName(event.target.value);
-              }}
-            />
-          </label>
-
-          <label className="mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-            {labels.presetLabel}
-            <select
-              className="mt-2 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-              value={presetId}
-              onChange={(event) => {
-                setPresetId(event.target.value as typeof presetId);
-              }}
-            >
-              <option value="bot-duel">Bot duel</option>
-              <option value="hotseat-duo">Duel preset</option>
-              <option value="mixed-table">Full table</option>
-            </select>
-          </label>
-
-          <button
-            type="button"
-            className={`${buttonVariants({ variant: 'default' })} mt-6`}
-            disabled={pending}
-            onClick={() => {
-              void handleCreateMatch();
-            }}
-          >
-            {labels.createAction}
-          </button>
 
           <div className="mt-8 space-y-3">
             <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
@@ -663,6 +1077,111 @@ export function UnoPageClient({
                   {labels.exitGame}
                 </button>
               ) : null}
+            </div>
+          ) : currentRoom ? (
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
+                    {labels.lobbyReadyTitle}
+                  </h2>
+                  <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                    {currentRoom.roomName}
+                  </p>
+                </div>
+                <span className="rounded-full border border-zinc-300 px-4 py-2 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
+                  {currentRoom.status}
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  {labels.inviteLinkLabel}
+                  <input
+                    readOnly
+                    value={inviteLink}
+                    className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-950 outline-none dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
+                  />
+                </label>
+                <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">
+                  {labels.shareInviteHint}
+                </p>
+                <button
+                  type="button"
+                  className={`${buttonVariants({ variant: 'outline' })} mt-4`}
+                  disabled={pending}
+                  onClick={() => {
+                    void handleCopyInviteLink();
+                  }}
+                >
+                  {labels.copyInviteAction}
+                </button>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                    {labels.reservedBotsLabel}: {currentRoom.botCount}
+                  </p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                    {labels.roomSizeLabel}: {currentRoom.maxPlayers}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                {currentRoom.seats.map((seat) => (
+                  <div
+                    key={seat.seat}
+                    className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-medium text-zinc-950 dark:text-zinc-50">
+                        {seat.displayName ?? `Seat ${seat.seat}`}
+                      </p>
+                      {seat.playerId === currentRoom.hostPlayerId ? (
+                        <span className="rounded-full border border-zinc-300 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
+                          {labels.hostBadge}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                      {seat.ready ? 'Ready' : 'Waiting'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {currentRoom.canStart ? (
+                <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                  {labels.readyToStart}
+                </p>
+              ) : null}
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className={buttonVariants({ variant: 'outline' })}
+                  disabled={pending || !viewerSeat}
+                  onClick={() => {
+                    void handleToggleReady();
+                  }}
+                >
+                  {labels.readyAction}
+                </button>
+                {currentRoom.viewerIsHost ? (
+                  <button
+                    type="button"
+                    className={buttonVariants({ variant: 'default' })}
+                    disabled={pending || !currentRoom.canStart}
+                    onClick={() => {
+                      void handleStartRoom();
+                    }}
+                  >
+                    {labels.startGame}
+                  </button>
+                ) : null}
+              </div>
             </div>
           ) : (
             <div className="space-y-4">

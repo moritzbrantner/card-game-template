@@ -11,6 +11,7 @@ const createRoomBodySchema = z.object({
   gameId: z.string().trim().min(1),
   displayName: z.string().trim().min(1).max(60).optional(),
   maxPlayers: z.number().int().min(2).max(12).optional(),
+  botCount: z.number().int().min(0).max(11).optional(),
 });
 
 function mapRoomProblem(

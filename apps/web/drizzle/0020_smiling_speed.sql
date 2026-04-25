@@ -1,0 +1,1 @@
+ALTER TABLE "game_rooms" ADD COLUMN "bot_count" integer DEFAULT 0 NOT NULL;

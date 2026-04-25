@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildUnoParticipants } from '@/src/domain/game-matches/service';
+import {
+  buildRoomMatchParticipants,
+  buildUnoParticipants,
+} from '@/src/domain/game-matches/service';
 
 describe('game match service', () => {
   it('converts non-owner preset seats into bots for authoritative solo play', () => {
@@ -46,6 +49,74 @@ describe('game match service', () => {
         seat: 4,
         displayName: 'Table Bot',
         identity: { kind: 'bot' },
+        isBot: true,
+      },
+    ]);
+  });
+
+  it('builds room-based match participants with reserved bot seats at open positions', () => {
+    const participants = buildRoomMatchParticipants({
+      seats: [
+        {
+          seat: 1,
+          playerId: 'host-player',
+          displayName: 'Alice',
+          identity: {
+            kind: 'guest',
+            guestId: 'guest-host',
+          },
+        },
+        {
+          seat: 3,
+          playerId: 'guest-player',
+          displayName: 'Bob',
+          identity: {
+            kind: 'account',
+            accountId: 'account-bob',
+          },
+        },
+      ],
+      maxPlayers: 4,
+      botCount: 2,
+    });
+
+    expect(participants).toEqual([
+      {
+        playerId: 'host-player',
+        seat: 1,
+        displayName: 'Alice',
+        identity: {
+          kind: 'guest',
+          guestId: 'guest-host',
+        },
+        isBot: false,
+      },
+      {
+        playerId: 'bot-room-seat-2',
+        seat: 2,
+        displayName: 'Bot 1',
+        identity: {
+          kind: 'bot',
+        },
+        isBot: true,
+      },
+      {
+        playerId: 'guest-player',
+        seat: 3,
+        displayName: 'Bob',
+        identity: {
+          kind: 'account',
+          accountId: 'account-bob',
+        },
+        isBot: false,
+      },
+      {
+        playerId: 'bot-room-seat-4',
+        seat: 4,
+        displayName: 'Bot 2',
+        identity: {
+          kind: 'bot',
+        },
         isBot: true,
       },
     ]);

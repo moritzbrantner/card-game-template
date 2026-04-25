@@ -87,6 +87,7 @@ export const gameRooms = pgTable(
     visibility: text('visibility').notNull(),
     executionMode: text('execution_mode').notNull(),
     maxPlayers: integer('max_players').notNull(),
+    botCount: integer('bot_count').notNull().default(0),
     hostPlayerId: text('host_player_id').notNull(),
     activeMatchId: text('active_match_id'),
     createdAt: timestamp('created_at', { withTimezone: false, mode: 'date' })
