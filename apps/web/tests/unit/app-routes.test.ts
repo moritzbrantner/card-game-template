@@ -44,6 +44,7 @@ describe('app routes', () => {
         'home',
         'about',
         'uno',
+        'poker',
         'pastGames',
         'forms',
         'login',
@@ -64,6 +65,7 @@ describe('app routes', () => {
       visibleKeys: [
         'home',
         'uno',
+        'poker',
         'pastGames',
         'people',
         'notifications',
@@ -79,6 +81,7 @@ describe('app routes', () => {
       visibleKeys: [
         'home',
         'uno',
+        'poker',
         'pastGames',
         'people',
         'notifications',
@@ -93,6 +96,7 @@ describe('app routes', () => {
       input: { isAuthenticated: true, role: 'ADMIN' as const },
       visibleKeys: [
         'uno',
+        'poker',
         'pastGames',
         'people',
         'notifications',
@@ -108,6 +112,7 @@ describe('app routes', () => {
       input: { isAuthenticated: true, role: 'SUPERADMIN' as const },
       visibleKeys: [
         'uno',
+        'poker',
         'pastGames',
         'people',
         'notifications',

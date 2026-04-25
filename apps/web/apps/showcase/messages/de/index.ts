@@ -4,6 +4,7 @@ import { formsPage } from './forms-page';
 import { homePage } from './home-page';
 import { navigationBar } from './navigation-bar';
 import { pastGamesPage } from './past-games-page';
+import { pokerPage } from './poker-page';
 import { remocnPage } from './remocn-page';
 import { storyPage } from './story-page';
 import { unoPage } from './uno-page';
@@ -17,6 +18,7 @@ const showcaseMessages = {
   FormsPage: formsPage,
   RemocnPage: remocnPage,
   StoryPage: storyPage,
+  PokerPage: pokerPage,
   UnoPage: unoPage,
   PastGamesPage: pastGamesPage,
   UploadsPage: uploadsPage,

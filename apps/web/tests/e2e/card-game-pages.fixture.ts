@@ -9,6 +9,7 @@ import {
 import { gotoAndWaitForHydration } from '@/tests/e2e/helpers';
 
 type UnoPreset = 'bot-duel' | 'hotseat-duo' | 'mixed-table';
+type PokerPreset = 'heads-up' | 'four-seat-bots';
 
 type UnoMatchSnapshotResponse = {
   matchId: string;
@@ -31,6 +32,75 @@ function isUnoApiResponse(
 
 async function readUnoSnapshot(response: Response) {
   return (await response.json()) as UnoMatchSnapshotResponse;
+}
+
+class PokerMatchesPage {
+  constructor(readonly page: Page) {}
+
+  get legalActions(): Locator {
+    return this.page.getByRole('group', { name: 'Legal actions' });
+  }
+
+  async goto() {
+    await gotoAndWaitForHydration(this.page, '/en/poker');
+    await expect(
+      this.page.getByRole('heading', { name: 'Texas Hold’em matches' }),
+    ).toBeVisible();
+  }
+
+  async createMatch(input: { playerName: string; preset?: PokerPreset }) {
+    await this.page.getByLabel('Player name').fill(input.playerName);
+    await this.page
+      .getByLabel('Preset')
+      .selectOption(input.preset ?? 'heads-up');
+
+    const createResponsePromise = this.page.waitForResponse((response) =>
+      isUnoApiResponse(response, {
+        method: 'POST',
+        pathname: /^\/api\/games\/poker\/matches$/,
+      }),
+    );
+
+    await this.page.getByRole('button', { name: 'Create match' }).click();
+    const snapshot = await readUnoSnapshot(await createResponsePromise);
+
+    await expect(this.page.getByText('Match created.')).toBeVisible();
+    await expect(
+      this.page.getByRole('heading', { exact: true, name: 'Active table' }),
+    ).toBeVisible();
+
+    return snapshot.matchId;
+  }
+
+  async submitFirstLegalAction() {
+    const actionButton = this.legalActions.getByRole('button').first();
+    await expect(actionButton).toBeVisible();
+
+    const moveResponsePromise = this.page.waitForResponse((response) =>
+      isUnoApiResponse(response, {
+        method: 'POST',
+        pathname: /^\/api\/games\/poker\/matches\/[^/]+\/moves$/,
+      }),
+    );
+
+    await actionButton.click();
+    await readUnoSnapshot(await moveResponsePromise);
+  }
+
+  async reloadMatchFromPage() {
+    const reloadResponsePromise = this.page.waitForResponse((response) =>
+      isUnoApiResponse(response, {
+        method: 'GET',
+        pathname: /^\/api\/games\/poker\/matches$/,
+      }),
+    );
+
+    await this.page.getByRole('button', { name: 'Reload' }).click();
+    await reloadResponsePromise;
+    await expect(
+      this.page.getByRole('heading', { exact: true, name: 'Active table' }),
+    ).toBeVisible();
+  }
 }
 
 export class UnoMatchesPage {
@@ -198,6 +268,7 @@ export class PastGameReplayPage {
 
 type CardGamePageFixtures = {
   pastGamesPage: PastGamesPage;
+  pokerPage: PokerMatchesPage;
   replayPage: PastGameReplayPage;
   unoPage: UnoMatchesPage;
 };
@@ -205,6 +276,9 @@ type CardGamePageFixtures = {
 export const test = base.extend<CardGamePageFixtures>({
   pastGamesPage: async ({ page }, use) => {
     await use(new PastGamesPage(page));
+  },
+  pokerPage: async ({ page }, use) => {
+    await use(new PokerMatchesPage(page));
   },
   replayPage: async ({ page }, use) => {
     await use(new PastGameReplayPage(page));

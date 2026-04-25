@@ -17,7 +17,7 @@ function getMatchId(request: Request) {
 
 export const POST = createApiRoute({
   action: 'games.poker.matches.submitMove',
-  featureKey: 'showcase.uno',
+  featureKey: 'showcase.poker',
   bodySchema: submitMoveBodySchema,
   async handler({ body, request, session }) {
     let input: SubmitPokerMoveInput;

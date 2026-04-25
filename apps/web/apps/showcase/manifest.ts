@@ -26,6 +26,7 @@ const enabledFeatures = {
   'admin.systemSettings': true,
   'admin.dataStudio': true,
   'showcase.forms': true,
+  'showcase.poker': true,
   'showcase.story': true,
   'showcase.communication': true,
   'showcase.uno': true,
@@ -54,6 +55,18 @@ const showcaseManifest: AppManifest = {
         const pageModule = await import('./pages/home-page');
         const HomePage = pageModule.default;
         return createElement(HomePage, { locale });
+      },
+    },
+    {
+      id: 'poker',
+      slug: 'poker',
+      kind: 'component',
+      namespace: 'PokerPage',
+      featureKey: 'showcase.poker',
+      render: async ({ locale }) => {
+        const pageModule = await import('./pages/poker-page');
+        const PokerPage = pageModule.default;
+        return createElement(PokerPage, { locale });
       },
     },
     {
@@ -224,6 +237,12 @@ const showcaseManifest: AppManifest = {
     { pageId: 'home', category: 'discover', hotkey: ['alt', 'h'], order: 10 },
     { pageId: 'about', category: 'discover', hotkey: ['alt', 'a'], order: 20 },
     { pageId: 'uno', category: 'discover', hotkey: ['alt', 'o'], order: 30 },
+    {
+      pageId: 'poker',
+      category: 'discover',
+      hotkey: ['alt', 'x'],
+      order: 35,
+    },
     {
       pageId: 'pastGames',
       category: 'discover',

@@ -9,7 +9,7 @@ function getMatchId(request: Request) {
 
 export const GET = createApiRoute({
   action: 'games.poker.matches.get',
-  featureKey: 'showcase.uno',
+  featureKey: 'showcase.poker',
   async handler({ request, session }) {
     const result = await getPokerMatchSnapshotUseCase(
       session,

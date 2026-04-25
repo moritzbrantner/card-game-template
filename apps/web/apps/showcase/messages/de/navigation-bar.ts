@@ -4,6 +4,7 @@ export const navigationBar = {
     home: 'Startseite',
     about: 'Über uns',
     uno: 'UNO-aehnlich',
+    poker: 'Poker',
     pastGames: 'Vergangene Spiele',
     remocn: 'remocn',
     forms: 'Formular-Demo',

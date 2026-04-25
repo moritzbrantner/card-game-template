@@ -26,7 +26,7 @@ function mapMatchProblem(
 
 export const GET = createApiRoute({
   action: 'games.poker.matches.list',
-  featureKey: 'showcase.uno',
+  featureKey: 'showcase.poker',
   async handler({ session }) {
     const result = await listPokerMatchesUseCase(session);
     return result.ok ? result.data : { active: [], recent: [] };
@@ -35,7 +35,7 @@ export const GET = createApiRoute({
 
 export const POST = createApiRoute({
   action: 'games.poker.matches.create',
-  featureKey: 'showcase.uno',
+  featureKey: 'showcase.poker',
   bodySchema: createMatchBodySchema,
   async handler({ body, session }) {
     const result = await createPokerMatchUseCase(session, body);

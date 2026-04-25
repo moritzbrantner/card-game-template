@@ -34,6 +34,14 @@ export default async function HomePage({ locale }: { locale: AppLocale }) {
             {t('visitUno')}
           </LocalizedLink>
           <LocalizedLink
+            href="/poker"
+            locale={routingLocale}
+            prefetch={false}
+            className={buttonVariants({ variant: 'default' })}
+          >
+            {t('visitPoker')}
+          </LocalizedLink>
+          <LocalizedLink
             href="/examples/forms"
             locale={routingLocale}
             prefetch={false}

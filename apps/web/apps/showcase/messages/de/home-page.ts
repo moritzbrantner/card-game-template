@@ -4,6 +4,7 @@ export const homePage = {
   description:
     'Der zusammengefuehrte Starter vereint lokalisierte Navigation, Auth, Formulare, Datenansichten, Storytelling, Kommunikationsleitlinien und Upload-Grundlagen in einer Next.js-Basis.',
   visitUno: 'UNO-aehnliches Beispiel oeffnen',
+  visitPoker: 'Poker-Beispiel oeffnen',
   visitForm: 'Formularbeispiel öffnen',
   visitStory: 'Story-Beispiel öffnen',
   visitCommunication: 'Kommunikationsbeispiel öffnen',

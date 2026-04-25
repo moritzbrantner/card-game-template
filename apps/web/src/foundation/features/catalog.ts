@@ -134,6 +134,12 @@ export const foundationFeatureMetadata: Record<
     category: 'showcase',
     supportsUserOverrides: false,
   },
+  'showcase.poker': {
+    label: 'Showcase poker',
+    description: 'Expose the shared Texas Hold’em example page.',
+    category: 'showcase',
+    supportsUserOverrides: false,
+  },
   'showcase.uno': {
     label: 'Showcase UNO-style',
     description: 'Expose the shared UNO-style example page.',

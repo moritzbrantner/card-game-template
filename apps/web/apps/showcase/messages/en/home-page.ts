@@ -4,6 +4,7 @@ export const homePage = {
   description:
     'The merged starter now combines localized navigation, auth, forms, data views, storytelling, communication notes, and upload scaffolding in one Next.js base.',
   visitUno: 'Open UNO-style Example',
+  visitPoker: 'Open Poker Example',
   visitForm: 'Open Form Example',
   visitStory: 'Open Story Example',
   visitCommunication: 'Open Communication Example',

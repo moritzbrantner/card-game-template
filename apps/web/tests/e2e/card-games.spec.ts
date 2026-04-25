@@ -1,6 +1,21 @@
 import { expect, test } from './card-game-pages.fixture';
 
 test.describe('card game page fixtures', () => {
+  test('poker page can create, play, and reload an authoritative match', async ({
+    pokerPage,
+  }) => {
+    await pokerPage.goto();
+
+    const playerName = `E2E Poker ${Date.now()}`;
+    await pokerPage.createMatch({ playerName, preset: 'heads-up' });
+    await expect(
+      pokerPage.page.getByText(playerName, { exact: true }),
+    ).toBeVisible();
+
+    await pokerPage.submitFirstLegalAction();
+    await pokerPage.reloadMatchFromPage();
+  });
+
   test('UNO page can create, play, reload, and abandon an authoritative match', async ({
     unoPage,
   }) => {
