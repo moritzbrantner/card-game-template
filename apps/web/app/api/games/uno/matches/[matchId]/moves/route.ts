@@ -2,6 +2,7 @@ import * as z from 'zod';
 import { parseUnoMove } from '@repo/game-uno';
 
 import type { SubmitUnoMoveInput } from '@/src/domain/game-matches/contracts';
+import { publishUnoMatchSnapshot } from '@/src/domain/game-matches/realtime';
 import { submitUnoMoveUseCase } from '@/src/domain/game-matches/use-cases';
 import { problem, ProblemError } from '@/src/http/errors';
 import { createApiRoute } from '@/src/http/route';
@@ -60,6 +61,7 @@ export const POST = createApiRoute({
       );
     }
 
+    publishUnoMatchSnapshot(result.data);
     return result.data;
   },
 });

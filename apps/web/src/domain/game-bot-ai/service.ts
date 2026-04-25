@@ -1,7 +1,10 @@
 import { eq } from 'drizzle-orm';
 
-import { createSeededRandom } from '@repo/game-engine';
-import type { UnoCard, UnoColor, UnoMove, UnoState } from '@repo/game-uno';
+import {
+  chooseRandomUnoLegalMove,
+  type UnoMove,
+  type UnoState,
+} from '@repo/game-uno';
 
 import { getDb } from '@/src/db/client';
 import { siteSettings } from '@/src/db/schema';
@@ -62,7 +65,6 @@ type BotParticipantLike = {
   displayName: string;
 };
 
-const COLORS: readonly UnoColor[] = ['red', 'yellow', 'green', 'blue'];
 const defaultProfiles: readonly UnoBotAiProfile[] = [
   {
     id: 'house-bot',
@@ -306,110 +308,14 @@ export function resolveUnoBotAiProfileForParticipant(
   );
 }
 
-function countColors(cards: readonly UnoCard[]) {
-  return COLORS.map((color) => ({
-    color,
-    count: cards.filter((card) => card.color === color).length,
-  })).sort(
-    (left, right) =>
-      right.count - left.count || left.color.localeCompare(right.color),
-  );
-}
-
-function choosePreferredColor(cards: readonly UnoCard[]): UnoColor {
-  return countColors(cards)[0]?.color ?? 'red';
-}
-
-function strategyScore(profile: UnoBotAiProfile, move: UnoMove) {
-  if (profile.strategy === 'aggressive') {
-    return move.kind === 'play-card' ? 80 : -80;
-  }
-
-  if (profile.strategy === 'conservative') {
-    return move.kind === 'play-card' ? -10 : 40;
-  }
-
-  return 0;
-}
-
-function scoreMove(input: ChooseUnoBotMoveInput, move: UnoMove) {
-  if (move.kind === 'draw-card') {
-    return -1000 + input.profile.drawBias + strategyScore(input.profile, move);
-  }
-
-  if (move.kind === 'pass') {
-    return (
-      -1100 +
-      Math.floor(input.profile.drawBias / 2) +
-      strategyScore(input.profile, move)
-    );
-  }
-
-  const hand = input.state.hands[input.playerId] ?? [];
-  const card = hand.find((candidate) => candidate.id === move.payload.cardId);
-
-  if (!card) {
-    return -1200;
-  }
-
-  const random = createSeededRandom(
-    `${input.seed}:${input.playerId}:${card.id}:${move.payload.chosenColor ?? 'none'}:${move.payload.targetPlayerId ?? 'none'}`,
-  );
-  let score =
-    100 + input.profile.aggression - 50 + strategyScore(input.profile, move);
-
-  if (card.kind === 'wild' || card.kind === 'wild-draw-four') {
-    score += input.profile.wildCardBias;
-  }
-
-  if (
-    card.kind === 'skip' ||
-    card.kind === 'reverse' ||
-    card.kind === 'draw-two' ||
-    card.kind === 'wild-draw-four'
-  ) {
-    score += 50 + input.profile.actionCardBias;
-  }
-
-  if (card.kind === 'wild' || card.kind === 'wild-draw-four') {
-    const preferredColor = choosePreferredColor(
-      hand.filter((handCard) => handCard.id !== card.id),
-    );
-    if (move.payload.chosenColor === preferredColor) {
-      score += 40;
-    }
-  }
-
-  if (move.payload.sayUno) {
-    score += input.profile.unoCallBias;
-  }
-
-  return score + random();
-}
-
 export function chooseUnoBotMove(input: ChooseUnoBotMoveInput): UnoMove | null {
-  const ownLegalMoves = input.legalMoves.filter(
-    (move) => move.playerId === input.playerId,
-  );
-
-  if (ownLegalMoves.length === 0) {
-    return null;
-  }
-
   if (!input.profile.enabled) {
     return null;
   }
 
-  if (input.profile.strategy === 'random') {
-    const random = createSeededRandom(
-      `${input.seed}:${input.playerId}:${input.state.lastEvent}:${ownLegalMoves.length}`,
-    );
-    return [...ownLegalMoves].sort(() => random() - 0.5)[0] ?? null;
-  }
-
-  return (
-    [...ownLegalMoves].sort(
-      (left, right) => scoreMove(input, right) - scoreMove(input, left),
-    )[0] ?? null
-  );
+  return chooseRandomUnoLegalMove({
+    legalMoves: input.legalMoves,
+    playerId: input.playerId,
+    seed: `${input.seed}:${input.state.lastEvent}`,
+  });
 }

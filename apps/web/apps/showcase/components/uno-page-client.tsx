@@ -1,13 +1,18 @@
 'use client';
 
-import { startTransition, useEffect, useState } from 'react';
+import {
+  startTransition,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from 'react';
 
 import { buttonVariants } from '@moritzbrantner/ui';
 import { defaultGameCatalog } from '@repo/game-catalog';
 
 import type {
   ListUnoMatchesResult,
-  PersistedUnoMatchRealtimeDto,
   PersistedUnoMatchSnapshotDto,
 } from '@/src/domain/game-matches/contracts';
 import { readProblemDetail } from '@/src/http/problem-client';
@@ -78,24 +83,10 @@ async function loadMatchSnapshot(matchId: string) {
   return readJson<PersistedUnoMatchSnapshotDto>(response);
 }
 
-async function loadMatchUpdates(match: PersistedUnoMatchSnapshotDto) {
-  const params = new URLSearchParams({
-    afterSequence: String(match.lastSequence),
-    sinceUpdatedAt: match.updatedAt,
-  });
-  const response = await fetch(
-    `/api/games/uno/matches/${match.matchId}/events?${params.toString()}`,
-    {
-      method: 'GET',
-      cache: 'no-store',
-    },
-  );
-
-  if (!response.ok) {
-    throw await readProblemDetail(response, 'Unable to load match updates.');
-  }
-
-  return readJson<PersistedUnoMatchRealtimeDto>(response);
+function buildMatchWebSocketUrl(matchId: string) {
+  const url = new URL(`/ws/games/uno/matches/${matchId}`, window.location.href);
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  return url.toString();
 }
 
 function winnerLabel(match: ListUnoMatchesResult['recent'][number]) {
@@ -128,6 +119,36 @@ export function UnoPageClient({
     {},
   );
   const catalogEntry = defaultGameCatalog.get('uno-style');
+  const activeMatchId =
+    currentMatch?.status === 'active' ? currentMatch.matchId : null;
+  const activeMatchStatus = currentMatch?.status ?? null;
+  const currentMatchRef = useRef<PersistedUnoMatchSnapshotDto | null>(null);
+
+  useEffect(() => {
+    currentMatchRef.current = currentMatch;
+  }, [currentMatch]);
+
+  const handleLiveUpdate = useEffectEvent(
+    async (snapshot: PersistedUnoMatchSnapshotDto) => {
+      setState((current) =>
+        current.error ? { ...current, error: undefined } : current,
+      );
+      setCurrentMatch(snapshot);
+
+      if (snapshot.status !== 'active') {
+        try {
+          await refresh(snapshot.matchId);
+        } catch (error) {
+          setState({
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Unable to reload matches.',
+          });
+        }
+      }
+    },
+  );
 
   async function refresh(matchId?: string) {
     const nextMatches = await loadMatchList();
@@ -174,48 +195,76 @@ export function UnoPageClient({
   }, []);
 
   useEffect(() => {
-    if (!currentMatch) {
+    if (
+      !activeMatchId ||
+      activeMatchStatus !== 'active' ||
+      typeof window.WebSocket !== 'function'
+    ) {
       return;
     }
 
     let cancelled = false;
-    const poll = async () => {
-      try {
-        const updates = await loadMatchUpdates(currentMatch);
+    let reconnectTimeoutId: number | null = null;
+    let socket: WebSocket | null = null;
 
-        if (cancelled || !updates.hasChanges) {
-          return;
-        }
+    const connect = () => {
+      if (cancelled) {
+        return;
+      }
 
-        setCurrentMatch(updates.snapshot);
-        if (updates.snapshot.status !== currentMatch.status) {
-          const nextMatches = await loadMatchList();
-          if (!cancelled) {
-            setMatches(nextMatches);
+      socket = new window.WebSocket(buildMatchWebSocketUrl(activeMatchId));
+
+      const handleMessage = (event: MessageEvent<string>) => {
+        try {
+          const message = JSON.parse(event.data) as {
+            snapshot?: PersistedUnoMatchSnapshotDto;
+            type?: string;
+          };
+
+          if (message.type === 'uno.match.snapshot' && message.snapshot) {
+            void handleLiveUpdate(message.snapshot);
           }
-        }
-      } catch (error) {
-        if (!cancelled) {
+        } catch (error) {
           setState({
             error:
               error instanceof Error
                 ? error.message
-                : 'Unable to load match updates.',
+                : 'Unable to read match updates.',
           });
         }
-      }
-    };
-    const intervalId = window.setInterval(() => {
-      void poll();
-    }, 2500);
+      };
 
-    void poll();
+      const handleClose = () => {
+        if (cancelled) {
+          return;
+        }
+
+        const latestMatch = currentMatchRef.current;
+
+        if (
+          latestMatch?.matchId === activeMatchId &&
+          latestMatch.status === 'active'
+        ) {
+          reconnectTimeoutId = window.setTimeout(connect, 1000);
+        }
+      };
+
+      socket.addEventListener('message', handleMessage);
+      socket.addEventListener('close', handleClose);
+    };
+
+    connect();
 
     return () => {
       cancelled = true;
-      window.clearInterval(intervalId);
+
+      if (reconnectTimeoutId !== null) {
+        window.clearTimeout(reconnectTimeoutId);
+      }
+
+      socket?.close();
     };
-  }, [currentMatch]);
+  }, [activeMatchId, activeMatchStatus]);
 
   async function handleCreateMatch() {
     setPending(true);
@@ -299,7 +348,11 @@ export function UnoPageClient({
 
     const snapshot = await readJson<PersistedUnoMatchSnapshotDto>(response);
     setCurrentMatch(snapshot);
-    await refresh(snapshot.matchId);
+
+    if (snapshot.status !== 'active') {
+      await refresh(snapshot.matchId);
+    }
+
     setPending(false);
   }
 

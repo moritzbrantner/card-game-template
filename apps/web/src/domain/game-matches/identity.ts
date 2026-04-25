@@ -7,7 +7,7 @@ import { getEnv } from '@/src/config/env';
 
 import type { MatchOwnerIdentity } from './contracts';
 
-const GUEST_COOKIE_NAME = 'game-guest-id';
+export const GUEST_COOKIE_NAME = 'game-guest-id';
 const GUEST_COOKIE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 
 function base64UrlEncode(value: string) {
@@ -55,6 +55,53 @@ export function parseGuestIdCookieValue(value: string | undefined) {
   } catch {
     return null;
   }
+}
+
+function parseCookieHeader(cookieHeader: string | null | undefined) {
+  if (!cookieHeader) {
+    return new Map<string, string>();
+  }
+
+  return new Map(
+    cookieHeader
+      .split(';')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map((part) => {
+        const separatorIndex = part.indexOf('=');
+
+        if (separatorIndex < 0) {
+          return [part, ''] as const;
+        }
+
+        return [
+          part.slice(0, separatorIndex),
+          decodeURIComponent(part.slice(separatorIndex + 1)),
+        ] as const;
+      }),
+  );
+}
+
+export function resolveMatchOwnerIdentityFromCookieHeader(
+  cookieHeader: string | null | undefined,
+  session: AppSession | null,
+): MatchOwnerIdentity | null {
+  if (session?.user.id) {
+    return {
+      kind: 'account',
+      accountId: session.user.id,
+    };
+  }
+
+  const cookiesByName = parseCookieHeader(cookieHeader);
+  const guestId = parseGuestIdCookieValue(cookiesByName.get(GUEST_COOKIE_NAME));
+
+  return guestId
+    ? {
+        kind: 'guest',
+        guestId,
+      }
+    : null;
 }
 
 function getSessionDisplayName(session: AppSession | null) {

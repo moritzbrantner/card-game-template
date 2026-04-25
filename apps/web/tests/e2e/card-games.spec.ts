@@ -8,7 +8,9 @@ test.describe('card game page fixtures', () => {
 
     const playerName = `E2E UNO ${Date.now()}`;
     await unoPage.createMatch({ playerName, preset: 'bot-duel' });
-    await expect(unoPage.page.getByText(playerName)).toBeVisible();
+    await expect(
+      unoPage.page.getByText(playerName, { exact: true }),
+    ).toBeVisible();
 
     await unoPage.submitFirstLegalAction();
     await unoPage.reloadMatchFromPage();

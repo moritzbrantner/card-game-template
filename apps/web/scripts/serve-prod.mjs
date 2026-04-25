@@ -1,5 +1,4 @@
 import { access } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
@@ -7,8 +6,18 @@ import { spawn } from 'node:child_process';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, '..');
 const nextBuildDir = path.join(appRoot, '.next');
-const require = createRequire(import.meta.url);
-const nextCli = require.resolve('next/dist/bin/next');
+const customServerEntry = path.join(
+  nextBuildDir,
+  'custom-server',
+  'next-websocket-server.mjs',
+);
+const runWithNode = path.resolve(
+  appRoot,
+  '..',
+  '..',
+  'scripts',
+  'run-with-node.sh',
+);
 
 const args = new Map();
 
@@ -36,16 +45,24 @@ const port = String(Number(args.get('port') ?? process.env.PORT ?? '3000'));
 
 try {
   await access(nextBuildDir);
+  await access(customServerEntry);
 } catch {
   console.error(
-    `Missing Next.js build output at ${nextBuildDir}. Run "bun run build" first.`,
+    `Missing build output at ${customServerEntry}. Run "bun run build" first.`,
   );
   process.exit(1);
 }
 
 const child = spawn(
-  process.execPath,
-  [nextCli, 'start', '--hostname', host, '--port', port],
+  runWithNode,
+  [
+    './.next/custom-server/next-websocket-server.mjs',
+    '--prod',
+    '--host',
+    host,
+    '--port',
+    port,
+  ],
   {
     cwd: appRoot,
     env: process.env,

@@ -91,7 +91,7 @@ describe('game bot AI service', () => {
     ).toBe('fallback-bot');
   });
 
-  it('uses the active AI profile to choose between legal UNO bot moves', () => {
+  it('chooses a deterministic random legal UNO move', () => {
     const state = createState([
       {
         color: 'red',
@@ -139,23 +139,22 @@ describe('game bot AI service', () => {
       },
     ])[0]!;
 
-    expect(
-      chooseUnoBotMove({
-        legalMoves: moves,
-        playerId: 'p2',
-        profile: conservative,
-        seed: 's',
-        state,
-      }),
-    ).toEqual(moves[0]);
-    expect(
-      chooseUnoBotMove({
-        legalMoves: moves,
-        playerId: 'p2',
-        profile: wildHappy,
-        seed: 's',
-        state,
-      }),
-    ).toEqual(moves[1]);
+    const conservativeChoice = chooseUnoBotMove({
+      legalMoves: moves,
+      playerId: 'p2',
+      profile: conservative,
+      seed: 's',
+      state,
+    });
+    const wildHappyChoice = chooseUnoBotMove({
+      legalMoves: moves,
+      playerId: 'p2',
+      profile: wildHappy,
+      seed: 's',
+      state,
+    });
+
+    expect(moves).toContainEqual(conservativeChoice);
+    expect(wildHappyChoice).toEqual(conservativeChoice);
   });
 });

@@ -22,26 +22,28 @@ function getSinceUpdatedAt(request: Request) {
   return new URL(request.url).searchParams.get('sinceUpdatedAt');
 }
 
+function getProblemStatus(code: 'NOT_FOUND' | 'CONFLICT' | 'VALIDATION_ERROR') {
+  return code === 'NOT_FOUND' ? 404 : code === 'CONFLICT' ? 409 : 400;
+}
+
 export const GET = createApiRoute({
   action: 'games.uno.matches.events',
   featureKey: 'showcase.uno',
   async handler({ request, session }) {
+    const matchId = getMatchId(request);
+    const realtimeInput = {
+      afterSequence: getAfterSequence(request),
+      sinceUpdatedAt: getSinceUpdatedAt(request),
+    };
+
     const result = await getUnoMatchRealtimeUseCase(
       session,
-      getMatchId(request),
-      {
-        afterSequence: getAfterSequence(request),
-        sinceUpdatedAt: getSinceUpdatedAt(request),
-      },
+      matchId,
+      realtimeInput,
     );
 
     if (!result.ok) {
-      const status =
-        result.error.code === 'NOT_FOUND'
-          ? 404
-          : result.error.code === 'CONFLICT'
-            ? 409
-            : 400;
+      const status = getProblemStatus(result.error.code);
       throw new ProblemError(
         problem(
           '/problems/uno-match-events',

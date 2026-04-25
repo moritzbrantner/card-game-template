@@ -6,7 +6,7 @@ import type { AppSession, AppSessionUser } from '@/src/auth';
 import { getEnv } from '@/src/config/env';
 import { buildProfileImageUrl } from '@/src/profile/object-storage';
 
-const SESSION_COOKIE_NAME = 'app-session';
+export const SESSION_COOKIE_NAME = 'app-session';
 const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 const SESSION_SECRET = getEnv().auth.secret;
 
@@ -60,6 +60,13 @@ function parseSession(value: string | undefined): SessionPayload | null {
   }
 }
 
+export function parseSessionCookieValue(
+  value: string | undefined,
+): AppSession | null {
+  const payload = parseSession(value);
+  return payload?.user ? { user: payload.user } : null;
+}
+
 async function getCookieStore() {
   return cookies();
 }
@@ -85,9 +92,7 @@ async function writeSessionCookie(payload: SessionPayload | null) {
 
 export async function getAuthSession(): Promise<AppSession | null> {
   const cookieStore = await getCookieStore();
-  const payload = parseSession(cookieStore.get(SESSION_COOKIE_NAME)?.value);
-
-  return payload?.user ? { user: payload.user } : null;
+  return parseSessionCookieValue(cookieStore.get(SESSION_COOKIE_NAME)?.value);
 }
 
 export async function signInSession(

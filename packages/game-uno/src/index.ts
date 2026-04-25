@@ -589,20 +589,6 @@ function drawCards(
   };
 }
 
-function countsByColor(cards: readonly UnoCard[]) {
-  return COLORS.map((color) => ({
-    color,
-    count: cards.filter((card) => card.color === color).length,
-  })).sort(
-    (left, right) =>
-      right.count - left.count || left.color.localeCompare(right.color),
-  );
-}
-
-function choosePreferredColor(cards: readonly UnoCard[]): UnoColor {
-  return countsByColor(cards)[0]?.color ?? 'red';
-}
-
 function matchesCurrentDiscard(card: UnoCard, state: UnoState): boolean {
   const topDiscard = getTopDiscard(state);
 
@@ -1583,63 +1569,28 @@ export function projectUnoPlayerView(
   };
 }
 
-function moveScore(
-  move: UnoMove,
-  state: UnoState,
-  playerId: PlayerId,
-  seed: number | string,
-): number {
-  if (move.kind === 'draw-card') {
-    return -1000;
-  }
-
-  if (move.kind === 'pass') {
-    return -1100;
-  }
-
-  const card = (state.hands[playerId] ?? []).find(
-    (candidate) => candidate.id === move.payload.cardId,
+export function chooseRandomUnoLegalMove(input: {
+  legalMoves: readonly UnoMove[];
+  playerId: PlayerId;
+  seed: number | string;
+}): UnoMove | null {
+  const ownLegalMoves = input.legalMoves.filter(
+    (move) => move.playerId === input.playerId,
   );
 
-  if (!card) {
-    return -1200;
+  if (ownLegalMoves.length === 0) {
+    return null;
   }
 
-  let score = 0;
+  const fingerprint = ownLegalMoves
+    .map((move) => JSON.stringify(canonicalizeUnoMove(move)))
+    .join('|');
   const random = createSeededRandom(
-    `${seed}:${card.id}:${move.payload.chosenColor ?? 'none'}:${move.payload.targetPlayerId ?? 'none'}`,
+    `${input.seed}:${input.playerId}:${fingerprint}`,
   );
+  const index = Math.floor(random() * ownLegalMoves.length);
 
-  if (card.kind === 'wild' || card.kind === 'wild-draw-four') {
-    score -= 100;
-  } else {
-    score += 100;
-  }
-
-  if (
-    card.kind === 'skip' ||
-    card.kind === 'reverse' ||
-    card.kind === 'draw-two'
-  ) {
-    score += 50;
-  }
-
-  if (card.kind === 'wild' || card.kind === 'wild-draw-four') {
-    const preferredColor = choosePreferredColor(
-      (state.hands[playerId] ?? []).filter(
-        (handCard) => handCard.id !== card.id,
-      ),
-    );
-    if (move.payload.chosenColor === preferredColor) {
-      score += 40;
-    }
-  }
-
-  if (move.payload.sayUno) {
-    score += 10;
-  }
-
-  return score + random();
+  return ownLegalMoves[index] ?? null;
 }
 
 export function createUnoBots(
@@ -1652,28 +1603,11 @@ export function createUnoBots(
       .map((participant) => {
         const bot: LocalGameSessionBot<UnoState, UnoMove> = {
           chooseMove({ legalMoves, playerId, state }) {
-            const ownLegalMoves = legalMoves.filter(
-              (move) => move.playerId === playerId,
-            );
-            const playableMoves = ownLegalMoves.filter(
-              (move) => move.kind === 'play-card',
-            );
-
-            if (playableMoves.length > 0) {
-              return (
-                [...playableMoves].sort(
-                  (left, right) =>
-                    moveScore(right, state.state, playerId, seed) -
-                    moveScore(left, state.state, playerId, seed),
-                )[0] ?? null
-              );
-            }
-
-            return (
-              ownLegalMoves.find((move) => move.kind === 'draw-card') ??
-              ownLegalMoves.find((move) => move.kind === 'pass') ??
-              null
-            );
+            return chooseRandomUnoLegalMove({
+              legalMoves,
+              playerId,
+              seed: `${seed}:${state.matchId}:${state.turn}`,
+            });
           },
         };
 

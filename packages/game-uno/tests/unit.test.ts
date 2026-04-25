@@ -11,6 +11,7 @@ import {
   IllegalMoveError,
 } from '../../game-engine/src/index.ts';
 import {
+  chooseRandomUnoLegalMove,
   createUnoAdapter,
   createUnoBots,
   defaultUnoRules,
@@ -624,7 +625,7 @@ test('UNO draw moves emit drawn-card transition events', () => {
   ]);
 });
 
-test('bot selection prefers the majority color when choosing a wild', () => {
+test('UNO bots choose the shared deterministic random legal move', () => {
   const bots = createUnoBots([
     { playerId: 'p1', displayName: 'Alice', seat: 1, controller: 'human' },
     { playerId: 'p2', displayName: 'Bot', seat: 2, controller: 'bot' },
@@ -643,9 +644,10 @@ test('bot selection prefers the majority color when choosing a wild', () => {
     },
     'p2',
   );
+  const legalMoves = adapter.listLegalMoves(botState);
 
   const choice = bots.p2?.chooseMove({
-    legalMoves: adapter.listLegalMoves(botState),
+    legalMoves,
     participants: [
       { playerId: 'p1', displayName: 'Alice', seat: 1, controller: 'human' },
       { playerId: 'p2', displayName: 'Bot', seat: 2, controller: 'bot' },
@@ -654,8 +656,14 @@ test('bot selection prefers the majority color when choosing a wild', () => {
     state: botState,
   });
 
-  assert.equal(choice?.kind, 'play-card');
-  assert.equal(choice?.payload.chosenColor, 'green');
+  assert.deepEqual(
+    choice,
+    chooseRandomUnoLegalMove({
+      legalMoves,
+      playerId: 'p2',
+      seed: 'uno-bot:match-uno:1',
+    }),
+  );
 });
 
 test('UNO bots ignore legal moves belonging to other players', () => {

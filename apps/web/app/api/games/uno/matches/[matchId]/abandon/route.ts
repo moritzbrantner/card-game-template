@@ -1,3 +1,4 @@
+import { publishUnoMatchSnapshot } from '@/src/domain/game-matches/realtime';
 import { abandonUnoMatchUseCase } from '@/src/domain/game-matches/use-cases';
 import { problem, ProblemError } from '@/src/http/errors';
 import { createApiRoute } from '@/src/http/route';
@@ -30,6 +31,7 @@ export const POST = createApiRoute({
       );
     }
 
+    publishUnoMatchSnapshot(result.data);
     return result.data;
   },
 });
