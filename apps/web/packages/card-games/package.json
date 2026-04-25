@@ -1,0 +1,27 @@
+{
+  "name": "@moritzbrantner/card-games",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "lint": "oxfmt --check . && bun run lint:imports && bun run lint:code",
+    "lint:imports": "bun ../../scripts/verify-package-imports.mjs ./src @/ next/",
+    "lint:code": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit",
+    "typecheck": "bun run check-types",
+    "test:unit": "cd ../.. && vitest run packages/card-games/tests/card-games.test.tsx",
+    "test": "bun run test:unit"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

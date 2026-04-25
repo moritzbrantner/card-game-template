@@ -2,8 +2,12 @@
 
 import { useState } from 'react';
 
+import { CardTable } from '@moritzbrantner/card-games';
 import { buttonVariants } from '@moritzbrantner/ui';
+import type { UnoCard } from '@repo/game-uno';
 import { Eye, UserRound } from 'lucide-react';
+
+import { UnoHandPreview } from '@/components/uno-card-visuals';
 
 type ReplayPerspective = {
   id: string;
@@ -26,7 +30,7 @@ type ReplayStepView = {
     displayName: string;
     handCount: number;
     isViewer: boolean;
-    visibleCards: readonly { id: string; label: string }[];
+    visibleCards: readonly UnoCard[];
   }>;
 };
 
@@ -173,42 +177,52 @@ export function PastGameReplayPageClient({
             />
           </div>
 
-          <div className="mt-6 grid gap-3 md:grid-cols-2">
-            {activeView.players.map((player) => (
-              <div
-                key={`${activeStep.id}:${player.playerId}`}
-                className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <p className="truncate font-medium text-zinc-950 dark:text-zinc-50">
-                      {player.displayName}
-                    </p>
-                    {player.isViewer ? (
-                      <span className="shrink-0 rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-800 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-200">
-                        View
-                      </span>
-                    ) : null}
-                  </div>
-                  <span className="text-sm text-zinc-600 dark:text-zinc-300">
-                    {player.handCount} cards
-                  </span>
-                </div>
+          <div className="mt-6">
+            <CardTable
+              eyebrow={activePerspective.label}
+              subtitle="Replay cards are rendered from the active perspective while hidden hands stay face down."
+              title={activeView.status}
+              tone="midnight"
+            >
+              <div className="grid gap-3 md:grid-cols-2">
+                {activeView.players.map((player) => {
+                  const hiddenCount = Math.max(
+                    player.handCount - player.visibleCards.length,
+                    0,
+                  );
 
-                {player.visibleCards.length > 0 ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {player.visibleCards.map((card) => (
-                      <span
-                        key={card.id}
-                        className="rounded-full border border-zinc-300 px-3 py-1 text-xs text-zinc-700 dark:border-zinc-700 dark:text-zinc-200"
-                      >
-                        {card.label}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
+                  return (
+                    <div
+                      key={`${activeStep.id}:${player.playerId}`}
+                      className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <p className="truncate font-medium text-white">
+                            {player.displayName}
+                          </p>
+                          {player.isViewer ? (
+                            <span className="shrink-0 rounded-full border border-sky-300/40 bg-sky-400/15 px-2 py-0.5 text-xs font-medium text-sky-100">
+                              View
+                            </span>
+                          ) : null}
+                        </div>
+                        <span className="text-sm text-white/72">
+                          {player.handCount} cards
+                        </span>
+                      </div>
+
+                      <UnoHandPreview
+                        className="mt-4"
+                        hiddenCount={hiddenCount}
+                        label={player.displayName}
+                        visibleCards={player.visibleCards}
+                      />
+                    </div>
+                  );
+                })}
               </div>
-            ))}
+            </CardTable>
           </div>
         </article>
 

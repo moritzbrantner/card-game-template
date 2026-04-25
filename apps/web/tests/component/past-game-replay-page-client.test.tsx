@@ -35,14 +35,30 @@ describe('PastGameReplayPageClient', () => {
                     displayName: 'Alice',
                     handCount: 1,
                     isViewer: false,
-                    visibleCards: [{ id: 'red-4', label: 'red-4' }],
+                    visibleCards: [
+                      {
+                        id: 'red-4',
+                        color: 'red',
+                        kind: 'number',
+                        label: 'red-4',
+                        value: 4,
+                      },
+                    ],
                   },
                   {
                     playerId: 'p2',
                     displayName: 'Bob',
                     handCount: 1,
                     isViewer: false,
-                    visibleCards: [{ id: 'blue-1', label: 'blue-1' }],
+                    visibleCards: [
+                      {
+                        id: 'blue-1',
+                        color: 'blue',
+                        kind: 'number',
+                        label: 'blue-1',
+                        value: 1,
+                      },
+                    ],
                   },
                 ],
               },
@@ -55,7 +71,15 @@ describe('PastGameReplayPageClient', () => {
                     displayName: 'Alice',
                     handCount: 1,
                     isViewer: true,
-                    visibleCards: [{ id: 'red-4', label: 'red-4' }],
+                    visibleCards: [
+                      {
+                        id: 'red-4',
+                        color: 'red',
+                        kind: 'number',
+                        label: 'red-4',
+                        value: 4,
+                      },
+                    ],
                   },
                   {
                     playerId: 'p2',
@@ -82,7 +106,15 @@ describe('PastGameReplayPageClient', () => {
                     displayName: 'Bob',
                     handCount: 1,
                     isViewer: true,
-                    visibleCards: [{ id: 'blue-1', label: 'blue-1' }],
+                    visibleCards: [
+                      {
+                        id: 'blue-1',
+                        color: 'blue',
+                        kind: 'number',
+                        label: 'blue-1',
+                        value: 1,
+                      },
+                    ],
                   },
                 ],
               },
@@ -95,17 +127,17 @@ describe('PastGameReplayPageClient', () => {
       />,
     );
 
-    expect(screen.getByText('red-4')).toBeTruthy();
-    expect(screen.getByText('blue-1')).toBeTruthy();
+    expect(screen.getByLabelText('red-4')).toBeTruthy();
+    expect(screen.getByLabelText('blue-1')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Alice' }));
 
-    expect(screen.getByText('red-4')).toBeTruthy();
-    expect(screen.queryByText('blue-1')).toBeNull();
+    expect(screen.getByLabelText('red-4')).toBeTruthy();
+    expect(screen.queryByLabelText('blue-1')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Bob' }));
 
-    expect(screen.queryByText('red-4')).toBeNull();
-    expect(screen.getByText('blue-1')).toBeTruthy();
+    expect(screen.queryByLabelText('red-4')).toBeNull();
+    expect(screen.getByLabelText('blue-1')).toBeTruthy();
   });
 });

@@ -1,6 +1,7 @@
 import type { MatchReplay, MatchState, PlayerId } from '@repo/game-contracts';
 import {
   projectUnoPlayerView,
+  type UnoCard,
   type UnoMove,
   type UnoState,
 } from '@repo/game-uno';
@@ -26,10 +27,7 @@ export type UnoReplayInspectionPlayer = {
   handCount: number;
   isViewer: boolean;
   playerId: PlayerId;
-  visibleCards: readonly {
-    id: string;
-    label: string;
-  }[];
+  visibleCards: readonly UnoCard[];
 };
 
 export type UnoReplayInspectionView = {
@@ -114,10 +112,7 @@ export function buildUnoReplayInspectionSteps(input: {
             displayName: player.displayName,
             handCount: player.handCount,
             isViewer: perspective.kind === 'player' && player.isViewer,
-            visibleCards: visibleCards.map((card) => ({
-              id: card.id,
-              label: card.label,
-            })),
+            visibleCards: [...visibleCards],
           };
         }),
       };

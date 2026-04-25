@@ -180,7 +180,15 @@ function createSnapshot(
           isActor: true,
           isViewer: true,
           playerId: 'p1',
-          visibleCards: [],
+          visibleCards: [
+            {
+              color: 'red',
+              id: 'red-5',
+              kind: 'number',
+              label: 'red-5',
+              value: 5,
+            },
+          ],
         },
         {
           controller: 'bot',
@@ -265,6 +273,7 @@ describe('UnoPageClient live updates', () => {
     await waitFor(() => {
       expect(MockWebSocket.instances).toHaveLength(1);
     });
+    expect(screen.getByLabelText('red-5')).toBeTruthy();
     expect(MockWebSocket.instances[0]?.url).toContain(
       `/ws/games/uno/matches/${activeSnapshot.matchId}`,
     );
@@ -280,6 +289,26 @@ describe('UnoPageClient live updates', () => {
         updatedAt: '2026-04-25T09:00:05.000Z',
         view: {
           ...activeSnapshot.view,
+          players: [
+            {
+              ...activeSnapshot.view.players[0]!,
+              handCount: 6,
+              isActive: false,
+              visibleCards: [
+                {
+                  color: 'green',
+                  id: 'green-7',
+                  kind: 'number',
+                  label: 'green-7',
+                  value: 7,
+                },
+              ],
+            },
+            {
+              ...activeSnapshot.view.players[1]!,
+              isActive: true,
+            },
+          ],
           status: 'Bot Bravo to act',
         },
       }),
@@ -289,6 +318,8 @@ describe('UnoPageClient live updates', () => {
       expect(screen.getByText('Bot Bravo to act')).toBeTruthy();
       expect(screen.getByText('1 accepted moves')).toBeTruthy();
     });
+    expect(screen.getByLabelText('green-7')).toBeTruthy();
+    expect(screen.queryByLabelText('red-5')).toBeNull();
 
     unmount();
     expect(MockWebSocket.instances[0]?.closed).toBe(true);

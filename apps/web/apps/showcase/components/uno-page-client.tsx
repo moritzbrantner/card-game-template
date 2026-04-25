@@ -8,9 +8,16 @@ import {
   useState,
 } from 'react';
 
+import { CardTable } from '@moritzbrantner/card-games';
 import { buttonVariants } from '@moritzbrantner/ui';
 import { defaultGameCatalog } from '@repo/game-catalog';
 
+import {
+  HiddenUnoCardStack,
+  UnoColorBadge,
+  UnoCardVisual,
+  UnoHandPreview,
+} from '@/components/uno-card-visuals';
 import type {
   ListUnoMatchesResult,
   PersistedUnoMatchSnapshotDto,
@@ -962,46 +969,123 @@ export function UnoPageClient({
                 </span>
               </div>
 
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                  {currentMatch.view.status}
-                </p>
-                {currentMatch.view.matchResultBanner ? (
-                  <p className="mt-2 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
-                    {currentMatch.view.matchResultBanner}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                {currentMatch.view.players.map((player) => (
-                  <div
-                    key={player.playerId}
-                    className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-medium text-zinc-950 dark:text-zinc-50">
-                        {player.displayName}
+              <CardTable
+                eyebrow={labels.activeMatchTitle}
+                subtitle={
+                  currentMatch.view.matchResultBanner ??
+                  `${currentMatch.view.drawPileCount} cards remain in the draw pile.`
+                }
+                title={currentMatch.view.status}
+                tone={
+                  currentMatch.view.activeColor === 'green'
+                    ? 'emerald'
+                    : currentMatch.view.activeColor === 'blue'
+                      ? 'midnight'
+                      : 'crimson'
+                }
+              >
+                <div className="grid gap-4 xl:grid-cols-[0.78fr_1.22fr]">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+                        Active color
                       </p>
-                      <span className="text-sm text-zinc-600 dark:text-zinc-300">
-                        {player.handCount} cards
-                      </span>
-                    </div>
-                    {player.visibleCards.length > 0 ? (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {player.visibleCards.map((card) => (
-                          <span
-                            key={card.id}
-                            className="rounded-full border border-zinc-300 px-3 py-1 text-xs text-zinc-700 dark:border-zinc-700 dark:text-zinc-200"
-                          >
-                            {card.label}
-                          </span>
-                        ))}
+                      <div className="mt-3">
+                        <UnoColorBadge color={currentMatch.view.activeColor} />
                       </div>
-                    ) : null}
+                      {currentMatch.view.pendingDrawAmount > 0 ? (
+                        <p className="mt-3 text-sm text-white/72">
+                          Pending draw: {currentMatch.view.pendingDrawAmount}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+                        Draw pile
+                      </p>
+                      <div className="mt-4">
+                        <HiddenUnoCardStack
+                          cardCount={currentMatch.view.drawPileCount}
+                          label="Draw pile"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm sm:col-span-2 xl:col-span-1">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+                            Discard pile
+                          </p>
+                          <p className="mt-2 text-sm text-white/72">
+                            Top card sets the current color and legal plays.
+                          </p>
+                        </div>
+                        <span className="rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-white/72">
+                          {currentMatch.view.discardTop?.label ?? 'No discard'}
+                        </span>
+                      </div>
+                      <div className="mt-4">
+                        {currentMatch.view.discardTop ? (
+                          <UnoCardVisual
+                            card={currentMatch.view.discardTop}
+                            selected
+                          />
+                        ) : (
+                          <p className="text-sm text-white/72">
+                            No discard card available.
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {currentMatch.view.players.map((player) => {
+                      const hiddenCount = Math.max(
+                        player.handCount - player.visibleCards.length,
+                        0,
+                      );
+
+                      return (
+                        <div
+                          key={player.playerId}
+                          className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <p className="truncate font-medium text-white">
+                                {player.displayName}
+                              </p>
+                              {player.isViewer ? (
+                                <span className="rounded-full border border-sky-300/40 bg-sky-400/15 px-2 py-0.5 text-xs font-medium text-sky-100">
+                                  You
+                                </span>
+                              ) : null}
+                              {player.isActive ? (
+                                <span className="rounded-full border border-emerald-300/40 bg-emerald-400/15 px-2 py-0.5 text-xs font-medium text-emerald-100">
+                                  Active
+                                </span>
+                              ) : null}
+                            </div>
+                            <span className="text-sm text-white/72">
+                              {player.handCount} cards
+                            </span>
+                          </div>
+
+                          <UnoHandPreview
+                            className="mt-4"
+                            hiddenCount={hiddenCount}
+                            label={player.displayName}
+                            visibleCards={player.visibleCards}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardTable>
 
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
