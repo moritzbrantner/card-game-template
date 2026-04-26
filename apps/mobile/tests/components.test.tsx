@@ -73,6 +73,7 @@ vi.mock('@repo/game-session', () => ({
               },
             ],
             matchResultBanner: null,
+            phaseOrder: ['Phase 1: 2 sets of 3'],
             phaseLabel: 'Phase 1: 2 sets of 3',
             players: [
               {
@@ -83,11 +84,14 @@ vi.mock('@repo/game-session', () => ({
                 isViewer: true,
                 laidGroups: [],
                 phaseComplete: false,
+                phaseLabel: 'Phase 1: 2 sets of 3',
+                phaseNumber: 1,
                 playerId: 'player-1',
                 skipped: false,
                 visibleCards: [{ id: 'red-5', label: 'Red 5' }],
               },
             ],
+            round: 1,
             status: 'Player 1 to draw',
           },
         }),
@@ -152,6 +156,14 @@ vi.mock('@repo/game-uno', () => ({
 vi.mock('@repo/game-phase-10', () => ({
   createPhase10Adapter: () => ({ kind: 'phase10-adapter' }),
   createPhase10Bots: () => [],
+  defaultPhase10Phases: [
+    {
+      id: 'phase-1',
+      label: 'Phase 1: 2 sets of 3',
+      setCount: 2,
+      setSize: 3,
+    },
+  ],
   defaultPhase10Rules: {
     allowHitting: true,
     allowSkipping: true,
@@ -159,6 +171,11 @@ vi.mock('@repo/game-phase-10', () => ({
     setCount: 2,
     setSize: 3,
   },
+  formatPhase10PhaseLabel: (
+    setCount: number,
+    setSize: number,
+    phaseNumber?: number,
+  ) => `Phase ${phaseNumber ?? 1}: ${setCount} sets of ${setSize}`,
   getPhase10ExamplePreset: () => ({
     hotseat: false,
     seats: [{ displayName: 'Player 1', playerId: 'player-1' }],

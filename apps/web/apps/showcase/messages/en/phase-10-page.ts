@@ -1,17 +1,31 @@
 export const phase10Page = {
   title: 'Phase 10 local showcase',
   description:
-    'Play a deterministic local Phase 10 round in the browser, swap seats in hotseat mode, and inspect the shared engine state without any server dependency.',
+    'Play a deterministic local Phase 10 round in the browser, define a custom ordered phase list, swap seats in hotseat mode, and inspect the shared engine state without any server dependency.',
   subtitle:
-    'Phase 1 only: build two sets of three, hit laid sets, discard cleanly, and watch bots finish their turns.',
+    'Configure set-based phase targets before the round starts, then play through lays, hits, discards, and automatic round advancement.',
+  addPhaseAction: 'Add phase',
   localModeBadge: 'Local session',
   catalogRouteLabel: 'Catalog route',
+  decreaseSetCountAction: 'Sets -',
+  decreaseSetSizeAction: 'Size -',
   phaseLabel: 'Round target',
+  phaseConfiguratorTitle: 'Phase configurator',
+  phaseConfiguratorDescription:
+    'Adjust set counts, card counts, and ordering before starting the configured round.',
+  phaseOrderTitle: 'Phase order',
   drawPileLabel: 'Draw pile',
+  increaseSetCountAction: 'Sets +',
+  increaseSetSizeAction: 'Size +',
+  movePhaseEarlierAction: 'Earlier',
+  movePhaseLaterAction: 'Later',
   presetsTitle: 'Table presets',
+  removePhaseAction: 'Remove',
   restartAction: 'Restart round',
+  roundLabel: 'Round',
   tableDrawLabel: 'Draw stack',
   tableDiscardLabel: 'Discard stack',
+  startConfiguredRoundAction: 'Start configured round',
   statusTitle: 'Round status',
   hotseatTitle: 'Hotseat handoff',
   hotseatDescription:

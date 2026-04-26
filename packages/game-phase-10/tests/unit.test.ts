@@ -6,10 +6,13 @@ import { createGameEngine } from '@repo/game-engine';
 import {
   choosePhase10Move,
   createPhase10Adapter,
+  defaultPhase10Phases,
   defaultPhase10Rules,
+  formatPhase10PhaseLabel,
   parsePhase10Move,
   parsePhase10Setup,
   type Phase10Card,
+  type Phase10PhaseDefinition,
   type Phase10Move,
   type Phase10State,
 } from '../src/index.ts';
@@ -58,6 +61,9 @@ function createState(
   state: Partial<Phase10State>,
   activePlayerId = 'p1',
 ): MatchState<Phase10State> {
+  const phaseDefinitions: readonly Phase10PhaseDefinition[] =
+    state.phaseDefinitions ?? defaultPhase10Phases;
+
   return {
     matchId: 'match-phase-10',
     gameId: 'phase-10',
@@ -92,12 +98,29 @@ function createState(
           numberCard('blue', 6, 'p3-blue-6'),
         ],
       },
-      lastEvent: 'Phase 1 started',
+      lastEvent: `${phaseDefinitions[0]?.label ?? 'Phase 1'} started`,
+      phaseDefinitions,
       phases: {
-        p1: { label: 'Phase 1: 2 sets of 3', laidGroups: null, phaseNumber: 1 },
-        p2: { label: 'Phase 1: 2 sets of 3', laidGroups: null, phaseNumber: 1 },
-        p3: { label: 'Phase 1: 2 sets of 3', laidGroups: null, phaseNumber: 1 },
+        p1: {
+          label: phaseDefinitions[0]!.label,
+          laidGroups: null,
+          phaseIndex: 0,
+          phaseNumber: 1,
+        },
+        p2: {
+          label: phaseDefinitions[0]!.label,
+          laidGroups: null,
+          phaseIndex: 0,
+          phaseNumber: 1,
+        },
+        p3: {
+          label: phaseDefinitions[0]!.label,
+          laidGroups: null,
+          phaseIndex: 0,
+          phaseNumber: 1,
+        },
       },
+      round: 1,
       rules: defaultPhase10Rules,
       seed: 'test-seed',
       skippedPlayerIds: [],
@@ -154,6 +177,35 @@ test('Phase 10 parsers reject invalid setup and move payloads', () => {
       }),
     /groups must contain card ids/,
   );
+  assert.throws(
+    () => parsePhase10Setup({ phases: [{ setCount: 0, setSize: 3 }] }),
+    /positive integer/,
+  );
+});
+
+test('Phase 10 setup accepts a custom ordered phase list', () => {
+  const parsed = parsePhase10Setup({
+    phases: [
+      { setCount: 1, setSize: 4 },
+      { label: 'Final sprint', setCount: 3, setSize: 2 },
+    ],
+    seed: 'custom-seed',
+  });
+
+  assert.deepEqual(parsed.phases, [
+    {
+      id: 'phase-1',
+      label: formatPhase10PhaseLabel(1, 4, 1),
+      setCount: 1,
+      setSize: 4,
+    },
+    {
+      id: 'phase-2',
+      label: 'Final sprint',
+      setCount: 3,
+      setSize: 2,
+    },
+  ]);
 });
 
 test('players must draw before they can lay or discard', () => {
@@ -189,6 +241,64 @@ test('laying phase 1 removes two sets from hand and records them on the table', 
   );
 });
 
+test('configured phases can require a different number of sets and card counts', () => {
+  const customPhases: readonly Phase10PhaseDefinition[] = [
+    {
+      id: 'phase-1',
+      label: formatPhase10PhaseLabel(1, 4, 1),
+      setCount: 1,
+      setSize: 4,
+    },
+  ];
+  const state = createState({
+    drawnCardThisTurn: true,
+    hands: {
+      p1: [
+        numberCard('red', 9, 'red-9'),
+        numberCard('blue', 9, 'blue-9'),
+        numberCard('green', 9, 'green-9'),
+        wild('wild-9'),
+        skip('skip-1'),
+      ],
+      p2: [numberCard('yellow', 8, 'p2-yellow-8')],
+      p3: [numberCard('green', 8, 'p3-green-8')],
+    },
+    phaseDefinitions: customPhases,
+    phases: {
+      p1: {
+        label: customPhases[0]!.label,
+        laidGroups: null,
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
+      p2: {
+        label: customPhases[0]!.label,
+        laidGroups: null,
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
+      p3: {
+        label: customPhases[0]!.label,
+        laidGroups: null,
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
+    },
+  });
+
+  const layMove = adapter
+    .listLegalMoves(state)
+    .find(
+      (move): move is Extract<Phase10Move, { kind: 'lay-phase' }> =>
+        move.kind === 'lay-phase',
+    );
+
+  assert.ok(layMove);
+  assert.deepEqual(layMove.payload.groups, [
+    ['red-9', 'blue-9', 'green-9', 'wild-9'],
+  ]);
+});
+
 test('hitting adds a matching card onto an existing laid set', () => {
   const state = createState({
     drawnCardThisTurn: true,
@@ -199,7 +309,7 @@ test('hitting adds a matching card onto an existing laid set', () => {
     },
     phases: {
       p1: {
-        label: 'Phase 1: 2 sets of 3',
+        label: defaultPhase10Phases[0]!.label,
         laidGroups: [
           {
             cards: [
@@ -224,10 +334,21 @@ test('hitting adds a matching card onto an existing laid set', () => {
             value: 9,
           },
         ],
+        phaseIndex: 0,
         phaseNumber: 1,
       },
-      p2: { label: 'Phase 1: 2 sets of 3', laidGroups: null, phaseNumber: 1 },
-      p3: { label: 'Phase 1: 2 sets of 3', laidGroups: null, phaseNumber: 1 },
+      p2: {
+        label: defaultPhase10Phases[0]!.label,
+        laidGroups: null,
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
+      p3: {
+        label: defaultPhase10Phases[0]!.label,
+        laidGroups: null,
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
     },
   });
   const hitMove = adapter
@@ -336,6 +457,94 @@ test('finishing after laying phase declares the winner', () => {
 
   assert.equal(transition.nextState.state.winnerPlayerId, 'p1');
   assert.deepEqual(engine.finalize(transition.nextState)?.winnerIds, ['p1']);
+});
+
+test('finishing a non-final configured phase advances the round and next target', () => {
+  const customPhases: readonly Phase10PhaseDefinition[] = [
+    {
+      id: 'phase-1',
+      label: formatPhase10PhaseLabel(2, 3, 1),
+      setCount: 2,
+      setSize: 3,
+    },
+    {
+      id: 'phase-2',
+      label: formatPhase10PhaseLabel(1, 4, 2),
+      setCount: 1,
+      setSize: 4,
+    },
+  ];
+  const state = createState({
+    drawnCardThisTurn: true,
+    hands: {
+      p1: [skip('skip-1')],
+      p2: [numberCard('green', 2, 'p2-green-2')],
+      p3: [numberCard('blue', 11, 'p3-blue-11')],
+    },
+    phaseDefinitions: customPhases,
+    phases: {
+      p1: {
+        label: customPhases[0]!.label,
+        laidGroups: [
+          {
+            cards: [
+              numberCard('red', 5, 'red-5'),
+              numberCard('yellow', 5, 'yellow-5'),
+              wild('wild-1'),
+            ],
+            cardIds: ['red-5', 'yellow-5', 'wild-1'],
+            label: 'Set of 5s + wild',
+            type: 'set',
+            value: 5,
+          },
+          {
+            cards: [
+              numberCard('red', 7, 'red-7'),
+              numberCard('blue', 7, 'blue-7'),
+              numberCard('green', 7, 'green-7'),
+            ],
+            cardIds: ['red-7', 'blue-7', 'green-7'],
+            label: 'Set of 7s',
+            type: 'set',
+            value: 7,
+          },
+        ],
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
+      p2: {
+        label: customPhases[0]!.label,
+        laidGroups: null,
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
+      p3: {
+        label: customPhases[0]!.label,
+        laidGroups: null,
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
+    },
+  });
+
+  const nextState = adapter.applyMove(state, {
+    playerId: 'p1',
+    kind: 'discard-card',
+    createdAt: '2026-04-26T12:00:01.000Z',
+    payload: {
+      cardId: 'skip-1',
+      targetPlayerId: 'p2',
+    },
+  });
+
+  assert.equal(nextState.state.winnerPlayerId, null);
+  assert.equal(nextState.state.round, 2);
+  assert.equal(nextState.activePlayerId, 'p1');
+  assert.equal(nextState.state.phases.p1?.phaseIndex, 1);
+  assert.equal(nextState.state.phases.p1?.label, customPhases[1]!.label);
+  assert.equal(nextState.state.phases.p2?.phaseIndex, 0);
+  assert.equal(nextState.state.phases.p1?.laidGroups, null);
+  assert.equal(nextState.state.hands.p1?.length, defaultPhase10Rules.handSize);
 });
 
 test('Phase 10 bots prefer laying a completed phase when it is available', () => {

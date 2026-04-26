@@ -40,7 +40,15 @@ export type Phase10Rules = {
   setSize: number;
 };
 
+export type Phase10PhaseDefinition = {
+  id: string;
+  label: string;
+  setCount: number;
+  setSize: number;
+};
+
 export type Phase10Setup = {
+  phases?: readonly Phase10PhaseDefinition[];
   rules?: Partial<Phase10Rules>;
   seed?: number | string;
 };
@@ -56,7 +64,8 @@ export type Phase10LaidGroup = {
 export type Phase10PlayerPhaseState = {
   label: string;
   laidGroups: readonly Phase10LaidGroup[] | null;
-  phaseNumber: 1;
+  phaseIndex: number;
+  phaseNumber: number;
 };
 
 export type Phase10State = {
@@ -65,7 +74,9 @@ export type Phase10State = {
   drawnCardThisTurn: boolean;
   hands: Record<PlayerId, readonly Phase10Card[]>;
   lastEvent: string;
+  phaseDefinitions: readonly Phase10PhaseDefinition[];
   phases: Record<PlayerId, Phase10PlayerPhaseState>;
+  round: number;
   rules: Phase10Rules;
   seed: number | string;
   skippedPlayerIds: readonly PlayerId[];
@@ -115,6 +126,7 @@ export type Phase10PlayerView = {
     move: Phase10Move;
   }>;
   matchResultBanner: string | null;
+  phaseOrder: readonly string[];
   phaseLabel: string;
   players: ReadonlyArray<{
     controller: SessionParticipant['controller'];
@@ -124,10 +136,13 @@ export type Phase10PlayerView = {
     isViewer: boolean;
     laidGroups: readonly Phase10LaidGroup[];
     phaseComplete: boolean;
+    phaseLabel: string;
+    phaseNumber: number;
     playerId: PlayerId;
     skipped: boolean;
     visibleCards: readonly Phase10Card[];
   }>;
+  round: number;
   status: string;
   viewerPlayerId: PlayerId | null;
 };
@@ -159,6 +174,31 @@ export const defaultPhase10Rules: Phase10Rules = {
   setCount: 2,
   setSize: 3,
 };
+
+export function formatPhase10PhaseLabel(
+  setCount: number,
+  setSize: number,
+  phaseNumber?: number,
+) {
+  const setLabel = `${setCount} set${setCount === 1 ? '' : 's'} of ${setSize}`;
+
+  return typeof phaseNumber === 'number'
+    ? `Phase ${phaseNumber}: ${setLabel}`
+    : setLabel;
+}
+
+export const defaultPhase10Phases: readonly Phase10PhaseDefinition[] = [
+  {
+    id: 'phase-1',
+    label: formatPhase10PhaseLabel(
+      defaultPhase10Rules.setCount,
+      defaultPhase10Rules.setSize,
+      1,
+    ),
+    setCount: defaultPhase10Rules.setCount,
+    setSize: defaultPhase10Rules.setSize,
+  },
+] as const;
 
 export const PHASE_10_GAME_VERSION = '0.1.0';
 export const PHASE_10_RULESET_VERSION = 'phase-10-phase-1-v1';
@@ -195,6 +235,14 @@ function parseFiniteNumber(
   return value;
 }
 
+function parsePositiveInteger(value: unknown, label: string): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1) {
+    throw new TypeError(`${label} must be a positive integer.`);
+  }
+
+  return value;
+}
+
 function parseBoolean(
   value: unknown,
   fallback: boolean,
@@ -211,8 +259,10 @@ function parseBoolean(
   return value;
 }
 
-function toSortedCardIds(cardIds: readonly string[]) {
-  return [...cardIds].sort((left, right) => left.localeCompare(right));
+function clonePhaseDefinitions(
+  phases: readonly Phase10PhaseDefinition[],
+): Phase10PhaseDefinition[] {
+  return phases.map((phase) => ({ ...phase }));
 }
 
 function clonePhases(
@@ -233,6 +283,41 @@ function clonePhases(
       },
     ]),
   );
+}
+
+function normalizePhaseDefinition(
+  phase: Pick<Phase10PhaseDefinition, 'label' | 'setCount' | 'setSize'>,
+  index: number,
+): Phase10PhaseDefinition {
+  return {
+    id: `phase-${index + 1}`,
+    label:
+      phase.label.trim().length > 0
+        ? phase.label.trim()
+        : formatPhase10PhaseLabel(phase.setCount, phase.setSize, index + 1),
+    setCount: phase.setCount,
+    setSize: phase.setSize,
+  };
+}
+
+function createPhaseDefinitions(
+  rules: Pick<Phase10Rules, 'setCount' | 'setSize'>,
+  phases?: readonly Phase10PhaseDefinition[],
+) {
+  if (phases && phases.length > 0) {
+    return clonePhaseDefinitions(phases);
+  }
+
+  return [
+    normalizePhaseDefinition(
+      {
+        label: '',
+        setCount: rules.setCount,
+        setSize: rules.setSize,
+      },
+      0,
+    ),
+  ];
 }
 
 function createDeck(): Phase10Card[] {
@@ -363,38 +448,50 @@ function combinations<T>(items: readonly T[], size: number): T[][] {
 
 function findPhaseGroups(
   hand: readonly Phase10Card[],
-  rules: Phase10Rules,
+  phaseDefinition: Pick<Phase10PhaseDefinition, 'setCount' | 'setSize'>,
 ): readonly (readonly Phase10Card[])[] | null {
   const usableCards = hand.filter((card) => card.kind !== 'skip');
-  const setOptions = combinations(usableCards, rules.setSize).filter((group) =>
-    isValidSetGroup(group, rules.setSize),
+  const setOptions = combinations(usableCards, phaseDefinition.setSize).filter(
+    (group) => isValidSetGroup(group, phaseDefinition.setSize),
   );
-  const seen = new Set<string>();
+  const chosen: Phase10Card[][] = [];
+  const usedCardIds = new Set<string>();
 
-  for (const first of setOptions) {
-    const firstIds = new Set(first.map((card) => card.id));
-
-    for (const second of setOptions) {
-      if (second.some((card) => firstIds.has(card.id))) {
-        continue;
-      }
-
-      const normalized = [
-        toSortedCardIds(first.map((card) => card.id)).join(','),
-        toSortedCardIds(second.map((card) => card.id)).join(','),
-      ].sort();
-      const key = normalized.join('|');
-
-      if (seen.has(key)) {
-        continue;
-      }
-
-      seen.add(key);
-      return [first, second];
+  function search(
+    startIndex: number,
+  ): readonly (readonly Phase10Card[])[] | null {
+    if (chosen.length === phaseDefinition.setCount) {
+      return chosen.map((group) => [...group]);
     }
+
+    for (let index = startIndex; index < setOptions.length; index += 1) {
+      const candidate = setOptions[index]!;
+
+      if (candidate.some((card) => usedCardIds.has(card.id))) {
+        continue;
+      }
+
+      candidate.forEach((card) => {
+        usedCardIds.add(card.id);
+      });
+      chosen.push(candidate);
+
+      const result = search(index + 1);
+
+      if (result) {
+        return result;
+      }
+
+      chosen.pop();
+      candidate.forEach((card) => {
+        usedCardIds.delete(card.id);
+      });
+    }
+
+    return null;
   }
 
-  return null;
+  return search(0);
 }
 
 function describeMove(
@@ -409,7 +506,7 @@ function describeMove(
   }
 
   if (move.kind === 'lay-phase') {
-    return 'Lay phase 1: 2 sets of 3';
+    return `Lay ${state.phases[move.playerId]?.label ?? 'current phase'}`;
   }
 
   if (move.kind === 'hit-phase') {
@@ -449,6 +546,20 @@ function activePhase(
   return phase;
 }
 
+function phaseDefinitionForPlayer(
+  state: MatchState<Phase10State>,
+  playerId: PlayerId,
+): Phase10PhaseDefinition {
+  const phase = activePhase(state, playerId);
+  const definition = state.state.phaseDefinitions[phase.phaseIndex];
+
+  if (!definition) {
+    throw new Error(`Unknown Phase 10 definition ${phase.phaseIndex}`);
+  }
+
+  return definition;
+}
+
 function recycleDrawPile(state: Phase10State): Phase10State {
   if (state.drawPile.length > 0 || state.discardPile.length <= 1) {
     return state;
@@ -469,6 +580,28 @@ function playerOrder<TPlayer extends { playerId: PlayerId; seat: number }>(
   players: readonly TPlayer[],
 ) {
   return [...players].sort((left, right) => left.seat - right.seat);
+}
+
+function dealRound(
+  players: readonly { playerId: PlayerId; seat: number }[],
+  handSize: number,
+  seed: number | string,
+) {
+  const orderedPlayers = playerOrder(players);
+  const deck = shuffleWithSeed(createDeck(), seed);
+  const hands: Record<PlayerId, readonly Phase10Card[]> = {};
+  let deckIndex = 0;
+
+  for (const player of orderedPlayers) {
+    hands[player.playerId] = deck.slice(deckIndex, deckIndex + handSize);
+    deckIndex += handSize;
+  }
+
+  return {
+    discardPile: [deck[deckIndex]!],
+    drawPile: deck.slice(deckIndex + 1),
+    hands,
+  };
 }
 
 function nextActivePlayer(input: {
@@ -604,11 +737,16 @@ function createHitMoves(
 
 function validatePhaseGroupsMove(
   hand: readonly Phase10Card[],
-  rules: Phase10Rules,
+  phaseDefinition: Pick<
+    Phase10PhaseDefinition,
+    'label' | 'setCount' | 'setSize'
+  >,
   groups: readonly (readonly string[])[],
 ) {
-  if (groups.length !== rules.setCount) {
-    throw new Error(`Phase 1 requires ${rules.setCount} sets.`);
+  if (groups.length !== phaseDefinition.setCount) {
+    throw new Error(
+      `${phaseDefinition.label} requires ${phaseDefinition.setCount} sets.`,
+    );
   }
 
   const selectedIds = groups.flatMap((group) => group);
@@ -637,8 +775,10 @@ function validatePhaseGroupsMove(
       return card;
     });
 
-    if (!isValidSetGroup(cards, rules.setSize)) {
-      throw new Error('Each phase 1 group must be a valid set.');
+    if (!isValidSetGroup(cards, phaseDefinition.setSize)) {
+      throw new Error(
+        `Each ${phaseDefinition.label.toLowerCase()} group must be a valid set.`,
+      );
     }
 
     return cards;
@@ -705,9 +845,10 @@ function applyLayMove(
   move: Phase10LayPhaseMove,
 ): MatchState<Phase10State> {
   const hand = state.state.hands[move.playerId] ?? [];
+  const phaseDefinition = phaseDefinitionForPlayer(state, move.playerId);
   const groups = validatePhaseGroupsMove(
     hand,
-    state.state.rules,
+    phaseDefinition,
     move.payload.groups,
   );
   const selectedIds = move.payload.groups.flatMap((group) => group);
@@ -727,7 +868,7 @@ function applyLayMove(
         ...state.state.hands,
         [move.playerId]: removed.cards,
       },
-      lastEvent: `${move.playerId} laid phase 1`,
+      lastEvent: `${move.playerId} laid ${phaseDefinition.label}`,
       phases: nextPhases,
     },
   };
@@ -790,14 +931,73 @@ function applyHitMove(
 function rankedPlayers(state: MatchState<Phase10State>) {
   return [...state.players]
     .map((player) => ({
+      phaseIndex: state.state.phases[player.playerId]?.phaseIndex ?? 0,
       playerId: player.playerId,
       handCount: state.state.hands[player.playerId]?.length ?? 0,
     }))
-    .sort((left, right) => left.handCount - right.handCount)
+    .sort((left, right) => {
+      if (left.phaseIndex !== right.phaseIndex) {
+        return right.phaseIndex - left.phaseIndex;
+      }
+
+      return left.handCount - right.handCount;
+    })
     .map((player, index) => ({
       playerId: player.playerId,
       position: index + 1,
     }));
+}
+
+function createNextRoundState(
+  state: MatchState<Phase10State>,
+  roundWinnerId: PlayerId,
+): MatchState<Phase10State> {
+  const nextRound = state.state.round + 1;
+  const deal = dealRound(
+    state.players,
+    state.state.rules.handSize,
+    `${state.state.seed}:round:${nextRound}`,
+  );
+  const phases = Object.fromEntries(
+    state.players.map((player) => {
+      const currentPhase = state.state.phases[player.playerId]!;
+      const nextPhaseIndex = currentPhase.laidGroups
+        ? Math.min(
+            currentPhase.phaseIndex + 1,
+            state.state.phaseDefinitions.length - 1,
+          )
+        : currentPhase.phaseIndex;
+      const nextDefinition = state.state.phaseDefinitions[nextPhaseIndex]!;
+
+      return [
+        player.playerId,
+        {
+          label: nextDefinition.label,
+          laidGroups: null,
+          phaseIndex: nextPhaseIndex,
+          phaseNumber: nextPhaseIndex + 1,
+        },
+      ] as const;
+    }),
+  );
+
+  return {
+    ...state,
+    activePlayerId: roundWinnerId,
+    turn: state.turn + 1,
+    state: {
+      ...state.state,
+      discardPile: deal.discardPile,
+      drawPile: deal.drawPile,
+      drawnCardThisTurn: false,
+      hands: deal.hands,
+      lastEvent: `Round ${nextRound} started`,
+      phases,
+      round: nextRound,
+      skippedPlayerIds: [],
+      winnerPlayerId: null,
+    },
+  };
 }
 
 function applyDiscardMove(
@@ -825,8 +1025,32 @@ function applyDiscardMove(
   }
 
   const laidGroups = state.state.phases[move.playerId]?.laidGroups;
-  const winnerPlayerId =
-    removed.cards.length === 0 && laidGroups ? move.playerId : null;
+  const currentPhase = state.state.phases[move.playerId];
+  const completedFinalPhase = Boolean(
+    removed.cards.length === 0 &&
+    laidGroups &&
+    currentPhase &&
+    currentPhase.phaseIndex >= state.state.phaseDefinitions.length - 1,
+  );
+  const winnerPlayerId = completedFinalPhase ? move.playerId : null;
+
+  if (removed.cards.length === 0 && laidGroups && !winnerPlayerId) {
+    return createNextRoundState(
+      {
+        ...state,
+        state: {
+          ...state.state,
+          discardPile: [...state.state.discardPile, removed.card],
+          hands: {
+            ...state.state.hands,
+            [move.playerId]: removed.cards,
+          },
+        },
+      },
+      move.playerId,
+    );
+  }
+
   const pendingSkips = new Set(state.state.skippedPlayerIds);
 
   if (removed.card.kind === 'skip' && move.payload.targetPlayerId) {
@@ -1002,6 +1226,39 @@ export function parsePhase10Setup(value: unknown): Phase10Setup {
     };
   }
 
+  if (value.phases !== undefined) {
+    if (!Array.isArray(value.phases) || value.phases.length === 0) {
+      throw new TypeError('Phase 10 setup phases must be a non-empty array.');
+    }
+
+    setup.phases = value.phases.map((phase, index) => {
+      if (!isRecord(phase)) {
+        throw new TypeError('Phase 10 phases must contain objects.');
+      }
+
+      const setCount = parsePositiveInteger(
+        phase.setCount,
+        `Phase 10 phase ${index + 1} setCount`,
+      );
+      const setSize = parsePositiveInteger(
+        phase.setSize,
+        `Phase 10 phase ${index + 1} setSize`,
+      );
+      const label =
+        phase.label === undefined
+          ? ''
+          : typeof phase.label === 'string'
+            ? phase.label
+            : (() => {
+                throw new TypeError(
+                  `Phase 10 phase ${index + 1} label must be a string.`,
+                );
+              })();
+
+      return normalizePhaseDefinition({ label, setCount, setSize }, index);
+    });
+  }
+
   return setup;
 }
 
@@ -1159,20 +1416,16 @@ export function createPhase10Adapter(): GameAdapter<
         ...setup.rules,
       };
       const seed = setup.seed ?? 'phase-10';
-      const deck = shuffleWithSeed(createDeck(), seed);
-      const hands: Record<PlayerId, readonly Phase10Card[]> = {};
+      const phaseDefinitions = createPhaseDefinitions(rules, setup.phases);
+      const deal = dealRound(orderedPlayers, rules.handSize, `${seed}:round:1`);
       const phases: Record<PlayerId, Phase10PlayerPhaseState> = {};
-      let deckIndex = 0;
+      const firstPhase = phaseDefinitions[0]!;
 
       for (const player of orderedPlayers) {
-        hands[player.playerId] = deck.slice(
-          deckIndex,
-          deckIndex + rules.handSize,
-        );
-        deckIndex += rules.handSize;
         phases[player.playerId] = {
-          label: 'Phase 1: 2 sets of 3',
+          label: firstPhase.label,
           laidGroups: null,
+          phaseIndex: 0,
           phaseNumber: 1,
         };
       }
@@ -1185,12 +1438,14 @@ export function createPhase10Adapter(): GameAdapter<
         turn: 1,
         executionMode,
         state: {
-          discardPile: [deck[deckIndex]!],
-          drawPile: deck.slice(deckIndex + 1),
+          discardPile: deal.discardPile,
+          drawPile: deal.drawPile,
           drawnCardThisTurn: false,
-          hands,
-          lastEvent: 'Phase 1 started',
+          hands: deal.hands,
+          lastEvent: `${firstPhase.label} started`,
+          phaseDefinitions,
           phases,
+          round: 1,
           rules,
           seed,
           skippedPlayerIds: [],
@@ -1206,6 +1461,7 @@ export function createPhase10Adapter(): GameAdapter<
       const activePlayerId = state.activePlayerId;
       const hand = state.state.hands[activePlayerId] ?? [];
       const phase = activePhase(state, activePlayerId);
+      const phaseDefinition = phaseDefinitionForPlayer(state, activePlayerId);
 
       if (!state.state.drawnCardThisTurn) {
         const legalMoves: Phase10Move[] = [];
@@ -1239,7 +1495,7 @@ export function createPhase10Adapter(): GameAdapter<
       const legalMoves: Phase10Move[] = [];
 
       if (!phase.laidGroups) {
-        const groups = findPhaseGroups(hand, state.state.rules);
+        const groups = findPhaseGroups(hand, phaseDefinition);
 
         if (groups) {
           legalMoves.push(createLayMove(activePlayerId, groups));
@@ -1299,6 +1555,11 @@ export function createPhase10Adapter(): GameAdapter<
 export function projectPhase10PlayerView(
   input: LocalGameSessionProjectViewInput<Phase10State, Phase10Move>,
 ): Phase10PlayerView {
+  const focusPlayerId = input.viewerPlayerId ?? input.state.activePlayerId;
+  const focusPhase =
+    input.state.state.phases[focusPlayerId] ??
+    input.state.state.phases[input.state.activePlayerId];
+
   return {
     activePlayerId: input.state.activePlayerId,
     discardTop:
@@ -1321,7 +1582,9 @@ export function projectPhase10PlayerView(
           )?.displayName ?? input.matchResult.winnerIds[0]
         }`
       : null,
-    phaseLabel: 'Phase 1: 2 sets of 3',
+    phaseOrder: input.state.state.phaseDefinitions.map((phase) => phase.label),
+    phaseLabel:
+      focusPhase?.label ?? input.state.state.phaseDefinitions[0]?.label ?? '',
     players: input.participants.map((participant) => ({
       controller: participant.controller,
       displayName: participant.displayName,
@@ -1333,6 +1596,12 @@ export function projectPhase10PlayerView(
       phaseComplete: Boolean(
         input.state.state.phases[participant.playerId]?.laidGroups,
       ),
+      phaseLabel:
+        input.state.state.phases[participant.playerId]?.label ??
+        input.state.state.phaseDefinitions[0]?.label ??
+        '',
+      phaseNumber:
+        input.state.state.phases[participant.playerId]?.phaseNumber ?? 1,
       playerId: participant.playerId,
       skipped: input.state.state.skippedPlayerIds.includes(
         participant.playerId,
@@ -1342,6 +1611,7 @@ export function projectPhase10PlayerView(
           ? [...(input.state.state.hands[participant.playerId] ?? [])]
           : [],
     })),
+    round: input.state.state.round,
     status: input.state.state.lastEvent,
     viewerPlayerId: input.viewerPlayerId,
   };

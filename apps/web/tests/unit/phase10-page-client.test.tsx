@@ -52,6 +52,7 @@ const snapshotState = vi.hoisted(() => ({
         },
       ],
       matchResultBanner: null,
+      phaseOrder: ['Phase 1: 2 sets of 3'],
       phaseLabel: 'Phase 1: 2 sets of 3',
       players: [
         {
@@ -85,6 +86,8 @@ const snapshotState = vi.hoisted(() => ({
             },
           ],
           phaseComplete: true,
+          phaseLabel: 'Phase 1: 2 sets of 3',
+          phaseNumber: 1,
           playerId: 'p1',
           skipped: false,
           visibleCards: [
@@ -105,11 +108,14 @@ const snapshotState = vi.hoisted(() => ({
           isViewer: false,
           laidGroups: [],
           phaseComplete: false,
+          phaseLabel: 'Phase 1: 2 sets of 3',
+          phaseNumber: 1,
           playerId: 'p2',
           skipped: false,
           visibleCards: [],
         },
       ],
+      round: 1,
       status: 'Player One to act',
       viewerPlayerId: 'p1',
     },
@@ -130,6 +136,14 @@ vi.mock('@repo/game-catalog', () => ({
 vi.mock('@repo/game-phase-10', () => ({
   createPhase10Adapter: () => ({ kind: 'phase10-adapter' }),
   createPhase10Bots: () => [],
+  defaultPhase10Phases: [
+    {
+      id: 'phase-1',
+      label: 'Phase 1: 2 sets of 3',
+      setCount: 2,
+      setSize: 3,
+    },
+  ],
   defaultPhase10Rules: {
     allowHitting: true,
     allowSkipping: true,
@@ -137,6 +151,11 @@ vi.mock('@repo/game-phase-10', () => ({
     setCount: 2,
     setSize: 3,
   },
+  formatPhase10PhaseLabel: (
+    setCount: number,
+    setSize: number,
+    phaseNumber?: number,
+  ) => `Phase ${phaseNumber ?? 1}: ${setCount} sets of ${setSize}`,
   getPhase10ExamplePreset: (presetId: string) => ({
     hotseat: presetId !== 'bot-duel',
     seats: [{ displayName: 'Player One', playerId: 'p1' }],
@@ -159,22 +178,35 @@ vi.mock('@repo/game-session', () => ({
 }));
 
 const labels = {
+  addPhaseAction: 'Add phase',
   catalogRouteLabel: 'Catalog route',
+  decreaseSetCountAction: 'Sets -',
+  decreaseSetSizeAction: 'Size -',
   description: 'Local Phase 10 showcase.',
   drawPileLabel: 'Draw pile',
   handTitle: 'Viewer hand',
   hotseatDescription:
     'The next turn belongs to {playerId}. Confirm the handoff before revealing that hand on this device.',
   hotseatTitle: 'Hotseat handoff',
+  increaseSetCountAction: 'Sets +',
+  increaseSetSizeAction: 'Size +',
   legalActionsTitle: 'Legal actions',
   localModeBadge: 'Local session',
+  movePhaseEarlierAction: 'Earlier',
+  movePhaseLaterAction: 'Later',
   phaseLabel: 'Round target',
+  phaseConfiguratorDescription: 'Adjust the configured phase order.',
+  phaseConfiguratorTitle: 'Phase configurator',
+  phaseOrderTitle: 'Phase order',
   playersTitle: 'Table seats',
   presetsTitle: 'Table presets',
+  removePhaseAction: 'Remove',
   restartAction: 'Restart round',
+  roundLabel: 'Round',
   revealHandAction: 'Reveal next hand',
+  startConfiguredRoundAction: 'Start configured round',
   statusTitle: 'Round status',
-  subtitle: 'Phase 1 only.',
+  subtitle: 'Configurable phases.',
   tableDiscardLabel: 'Discard stack',
   tableDrawLabel: 'Draw stack',
   title: 'Phase 10 local showcase',

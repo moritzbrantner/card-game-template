@@ -27,31 +27,47 @@ import {
 import {
   createPhase10Adapter,
   createPhase10Bots,
+  defaultPhase10Phases,
   defaultPhase10Rules,
+  formatPhase10PhaseLabel,
   getPhase10ExamplePreset,
   phase10ExamplePresets,
   projectPhase10PlayerView,
   type Phase10Card,
   type Phase10ExamplePresetId,
+  type Phase10PhaseDefinition,
   type Phase10Move,
   type Phase10PlayerView,
   type Phase10State,
 } from '@repo/game-phase-10';
 
 type Phase10PageLabels = {
+  addPhaseAction: string;
   catalogRouteLabel: string;
+  decreaseSetCountAction: string;
+  decreaseSetSizeAction: string;
   description: string;
   drawPileLabel: string;
   handTitle: string;
   hotseatDescription: string;
   hotseatTitle: string;
+  increaseSetCountAction: string;
+  increaseSetSizeAction: string;
   legalActionsTitle: string;
   localModeBadge: string;
+  movePhaseEarlierAction: string;
+  movePhaseLaterAction: string;
   phaseLabel: string;
+  phaseConfiguratorDescription: string;
+  phaseConfiguratorTitle: string;
+  phaseOrderTitle: string;
   playersTitle: string;
   presetsTitle: string;
+  removePhaseAction: string;
   restartAction: string;
+  roundLabel: string;
   revealHandAction: string;
+  startConfiguredRoundAction: string;
   statusTitle: string;
   subtitle: string;
   tableDiscardLabel: string;
@@ -62,20 +78,73 @@ type Phase10PageLabels = {
 
 const DEFAULT_PRESET_ID: Phase10ExamplePresetId = 'mixed-table';
 
+type Phase10TableConfig = {
+  phases: Phase10PhaseDefinition[];
+  presetId: Phase10ExamplePresetId;
+};
+
+function clonePhaseDefinitions(phases: readonly Phase10PhaseDefinition[]) {
+  return phases.map((phase) => ({ ...phase }));
+}
+
+function createDefaultTableConfig(): Phase10TableConfig {
+  return {
+    phases: clonePhaseDefinitions(defaultPhase10Phases),
+    presetId: DEFAULT_PRESET_ID,
+  };
+}
+
+function serializePhaseConfig(phases: readonly Phase10PhaseDefinition[]) {
+  return phases
+    .map((phase) => `${phase.setCount}x${phase.setSize}:${phase.label}`)
+    .join('|');
+}
+
+function renumberPhases(
+  phases: readonly Phase10PhaseDefinition[],
+): Phase10PhaseDefinition[] {
+  return phases.map((phase, index) => ({
+    ...phase,
+    id: `phase-${index + 1}`,
+    label: formatPhase10PhaseLabel(phase.setCount, phase.setSize, index + 1),
+  }));
+}
+
+function movePhase(
+  phases: readonly Phase10PhaseDefinition[],
+  fromIndex: number,
+  toIndex: number,
+) {
+  if (toIndex < 0 || toIndex >= phases.length) {
+    return [...phases];
+  }
+
+  const next = [...phases];
+  const [phase] = next.splice(fromIndex, 1);
+
+  if (!phase) {
+    return next;
+  }
+
+  next.splice(toIndex, 0, phase);
+  return renumberPhases(next);
+}
+
 function createSession(
-  presetId: Phase10ExamplePresetId,
+  config: Phase10TableConfig,
 ): LocalGameSession<Phase10State, Phase10Move, Phase10PlayerView> {
-  const preset = getPhase10ExamplePreset(presetId);
-  const seed = `web-phase-10:${presetId}`;
+  const preset = getPhase10ExamplePreset(config.presetId);
+  const seed = `web-phase-10:${config.presetId}:${serializePhaseConfig(config.phases)}`;
 
   return createLocalGameSession({
     adapter: createPhase10Adapter(),
     bots: createPhase10Bots(preset.seats, seed),
     hotseat: preset.hotseat,
-    matchId: `web-phase-10:${presetId}`,
+    matchId: `web-phase-10:${config.presetId}`,
     participants: preset.seats,
     projectView: projectPhase10PlayerView,
     setup: {
+      phases: config.phases,
       rules: defaultPhase10Rules,
       seed,
     },
@@ -137,7 +206,11 @@ function renderCard(
       aria-label={card.label}
       artwork={
         <div className="text-center text-lg font-semibold tracking-tight">
-          {card.kind === 'number' ? card.value : card.kind === 'wild' ? 'Wild' : 'Skip'}
+          {card.kind === 'number'
+            ? card.value
+            : card.kind === 'wild'
+              ? 'Wild'
+              : 'Skip'}
         </div>
       }
       badge={<Badge variant="outline">{card.color}</Badge>}
@@ -154,16 +227,16 @@ function renderCard(
   );
 }
 
-export function Phase10PageClient({
-  labels,
-}: {
-  labels: Phase10PageLabels;
-}) {
+export function Phase10PageClient({ labels }: { labels: Phase10PageLabels }) {
   const catalogEntry = defaultGameCatalog.get('phase-10');
-  const [presetId, setPresetId] =
-    useState<Phase10ExamplePresetId>(DEFAULT_PRESET_ID);
+  const [activeConfig, setActiveConfig] = useState<Phase10TableConfig>(() =>
+    createDefaultTableConfig(),
+  );
+  const [draftConfig, setDraftConfig] = useState<Phase10TableConfig>(() =>
+    createDefaultTableConfig(),
+  );
   const [snapshot, setSnapshot] = useState(() =>
-    createSession(DEFAULT_PRESET_ID).getSnapshot(),
+    createSession(createDefaultTableConfig()).getSnapshot(),
   );
   const sessionRef = useRef<LocalGameSession<
     Phase10State,
@@ -174,7 +247,11 @@ export function Phase10PageClient({
   const handleSnapshot = useEffectEvent(
     (
       nextSnapshot: ReturnType<
-        LocalGameSession<Phase10State, Phase10Move, Phase10PlayerView>['getSnapshot']
+        LocalGameSession<
+          Phase10State,
+          Phase10Move,
+          Phase10PlayerView
+        >['getSnapshot']
       >,
     ) => {
       startTransition(() => {
@@ -184,7 +261,7 @@ export function Phase10PageClient({
   );
 
   useEffect(() => {
-    const session = createSession(presetId);
+    const session = createSession(activeConfig);
     sessionRef.current = session;
 
     const unsubscribe = session.subscribe((nextSnapshot) => {
@@ -199,7 +276,7 @@ export function Phase10PageClient({
         sessionRef.current = null;
       }
     };
-  }, [presetId]);
+  }, [activeConfig]);
 
   const viewer =
     snapshot.view.players.find((player) => player.isViewer) ?? null;
@@ -234,6 +311,9 @@ export function Phase10PageClient({
                 <p className="mt-2 text-sm leading-6 text-white/70">
                   {labels.subtitle}
                 </p>
+                <p className="mt-2 text-sm leading-6 text-white/60">
+                  {labels.roundLabel}: {snapshot.view.round}
+                </p>
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
@@ -261,15 +341,18 @@ export function Phase10PageClient({
                 {phase10ExamplePresets.map((preset) => (
                   <Button
                     key={preset.id}
-                    aria-pressed={preset.id === presetId}
+                    aria-pressed={preset.id === draftConfig.presetId}
                     className={cn(
                       'border-white/16 text-white hover:border-white/26 hover:bg-white/10',
-                      preset.id === presetId
+                      preset.id === draftConfig.presetId
                         ? 'bg-white text-slate-950 hover:bg-white/90'
                         : 'bg-transparent',
                     )}
                     onClick={() => {
-                      setPresetId(preset.id);
+                      setDraftConfig((current) => ({
+                        ...current,
+                        presetId: preset.id,
+                      }));
                     }}
                     size="sm"
                     variant="outline"
@@ -277,6 +360,19 @@ export function Phase10PageClient({
                     {preset.label}
                   </Button>
                 ))}
+                <Button
+                  className="border-white/16 bg-white text-slate-950 hover:bg-white/90"
+                  onClick={() => {
+                    setActiveConfig({
+                      phases: clonePhaseDefinitions(draftConfig.phases),
+                      presetId: draftConfig.presetId,
+                    });
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  {labels.startConfiguredRoundAction}
+                </Button>
                 <Button
                   className="ml-auto border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
                   onClick={() => {
@@ -287,6 +383,232 @@ export function Phase10PageClient({
                 >
                   {labels.restartAction}
                 </Button>
+              </div>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-white/14 bg-black/18 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+                    {labels.phaseConfiguratorTitle}
+                  </p>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
+                    {labels.phaseConfiguratorDescription}
+                  </p>
+                </div>
+                <Button
+                  className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                  onClick={() => {
+                    setDraftConfig((current) => ({
+                      ...current,
+                      phases: renumberPhases([
+                        ...current.phases,
+                        {
+                          id: `phase-${current.phases.length + 1}`,
+                          label: formatPhase10PhaseLabel(
+                            2,
+                            3,
+                            current.phases.length + 1,
+                          ),
+                          setCount: 2,
+                          setSize: 3,
+                        },
+                      ]),
+                    }));
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  {labels.addPhaseAction}
+                </Button>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {draftConfig.phases.map((phase, index) => (
+                  <div
+                    key={phase.id}
+                    className="rounded-[1.25rem] border border-white/12 bg-black/18 p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-white">
+                          {phase.label}
+                        </p>
+                        <p className="text-sm text-white/60">
+                          {labels.phaseOrderTitle} {index + 1}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                          disabled={index === 0}
+                          onClick={() => {
+                            setDraftConfig((current) => ({
+                              ...current,
+                              phases: movePhase(
+                                current.phases,
+                                index,
+                                index - 1,
+                              ),
+                            }));
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          {labels.movePhaseEarlierAction}
+                        </Button>
+                        <Button
+                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                          disabled={index === draftConfig.phases.length - 1}
+                          onClick={() => {
+                            setDraftConfig((current) => ({
+                              ...current,
+                              phases: movePhase(
+                                current.phases,
+                                index,
+                                index + 1,
+                              ),
+                            }));
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          {labels.movePhaseLaterAction}
+                        </Button>
+                        <Button
+                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                          disabled={draftConfig.phases.length === 1}
+                          onClick={() => {
+                            setDraftConfig((current) => ({
+                              ...current,
+                              phases: renumberPhases(
+                                current.phases.filter(
+                                  (_, phaseIndex) => phaseIndex !== index,
+                                ),
+                              ),
+                            }));
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          {labels.removePhaseAction}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <div className="flex items-center gap-2 rounded-full border border-white/12 px-3 py-2">
+                        <span className="text-sm text-white/70">Sets</span>
+                        <Button
+                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                          disabled={phase.setCount === 1}
+                          onClick={() => {
+                            setDraftConfig((current) => ({
+                              ...current,
+                              phases: renumberPhases(
+                                current.phases.map((candidate, phaseIndex) =>
+                                  phaseIndex === index
+                                    ? {
+                                        ...candidate,
+                                        setCount: Math.max(
+                                          1,
+                                          candidate.setCount - 1,
+                                        ),
+                                      }
+                                    : candidate,
+                                ),
+                              ),
+                            }));
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          {labels.decreaseSetCountAction}
+                        </Button>
+                        <span className="min-w-6 text-center text-sm font-semibold text-white">
+                          {phase.setCount}
+                        </span>
+                        <Button
+                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                          onClick={() => {
+                            setDraftConfig((current) => ({
+                              ...current,
+                              phases: renumberPhases(
+                                current.phases.map((candidate, phaseIndex) =>
+                                  phaseIndex === index
+                                    ? {
+                                        ...candidate,
+                                        setCount: candidate.setCount + 1,
+                                      }
+                                    : candidate,
+                                ),
+                              ),
+                            }));
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          {labels.increaseSetCountAction}
+                        </Button>
+                      </div>
+
+                      <div className="flex items-center gap-2 rounded-full border border-white/12 px-3 py-2">
+                        <span className="text-sm text-white/70">Size</span>
+                        <Button
+                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                          disabled={phase.setSize === 1}
+                          onClick={() => {
+                            setDraftConfig((current) => ({
+                              ...current,
+                              phases: renumberPhases(
+                                current.phases.map((candidate, phaseIndex) =>
+                                  phaseIndex === index
+                                    ? {
+                                        ...candidate,
+                                        setSize: Math.max(
+                                          1,
+                                          candidate.setSize - 1,
+                                        ),
+                                      }
+                                    : candidate,
+                                ),
+                              ),
+                            }));
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          {labels.decreaseSetSizeAction}
+                        </Button>
+                        <span className="min-w-6 text-center text-sm font-semibold text-white">
+                          {phase.setSize}
+                        </span>
+                        <Button
+                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                          onClick={() => {
+                            setDraftConfig((current) => ({
+                              ...current,
+                              phases: renumberPhases(
+                                current.phases.map((candidate, phaseIndex) =>
+                                  phaseIndex === index
+                                    ? {
+                                        ...candidate,
+                                        setSize: candidate.setSize + 1,
+                                      }
+                                    : candidate,
+                                ),
+                              ),
+                            }));
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          {labels.increaseSetSizeAction}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -309,9 +631,7 @@ export function Phase10PageClient({
                     <p className="text-xl font-semibold text-white">
                       {snapshot.view.drawPileCount}
                     </p>
-                    <p className="text-sm text-white/70">
-                      Cards left to draw
-                    </p>
+                    <p className="text-sm text-white/70">Cards left to draw</p>
                   </div>
                 </div>
               </div>
@@ -338,7 +658,9 @@ export function Phase10PageClient({
                     <p className="text-xl font-semibold text-white">
                       {snapshot.view.discardTop?.label ?? 'Empty pile'}
                     </p>
-                    <p className="text-sm text-white/70">{snapshot.view.status}</p>
+                    <p className="text-sm text-white/70">
+                      {snapshot.view.status}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -389,6 +711,23 @@ export function Phase10PageClient({
                 </Button>
               </div>
             ) : null}
+
+            <div className="mt-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+                {labels.phaseOrderTitle}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {snapshot.view.phaseOrder.map((phaseLabel, index) => (
+                  <Badge
+                    key={`${phaseLabel}-${index}`}
+                    className="border-white/18 bg-white/10 text-white hover:bg-white/10"
+                    variant="outline"
+                  >
+                    {index + 1}. {phaseLabel}
+                  </Badge>
+                ))}
+              </div>
+            </div>
 
             <div className="mt-6">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
@@ -469,10 +808,15 @@ export function Phase10PageClient({
                   {player.phaseComplete ? (
                     <Badge variant="secondary">Phase laid</Badge>
                   ) : null}
-                  {player.skipped ? <Badge variant="destructive">Skipped</Badge> : null}
+                  {player.skipped ? (
+                    <Badge variant="destructive">Skipped</Badge>
+                  ) : null}
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {player.handCount} cards remaining
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {player.phaseLabel}
                 </p>
 
                 {player.laidGroups.length > 0 ? (

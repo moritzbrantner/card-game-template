@@ -1,5 +1,5 @@
 import { startTransition, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -14,30 +14,82 @@ import {
 import {
   createPhase10Adapter,
   createPhase10Bots,
+  defaultPhase10Phases,
   defaultPhase10Rules,
+  formatPhase10PhaseLabel,
   getPhase10ExamplePreset,
   phase10ExamplePresets,
   projectPhase10PlayerView,
   type Phase10ExamplePresetId,
+  type Phase10PhaseDefinition,
   type Phase10Move,
   type Phase10PlayerView,
   type Phase10State,
 } from '@repo/game-phase-10';
 
+type Phase10TableConfig = {
+  phases: Phase10PhaseDefinition[];
+  presetId: Phase10ExamplePresetId;
+};
+
+function clonePhaseDefinitions(phases: readonly Phase10PhaseDefinition[]) {
+  return phases.map((phase) => ({ ...phase }));
+}
+
+function createDefaultTableConfig(): Phase10TableConfig {
+  return {
+    phases: clonePhaseDefinitions(defaultPhase10Phases),
+    presetId: 'mixed-table',
+  };
+}
+
+function renumberPhases(
+  phases: readonly Phase10PhaseDefinition[],
+): Phase10PhaseDefinition[] {
+  return phases.map((phase, index) => ({
+    ...phase,
+    id: `phase-${index + 1}`,
+    label: formatPhase10PhaseLabel(phase.setCount, phase.setSize, index + 1),
+  }));
+}
+
+function movePhase(
+  phases: readonly Phase10PhaseDefinition[],
+  fromIndex: number,
+  toIndex: number,
+) {
+  if (toIndex < 0 || toIndex >= phases.length) {
+    return [...phases];
+  }
+
+  const next = [...phases];
+  const [phase] = next.splice(fromIndex, 1);
+
+  if (!phase) {
+    return next;
+  }
+
+  next.splice(toIndex, 0, phase);
+  return renumberPhases(next);
+}
+
 function createSession(
-  presetId: Phase10ExamplePresetId,
+  config: Phase10TableConfig,
 ): LocalGameSession<Phase10State, Phase10Move, Phase10PlayerView> {
-  const preset = getPhase10ExamplePreset(presetId);
-  const seed = `mobile-phase-10:${presetId}`;
+  const preset = getPhase10ExamplePreset(config.presetId);
+  const seed = `mobile-phase-10:${config.presetId}:${config.phases
+    .map((phase) => `${phase.setCount}x${phase.setSize}:${phase.label}`)
+    .join('|')}`;
 
   return createLocalGameSession({
     adapter: createPhase10Adapter(),
     bots: createPhase10Bots(preset.seats, seed),
     hotseat: preset.hotseat,
-    matchId: `mobile-phase-10:${presetId}`,
+    matchId: `mobile-phase-10:${config.presetId}`,
     participants: preset.seats,
     projectView: projectPhase10PlayerView,
     setup: {
+      phases: config.phases,
       rules: defaultPhase10Rules,
       seed,
     },
@@ -50,19 +102,23 @@ export default function Phase10Screen() {
   const accentSurface = useThemeColor({}, 'accentSurface');
   const tintColor = useThemeColor({}, 'tint');
   const catalogEntry = defaultGameCatalog.get('phase-10');
-  const [presetId, setPresetId] =
-    useState<Phase10ExamplePresetId>('mixed-table');
+  const [activeConfig, setActiveConfig] = useState<Phase10TableConfig>(() =>
+    createDefaultTableConfig(),
+  );
+  const [draftConfig, setDraftConfig] = useState<Phase10TableConfig>(() =>
+    createDefaultTableConfig(),
+  );
   const sessionRef = useRef<LocalGameSession<
     Phase10State,
     Phase10Move,
     Phase10PlayerView
   > | null>(null);
   const [snapshot, setSnapshot] = useState(() =>
-    createSession('mixed-table').getSnapshot(),
+    createSession(createDefaultTableConfig()).getSnapshot(),
   );
 
   useEffect(() => {
-    const session = createSession(presetId);
+    const session = createSession(activeConfig);
     sessionRef.current = session;
     const unsubscribe = session.subscribe((nextSnapshot) => {
       startTransition(() => {
@@ -72,7 +128,7 @@ export default function Phase10Screen() {
 
     setSnapshot(session.getSnapshot());
     return unsubscribe;
-  }, [presetId]);
+  }, [activeConfig]);
 
   return (
     <ThemedView style={styles.page}>
@@ -85,11 +141,15 @@ export default function Phase10Screen() {
           >
             <ThemedText type="title">Phase 10</ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
-              Starter implementation for phase 1 only: draw, lay two sets of
-              three, hit laid sets, discard, and skip.
+              Configure an ordered list of set-based phases before starting the
+              next round, then play through draws, lays, hits, discards, and
+              skips with the shared engine.
             </ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
               Catalog route: {catalogEntry?.metadata?.route}
+            </ThemedText>
+            <ThemedText style={{ color: mutedTextColor }}>
+              Current round: {snapshot.view.round}
             </ThemedText>
             <Pressable
               onPress={() => {
@@ -113,20 +173,278 @@ export default function Phase10Screen() {
                 <Pressable
                   key={preset.id}
                   onPress={() => {
-                    setPresetId(preset.id);
+                    setDraftConfig((current) => ({
+                      ...current,
+                      presetId: preset.id,
+                    }));
                   }}
                   style={({ pressed }) => [
                     styles.choiceButton,
                     {
                       borderColor,
                       backgroundColor:
-                        preset.id === presetId ? accentSurface : 'transparent',
+                        preset.id === draftConfig.presetId
+                          ? accentSurface
+                          : 'transparent',
                       opacity: pressed ? 0.82 : 1,
                     },
                   ]}
                 >
                   <ThemedText type="defaultSemiBold">{preset.label}</ThemedText>
                 </Pressable>
+              ))}
+            </ThemedView>
+            <Pressable
+              onPress={() => {
+                setActiveConfig({
+                  phases: clonePhaseDefinitions(draftConfig.phases),
+                  presetId: draftConfig.presetId,
+                });
+              }}
+              style={({ pressed }) => [
+                styles.primaryButton,
+                {
+                  backgroundColor: tintColor,
+                  marginTop: 12,
+                  opacity: pressed ? 0.82 : 1,
+                },
+              ]}
+            >
+              <ThemedText style={styles.primaryButtonText}>
+                Start configured round
+              </ThemedText>
+            </Pressable>
+          </ThemedView>
+
+          <ThemedView
+            style={[styles.card, { borderColor }]}
+            lightColor={Colors.light.surface}
+            darkColor={Colors.dark.surface}
+          >
+            <ThemedText type="subtitle">Phase order</ThemedText>
+            <ThemedText style={{ color: mutedTextColor }}>
+              Build the ordered phase list before the next restart.
+            </ThemedText>
+            <Pressable
+              onPress={() => {
+                setDraftConfig((current) => ({
+                  ...current,
+                  phases: renumberPhases([
+                    ...current.phases,
+                    {
+                      id: `phase-${current.phases.length + 1}`,
+                      label: formatPhase10PhaseLabel(
+                        2,
+                        3,
+                        current.phases.length + 1,
+                      ),
+                      setCount: 2,
+                      setSize: 3,
+                    },
+                  ]),
+                }));
+              }}
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                { borderColor, opacity: pressed ? 0.82 : 1 },
+              ]}
+            >
+              <ThemedText type="defaultSemiBold">Add phase</ThemedText>
+            </Pressable>
+
+            <ThemedView style={styles.groupList}>
+              {draftConfig.phases.map((phase, index) => (
+                <ThemedView
+                  key={phase.id}
+                  style={[styles.groupCard, { borderColor }]}
+                  lightColor={Colors.light.background}
+                  darkColor={Colors.dark.background}
+                >
+                  <ThemedText type="defaultSemiBold">{phase.label}</ThemedText>
+                  <ThemedText style={{ color: mutedTextColor }}>
+                    Order {index + 1} · {phase.setCount} sets · size{' '}
+                    {phase.setSize}
+                  </ThemedText>
+
+                  <View style={styles.phaseButtonRow}>
+                    <Pressable
+                      disabled={index === 0}
+                      onPress={() => {
+                        setDraftConfig((current) => ({
+                          ...current,
+                          phases: movePhase(current.phases, index, index - 1),
+                        }));
+                      }}
+                      style={({ pressed }) => [
+                        styles.secondaryButton,
+                        {
+                          borderColor,
+                          opacity: index === 0 ? 0.45 : pressed ? 0.82 : 1,
+                        },
+                      ]}
+                    >
+                      <ThemedText type="defaultSemiBold">Earlier</ThemedText>
+                    </Pressable>
+                    <Pressable
+                      disabled={index === draftConfig.phases.length - 1}
+                      onPress={() => {
+                        setDraftConfig((current) => ({
+                          ...current,
+                          phases: movePhase(current.phases, index, index + 1),
+                        }));
+                      }}
+                      style={({ pressed }) => [
+                        styles.secondaryButton,
+                        {
+                          borderColor,
+                          opacity:
+                            index === draftConfig.phases.length - 1
+                              ? 0.45
+                              : pressed
+                                ? 0.82
+                                : 1,
+                        },
+                      ]}
+                    >
+                      <ThemedText type="defaultSemiBold">Later</ThemedText>
+                    </Pressable>
+                    <Pressable
+                      disabled={draftConfig.phases.length === 1}
+                      onPress={() => {
+                        setDraftConfig((current) => ({
+                          ...current,
+                          phases: renumberPhases(
+                            current.phases.filter(
+                              (_, phaseIndex) => phaseIndex !== index,
+                            ),
+                          ),
+                        }));
+                      }}
+                      style={({ pressed }) => [
+                        styles.secondaryButton,
+                        {
+                          borderColor,
+                          opacity:
+                            draftConfig.phases.length === 1
+                              ? 0.45
+                              : pressed
+                                ? 0.82
+                                : 1,
+                        },
+                      ]}
+                    >
+                      <ThemedText type="defaultSemiBold">Remove</ThemedText>
+                    </Pressable>
+                  </View>
+
+                  <View style={styles.phaseButtonRow}>
+                    <Pressable
+                      disabled={phase.setCount === 1}
+                      onPress={() => {
+                        setDraftConfig((current) => ({
+                          ...current,
+                          phases: renumberPhases(
+                            current.phases.map((candidate, phaseIndex) =>
+                              phaseIndex === index
+                                ? {
+                                    ...candidate,
+                                    setCount: Math.max(
+                                      1,
+                                      candidate.setCount - 1,
+                                    ),
+                                  }
+                                : candidate,
+                            ),
+                          ),
+                        }));
+                      }}
+                      style={({ pressed }) => [
+                        styles.secondaryButton,
+                        {
+                          borderColor,
+                          opacity:
+                            phase.setCount === 1 ? 0.45 : pressed ? 0.82 : 1,
+                        },
+                      ]}
+                    >
+                      <ThemedText type="defaultSemiBold">Sets -</ThemedText>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        setDraftConfig((current) => ({
+                          ...current,
+                          phases: renumberPhases(
+                            current.phases.map((candidate, phaseIndex) =>
+                              phaseIndex === index
+                                ? {
+                                    ...candidate,
+                                    setCount: candidate.setCount + 1,
+                                  }
+                                : candidate,
+                            ),
+                          ),
+                        }));
+                      }}
+                      style={({ pressed }) => [
+                        styles.secondaryButton,
+                        { borderColor, opacity: pressed ? 0.82 : 1 },
+                      ]}
+                    >
+                      <ThemedText type="defaultSemiBold">Sets +</ThemedText>
+                    </Pressable>
+                    <Pressable
+                      disabled={phase.setSize === 1}
+                      onPress={() => {
+                        setDraftConfig((current) => ({
+                          ...current,
+                          phases: renumberPhases(
+                            current.phases.map((candidate, phaseIndex) =>
+                              phaseIndex === index
+                                ? {
+                                    ...candidate,
+                                    setSize: Math.max(1, candidate.setSize - 1),
+                                  }
+                                : candidate,
+                            ),
+                          ),
+                        }));
+                      }}
+                      style={({ pressed }) => [
+                        styles.secondaryButton,
+                        {
+                          borderColor,
+                          opacity:
+                            phase.setSize === 1 ? 0.45 : pressed ? 0.82 : 1,
+                        },
+                      ]}
+                    >
+                      <ThemedText type="defaultSemiBold">Size -</ThemedText>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        setDraftConfig((current) => ({
+                          ...current,
+                          phases: renumberPhases(
+                            current.phases.map((candidate, phaseIndex) =>
+                              phaseIndex === index
+                                ? {
+                                    ...candidate,
+                                    setSize: candidate.setSize + 1,
+                                  }
+                                : candidate,
+                            ),
+                          ),
+                        }));
+                      }}
+                      style={({ pressed }) => [
+                        styles.secondaryButton,
+                        { borderColor, opacity: pressed ? 0.82 : 1 },
+                      ]}
+                    >
+                      <ThemedText type="defaultSemiBold">Size +</ThemedText>
+                    </Pressable>
+                  </View>
+                </ThemedView>
               ))}
             </ThemedView>
           </ThemedView>
@@ -139,6 +457,9 @@ export default function Phase10Screen() {
             <ThemedText type="subtitle">Round status</ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
               Target: {snapshot.view.phaseLabel}
+            </ThemedText>
+            <ThemedText style={{ color: mutedTextColor }}>
+              Phase order: {snapshot.view.phaseOrder.join(' -> ')}
             </ThemedText>
             <ThemedText style={{ color: mutedTextColor }}>
               Draw pile: {snapshot.view.drawPileCount}
@@ -203,6 +524,9 @@ export default function Phase10Screen() {
                     : player.isActive
                       ? 'Active turn'
                       : 'Waiting'}
+                </ThemedText>
+                <ThemedText style={{ color: mutedTextColor }}>
+                  {player.phaseLabel}
                 </ThemedText>
 
                 {player.laidGroups.length > 0 ? (
@@ -327,6 +651,17 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 14,
     paddingVertical: 10,
+  },
+  secondaryButton: {
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  phaseButtonRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   groupList: {
     gap: 8,

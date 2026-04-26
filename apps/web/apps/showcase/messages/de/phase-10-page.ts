@@ -1,17 +1,31 @@
 export const phase10Page = {
   title: 'Phase 10 Lokaldemo',
   description:
-    'Spiele eine deterministische lokale Phase-10-Runde direkt im Browser, wechsle im Hotseat zwischen Sitzen und inspiziere den gemeinsamen Engine-Zustand ohne Serverabhaengigkeit.',
+    'Spiele eine deterministische lokale Phase-10-Runde direkt im Browser, definiere eine eigene Phasenreihenfolge vor dem Start, wechsle im Hotseat zwischen Sitzen und inspiziere den gemeinsamen Engine-Zustand ohne Serverabhaengigkeit.',
   subtitle:
-    'Nur Phase 1: Baue zwei Dreier-Sets, erweitere ausgelegte Sets, wirf sauber ab und beobachte, wie Bots ihre Zuege beenden.',
+    'Konfiguriere setbasierte Phasenziele vor dem Rundenstart und spiele dann Auslagen, Treffer, Ablagen und automatische Rundenwechsel durch.',
+  addPhaseAction: 'Phase hinzufuegen',
   localModeBadge: 'Lokale Sitzung',
   catalogRouteLabel: 'Katalogroute',
+  decreaseSetCountAction: 'Sets -',
+  decreaseSetSizeAction: 'Groesse -',
   phaseLabel: 'Rundenziel',
+  phaseConfiguratorTitle: 'Phasenkonfiguration',
+  phaseConfiguratorDescription:
+    'Passe Anzahl der Sets, Kartenzahl pro Set und die Reihenfolge an, bevor die konfigurierte Runde startet.',
+  phaseOrderTitle: 'Phasenfolge',
   drawPileLabel: 'Nachziehstapel',
+  increaseSetCountAction: 'Sets +',
+  increaseSetSizeAction: 'Groesse +',
+  movePhaseEarlierAction: 'Frueher',
+  movePhaseLaterAction: 'Spaeter',
   presetsTitle: 'Tischvorgaben',
+  removePhaseAction: 'Entfernen',
   restartAction: 'Runde neu starten',
+  roundLabel: 'Runde',
   tableDrawLabel: 'Ziehstapel',
   tableDiscardLabel: 'Ablagestapel',
+  startConfiguredRoundAction: 'Konfigurierte Runde starten',
   statusTitle: 'Rundenstatus',
   hotseatTitle: 'Hotseat-Uebergabe',
   hotseatDescription:
