@@ -297,7 +297,7 @@ export const adminPage = {
   botAis: {
     title: 'Bot-KIs',
     description:
-      'Pruefe und tune die KI-Profile fuer serverseitige UNO-Bot-Sitze.',
+      'Pruefe und tune die KI-Profile fuer UNO-, Poker- und Phase-10-Bot-Sitze.',
   },
   systemSettings: {
     title: 'Systemeinstellungen',

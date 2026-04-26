@@ -21,7 +21,11 @@ export const foundationSiteSettingKeys = [
   'foundation.featureOverrides',
 ] as const;
 
-export const gameSiteSettingKeys = ['game.uno.botAiProfiles'] as const;
+export const gameSiteSettingKeys = [
+  'game.uno.botAiProfiles',
+  'game.poker.botAiProfiles',
+  'game.phase10.botAiProfiles',
+] as const;
 
 export const siteSettingKeys = [
   ...publicSiteSettingKeys,

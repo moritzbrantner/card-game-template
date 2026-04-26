@@ -15,7 +15,10 @@ import {
 
 import type { AppSession } from '@/src/auth';
 import { getDb } from '@/src/db/client';
-import { listUnoBotAiProfiles } from '@/src/domain/game-bot-ai/service';
+import {
+  listPokerBotAiProfiles,
+  listUnoBotAiProfiles,
+} from '@/src/domain/game-bot-ai/service';
 import {
   failure,
   success,
@@ -494,6 +497,7 @@ export async function createPokerMatchUseCase(
   input: CreatePokerMatchInput,
 ): Promise<ServiceResult<PersistedPokerMatchSnapshotDto, MatchUseCaseError>> {
   const resolvedIdentity = await resolveOwnedIdentity(session, true);
+  const botAiProfiles = await listPokerBotAiProfiles();
 
   try {
     const snapshot = await getDb().transaction(async (tx) => {
@@ -505,6 +509,7 @@ export async function createPokerMatchUseCase(
         fallbackDisplayName: resolvedIdentity.displayName,
         presetId: input.presetId,
         displayName: input.displayName,
+        botAiProfiles,
       });
       const persistedMatch = buildPersistedPokerMatchRecord({
         createdAt,
@@ -610,6 +615,7 @@ export async function submitPokerMoveUseCase(
   }
 
   try {
+    const botAiProfiles = await listPokerBotAiProfiles();
     const snapshot = await getDb().transaction(async (tx) => {
       const persistedMatch =
         await loadOwnedGameMatch<PersistedPokerMatchRecord>(
@@ -637,7 +643,11 @@ export async function submitPokerMoveUseCase(
       const serverSession = createResumedPokerSession(persistedMatch, now);
 
       serverSession.submitMove(input.move);
-      processPokerBots(serverSession, persistedMatch.participants);
+      processPokerBots(
+        serverSession,
+        persistedMatch.participants,
+        botAiProfiles,
+      );
 
       const updatedMatch = finalizePersistedPokerMatch({
         session: serverSession,

@@ -118,6 +118,8 @@ const siteConfigDefaults: Record<SiteSettingKey, string> = {
   ),
   'foundation.featureOverrides': JSON.stringify({}),
   'game.uno.botAiProfiles': '[]',
+  'game.poker.botAiProfiles': '[]',
+  'game.phase10.botAiProfiles': '[]',
 };
 
 const featureFlagDefaults: Record<FeatureFlagKey, boolean> = {

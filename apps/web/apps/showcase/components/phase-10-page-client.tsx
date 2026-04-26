@@ -26,7 +26,6 @@ import {
 } from '@repo/game-session';
 import {
   createPhase10Adapter,
-  createPhase10Bots,
   defaultPhase10Phases,
   defaultPhase10Rules,
   formatPhase10PhaseLabel,
@@ -40,6 +39,12 @@ import {
   type Phase10PlayerView,
   type Phase10State,
 } from '@repo/game-phase-10';
+
+import {
+  createPhase10BotsFromProfiles,
+  getDefaultPhase10BotAiProfiles,
+  type Phase10BotAiProfile,
+} from '@/src/domain/game-bot-ai/logic';
 
 type Phase10PageLabels = {
   addPhaseAction: string;
@@ -132,13 +137,14 @@ function movePhase(
 
 function createSession(
   config: Phase10TableConfig,
+  botAiProfiles: readonly Phase10BotAiProfile[],
 ): LocalGameSession<Phase10State, Phase10Move, Phase10PlayerView> {
   const preset = getPhase10ExamplePreset(config.presetId);
   const seed = `web-phase-10:${config.presetId}:${serializePhaseConfig(config.phases)}`;
 
   return createLocalGameSession({
     adapter: createPhase10Adapter(),
-    bots: createPhase10Bots(preset.seats, seed),
+    bots: createPhase10BotsFromProfiles(preset.seats, botAiProfiles, seed),
     hotseat: preset.hotseat,
     matchId: `web-phase-10:${config.presetId}`,
     participants: preset.seats,
@@ -227,7 +233,13 @@ function renderCard(
   );
 }
 
-export function Phase10PageClient({ labels }: { labels: Phase10PageLabels }) {
+export function Phase10PageClient({
+  botAiProfiles = getDefaultPhase10BotAiProfiles(),
+  labels,
+}: {
+  botAiProfiles?: readonly Phase10BotAiProfile[];
+  labels: Phase10PageLabels;
+}) {
   const catalogEntry = defaultGameCatalog.get('phase-10');
   const [activeConfig, setActiveConfig] = useState<Phase10TableConfig>(() =>
     createDefaultTableConfig(),
@@ -236,7 +248,7 @@ export function Phase10PageClient({ labels }: { labels: Phase10PageLabels }) {
     createDefaultTableConfig(),
   );
   const [snapshot, setSnapshot] = useState(() =>
-    createSession(createDefaultTableConfig()).getSnapshot(),
+    createSession(createDefaultTableConfig(), botAiProfiles).getSnapshot(),
   );
   const sessionRef = useRef<LocalGameSession<
     Phase10State,
@@ -261,7 +273,7 @@ export function Phase10PageClient({ labels }: { labels: Phase10PageLabels }) {
   );
 
   useEffect(() => {
-    const session = createSession(activeConfig);
+    const session = createSession(activeConfig, botAiProfiles);
     sessionRef.current = session;
 
     const unsubscribe = session.subscribe((nextSnapshot) => {
@@ -276,7 +288,7 @@ export function Phase10PageClient({ labels }: { labels: Phase10PageLabels }) {
         sessionRef.current = null;
       }
     };
-  }, [activeConfig]);
+  }, [activeConfig, botAiProfiles]);
 
   const viewer =
     snapshot.view.players.find((player) => player.isViewer) ?? null;

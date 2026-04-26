@@ -296,7 +296,7 @@ export const adminPage = {
   botAis: {
     title: 'Bot AIs',
     description:
-      'Inspect and tune the AI profiles used by server-run UNO bot seats.',
+      'Inspect and tune the AI profiles used by UNO, Poker, and Phase 10 bot seats.',
   },
   systemSettings: {
     title: 'System settings',

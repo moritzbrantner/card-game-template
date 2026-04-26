@@ -1,13 +1,16 @@
 import type { AppLocale } from '@moritzbrantner/app-pack';
 
 import { Phase10PageClient } from '@/apps/showcase/components/phase-10-page-client';
+import { listPhase10BotAiProfiles } from '@/src/domain/game-bot-ai/service';
 import { createTranslator } from '@/src/i18n/messages';
 
 export default async function Phase10Page({ locale }: { locale: AppLocale }) {
   const t = createTranslator(locale, 'Phase10Page');
+  const botAiProfiles = await listPhase10BotAiProfiles();
 
   return (
     <Phase10PageClient
+      botAiProfiles={botAiProfiles}
       labels={{
         addPhaseAction: t('addPhaseAction'),
         catalogRouteLabel: t('catalogRouteLabel'),

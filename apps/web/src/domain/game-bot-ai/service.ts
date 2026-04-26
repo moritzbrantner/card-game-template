@@ -1,321 +1,184 @@
 import { eq } from 'drizzle-orm';
 
-import {
-  chooseRandomUnoLegalMove,
-  type UnoMove,
-  type UnoState,
-} from '@repo/game-uno';
-
 import { getDb } from '@/src/db/client';
 import { siteSettings } from '@/src/db/schema';
+import type { GameSiteSettingKey } from '@/src/site-config/contracts';
 import { upsertSiteSetting } from '@/src/site-config/service';
 
+import {
+  getDefaultPhase10BotAiProfiles,
+  getDefaultPokerBotAiProfiles,
+  getDefaultUnoBotAiProfiles,
+  normalizePhase10BotAiProfiles,
+  normalizePokerBotAiProfiles,
+  normalizeUnoBotAiProfiles,
+  type Phase10BotAiProfile,
+  type Phase10BotAiProfileId,
+  type PokerBotAiProfile,
+  type PokerBotAiProfileId,
+  type UnoBotAiProfile,
+  type UnoBotAiProfileId,
+} from './logic';
+
 export const UNO_BOT_AI_SITE_SETTING_KEY = 'game.uno.botAiProfiles';
+export const POKER_BOT_AI_SITE_SETTING_KEY = 'game.poker.botAiProfiles';
+export const PHASE10_BOT_AI_SITE_SETTING_KEY = 'game.phase10.botAiProfiles';
 
-export const unoBotAiStrategies = [
-  'balanced',
-  'aggressive',
-  'conservative',
-  'random',
-] as const;
-export type UnoBotAiStrategy = (typeof unoBotAiStrategies)[number];
+type UnoBotAiProfileInput = Partial<Record<keyof UnoBotAiProfile, unknown>>;
+type PokerBotAiProfileInput = Partial<Record<keyof PokerBotAiProfile, unknown>>;
+type Phase10BotAiProfileInput = Partial<
+  Record<keyof Phase10BotAiProfile, unknown>
+>;
 
-export type UnoBotAiProfileId =
-  | 'house-bot'
-  | 'table-bot'
-  | 'player-two-bot'
-  | 'fallback-bot';
-
-export type UnoBotAiProfile = {
-  id: UnoBotAiProfileId;
-  displayName: string;
-  description: string;
-  enabled: boolean;
-  strategy: UnoBotAiStrategy;
-  aggression: number;
-  actionCardBias: number;
-  wildCardBias: number;
-  drawBias: number;
-  unoCallBias: number;
-  notes: string;
-};
-
-type UnoBotAiProfileInput = {
-  id?: unknown;
-  displayName?: unknown;
-  enabled?: unknown;
-  strategy?: unknown;
-  aggression?: unknown;
-  actionCardBias?: unknown;
-  wildCardBias?: unknown;
-  drawBias?: unknown;
-  unoCallBias?: unknown;
-  notes?: unknown;
-};
-
-type ChooseUnoBotMoveInput = {
-  legalMoves: readonly UnoMove[];
-  playerId: string;
-  profile: UnoBotAiProfile;
-  seed: number | string;
-  state: UnoState;
-};
-
-type BotParticipantLike = {
-  displayName: string;
-};
-
-const defaultProfiles: readonly UnoBotAiProfile[] = [
-  {
-    id: 'house-bot',
-    displayName: 'House Bot',
-    description:
-      'Default duel opponent. Keeps wilds for later unless they are clearly best.',
-    enabled: true,
-    strategy: 'balanced',
-    aggression: 50,
-    actionCardBias: 50,
-    wildCardBias: -100,
-    drawBias: 0,
-    unoCallBias: 90,
-    notes: '',
-  },
-  {
-    id: 'table-bot',
-    displayName: 'Table Bot',
-    description:
-      'Pressure-oriented table opponent that spends action cards early.',
-    enabled: true,
-    strategy: 'aggressive',
-    aggression: 80,
-    actionCardBias: 95,
-    wildCardBias: -30,
-    drawBias: -60,
-    unoCallBias: 95,
-    notes: '',
-  },
-  {
-    id: 'player-two-bot',
-    displayName: 'Player Two Bot',
-    description:
-      'Conservative converted hotseat player used in solo mixed-table matches.',
-    enabled: true,
-    strategy: 'conservative',
-    aggression: 35,
-    actionCardBias: 5,
-    wildCardBias: -160,
-    drawBias: 35,
-    unoCallBias: 80,
-    notes: '',
-  },
-  {
-    id: 'fallback-bot',
-    displayName: 'Fallback Bot',
-    description: 'Shared AI for bot seats without a named profile.',
-    enabled: true,
-    strategy: 'balanced',
-    aggression: 50,
-    actionCardBias: 40,
-    wildCardBias: -100,
-    drawBias: 0,
-    unoCallBias: 90,
-    notes: '',
-  },
-];
-
-function isUnoBotAiProfileId(value: unknown): value is UnoBotAiProfileId {
-  return (
-    typeof value === 'string' &&
-    defaultProfiles.some((profile) => profile.id === value)
-  );
-}
-
-function isUnoBotAiStrategy(value: unknown): value is UnoBotAiStrategy {
-  return (
-    typeof value === 'string' &&
-    (unoBotAiStrategies as readonly string[]).includes(value)
-  );
-}
-
-function clampInteger(
-  value: unknown,
-  fallback: number,
-  min: number,
-  max: number,
+async function loadProfiles<TProfile>(
+  settingKey: GameSiteSettingKey,
+  parse: (value: unknown) => readonly TProfile[],
+  fallback: () => readonly TProfile[],
 ) {
-  const parsed =
-    typeof value === 'number'
-      ? value
-      : typeof value === 'string'
-        ? Number.parseFloat(value)
-        : Number.NaN;
-
-  if (!Number.isFinite(parsed)) {
-    return fallback;
-  }
-
-  return Math.min(max, Math.max(min, Math.round(parsed)));
-}
-
-function trimText(value: unknown, fallback: string, maxLength: number) {
-  if (typeof value !== 'string') {
-    return fallback;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.slice(0, maxLength);
-}
-
-function normalizeProfile(
-  input: UnoBotAiProfileInput,
-  fallback: UnoBotAiProfile,
-): UnoBotAiProfile {
-  return {
-    id: fallback.id,
-    displayName:
-      trimText(input.displayName, fallback.displayName, 80) ||
-      fallback.displayName,
-    description: fallback.description,
-    enabled:
-      typeof input.enabled === 'boolean' ? input.enabled : fallback.enabled,
-    strategy: isUnoBotAiStrategy(input.strategy)
-      ? input.strategy
-      : fallback.strategy,
-    aggression: clampInteger(input.aggression, fallback.aggression, 0, 100),
-    actionCardBias: clampInteger(
-      input.actionCardBias,
-      fallback.actionCardBias,
-      -200,
-      200,
-    ),
-    wildCardBias: clampInteger(
-      input.wildCardBias,
-      fallback.wildCardBias,
-      -200,
-      200,
-    ),
-    drawBias: clampInteger(input.drawBias, fallback.drawBias, -200, 200),
-    unoCallBias: clampInteger(input.unoCallBias, fallback.unoCallBias, 0, 100),
-    notes: trimText(input.notes, fallback.notes, 280),
-  };
-}
-
-export function getDefaultUnoBotAiProfiles(): readonly UnoBotAiProfile[] {
-  return defaultProfiles.map((profile) => ({ ...profile }));
-}
-
-export function normalizeUnoBotAiProfiles(
-  input: unknown,
-): readonly UnoBotAiProfile[] {
-  const rawProfiles = Array.isArray(input) ? input : [];
-
-  return defaultProfiles.map((fallback) => {
-    const rawProfile = rawProfiles.find(
-      (candidate): candidate is UnoBotAiProfileInput => {
-        return (
-          typeof candidate === 'object' &&
-          candidate !== null &&
-          isUnoBotAiProfileId((candidate as { id?: unknown }).id) &&
-          (candidate as { id: unknown }).id === fallback.id
-        );
-      },
-    );
-
-    return normalizeProfile(rawProfile ?? {}, fallback);
-  });
-}
-
-function parseProfiles(value: string | null | undefined) {
-  if (!value) {
-    return getDefaultUnoBotAiProfiles();
-  }
-
-  try {
-    return normalizeUnoBotAiProfiles(JSON.parse(value));
-  } catch {
-    return getDefaultUnoBotAiProfiles();
-  }
-}
-
-async function loadUnoBotAiProfiles(): Promise<readonly UnoBotAiProfile[]> {
   try {
     const [row] = await getDb()
       .select()
       .from(siteSettings)
-      .where(eq(siteSettings.key, UNO_BOT_AI_SITE_SETTING_KEY))
+      .where(eq(siteSettings.key, settingKey))
       .limit(1);
 
-    return parseProfiles(row?.value);
+    if (!row?.value) {
+      return fallback();
+    }
+
+    return parse(JSON.parse(row.value));
   } catch {
-    return getDefaultUnoBotAiProfiles();
+    return fallback();
   }
+}
+
+function isKnownProfileId<TProfile extends { id: string }>(
+  id: unknown,
+  defaults: readonly TProfile[],
+): id is TProfile['id'] {
+  return (
+    typeof id === 'string' && defaults.some((profile) => profile.id === id)
+  );
+}
+
+async function listProfiles<TProfile>(
+  settingKey: GameSiteSettingKey,
+  parse: (value: unknown) => readonly TProfile[],
+  fallback: () => readonly TProfile[],
+) {
+  return loadProfiles(settingKey, parse, fallback);
+}
+
+async function saveProfiles<TProfile extends { id: string }, TInput>(
+  input: TInput & { id?: unknown },
+  options: {
+    defaults: () => readonly TProfile[];
+    list: () => Promise<readonly TProfile[]>;
+    normalize: (value: unknown) => readonly TProfile[];
+    settingKey: GameSiteSettingKey;
+  },
+) {
+  const defaults = options.defaults();
+
+  if (!isKnownProfileId(input.id, defaults)) {
+    throw new Error('Unknown bot AI profile.');
+  }
+
+  const currentProfiles = await options.list();
+  const nextProfiles = options.normalize(
+    currentProfiles.map((profile) =>
+      profile.id === input.id ? { ...profile, ...input } : profile,
+    ),
+  );
+
+  await upsertSiteSetting(options.settingKey, JSON.stringify(nextProfiles));
+
+  return nextProfiles.find((profile) => profile.id === input.id)!;
 }
 
 export async function listUnoBotAiProfiles(): Promise<
   readonly UnoBotAiProfile[]
 > {
-  return loadUnoBotAiProfiles();
+  return listProfiles(
+    UNO_BOT_AI_SITE_SETTING_KEY,
+    normalizeUnoBotAiProfiles,
+    getDefaultUnoBotAiProfiles,
+  );
 }
 
 export async function saveUnoBotAiProfile(
-  input: UnoBotAiProfileInput,
+  input: UnoBotAiProfileInput & { id?: UnoBotAiProfileId | unknown },
 ): Promise<UnoBotAiProfile> {
-  if (!isUnoBotAiProfileId(input.id)) {
-    throw new Error('Unknown bot AI profile.');
-  }
-
-  const currentProfiles = await loadUnoBotAiProfiles();
-  const fallback = defaultProfiles.find((profile) => profile.id === input.id)!;
-  const nextProfile = normalizeProfile(input, fallback);
-  const nextProfiles = normalizeUnoBotAiProfiles(
-    currentProfiles.map((profile) =>
-      profile.id === nextProfile.id ? nextProfile : profile,
-    ),
-  );
-
-  await upsertSiteSetting(
-    UNO_BOT_AI_SITE_SETTING_KEY,
-    JSON.stringify(nextProfiles),
-  );
-
-  return nextProfile;
-}
-
-function normalizeName(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-export function resolveUnoBotAiProfileForParticipant(
-  participant: BotParticipantLike,
-  profiles: readonly UnoBotAiProfile[],
-): UnoBotAiProfile {
-  const normalizedName = normalizeName(participant.displayName);
-  const profileId = normalizedName.includes('house')
-    ? 'house-bot'
-    : normalizedName.includes('table')
-      ? 'table-bot'
-      : normalizedName.includes('player-two')
-        ? 'player-two-bot'
-        : 'fallback-bot';
-
-  return (
-    profiles.find((profile) => profile.id === profileId) ??
-    profiles.find((profile) => profile.id === 'fallback-bot') ??
-    defaultProfiles[3]!
-  );
-}
-
-export function chooseUnoBotMove(input: ChooseUnoBotMoveInput): UnoMove | null {
-  if (!input.profile.enabled) {
-    return null;
-  }
-
-  return chooseRandomUnoLegalMove({
-    legalMoves: input.legalMoves,
-    playerId: input.playerId,
-    seed: `${input.seed}:${input.state.lastEvent}`,
+  return saveProfiles(input, {
+    defaults: getDefaultUnoBotAiProfiles,
+    list: listUnoBotAiProfiles,
+    normalize: normalizeUnoBotAiProfiles,
+    settingKey: UNO_BOT_AI_SITE_SETTING_KEY,
   });
 }
+
+export async function listPokerBotAiProfiles(): Promise<
+  readonly PokerBotAiProfile[]
+> {
+  return listProfiles(
+    POKER_BOT_AI_SITE_SETTING_KEY,
+    normalizePokerBotAiProfiles,
+    getDefaultPokerBotAiProfiles,
+  );
+}
+
+export async function savePokerBotAiProfile(
+  input: PokerBotAiProfileInput & { id?: PokerBotAiProfileId | unknown },
+): Promise<PokerBotAiProfile> {
+  return saveProfiles(input, {
+    defaults: getDefaultPokerBotAiProfiles,
+    list: listPokerBotAiProfiles,
+    normalize: normalizePokerBotAiProfiles,
+    settingKey: POKER_BOT_AI_SITE_SETTING_KEY,
+  });
+}
+
+export async function listPhase10BotAiProfiles(): Promise<
+  readonly Phase10BotAiProfile[]
+> {
+  return listProfiles(
+    PHASE10_BOT_AI_SITE_SETTING_KEY,
+    normalizePhase10BotAiProfiles,
+    getDefaultPhase10BotAiProfiles,
+  );
+}
+
+export async function savePhase10BotAiProfile(
+  input: Phase10BotAiProfileInput & { id?: Phase10BotAiProfileId | unknown },
+): Promise<Phase10BotAiProfile> {
+  return saveProfiles(input, {
+    defaults: getDefaultPhase10BotAiProfiles,
+    list: listPhase10BotAiProfiles,
+    normalize: normalizePhase10BotAiProfiles,
+    settingKey: PHASE10_BOT_AI_SITE_SETTING_KEY,
+  });
+}
+
+export {
+  choosePhase10BotMove,
+  choosePokerBotMove,
+  chooseUnoBotMove,
+  createPhase10BotsFromProfiles,
+  getDefaultPhase10BotAiProfiles,
+  getDefaultPokerBotAiProfiles,
+  getDefaultUnoBotAiProfiles,
+  normalizePhase10BotAiProfiles,
+  normalizePokerBotAiProfiles,
+  normalizeUnoBotAiProfiles,
+  resolvePhase10BotAiProfileForParticipant,
+  resolvePokerBotAiProfileForParticipant,
+  resolveUnoBotAiProfileForParticipant,
+} from './logic';
+export type {
+  Phase10BotAiProfile,
+  Phase10BotAiProfileId,
+  PokerBotAiProfile,
+  PokerBotAiProfileId,
+  UnoBotAiProfile,
+  UnoBotAiProfileId,
+} from './logic';

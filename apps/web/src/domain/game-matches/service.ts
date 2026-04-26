@@ -10,7 +10,6 @@ import {
 } from '@repo/game-contracts';
 import {
   createPokerAdapter,
-  createPokerBots,
   getPokerExamplePreset,
   projectPokerPlayerView,
   type PokerExamplePresetId,
@@ -38,9 +37,13 @@ import {
 } from '@repo/game-session';
 
 import {
+  choosePokerBotMove,
   chooseUnoBotMove,
+  getDefaultPokerBotAiProfiles,
   getDefaultUnoBotAiProfiles,
+  resolvePokerBotAiProfileForParticipant,
   resolveUnoBotAiProfileForParticipant,
+  type PokerBotAiProfile,
   type UnoBotAiProfile,
 } from '@/src/domain/game-bot-ai/service';
 import type { GameRoomParticipantRecord } from '@/src/domain/game-rooms/contracts';
@@ -538,6 +541,7 @@ export function createPokerMatchSession(input: {
   fallbackDisplayName: string | null;
   presetId: PokerExamplePresetId;
   displayName?: string | null;
+  botAiProfiles?: readonly PokerBotAiProfile[];
   now?: () => string;
 }) {
   const participants = buildPokerParticipants({
@@ -559,7 +563,7 @@ export function createPokerMatchSession(input: {
     now: input.now,
   });
 
-  processPokerBots(session, participants);
+  processPokerBots(session, participants, input.botAiProfiles);
 
   return {
     participants,
@@ -570,6 +574,7 @@ export function createPokerMatchSession(input: {
 export function createPokerMatchSessionFromParticipants(input: {
   matchId: string;
   participants: readonly GameMatchParticipantRecord[];
+  botAiProfiles?: readonly PokerBotAiProfile[];
   now?: () => string;
 }) {
   const session = createServerGameSession({
@@ -582,7 +587,7 @@ export function createPokerMatchSessionFromParticipants(input: {
     now: input.now,
   });
 
-  processPokerBots(session, input.participants);
+  processPokerBots(session, input.participants, input.botAiProfiles);
 
   return {
     participants: input.participants,
@@ -637,13 +642,8 @@ export function processUnoBots(
 export function processPokerBots(
   session: PokerServerSession,
   participants: readonly GameMatchParticipantRecord[],
+  botAiProfiles: readonly PokerBotAiProfile[] = getDefaultPokerBotAiProfiles(),
 ) {
-  const sessionParticipants = toSessionParticipants(participants);
-  const bots = createPokerBots(
-    sessionParticipants,
-    session.getSnapshot().match.matchId,
-  );
-
   while (!session.getSnapshot().matchResult) {
     const snapshot = session.getSnapshot();
     const selectedActorPlayerId = snapshot.selectedActorPlayerId;
@@ -657,12 +657,17 @@ export function processPokerBots(
       break;
     }
 
+    const profile = resolvePokerBotAiProfileForParticipant(
+      activeParticipant,
+      botAiProfiles,
+    );
     const move =
-      bots[activeParticipant.playerId]?.chooseMove({
+      choosePokerBotMove({
         legalMoves: snapshot.legalMoves,
-        participants: sessionParticipants,
         playerId: activeParticipant.playerId,
-        state: snapshot.match,
+        profile,
+        seed: snapshot.match.matchId,
+        state: snapshot.match.state,
       }) ??
       snapshot.legalMoves[0] ??
       null;
