@@ -50,6 +50,7 @@ const manifest: AppManifest = {
 describe('@moritzbrantner/app-pack', () => {
   it('exports the foundation feature catalog', () => {
     expect(foundationFeatureKeys).toContain('showcase.forms');
+    expect(foundationFeatureKeys).toContain('showcase.phase10');
     expect(foundationFeatureKeys).toContain('showcase.poker');
   });
 

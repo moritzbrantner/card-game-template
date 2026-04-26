@@ -26,6 +26,7 @@ const enabledFeatures = {
   'admin.systemSettings': true,
   'admin.dataStudio': true,
   'showcase.forms': true,
+  'showcase.phase10': true,
   'showcase.poker': true,
   'showcase.story': true,
   'showcase.communication': true,
@@ -55,6 +56,18 @@ const showcaseManifest: AppManifest = {
         const pageModule = await import('./pages/home-page');
         const HomePage = pageModule.default;
         return createElement(HomePage, { locale });
+      },
+    },
+    {
+      id: 'phase10',
+      slug: 'phase-10',
+      kind: 'component',
+      namespace: 'Phase10Page',
+      featureKey: 'showcase.phase10',
+      render: async ({ locale }) => {
+        const pageModule = await import('./pages/phase-10-page');
+        const Phase10Page = pageModule.default;
+        return createElement(Phase10Page, { locale });
       },
     },
     {
@@ -237,6 +250,12 @@ const showcaseManifest: AppManifest = {
     { pageId: 'home', category: 'discover', hotkey: ['alt', 'h'], order: 10 },
     { pageId: 'about', category: 'discover', hotkey: ['alt', 'a'], order: 20 },
     { pageId: 'uno', category: 'discover', hotkey: ['alt', 'o'], order: 30 },
+    {
+      pageId: 'phase10',
+      category: 'discover',
+      hotkey: ['alt', 'z'],
+      order: 33,
+    },
     {
       pageId: 'poker',
       category: 'discover',

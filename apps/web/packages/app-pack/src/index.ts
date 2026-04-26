@@ -23,6 +23,7 @@ export const foundationFeatureKeys = [
   'admin.systemSettings',
   'admin.dataStudio',
   'showcase.forms',
+  'showcase.phase10',
   'showcase.poker',
   'showcase.uno',
   'showcase.story',

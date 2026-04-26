@@ -3,6 +3,7 @@ import type {
   GameId,
   MatchExecutionMode,
 } from '@repo/game-contracts';
+import { phase10CatalogEntry } from '@repo/game-phase-10';
 import { pokerCatalogEntry } from '@repo/game-poker';
 import { ticTacToeCatalogEntry } from '@repo/game-tic-tac-toe';
 import { tcgCatalogEntry } from '@repo/game-tcg';
@@ -61,11 +62,18 @@ export function createGameCatalog<TMetadata = Record<string, unknown>>(
 }
 
 export type DefaultGameCatalogMetadata =
+  | typeof phase10CatalogEntry.metadata
   | typeof ticTacToeCatalogEntry.metadata
   | typeof pokerCatalogEntry.metadata
   | typeof tcgCatalogEntry.metadata
   | typeof unoCatalogEntry.metadata;
 
 export const defaultGameCatalog = createGameCatalog<DefaultGameCatalogMetadata>(
-  [pokerCatalogEntry, tcgCatalogEntry, ticTacToeCatalogEntry, unoCatalogEntry],
+  [
+    phase10CatalogEntry,
+    pokerCatalogEntry,
+    tcgCatalogEntry,
+    ticTacToeCatalogEntry,
+    unoCatalogEntry,
+  ],
 );

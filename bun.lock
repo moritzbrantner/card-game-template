@@ -78,6 +78,7 @@
         "@repo/game-catalog": "workspace:*",
         "@repo/game-contracts": "workspace:*",
         "@repo/game-engine": "workspace:*",
+        "@repo/game-phase-10": "workspace:*",
         "@repo/game-poker": "workspace:*",
         "@repo/game-session": "workspace:*",
         "@repo/game-tcg": "workspace:*",
@@ -318,6 +319,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@repo/game-contracts": "workspace:*",
+        "@repo/game-phase-10": "workspace:*",
         "@repo/game-poker": "workspace:*",
         "@repo/game-tcg": "workspace:*",
         "@repo/game-tic-tac-toe": "workspace:*",
@@ -358,6 +360,20 @@
         "@repo/game-tcg": "workspace:*",
         "@repo/game-tic-tac-toe": "workspace:*",
         "@repo/game-uno": "workspace:*",
+      },
+      "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "typescript": "6.0.3",
+      },
+    },
+    "packages/game-phase-10": {
+      "name": "@repo/game-phase-10",
+      "version": "0.0.0",
+      "dependencies": {
+        "@repo/card-kit": "workspace:*",
+        "@repo/game-contracts": "workspace:*",
+        "@repo/game-engine": "workspace:*",
+        "@repo/game-session": "workspace:*",
       },
       "devDependencies": {
         "@repo/typescript-config": "workspace:*",
@@ -1630,6 +1646,8 @@
     "@repo/game-engine": ["@repo/game-engine@workspace:packages/game-engine"],
 
     "@repo/game-fixtures": ["@repo/game-fixtures@workspace:packages/game-fixtures"],
+
+    "@repo/game-phase-10": ["@repo/game-phase-10@workspace:packages/game-phase-10"],
 
     "@repo/game-poker": ["@repo/game-poker@workspace:packages/game-poker"],
 

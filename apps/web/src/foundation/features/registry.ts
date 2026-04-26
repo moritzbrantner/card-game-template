@@ -97,6 +97,11 @@ export const foundationFeatureModules: readonly FoundationFeatureModule[] = [
     requiredContentCollections: [],
   },
   {
+    featureKey: 'showcase.phase10',
+    requiredMessageNamespaces: ['Phase10Page'],
+    requiredContentCollections: [],
+  },
+  {
     featureKey: 'showcase.poker',
     requiredMessageNamespaces: ['PokerPage'],
     requiredContentCollections: [],

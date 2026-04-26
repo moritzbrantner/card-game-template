@@ -45,48 +45,95 @@ vi.mock('@repo/game-catalog', () => ({
 }));
 
 vi.mock('@repo/game-session', () => ({
-  createLocalGameSession: () => ({
-    confirmHotseat: sessionSpies.confirmHotseat,
-    getSnapshot: () => ({
-      view: {
-        activeColor: 'red',
-        drawPileCount: 42,
-        legalActions: [
-          {
-            id: 'play-red-five',
-            label: 'Play red 5',
-            move: {
-              kind: 'play-card',
-              payload: { cardId: 'red-5' },
-              playerId: 'player-1',
+  createLocalGameSession: ({ adapter }: { adapter?: { kind?: string } }) => {
+    const shared = {
+      confirmHotseat: sessionSpies.confirmHotseat,
+      restart: sessionSpies.restart,
+      submitMove: sessionSpies.submitMove,
+      subscribe: sessionSpies.subscribe,
+    };
+
+    if (adapter?.kind === 'phase10-adapter') {
+      return {
+        ...shared,
+        getSnapshot: () => ({
+          pendingHotseatPlayerId: null,
+          view: {
+            discardTop: { id: 'discard-red-9', label: 'Red 9' },
+            drawPileCount: 31,
+            legalActions: [
+              {
+                id: 'draw-discard',
+                label: 'Draw Red 9',
+                move: {
+                  kind: 'draw-card',
+                  payload: { source: 'discard' },
+                  playerId: 'player-1',
+                },
+              },
+            ],
+            matchResultBanner: null,
+            phaseLabel: 'Phase 1: 2 sets of 3',
+            players: [
+              {
+                controller: 'human',
+                displayName: 'Player 1',
+                handCount: 10,
+                isActive: true,
+                isViewer: true,
+                laidGroups: [],
+                phaseComplete: false,
+                playerId: 'player-1',
+                skipped: false,
+                visibleCards: [{ id: 'red-5', label: 'Red 5' }],
+              },
+            ],
+            status: 'Player 1 to draw',
+          },
+        }),
+      };
+    }
+
+    return {
+      ...shared,
+      getSnapshot: () => ({
+        view: {
+          activeColor: 'red',
+          drawPileCount: 42,
+          legalActions: [
+            {
+              id: 'play-red-five',
+              label: 'Play red 5',
+              move: {
+                kind: 'play-card',
+                payload: { cardId: 'red-5' },
+                playerId: 'player-1',
+              },
             },
-          },
-        ],
-        matchResultBanner: null,
-        pendingDrawAmount: 0,
-        pendingHotseatPlayerId: null,
-        players: [
-          {
-            controller: 'human',
-            displayName: 'Player 1',
-            handCount: 3,
-            isActive: true,
-            playerId: 'player-1',
-            visibleCards: [{ id: 'red-5', label: 'Red 5' }],
-          },
-        ],
-        status: 'Player 1 to act',
-      },
-    }),
-    restart: sessionSpies.restart,
-    submitMove: sessionSpies.submitMove,
-    subscribe: sessionSpies.subscribe,
-  }),
+          ],
+          matchResultBanner: null,
+          pendingDrawAmount: 0,
+          pendingHotseatPlayerId: null,
+          players: [
+            {
+              controller: 'human',
+              displayName: 'Player 1',
+              handCount: 3,
+              isActive: true,
+              playerId: 'player-1',
+              visibleCards: [{ id: 'red-5', label: 'Red 5' }],
+            },
+          ],
+          status: 'Player 1 to act',
+        },
+      }),
+    };
+  },
   type: {},
 }));
 
 vi.mock('@repo/game-uno', () => ({
-  createUnoAdapter: () => ({ kind: 'adapter' }),
+  createUnoAdapter: () => ({ kind: 'uno-adapter' }),
   createUnoBots: () => [],
   defaultUnoRules: {
     drawStacking: false,
@@ -100,6 +147,24 @@ vi.mock('@repo/game-uno', () => ({
   }),
   projectUnoPlayerView: () => ({}),
   unoExamplePresets: [{ id: 'mixed-table', label: 'Mixed table' }],
+}));
+
+vi.mock('@repo/game-phase-10', () => ({
+  createPhase10Adapter: () => ({ kind: 'phase10-adapter' }),
+  createPhase10Bots: () => [],
+  defaultPhase10Rules: {
+    allowHitting: true,
+    allowSkipping: true,
+    handSize: 10,
+    setCount: 2,
+    setSize: 3,
+  },
+  getPhase10ExamplePreset: () => ({
+    hotseat: false,
+    seats: [{ displayName: 'Player 1', playerId: 'player-1' }],
+  }),
+  phase10ExamplePresets: [{ id: 'mixed-table', label: 'Mixed table' }],
+  projectPhase10PlayerView: () => ({}),
 }));
 
 const mountedRoots: Array<{ container: HTMLDivElement; root: Root }> = [];
@@ -205,6 +270,29 @@ describe('mobile component behavior', () => {
     expect(sessionSpies.submitMove).toHaveBeenCalledWith({
       kind: 'play-card',
       payload: { cardId: 'red-5' },
+      playerId: 'player-1',
+    });
+    expect(sessionSpies.subscribe).toHaveBeenCalledTimes(1);
+  });
+
+  it('phase 10 screen mounts and routes legal actions into the local session', async () => {
+    const { default: Phase10Screen } = await import('@/app/(tabs)/phase-10');
+    const container = renderIntoDom(
+      <ThemeModeProvider>
+        <Phase10Screen />
+      </ThemeModeProvider>,
+    );
+
+    const actionButton = Array.from(
+      container.querySelectorAll('pressable'),
+    ).find((element) => element.textContent?.includes('Draw Red 9'));
+
+    expect(actionButton).toBeTruthy();
+    clickElement(actionButton!);
+
+    expect(sessionSpies.submitMove).toHaveBeenCalledWith({
+      kind: 'draw-card',
+      payload: { source: 'discard' },
       playerId: 'player-1',
     });
     expect(sessionSpies.subscribe).toHaveBeenCalledTimes(1);

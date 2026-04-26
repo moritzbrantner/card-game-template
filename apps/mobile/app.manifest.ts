@@ -11,6 +11,7 @@ export const appManifest = {
     '@repo/game-catalog',
     '@repo/game-contracts',
     '@repo/game-engine',
+    '@repo/game-phase-10',
     '@repo/game-poker',
     '@repo/game-session',
     '@repo/game-tcg',

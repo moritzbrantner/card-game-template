@@ -74,11 +74,14 @@ test('createGameCatalog rejects duplicate registrations', () => {
 });
 
 test('defaultGameCatalog registers card and board game samples', () => {
+  const phase10Entry = defaultGameCatalog.get('phase-10');
   const unoEntry = defaultGameCatalog.get('uno-style');
   const pokerEntry = defaultGameCatalog.get('texas-holdem');
   const tcgEntry = defaultGameCatalog.get('arcane-duel');
   const ticTacToeEntry = defaultGameCatalog.get('tic-tac-toe');
 
+  assert.equal(phase10Entry?.definition.name, 'Phase 10');
+  assert.equal(phase10Entry?.metadata?.route, '/phase-10');
   assert.equal(unoEntry?.definition.name, 'UNO-style');
   assert.equal(unoEntry?.metadata?.route, '/uno');
   assert.equal(pokerEntry?.definition.name, "Texas Hold'em");

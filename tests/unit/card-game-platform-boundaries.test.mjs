@@ -23,6 +23,7 @@ test('turn-based packages expose the shared domain boundaries', () => {
     'packages/game-contracts/package.json',
     'packages/game-engine/package.json',
     'packages/game-catalog/package.json',
+    'packages/game-phase-10/package.json',
     'packages/game-session/package.json',
     'packages/game-poker/package.json',
     'packages/game-tcg/package.json',

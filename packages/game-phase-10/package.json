@@ -1,5 +1,5 @@
 {
-  "name": "@repo/game-catalog",
+  "name": "@repo/game-phase-10",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -15,12 +15,10 @@
     "test:unit": "../../scripts/run-with-node.sh --experimental-strip-types --test ./tests/unit.test.ts"
   },
   "dependencies": {
+    "@repo/card-kit": "workspace:*",
     "@repo/game-contracts": "workspace:*",
-    "@repo/game-phase-10": "workspace:*",
-    "@repo/game-poker": "workspace:*",
-    "@repo/game-tcg": "workspace:*",
-    "@repo/game-tic-tac-toe": "workspace:*",
-    "@repo/game-uno": "workspace:*"
+    "@repo/game-engine": "workspace:*",
+    "@repo/game-session": "workspace:*"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

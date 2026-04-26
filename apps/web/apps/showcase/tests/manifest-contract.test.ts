@@ -75,4 +75,18 @@ describe('showcase manifest contract', () => {
       expect(messages.NavigationBar).toBeDefined();
     }
   });
+
+  it('exposes phase 10 as a feature-gated public showcase route', () => {
+    const phase10Page = showcaseManifest.publicPages.find(
+      (page) => page.id === 'phase10',
+    );
+    const phase10Nav = showcaseManifest.publicNavigation.find(
+      (item) => item.pageId === 'phase10',
+    );
+
+    expect(phase10Page?.slug).toBe('phase-10');
+    expect(phase10Page?.featureKey).toBe('showcase.phase10');
+    expect(phase10Page?.namespace).toBe('Phase10Page');
+    expect(phase10Nav?.category).toBe('discover');
+  });
 });

@@ -61,6 +61,7 @@
     "@repo/game-catalog": "workspace:*",
     "@repo/game-contracts": "workspace:*",
     "@repo/game-engine": "workspace:*",
+    "@repo/game-phase-10": "workspace:*",
     "@repo/game-poker": "workspace:*",
     "@repo/game-session": "workspace:*",
     "@repo/game-tcg": "workspace:*",

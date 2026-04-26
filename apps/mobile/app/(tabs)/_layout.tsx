@@ -36,6 +36,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="phase-10"
+        options={{
+          title: 'Phase 10',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol
+              size={28}
+              name="chevron.left.forwardslash.chevron.right"
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="tcg"
         options={{
           title: 'Arcane Duel',

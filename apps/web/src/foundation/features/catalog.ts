@@ -134,6 +134,12 @@ export const foundationFeatureMetadata: Record<
     category: 'showcase',
     supportsUserOverrides: false,
   },
+  'showcase.phase10': {
+    label: 'Showcase Phase 10',
+    description: 'Expose the shared Phase 10 local-play example page.',
+    category: 'showcase',
+    supportsUserOverrides: false,
+  },
   'showcase.poker': {
     label: 'Showcase poker',
     description: 'Expose the shared Texas Hold’em example page.',
