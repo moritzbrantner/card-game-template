@@ -171,6 +171,67 @@ test('bet and call move the pot and reveal the flop', () => {
   assert.equal(afterCall.state.currentBet, 0);
 });
 
+test('check rounds reveal the community cards in deck order through the river', () => {
+  let state = createState({});
+
+  state = adapter.applyMove(state, {
+    playerId: 'p1',
+    kind: 'check',
+    createdAt: '2026-04-21T12:00:00.000Z',
+    payload: {},
+  });
+  state = adapter.applyMove(state, {
+    playerId: 'p2',
+    kind: 'check',
+    createdAt: '2026-04-21T12:00:01.000Z',
+    payload: {},
+  });
+
+  assert.equal(state.state.phase, 'flop');
+  assert.deepEqual(
+    state.state.communityCards.map((communityCard) => communityCard.id),
+    ['2-clubs', '3-diamonds', '4-hearts'],
+  );
+
+  state = adapter.applyMove(state, {
+    playerId: 'p1',
+    kind: 'check',
+    createdAt: '2026-04-21T12:00:02.000Z',
+    payload: {},
+  });
+  state = adapter.applyMove(state, {
+    playerId: 'p2',
+    kind: 'check',
+    createdAt: '2026-04-21T12:00:03.000Z',
+    payload: {},
+  });
+
+  assert.equal(state.state.phase, 'turn');
+  assert.deepEqual(
+    state.state.communityCards.map((communityCard) => communityCard.id),
+    ['2-clubs', '3-diamonds', '4-hearts', '5-spades'],
+  );
+
+  state = adapter.applyMove(state, {
+    playerId: 'p1',
+    kind: 'check',
+    createdAt: '2026-04-21T12:00:04.000Z',
+    payload: {},
+  });
+  state = adapter.applyMove(state, {
+    playerId: 'p2',
+    kind: 'check',
+    createdAt: '2026-04-21T12:00:05.000Z',
+    payload: {},
+  });
+
+  assert.equal(state.state.phase, 'river');
+  assert.deepEqual(
+    state.state.communityCards.map((communityCard) => communityCard.id),
+    ['2-clubs', '3-diamonds', '4-hearts', '5-spades', '6-clubs'],
+  );
+});
+
 test('fold completes the hand and awards the pot', () => {
   const engine = createGameEngine(adapter);
   const afterBet = adapter.applyMove(createState({}), {
@@ -241,6 +302,49 @@ test('checking through the river completes with the stronger hand winning', () =
   assert.equal(state.state.phase, 'complete');
   assert.deepEqual(state.state.winnerIds, ['p1']);
   assert.equal(state.state.showdown?.p1?.rank, 'pair');
+});
+
+test('showdown splits the pot when the board gives both players the same hand', () => {
+  let state = createState({
+    communityCards: [
+      card('A', 'clubs'),
+      card('K', 'diamonds'),
+      card('Q', 'hearts'),
+      card('J', 'spades'),
+      card('10', 'clubs'),
+    ],
+    deck: [],
+    hands: {
+      p1: [card('2', 'clubs'), card('3', 'clubs')],
+      p2: [card('4', 'diamonds'), card('5', 'diamonds')],
+    },
+    phase: 'river',
+    pot: 20,
+    stacks: {
+      p1: 90,
+      p2: 90,
+    },
+  });
+
+  state = adapter.applyMove(state, {
+    playerId: 'p1',
+    kind: 'check',
+    createdAt: '2026-04-21T12:00:00.000Z',
+    payload: {},
+  });
+  state = adapter.applyMove(state, {
+    playerId: 'p2',
+    kind: 'check',
+    createdAt: '2026-04-21T12:00:01.000Z',
+    payload: {},
+  });
+
+  assert.equal(state.state.phase, 'complete');
+  assert.deepEqual(state.state.winnerIds, ['p1', 'p2']);
+  assert.equal(state.state.showdown?.p1?.rank, 'straight');
+  assert.equal(state.state.showdown?.p2?.rank, 'straight');
+  assert.equal(state.state.stacks.p1, 100);
+  assert.equal(state.state.stacks.p2, 100);
 });
 
 test('poker bots prefer check/call over folding', () => {

@@ -51,6 +51,13 @@ const spark: TcgCard = {
   cost: 1,
   effect: 'deal-2',
 };
+const sun: TcgCard = {
+  id: 'sun',
+  kind: 'spell',
+  label: 'Sun Burst',
+  cost: 1,
+  effect: 'heal-2',
+};
 
 function unit(
   card: TcgCard,
@@ -372,6 +379,67 @@ test('damage spells can destroy opposing units', () => {
   assert.equal(next.state.battlefield.p2.length, 0);
   assert.deepEqual(next.state.graveyards.p2, [ember]);
   assert.deepEqual(next.state.graveyards.p1, [spark]);
+});
+
+test('healing spells restore life without exceeding the starting total', () => {
+  const next = adapter.applyMove(
+    createState({
+      hands: {
+        p1: [sun],
+        p2: [],
+      },
+      life: {
+        p1: 19,
+        p2: 20,
+      },
+      mana: {
+        p1: 1,
+        p2: 0,
+      },
+    }),
+    {
+      playerId: 'p1',
+      kind: 'play-card',
+      createdAt: '2026-04-21T12:00:00.000Z',
+      payload: {
+        cardId: 'sun',
+        targetPlayerId: 'p1',
+      },
+    },
+  );
+
+  assert.equal(next.state.life.p1, 20);
+  assert.equal(next.state.mana.p1, 0);
+  assert.deepEqual(next.state.graveyards.p1, [sun]);
+});
+
+test('unit combat removes both creatures when they deal lethal damage', () => {
+  const attacker = unit(ember, 'p1', 'ember-attacker');
+  const defender = unit(ember, 'p2', 'ember-defender');
+  const next = adapter.applyMove(
+    createState({
+      battlefield: {
+        p1: [attacker],
+        p2: [defender],
+      },
+      exhaustedUnitIds: [],
+    }),
+    {
+      playerId: 'p1',
+      kind: 'attack',
+      createdAt: '2026-04-21T12:00:00.000Z',
+      payload: {
+        attackerUnitId: attacker.id,
+        targetUnitId: defender.id,
+      },
+    },
+  );
+
+  assert.deepEqual(next.state.battlefield.p1, []);
+  assert.deepEqual(next.state.battlefield.p2, []);
+  assert.deepEqual(next.state.graveyards.p1, [ember]);
+  assert.deepEqual(next.state.graveyards.p2, [ember]);
+  assert.deepEqual(next.state.exhaustedUnitIds, []);
 });
 
 test('match completes when a player reaches zero life', () => {

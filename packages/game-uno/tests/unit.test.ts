@@ -512,6 +512,62 @@ test('seven-zero rotates hands when zero is played', () => {
   ]);
 });
 
+test('seven-zero swaps hands with the targeted player when seven is played', () => {
+  const swapState = createState({
+    rules: {
+      ...defaultUnoRules,
+      sevenZero: true,
+    },
+    hands: {
+      p1: [
+        createCard('red', 'number', 'swap-card', 7),
+        createCard('green', 'number', 'p1-keep', 2),
+      ],
+      p2: [
+        createCard('blue', 'number', 'p2-blue', 9),
+        createCard('yellow', 'number', 'p2-yellow', 1),
+      ],
+    },
+  });
+
+  const next = applyMove(swapState, {
+    playerId: 'p1',
+    kind: 'play-card',
+    createdAt: '2026-04-17T12:00:00.000Z',
+    payload: {
+      cardId: 'swap-card',
+      targetPlayerId: 'p2',
+      sayUno: true,
+    },
+  });
+
+  assert.deepEqual(
+    next.state.state.hands.p1.map((card) => card.id),
+    ['p2-blue', 'p2-yellow'],
+  );
+  assert.deepEqual(
+    next.state.state.hands.p2.map((card) => card.id),
+    ['p1-keep'],
+  );
+  assert.deepEqual(next.events, [
+    {
+      type: 'card-played',
+      playerId: 'p1',
+      cardId: 'swap-card',
+      cardKind: 'number',
+      cardColor: 'red',
+      resultingColor: 'red',
+      saidUno: true,
+      targetPlayerId: 'p2',
+    },
+    {
+      type: 'hands-swapped',
+      playerId: 'p1',
+      targetPlayerId: 'p2',
+    },
+  ]);
+});
+
 test('match completes when a player empties their hand', () => {
   const winningState = createState({
     hands: {
@@ -621,6 +677,57 @@ test('UNO draw moves emit drawn-card transition events', () => {
       amount: 1,
       source: 'draw',
       cardIds: ['draw-1'],
+    },
+  ]);
+});
+
+test('missing an UNO call immediately draws the penalty cards', () => {
+  const penalized = applyMove(
+    createState({
+      hands: {
+        p1: [
+          createCard('red', 'number', 'red-5', 5),
+          createCard('blue', 'number', 'blue-1', 1),
+        ],
+        p2: [createCard('green', 'number', 'green-1', 1)],
+      },
+      rules: {
+        ...defaultUnoRules,
+        requireUnoCall: true,
+      },
+    }),
+    {
+      playerId: 'p1',
+      kind: 'play-card',
+      createdAt: '2026-04-17T12:00:00.000Z',
+      payload: {
+        cardId: 'red-5',
+        sayUno: false,
+      },
+    },
+  );
+
+  assert.equal(penalized.state.state.winnerPlayerId, null);
+  assert.deepEqual(
+    penalized.state.state.hands.p1.map((card) => card.id),
+    ['blue-1', 'draw-1', 'draw-2'],
+  );
+  assert.deepEqual(penalized.events, [
+    {
+      type: 'card-played',
+      playerId: 'p1',
+      cardId: 'red-5',
+      cardKind: 'number',
+      cardColor: 'red',
+      resultingColor: 'red',
+      saidUno: false,
+    },
+    {
+      type: 'cards-drawn',
+      playerId: 'p1',
+      amount: 2,
+      source: 'uno-penalty',
+      cardIds: ['draw-1', 'draw-2'],
     },
   ]);
 });

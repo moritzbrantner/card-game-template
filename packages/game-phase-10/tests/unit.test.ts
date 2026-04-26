@@ -217,6 +217,49 @@ test('players must draw before they can lay or discard', () => {
   );
 });
 
+test('drawing from discard picks up the top card and enables the completed phase', () => {
+  const drawState = createState({
+    discardPile: [wild('discard-wild')],
+    hands: {
+      p1: [
+        numberCard('red', 5, 'red-5'),
+        numberCard('yellow', 5, 'yellow-5'),
+        numberCard('red', 7, 'red-7'),
+        numberCard('blue', 7, 'blue-7'),
+        numberCard('green', 7, 'green-7'),
+        numberCard('blue', 1, 'blue-1'),
+        skip('skip-1'),
+      ],
+      p2: [numberCard('green', 2, 'p2-green-2')],
+      p3: [numberCard('yellow', 6, 'p3-yellow-6')],
+    },
+  });
+
+  const nextState = adapter.applyMove(drawState, {
+    playerId: 'p1',
+    kind: 'draw-card',
+    createdAt: '2026-04-26T12:00:00.000Z',
+    payload: {
+      source: 'discard',
+    },
+  });
+  const layMove = adapter
+    .listLegalMoves(nextState)
+    .find(
+      (move): move is Extract<Phase10Move, { kind: 'lay-phase' }> =>
+        move.kind === 'lay-phase',
+    );
+
+  assert.deepEqual(nextState.state.discardPile, []);
+  assert.equal(nextState.state.hands.p1.at(-1)?.id, 'discard-wild');
+  assert.equal(nextState.state.drawnCardThisTurn, true);
+  assert.ok(layMove);
+  assert.deepEqual(layMove.payload.groups, [
+    ['red-5', 'yellow-5', 'discard-wild'],
+    ['red-7', 'blue-7', 'green-7'],
+  ]);
+});
+
 test('laying phase 1 removes two sets from hand and records them on the table', () => {
   const state = createState({
     drawnCardThisTurn: true,
@@ -365,6 +408,49 @@ test('hitting adds a matching card onto an existing laid set', () => {
 
   assert.equal(firstGroup?.cards.length, 4);
   assert.equal(nextState.state.hands.p1?.length, 0);
+});
+
+test('drawing from an empty pile recycles older discards with the match seed', () => {
+  const recycleState = createState({
+    drawPile: [],
+    discardPile: [
+      numberCard('red', 1, 'discard-red-1'),
+      numberCard('yellow', 2, 'discard-yellow-2'),
+      numberCard('green', 3, 'discard-green-3'),
+    ],
+    hands: {
+      p1: [numberCard('red', 5, 'red-5'), numberCard('yellow', 5, 'yellow-5')],
+      p2: [numberCard('green', 2, 'p2-green-2')],
+      p3: [numberCard('blue', 10, 'p3-blue-10')],
+    },
+    seed: 'phase-recycle-seed',
+  });
+
+  const firstDraw = adapter.applyMove(recycleState, {
+    playerId: 'p1',
+    kind: 'draw-card',
+    createdAt: '2026-04-26T12:00:00.000Z',
+    payload: {
+      source: 'draw',
+    },
+  });
+  const secondDraw = adapter.applyMove(recycleState, {
+    playerId: 'p1',
+    kind: 'draw-card',
+    createdAt: '2026-04-26T12:00:00.000Z',
+    payload: {
+      source: 'draw',
+    },
+  });
+
+  assert.equal(firstDraw.state.discardPile.at(-1)?.id, 'discard-green-3');
+  assert.equal(firstDraw.state.drawPile.length, 1);
+  assert.equal(firstDraw.state.hands.p1.length, 3);
+  assert.equal(
+    firstDraw.state.hands.p1.at(-1)?.id,
+    secondDraw.state.hands.p1.at(-1)?.id,
+  );
+  assert.notEqual(firstDraw.state.hands.p1.at(-1)?.id, 'discard-green-3');
 });
 
 test('discarding skip skips the targeted player on the next turn', () => {
