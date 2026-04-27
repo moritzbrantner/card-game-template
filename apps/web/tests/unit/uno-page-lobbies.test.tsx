@@ -38,6 +38,7 @@ const labels = {
   nameLabel: 'Player name',
   noActiveMatch: 'Create or resume a match.',
   openLobbiesTitle: 'Your open lobbies',
+  overviewAction: 'Back to overview',
   pastGamesCta: 'Past games',
   readyAction: 'Ready up',
   readyToStart: 'Everyone is seated. The host can start the game now.',
@@ -409,5 +410,126 @@ describe('UnoPageClient lobby flow', () => {
       ).toBeTruthy();
     });
     expect(window.location.search).toContain('invite=room-1');
+  });
+
+  it('returns to overview without auto-resuming the old match on reload', async () => {
+    fetchMock.mockImplementation(async (input, init) => {
+      const url = String(input);
+
+      if (url === '/api/games/uno/matches') {
+        return Response.json({
+          active: [
+            {
+              matchId: 'match-1',
+              gameId: 'uno-style',
+              status: 'active',
+              startedAt: '2026-04-25T09:01:00.000Z',
+              finishedAt: null,
+              updatedAt: '2026-04-25T09:02:00.000Z',
+              participants: [
+                {
+                  playerId: 'player-1',
+                  seat: 0,
+                  displayName: 'Alice',
+                  identity: { kind: 'guest', guestId: 'guest-1' },
+                  isBot: false,
+                },
+              ],
+              result: null,
+              analysis: null,
+              lastSequence: 0,
+            },
+          ],
+          recent: [],
+        });
+      }
+
+      if (url === '/api/games/rooms') {
+        return Response.json([]);
+      }
+
+      if (url === '/api/games/uno/matches/match-1') {
+        return Response.json({
+          matchId: 'match-1',
+          gameId: 'uno-style',
+          status: 'active',
+          startedAt: '2026-04-25T09:01:00.000Z',
+          finishedAt: null,
+          updatedAt: '2026-04-25T09:02:00.000Z',
+          participants: [],
+          result: null,
+          analysis: {
+            generic: {
+              acceptedMoveCount: 0,
+              durationMs: null,
+              executionMode: 'server-authoritative',
+              finishedAt: null,
+              gameId: 'uno-style',
+              matchId: 'match-1',
+              moveKinds: [],
+              players: [],
+              startedAt: '2026-04-25T09:01:00.000Z',
+              turnsCompleted: 0,
+              winnerIds: [],
+            },
+          },
+          lastSequence: 0,
+          executionMode: 'server-authoritative',
+          replayFormatVersion: 'match-replay-v1',
+          match: {
+            activePlayerId: 'player-1',
+            executionMode: 'server-authoritative',
+            gameId: 'uno-style',
+            matchId: 'match-1',
+            players: [],
+            state: {},
+            turn: 1,
+          },
+          legalMoves: [],
+          selectedActorPlayerId: 'player-1',
+          view: {
+            activeColor: 'red',
+            activePlayerId: 'player-1',
+            discardTop: null,
+            drawPileCount: 42,
+            legalActions: [],
+            matchResultBanner: null,
+            pendingDrawAmount: 0,
+            pendingHotseatPlayerId: null,
+            players: [],
+            selectedActorPlayerId: 'player-1',
+            status: 'Alice to act',
+            viewerPlayerId: 'player-1',
+          },
+        });
+      }
+
+      throw new Error(`Unexpected fetch: ${url} ${init?.method ?? 'GET'}`);
+    });
+
+    render(<UnoPageClient labels={labels} pastGamesHref="/en/past-games" />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: 'Active match' }),
+      ).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to overview' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: 'Create a lobby' }),
+      ).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Reload' })[0]!);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: 'Create a lobby' }),
+      ).toBeTruthy();
+    });
+    expect(screen.queryByRole('heading', { name: 'Active match' })).toBeNull();
   });
 });

@@ -63,17 +63,25 @@ export default async function PastGameReplayPage({
     replay: replay.replay,
   });
 
-  const timeline = replay.moves.map((move, index) => {
-    const player = replay.summary.participants.find(
-      (participant) => participant.playerId === move.move.playerId,
-    );
-    return {
-      id: `${move.sequence}`,
-      acceptedAt: move.acceptedAt,
-      label: `${player?.displayName ?? move.move.playerId} played ${move.move.kind}`,
-      stepIndex: index + 1,
-    };
-  });
+  const timeline = [
+    {
+      id: `${replay.summary.matchId}:opening`,
+      acceptedAt: null,
+      label: 'Opening state',
+      stepIndex: 0,
+    },
+    ...replay.moves.map((move, index) => {
+      const player = replay.summary.participants.find(
+        (participant) => participant.playerId === move.move.playerId,
+      );
+      return {
+        id: `${move.sequence}`,
+        acceptedAt: move.acceptedAt,
+        label: `${player?.displayName ?? move.move.playerId} played ${move.move.kind}`,
+        stepIndex: index + 1,
+      };
+    }),
+  ];
 
   const topUnoPlayer = replay.unoAnalysis.players[0];
 

@@ -40,6 +40,7 @@ export default async function UnoPage({ locale }: { locale: AppLocale }) {
         nameLabel: t('nameLabel'),
         noActiveMatch: t('noActiveMatch'),
         openLobbiesTitle: t('openLobbiesTitle'),
+        overviewAction: t('overviewAction'),
         pastGamesCta: t('pastGamesCta'),
         readyAction: t('readyAction'),
         readyToStart: t('readyToStart'),

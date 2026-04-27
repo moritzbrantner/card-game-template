@@ -61,6 +61,7 @@ type UnoPageLabels = {
   nameLabel: string;
   noActiveMatch: string;
   openLobbiesTitle: string;
+  overviewAction: string;
   pastGamesCta: string;
   readyAction: string;
   readyToStart: string;
@@ -309,6 +310,7 @@ export function UnoPageClient({
   const [pending, setPending] = useState(false);
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [isDiscardDropActive, setIsDiscardDropActive] = useState(false);
+  const [manualOverview, setManualOverview] = useState(false);
   const [state, setState] = useState<{ announcement?: string; error?: string }>(
     {},
   );
@@ -337,11 +339,27 @@ export function UnoPageClient({
     currentMatchRef.current = currentMatch;
   }, [currentMatch]);
 
-  async function refresh(matchId?: string, roomId?: string) {
+  function showOverview() {
+    currentMatchRef.current = null;
+    setCurrentRoom(null);
+    setCurrentMatch(null);
+    setManualOverview(true);
+    replaceRoomUrl(null);
+  }
+
+  async function refresh(input?: {
+    matchId?: string;
+    preferOverview?: boolean;
+    roomId?: string;
+  }) {
+    const preferOverview = input?.preferOverview ?? manualOverview;
+    const inviteRoomId = new URL(window.location.href).searchParams.get(
+      'invite',
+    );
     const targetRoomId =
-      roomId ??
-      currentRoom?.roomId ??
-      new URL(window.location.href).searchParams.get('invite');
+      input?.roomId ??
+      inviteRoomId ??
+      (!preferOverview ? currentRoom?.roomId : null);
     const [nextMatches, nextRooms, targetedRoom] = await Promise.all([
       loadMatchList(),
       loadRoomList(),
@@ -354,19 +372,22 @@ export function UnoPageClient({
     setRooms(nextRooms);
 
     const openRooms = getOpenRooms(nextRooms);
-    const nextCurrentRoom =
-      (targetedRoom?.status === 'open' ? targetedRoom : null) ??
-      (roomId ? openRooms.find((room) => room.roomId === roomId) : null) ??
-      (currentRoom
-        ? openRooms.find((room) => room.roomId === currentRoom.roomId)
-        : null) ??
-      openRooms[0] ??
-      null;
+    const nextCurrentRoom = preferOverview
+      ? null
+      : ((targetedRoom?.status === 'open' ? targetedRoom : null) ??
+        (input?.roomId
+          ? openRooms.find((room) => room.roomId === input.roomId)
+          : null) ??
+        (currentRoom
+          ? openRooms.find((room) => room.roomId === currentRoom.roomId)
+          : null) ??
+        openRooms[0] ??
+        null);
     setCurrentRoom(nextCurrentRoom);
 
     if (targetedRoom && targetedRoom.status !== 'closed') {
       replaceRoomUrl(targetedRoom.roomId);
-    } else if (!nextCurrentRoom && !matchId) {
+    } else if (!nextCurrentRoom && !input?.matchId) {
       replaceRoomUrl(null);
     }
 
@@ -376,29 +397,36 @@ export function UnoPageClient({
         ?.activeMatchId ??
       null;
     const targetMatchId =
-      matchId ??
-      targetedRoom?.activeMatchId ??
-      currentMatchRef.current?.matchId ??
-      nextMatches.active[0]?.matchId ??
-      activeRoomMatchId;
+      input?.matchId ??
+      (preferOverview
+        ? null
+        : (targetedRoom?.activeMatchId ??
+          (currentMatchRef.current?.status === 'active'
+            ? currentMatchRef.current.matchId
+            : null) ??
+          nextMatches.active[0]?.matchId ??
+          activeRoomMatchId));
 
     if (!targetMatchId) {
+      currentMatchRef.current = null;
       setCurrentMatch(null);
       return;
     }
 
     const snapshot = await loadMatchSnapshot(targetMatchId);
+    currentMatchRef.current = snapshot;
     setCurrentMatch(snapshot);
   }
 
   const refreshFromEffects = useEffectEvent(
-    async (matchId?: string, roomId?: string) => {
-      await refresh(matchId, roomId);
+    async (matchId?: string, roomId?: string, preferOverview?: boolean) => {
+      await refresh({ matchId, roomId, preferOverview });
     },
   );
 
   const handleLiveUpdate = useEffectEvent(
     async (snapshot: PersistedUnoMatchSnapshotDto) => {
+      currentMatchRef.current = snapshot;
       setState((current) => ({
         ...(current.error ? { ...current, error: undefined } : current),
         ...(snapshot.status === 'completed'
@@ -409,7 +437,7 @@ export function UnoPageClient({
 
       if (snapshot.status !== 'active') {
         try {
-          await refresh(snapshot.matchId);
+          await refresh({ preferOverview: true });
         } catch (error) {
           setState({
             error:
@@ -594,6 +622,7 @@ export function UnoPageClient({
     }
 
     const room = await readJson<GameRoomDto>(response);
+    setManualOverview(false);
     setRooms((existing) => [
       room,
       ...existing.filter((existingRoom) => existingRoom.roomId !== room.roomId),
@@ -635,6 +664,7 @@ export function UnoPageClient({
 
     const room = await readJson<GameRoomDto>(response);
     setInviteRoomId(null);
+    setManualOverview(false);
     setRooms((existing) => [
       room,
       ...existing.filter((existingRoom) => existingRoom.roomId !== room.roomId),
@@ -685,6 +715,7 @@ export function UnoPageClient({
     }
 
     const room = await readJson<GameRoomDto>(response);
+    setManualOverview(false);
     setRooms((existing) =>
       existing.map((existingRoom) =>
         existingRoom.roomId === room.roomId ? room : existingRoom,
@@ -725,16 +756,18 @@ export function UnoPageClient({
         existingRoom.roomId === room.roomId ? room : existingRoom,
       ),
     );
+    setManualOverview(false);
     setCurrentRoom(null);
     setState({ announcement: labels.startedGameStatus });
     replaceRoomUrl(room.roomId);
 
     if (room.activeMatchId) {
       const snapshot = await loadMatchSnapshot(room.activeMatchId);
+      currentMatchRef.current = snapshot;
       setCurrentMatch(snapshot);
-      await refresh(snapshot.matchId);
+      await refresh({ matchId: snapshot.matchId });
     } else {
-      await refresh(undefined, room.roomId);
+      await refresh({ roomId: room.roomId });
     }
 
     setPending(false);
@@ -762,6 +795,8 @@ export function UnoPageClient({
 
     try {
       const snapshot = await loadMatchSnapshot(matchId);
+      currentMatchRef.current = snapshot;
+      setManualOverview(false);
       setCurrentMatch(snapshot);
       setCurrentRoom(null);
     } catch (error) {
@@ -806,13 +841,14 @@ export function UnoPageClient({
     }
 
     const snapshot = await readJson<PersistedUnoMatchSnapshotDto>(response);
+    currentMatchRef.current = snapshot;
     setCurrentMatch(snapshot);
 
     if (snapshot.status !== 'active') {
       if (snapshot.status === 'completed') {
         setState({ announcement: labels.completedMatchStatus });
       }
-      await refresh(snapshot.matchId);
+      await refresh({ preferOverview: true });
     }
 
     setPending(false);
@@ -916,10 +952,11 @@ export function UnoPageClient({
     }
 
     const snapshot = await readJson<PersistedUnoMatchSnapshotDto>(response);
+    currentMatchRef.current = snapshot;
     setCurrentMatch(snapshot);
     setState({ announcement: labels.exitedGameStatus });
     replaceRoomUrl(null);
-    await refresh();
+    await refresh({ preferOverview: true });
     setPending(false);
   }
 
@@ -961,14 +998,16 @@ export function UnoPageClient({
               className={buttonVariants({ variant: 'outline' })}
               disabled={pending}
               onClick={() => {
-                void refresh().catch((error) => {
-                  setState({
-                    error:
-                      error instanceof Error
-                        ? error.message
-                        : 'Unable to reload matches.',
-                  });
-                });
+                void refresh({ preferOverview: manualOverview }).catch(
+                  (error) => {
+                    setState({
+                      error:
+                        error instanceof Error
+                          ? error.message
+                          : 'Unable to reload matches.',
+                    });
+                  },
+                );
               }}
             >
               {labels.reloadAction}
@@ -1136,6 +1175,7 @@ export function UnoPageClient({
                         className={buttonVariants({ variant: 'outline' })}
                         disabled={pending}
                         onClick={() => {
+                          setManualOverview(false);
                           replaceRoomUrl(room.roomId);
                           setCurrentRoom(room);
                           setCurrentMatch(null);
@@ -1214,6 +1254,16 @@ export function UnoPageClient({
         >
           {hasFocusedSession ? (
             <div className="mb-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                className={buttonVariants({ variant: 'outline' })}
+                disabled={pending}
+                onClick={() => {
+                  showOverview();
+                }}
+              >
+                {labels.overviewAction}
+              </button>
               <a
                 href={pastGamesHref}
                 className={buttonVariants({ variant: 'outline' })}
@@ -1225,14 +1275,16 @@ export function UnoPageClient({
                 className={buttonVariants({ variant: 'outline' })}
                 disabled={pending}
                 onClick={() => {
-                  void refresh().catch((error) => {
-                    setState({
-                      error:
-                        error instanceof Error
-                          ? error.message
-                          : 'Unable to reload matches.',
-                    });
-                  });
+                  void refresh({ preferOverview: manualOverview }).catch(
+                    (error) => {
+                      setState({
+                        error:
+                          error instanceof Error
+                            ? error.message
+                            : 'Unable to reload matches.',
+                      });
+                    },
+                  );
                 }}
               >
                 {labels.reloadAction}

@@ -48,6 +48,7 @@ export const unoPage = {
   recentMatchesTitle: 'Recent matches',
   activeMatchesTitle: 'Your active matches',
   noActiveMatch: 'Create a lobby, join an invite, or resume an active match.',
+  overviewAction: 'Back to overview',
   reviewReplayAction: 'Review replay',
   legalActionsTitle: 'Legal actions',
   analysisTitle: 'Analysis',

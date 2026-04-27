@@ -48,6 +48,7 @@ const labels = {
   nameLabel: 'Player name',
   noActiveMatch: 'Create or resume a match.',
   openLobbiesTitle: 'Recent matches',
+  overviewAction: 'Back to overview',
   pastGamesCta: 'Past games',
   readyAction: 'Ready up',
   readyToStart: 'Ready to start.',
@@ -713,15 +714,18 @@ describe('UnoPageClient live updates', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Play red-5' }));
 
     await waitFor(() => {
-      const reviewLink = screen.getByRole('link', { name: 'Review replay' });
+      const replayLink = screen
+        .getAllByRole('link')
+        .find(
+          (candidate) =>
+            candidate.getAttribute('href') === '/en/past-games/match-uno-1',
+        );
 
       expect(
         screen.getByText('Match finished and saved to past games.'),
       ).toBeTruthy();
-      expect(reviewLink.getAttribute('href')).toBe(
-        '/en/past-games/match-uno-1',
-      );
-      expect(screen.getByText('Winner: Alice')).toBeTruthy();
+      expect(replayLink).toBeTruthy();
+      expect(screen.queryByRole('link', { name: 'Review replay' })).toBeNull();
     });
   });
 });

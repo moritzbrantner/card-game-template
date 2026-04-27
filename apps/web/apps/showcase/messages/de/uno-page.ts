@@ -51,6 +51,7 @@ export const unoPage = {
   activeMatchesTitle: 'Deine aktiven Partien',
   noActiveMatch:
     'Erstelle eine Lobby, tritt einer Einladung bei oder setze eine aktive Partie fort.',
+  overviewAction: 'Zur Uebersicht',
   reviewReplayAction: 'Replay ansehen',
   legalActionsTitle: 'Zulaessige Aktionen',
   analysisTitle: 'Analyse',
