@@ -40,11 +40,26 @@ export type Phase10Rules = {
   setSize: number;
 };
 
+export type Phase10PhaseRequirement =
+  | {
+      size: number;
+      type: 'set';
+    }
+  | {
+      size: number;
+      type: 'color';
+    }
+  | {
+      size: number;
+      type: 'run';
+    };
+
 export type Phase10PhaseDefinition = {
   id: string;
   label: string;
-  setCount: number;
-  setSize: number;
+  requirements?: readonly Phase10PhaseRequirement[];
+  setCount?: number;
+  setSize?: number;
 };
 
 export type Phase10Setup = {
@@ -56,9 +71,12 @@ export type Phase10Setup = {
 export type Phase10LaidGroup = {
   cards: readonly Phase10Card[];
   cardIds: readonly string[];
+  color?: Phase10Color | null;
   label: string;
-  type: 'set';
-  value: number | null;
+  runEnd?: number | null;
+  runStart?: number | null;
+  type: Phase10PhaseRequirement['type'];
+  value?: number | null;
 };
 
 export type Phase10PlayerPhaseState = {
@@ -176,25 +194,54 @@ export const defaultPhase10Rules: Phase10Rules = {
 };
 
 export function formatPhase10PhaseLabel(
-  setCount: number,
-  setSize: number,
-  phaseNumber?: number,
+  requirementsOrSetCount: readonly Phase10PhaseRequirement[] | number,
+  setSizeOrPhaseNumber?: number,
+  maybePhaseNumber?: number,
 ) {
-  const setLabel = `${setCount} set${setCount === 1 ? '' : 's'} of ${setSize}`;
+  const requirements = Array.isArray(requirementsOrSetCount)
+    ? requirementsOrSetCount
+    : Array.from({ length: Number(requirementsOrSetCount) }, () => ({
+        size: setSizeOrPhaseNumber ?? defaultPhase10Rules.setSize,
+        type: 'set' as const,
+      }));
+  const phaseNumber = Array.isArray(requirementsOrSetCount)
+    ? setSizeOrPhaseNumber
+    : maybePhaseNumber;
+  const uniformSetSize =
+    requirements.length > 0 &&
+    requirements.every(
+      (requirement) =>
+        requirement.type === 'set' &&
+        requirement.size === requirements[0]?.size,
+    )
+      ? (requirements[0]?.size ?? null)
+      : null;
+  const phaseLabel =
+    uniformSetSize !== null
+      ? `${requirements.length} set${requirements.length === 1 ? '' : 's'} of ${uniformSetSize}`
+      : requirements
+          .map((requirement) => formatPhase10RequirementLabel(requirement))
+          .join(' + ');
 
   return typeof phaseNumber === 'number'
-    ? `Phase ${phaseNumber}: ${setLabel}`
-    : setLabel;
+    ? `Phase ${phaseNumber}: ${phaseLabel}`
+    : phaseLabel;
 }
 
 export const defaultPhase10Phases: readonly Phase10PhaseDefinition[] = [
   {
     id: 'phase-1',
     label: formatPhase10PhaseLabel(
-      defaultPhase10Rules.setCount,
-      defaultPhase10Rules.setSize,
+      Array.from({ length: defaultPhase10Rules.setCount }, () => ({
+        size: defaultPhase10Rules.setSize,
+        type: 'set' as const,
+      })),
       1,
     ),
+    requirements: Array.from({ length: defaultPhase10Rules.setCount }, () => ({
+      size: defaultPhase10Rules.setSize,
+      type: 'set' as const,
+    })),
     setCount: defaultPhase10Rules.setCount,
     setSize: defaultPhase10Rules.setSize,
   },
@@ -217,6 +264,83 @@ const COLORS: readonly Phase10Color[] = ['red', 'yellow', 'green', 'blue'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isPhase10RequirementType(
+  value: unknown,
+): value is Phase10PhaseRequirement['type'] {
+  return value === 'set' || value === 'color' || value === 'run';
+}
+
+function createRepeatedSetRequirements(
+  setCount: number,
+  setSize: number,
+): Phase10PhaseRequirement[] {
+  return Array.from({ length: setCount }, () => ({
+    size: setSize,
+    type: 'set' as const,
+  }));
+}
+
+function clonePhaseRequirements(
+  requirements: readonly Phase10PhaseRequirement[],
+): Phase10PhaseRequirement[] {
+  return requirements.map((requirement) => ({ ...requirement }));
+}
+
+function deriveUniformSetConfig(
+  requirements: readonly Phase10PhaseRequirement[],
+) {
+  if (
+    requirements.length === 0 ||
+    requirements.some(
+      (requirement) =>
+        requirement.type !== 'set' ||
+        requirement.size !== requirements[0]?.size,
+    )
+  ) {
+    return null;
+  }
+
+  return {
+    setCount: requirements.length,
+    setSize: requirements[0]!.size,
+  };
+}
+
+export function getPhase10PhaseRequirements(
+  phase: Pick<Phase10PhaseDefinition, 'requirements' | 'setCount' | 'setSize'>,
+): readonly Phase10PhaseRequirement[] {
+  if (phase.requirements && phase.requirements.length > 0) {
+    return phase.requirements;
+  }
+
+  if (
+    typeof phase.setCount === 'number' &&
+    Number.isInteger(phase.setCount) &&
+    phase.setCount > 0 &&
+    typeof phase.setSize === 'number' &&
+    Number.isInteger(phase.setSize) &&
+    phase.setSize > 0
+  ) {
+    return createRepeatedSetRequirements(phase.setCount, phase.setSize);
+  }
+
+  throw new Error('Phase 10 phases must define at least one requirement.');
+}
+
+export function formatPhase10RequirementLabel(
+  requirement: Phase10PhaseRequirement,
+) {
+  if (requirement.type === 'set') {
+    return `set of ${requirement.size}`;
+  }
+
+  if (requirement.type === 'color') {
+    return `${requirement.size} cards of one color`;
+  }
+
+  return `street of ${requirement.size}`;
 }
 
 function parseFiniteNumber(
@@ -262,7 +386,12 @@ function parseBoolean(
 function clonePhaseDefinitions(
   phases: readonly Phase10PhaseDefinition[],
 ): Phase10PhaseDefinition[] {
-  return phases.map((phase) => ({ ...phase }));
+  return phases.map((phase) => ({
+    ...phase,
+    requirements: phase.requirements
+      ? clonePhaseRequirements(phase.requirements)
+      : undefined,
+  }));
 }
 
 function clonePhases(
@@ -286,17 +415,25 @@ function clonePhases(
 }
 
 function normalizePhaseDefinition(
-  phase: Pick<Phase10PhaseDefinition, 'label' | 'setCount' | 'setSize'>,
+  phase: Pick<
+    Phase10PhaseDefinition,
+    'label' | 'requirements' | 'setCount' | 'setSize'
+  >,
   index: number,
 ): Phase10PhaseDefinition {
+  const requirements = clonePhaseRequirements(
+    getPhase10PhaseRequirements(phase),
+  );
+  const uniformSetConfig = deriveUniformSetConfig(requirements);
+
   return {
     id: `phase-${index + 1}`,
     label:
       phase.label.trim().length > 0
         ? phase.label.trim()
-        : formatPhase10PhaseLabel(phase.setCount, phase.setSize, index + 1),
-    setCount: phase.setCount,
-    setSize: phase.setSize,
+        : formatPhase10PhaseLabel(requirements, index + 1),
+    requirements,
+    ...(uniformSetConfig ?? {}),
   };
 }
 
@@ -312,8 +449,10 @@ function createPhaseDefinitions(
     normalizePhaseDefinition(
       {
         label: '',
-        setCount: rules.setCount,
-        setSize: rules.setSize,
+        requirements: createRepeatedSetRequirements(
+          rules.setCount,
+          rules.setSize,
+        ),
       },
       0,
     ),
@@ -395,6 +534,81 @@ function createSetLabel(cards: readonly Phase10Card[]) {
   return wildCount > 0 ? `Set of ${value}s + wild` : `Set of ${value}s`;
 }
 
+function resolveColorValue(cards: readonly Phase10Card[]) {
+  const numericCards = cards.filter(
+    (card): card is Phase10Card & { color: Phase10Color; kind: 'number' } =>
+      card.kind === 'number',
+  );
+
+  if (numericCards.length === 0) {
+    return null;
+  }
+
+  const color = numericCards[0]!.color;
+  return numericCards.every((card) => card.color === color) ? color : null;
+}
+
+function createColorLabel(cards: readonly Phase10Card[]) {
+  const color = resolveColorValue(cards);
+  const wildCount = cards.filter((card) => card.kind === 'wild').length;
+
+  if (color === null) {
+    return wildCount === cards.length
+      ? `Color group of ${cards.length} wild${cards.length === 1 ? '' : 's'}`
+      : 'Flexible color group';
+  }
+
+  return wildCount > 0
+    ? `${cards.length} ${color} cards + wild`
+    : `${cards.length} ${color} cards`;
+}
+
+function resolveRunRange(cards: readonly Phase10Card[], size: number) {
+  if (cards.length !== size || cards.some((card) => card.kind === 'skip')) {
+    return null;
+  }
+
+  const numericValues = cards
+    .filter(
+      (card): card is Phase10Card & { kind: 'number'; value: number } =>
+        card.kind === 'number' && typeof card.value === 'number',
+    )
+    .map((card) => card.value)
+    .sort((left, right) => left - right);
+  const uniqueValues = [...new Set(numericValues)];
+
+  if (uniqueValues.length !== numericValues.length || size > 12) {
+    return null;
+  }
+
+  for (let start = 1; start <= 13 - size; start += 1) {
+    const end = start + size - 1;
+
+    if (uniqueValues.every((value) => value >= start && value <= end)) {
+      return { start, end };
+    }
+  }
+
+  return null;
+}
+
+function createRunLabel(cards: readonly Phase10Card[]) {
+  const range = resolveRunRange(cards, cards.length);
+  const wildCount = cards.filter((card) => card.kind === 'wild').length;
+
+  if (!range) {
+    return 'Invalid street';
+  }
+
+  if (wildCount === cards.length) {
+    return `Flexible street of ${cards.length}`;
+  }
+
+  return wildCount > 0
+    ? `Street ${range.start}-${range.end} + wild`
+    : `Street ${range.start}-${range.end}`;
+}
+
 function isValidSetGroup(cards: readonly Phase10Card[], setSize: number) {
   if (cards.length !== setSize) {
     return false;
@@ -408,14 +622,266 @@ function isValidSetGroup(cards: readonly Phase10Card[], setSize: number) {
   return value !== null || cards.every((card) => card.kind === 'wild');
 }
 
-function toLaidGroup(cards: readonly Phase10Card[]): Phase10LaidGroup {
+function isValidColorGroup(cards: readonly Phase10Card[], size: number) {
+  if (cards.length !== size || cards.some((card) => card.kind === 'skip')) {
+    return false;
+  }
+
+  const color = resolveColorValue(cards);
+  return color !== null || cards.every((card) => card.kind === 'wild');
+}
+
+function isValidRunGroup(cards: readonly Phase10Card[], size: number) {
+  return resolveRunRange(cards, size) !== null;
+}
+
+function isValidRequirementGroup(
+  cards: readonly Phase10Card[],
+  requirement: Phase10PhaseRequirement,
+) {
+  if (requirement.type === 'set') {
+    return isValidSetGroup(cards, requirement.size);
+  }
+
+  if (requirement.type === 'color') {
+    return isValidColorGroup(cards, requirement.size);
+  }
+
+  return isValidRunGroup(cards, requirement.size);
+}
+
+function toLaidGroupForType(
+  cards: readonly Phase10Card[],
+  type: Phase10PhaseRequirement['type'],
+): Phase10LaidGroup {
+  if (type === 'set') {
+    return {
+      cards: [...cards],
+      cardIds: cards.map((card) => card.id),
+      label: createSetLabel(cards),
+      type,
+      value: resolveSetValue(cards),
+    };
+  }
+
+  if (type === 'color') {
+    return {
+      cards: [...cards],
+      cardIds: cards.map((card) => card.id),
+      color: resolveColorValue(cards),
+      label: createColorLabel(cards),
+      type,
+    };
+  }
+
+  const range = resolveRunRange(cards, cards.length);
+
   return {
     cards: [...cards],
     cardIds: cards.map((card) => card.id),
-    label: createSetLabel(cards),
-    type: 'set',
-    value: resolveSetValue(cards),
+    label: createRunLabel(cards),
+    runEnd: range?.end ?? null,
+    runStart: range?.start ?? null,
+    type,
   };
+}
+
+function toLaidGroup(
+  cards: readonly Phase10Card[],
+  requirement: Phase10PhaseRequirement,
+): Phase10LaidGroup {
+  if (!isValidRequirementGroup(cards, requirement)) {
+    throw new Error(
+      `Cannot create a laid group from ${formatPhase10RequirementLabel(requirement)}.`,
+    );
+  }
+
+  return toLaidGroupForType(cards, requirement.type);
+}
+
+function cardMatchesColorValue(
+  card: Phase10Card,
+  color: Phase10Color | null | undefined,
+) {
+  if (card.kind === 'wild') {
+    return true;
+  }
+
+  if (card.kind !== 'number') {
+    return false;
+  }
+
+  return color === null || color === undefined || card.color === color;
+}
+
+function canAppendToRun(cards: readonly Phase10Card[], card: Phase10Card) {
+  if (card.kind === 'skip') {
+    return false;
+  }
+
+  return resolveRunRange([...cards, card], cards.length + 1) !== null;
+}
+
+function appendToLaidGroup(
+  group: Phase10LaidGroup,
+  card: Phase10Card,
+): Phase10LaidGroup | null {
+  if (card.kind === 'skip') {
+    return null;
+  }
+
+  if (group.type === 'set') {
+    if (!cardMatchesSetValue(card, group.value ?? null)) {
+      return null;
+    }
+
+    return toLaidGroupForType([...group.cards, card], 'set');
+  }
+
+  if (group.type === 'color') {
+    if (!cardMatchesColorValue(card, group.color)) {
+      return null;
+    }
+
+    const nextGroup = [...group.cards, card];
+
+    if (!isValidColorGroup(nextGroup, nextGroup.length)) {
+      return null;
+    }
+
+    return toLaidGroupForType(nextGroup, 'color');
+  }
+
+  if (!canAppendToRun(group.cards, card)) {
+    return null;
+  }
+
+  return toLaidGroupForType([...group.cards, card], 'run');
+}
+
+function cardHelpsRunRequirement(
+  hand: readonly Phase10Card[],
+  card: Phase10Card,
+  size: number,
+) {
+  if (card.kind !== 'number' || typeof card.value !== 'number' || size > 12) {
+    return false;
+  }
+
+  const values = new Set<number>();
+
+  for (const candidate of hand) {
+    if (candidate.kind === 'number' && typeof candidate.value === 'number') {
+      values.add(candidate.value);
+    }
+  }
+
+  values.add(card.value);
+
+  const wildCount = hand.filter(
+    (candidate) => candidate.kind === 'wild',
+  ).length;
+
+  for (let start = 1; start <= 13 - size; start += 1) {
+    const end = start + size - 1;
+
+    if (card.value < start || card.value > end) {
+      continue;
+    }
+
+    let presentCount = 0;
+
+    for (let value = start; value <= end; value += 1) {
+      if (values.has(value)) {
+        presentCount += 1;
+      }
+    }
+
+    if (size - presentCount <= wildCount) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function cardHelpsRequirement(
+  hand: readonly Phase10Card[],
+  card: Phase10Card,
+  requirement: Phase10PhaseRequirement,
+) {
+  if (card.kind === 'wild') {
+    return true;
+  }
+
+  if (card.kind !== 'number') {
+    return false;
+  }
+
+  const wildCount = hand.filter(
+    (candidate) => candidate.kind === 'wild',
+  ).length;
+
+  if (requirement.type === 'set') {
+    return (
+      hand.filter(
+        (candidate) =>
+          candidate.kind === 'number' && candidate.value === card.value,
+      ).length +
+        wildCount >=
+      requirement.size
+    );
+  }
+
+  if (requirement.type === 'color') {
+    return (
+      hand.filter(
+        (candidate) =>
+          candidate.kind === 'number' && candidate.color === card.color,
+      ).length +
+        wildCount >=
+      requirement.size
+    );
+  }
+
+  return cardHelpsRunRequirement(hand, card, requirement.size);
+}
+
+function cardHelpsCurrentPhase(
+  card: Phase10Card | null,
+  state: MatchState<Phase10State>,
+  playerId: PlayerId,
+) {
+  if (!card) {
+    return false;
+  }
+
+  const phase = state.state.phases[playerId];
+
+  if (!phase || phase.laidGroups) {
+    return false;
+  }
+
+  const hand = state.state.hands[playerId] ?? [];
+  const requirements = getPhase10PhaseRequirements(
+    phaseDefinitionForPlayer(state, playerId),
+  );
+
+  return requirements.some((requirement) =>
+    cardHelpsRequirement(hand, card, requirement),
+  );
+}
+
+function toPhaseGroupErrorLabel(requirement: Phase10PhaseRequirement) {
+  if (requirement.type === 'set') {
+    return `set of ${requirement.size}`;
+  }
+
+  if (requirement.type === 'color') {
+    return `${requirement.size} cards of one color`;
+  }
+
+  return `street of ${requirement.size}`;
 }
 
 function combinations<T>(items: readonly T[], size: number): T[][] {
@@ -448,25 +914,30 @@ function combinations<T>(items: readonly T[], size: number): T[][] {
 
 function findPhaseGroups(
   hand: readonly Phase10Card[],
-  phaseDefinition: Pick<Phase10PhaseDefinition, 'setCount' | 'setSize'>,
+  phaseDefinition: Pick<
+    Phase10PhaseDefinition,
+    'requirements' | 'setCount' | 'setSize'
+  >,
 ): readonly (readonly Phase10Card[])[] | null {
   const usableCards = hand.filter((card) => card.kind !== 'skip');
-  const setOptions = combinations(usableCards, phaseDefinition.setSize).filter(
-    (group) => isValidSetGroup(group, phaseDefinition.setSize),
-  );
+  const requirements = getPhase10PhaseRequirements(phaseDefinition);
   const chosen: Phase10Card[][] = [];
   const usedCardIds = new Set<string>();
 
   function search(
-    startIndex: number,
+    requirementIndex: number,
   ): readonly (readonly Phase10Card[])[] | null {
-    if (chosen.length === phaseDefinition.setCount) {
+    if (requirementIndex === requirements.length) {
       return chosen.map((group) => [...group]);
     }
 
-    for (let index = startIndex; index < setOptions.length; index += 1) {
-      const candidate = setOptions[index]!;
+    const requirement = requirements[requirementIndex]!;
+    const options = combinations(
+      usableCards.filter((card) => !usedCardIds.has(card.id)),
+      requirement.size,
+    ).filter((group) => isValidRequirementGroup(group, requirement));
 
+    for (const candidate of options) {
       if (candidate.some((card) => usedCardIds.has(card.id))) {
         continue;
       }
@@ -476,7 +947,7 @@ function findPhaseGroups(
       });
       chosen.push(candidate);
 
-      const result = search(index + 1);
+      const result = search(requirementIndex + 1);
 
       if (result) {
         return result;
@@ -714,7 +1185,7 @@ function createHitMoves(
       const laidGroups = state.state.phases[player.playerId]?.laidGroups ?? [];
 
       laidGroups.forEach((group, groupIndex) => {
-        if (!cardMatchesSetValue(card, group.value)) {
+        if (!appendToLaidGroup(group, card)) {
           return;
         }
 
@@ -739,13 +1210,15 @@ function validatePhaseGroupsMove(
   hand: readonly Phase10Card[],
   phaseDefinition: Pick<
     Phase10PhaseDefinition,
-    'label' | 'setCount' | 'setSize'
+    'label' | 'requirements' | 'setCount' | 'setSize'
   >,
   groups: readonly (readonly string[])[],
 ) {
-  if (groups.length !== phaseDefinition.setCount) {
+  const requirements = getPhase10PhaseRequirements(phaseDefinition);
+
+  if (groups.length !== requirements.length) {
     throw new Error(
-      `${phaseDefinition.label} requires ${phaseDefinition.setCount} sets.`,
+      `${phaseDefinition.label} requires ${requirements.length} groups.`,
     );
   }
 
@@ -764,7 +1237,8 @@ function validatePhaseGroupsMove(
 
   const cardsById = new Map(removedCards.map((card) => [card.id, card]));
 
-  return groups.map((group) => {
+  return groups.map((group, groupIndex) => {
+    const requirement = requirements[groupIndex]!;
     const cards = group.map((cardId) => {
       const card = cardsById.get(cardId);
 
@@ -775,9 +1249,9 @@ function validatePhaseGroupsMove(
       return card;
     });
 
-    if (!isValidSetGroup(cards, phaseDefinition.setSize)) {
+    if (!isValidRequirementGroup(cards, requirement)) {
       throw new Error(
-        `Each ${phaseDefinition.label.toLowerCase()} group must be a valid set.`,
+        `Group ${groupIndex + 1} of ${phaseDefinition.label.toLowerCase()} must be a valid ${toPhaseGroupErrorLabel(requirement)}.`,
       );
     }
 
@@ -857,7 +1331,12 @@ function applyLayMove(
 
   nextPhases[move.playerId] = {
     ...nextPhases[move.playerId]!,
-    laidGroups: groups.map((group) => toLaidGroup(group)),
+    laidGroups: groups.map((group, groupIndex) =>
+      toLaidGroup(
+        group,
+        getPhase10PhaseRequirements(phaseDefinition)[groupIndex]!,
+      ),
+    ),
   };
 
   return {
@@ -894,23 +1373,15 @@ function applyHitMove(
     throw new Error('Cannot hit a phase group that has not been laid.');
   }
 
-  if (!cardMatchesSetValue(removed.card, targetGroup.value)) {
-    throw new Error('Card does not fit the target set.');
-  }
+  const nextGroup = appendToLaidGroup(targetGroup, removed.card);
 
-  const nextCards = [...targetGroup.cards, removed.card];
+  if (!nextGroup) {
+    throw new Error('Card does not fit the target phase group.');
+  }
   nextPhases[move.payload.targetPlayerId] = {
     ...targetPhase,
     laidGroups: laidGroups.map((group, groupIndex) =>
-      groupIndex === move.payload.groupIndex
-        ? {
-            ...targetGroup,
-            cards: nextCards,
-            cardIds: nextCards.map((card) => card.id),
-            label: createSetLabel(nextCards),
-            value: resolveSetValue(nextCards),
-          }
-        : group,
+      groupIndex === move.payload.groupIndex ? nextGroup : group,
     ),
   };
 
@@ -1115,15 +1586,17 @@ function cardUsefulness(
 
   if (ownPhase) {
     const canHit = state.players.some((player) =>
-      (state.state.phases[player.playerId]?.laidGroups ?? []).some((group) =>
-        cardMatchesSetValue(card, group.value),
+      (state.state.phases[player.playerId]?.laidGroups ?? []).some(
+        (group) => appendToLaidGroup(group, card) !== null,
       ),
     );
 
     return canHit ? 80 : 8 + countValueMatches(hand, card.value);
   }
 
-  return countValueMatches(hand, card.value) * 12 + 10;
+  return cardHelpsCurrentPhase(card, state, playerId)
+    ? 48
+    : countValueMatches(hand, card.value) * 12 + 10;
 }
 
 function chooseDiscardMove(
@@ -1164,8 +1637,7 @@ function isHelpfulDiscard(
     return true;
   }
 
-  const hand = state.state.hands[playerId] ?? [];
-  return countValueMatches(hand, card.value) >= 1;
+  return cardHelpsCurrentPhase(card, state, playerId);
 }
 
 export function parsePhase10Setup(value: unknown): Phase10Setup {
@@ -1236,14 +1708,6 @@ export function parsePhase10Setup(value: unknown): Phase10Setup {
         throw new TypeError('Phase 10 phases must contain objects.');
       }
 
-      const setCount = parsePositiveInteger(
-        phase.setCount,
-        `Phase 10 phase ${index + 1} setCount`,
-      );
-      const setSize = parsePositiveInteger(
-        phase.setSize,
-        `Phase 10 phase ${index + 1} setSize`,
-      );
       const label =
         phase.label === undefined
           ? ''
@@ -1254,6 +1718,54 @@ export function parsePhase10Setup(value: unknown): Phase10Setup {
                   `Phase 10 phase ${index + 1} label must be a string.`,
                 );
               })();
+      const requirements =
+        phase.requirements === undefined
+          ? null
+          : (() => {
+              if (
+                !Array.isArray(phase.requirements) ||
+                phase.requirements.length === 0
+              ) {
+                throw new TypeError(
+                  `Phase 10 phase ${index + 1} requirements must be a non-empty array.`,
+                );
+              }
+
+              return phase.requirements.map((requirement, requirementIndex) => {
+                if (!isRecord(requirement)) {
+                  throw new TypeError(
+                    `Phase 10 phase ${index + 1} requirements must contain objects.`,
+                  );
+                }
+
+                if (!isPhase10RequirementType(requirement.type)) {
+                  throw new TypeError(
+                    `Phase 10 phase ${index + 1} requirement ${requirementIndex + 1} type must be "set", "color", or "run".`,
+                  );
+                }
+
+                return {
+                  size: parsePositiveInteger(
+                    requirement.size,
+                    `Phase 10 phase ${index + 1} requirement ${requirementIndex + 1} size`,
+                  ),
+                  type: requirement.type,
+                } satisfies Phase10PhaseRequirement;
+              });
+            })();
+
+      if (requirements) {
+        return normalizePhaseDefinition({ label, requirements }, index);
+      }
+
+      const setCount = parsePositiveInteger(
+        phase.setCount,
+        `Phase 10 phase ${index + 1} setCount`,
+      );
+      const setSize = parsePositiveInteger(
+        phase.setSize,
+        `Phase 10 phase ${index + 1} setSize`,
+      );
 
       return normalizePhaseDefinition({ label, setCount, setSize }, index);
     });

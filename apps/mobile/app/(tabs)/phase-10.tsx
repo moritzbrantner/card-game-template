@@ -17,11 +17,13 @@ import {
   defaultPhase10Phases,
   defaultPhase10Rules,
   formatPhase10PhaseLabel,
+  formatPhase10RequirementLabel,
   getPhase10ExamplePreset,
   phase10ExamplePresets,
   projectPhase10PlayerView,
   type Phase10ExamplePresetId,
   type Phase10PhaseDefinition,
+  type Phase10PhaseRequirement,
   type Phase10Move,
   type Phase10PlayerView,
   type Phase10State,
@@ -32,8 +34,52 @@ type Phase10TableConfig = {
   presetId: Phase10ExamplePresetId;
 };
 
+function clonePhaseRequirement(
+  requirement: Phase10PhaseRequirement,
+): Phase10PhaseRequirement {
+  return { ...requirement };
+}
+
 function clonePhaseDefinitions(phases: readonly Phase10PhaseDefinition[]) {
-  return phases.map((phase) => ({ ...phase }));
+  return phases.map((phase) => ({
+    ...phase,
+    requirements: (phase.requirements ?? []).map(clonePhaseRequirement),
+  }));
+}
+
+function createDefaultRequirement(
+  type: Phase10PhaseRequirement['type'] = 'set',
+): Phase10PhaseRequirement {
+  return {
+    size: type === 'set' ? 2 : 4,
+    type,
+  };
+}
+
+function createDefaultPhaseDefinition(index: number): Phase10PhaseDefinition {
+  const requirements = [createDefaultRequirement()];
+
+  return {
+    id: `phase-${index + 1}`,
+    label: formatPhase10PhaseLabel(requirements, index + 1),
+    requirements,
+  };
+}
+
+function getPhaseRequirementMinSize(_requirement: Phase10PhaseRequirement) {
+  return 2;
+}
+
+function getPhaseRequirementMaxSize(requirement: Phase10PhaseRequirement) {
+  return requirement.type === 'set' ? 6 : 12;
+}
+
+function formatPhaseRequirementSummary(
+  requirements: readonly Phase10PhaseRequirement[],
+) {
+  return requirements
+    .map((requirement) => formatPhase10RequirementLabel(requirement))
+    .join(' + ');
 }
 
 function createDefaultTableConfig(): Phase10TableConfig {
@@ -49,7 +95,8 @@ function renumberPhases(
   return phases.map((phase, index) => ({
     ...phase,
     id: `phase-${index + 1}`,
-    label: formatPhase10PhaseLabel(phase.setCount, phase.setSize, index + 1),
+    label: formatPhase10PhaseLabel(phase.requirements ?? [], index + 1),
+    requirements: (phase.requirements ?? []).map(clonePhaseRequirement),
   }));
 }
 
@@ -78,7 +125,11 @@ function createSession(
 ): LocalGameSession<Phase10State, Phase10Move, Phase10PlayerView> {
   const preset = getPhase10ExamplePreset(config.presetId);
   const seed = `mobile-phase-10:${config.presetId}:${config.phases
-    .map((phase) => `${phase.setCount}x${phase.setSize}:${phase.label}`)
+    .map((phase) =>
+      (phase.requirements ?? [])
+        .map((requirement) => `${requirement.type[0]}${requirement.size}`)
+        .join('+'),
+    )
     .join('|')}`;
 
   return createLocalGameSession({
@@ -231,16 +282,7 @@ export default function Phase10Screen() {
                   ...current,
                   phases: renumberPhases([
                     ...current.phases,
-                    {
-                      id: `phase-${current.phases.length + 1}`,
-                      label: formatPhase10PhaseLabel(
-                        2,
-                        3,
-                        current.phases.length + 1,
-                      ),
-                      setCount: 2,
-                      setSize: 3,
-                    },
+                    createDefaultPhaseDefinition(current.phases.length),
                   ]),
                 }));
               }}
@@ -262,8 +304,8 @@ export default function Phase10Screen() {
                 >
                   <ThemedText type="defaultSemiBold">{phase.label}</ThemedText>
                   <ThemedText style={{ color: mutedTextColor }}>
-                    Order {index + 1} · {phase.setCount} sets · size{' '}
-                    {phase.setSize}
+                    Order {index + 1} ·{' '}
+                    {formatPhaseRequirementSummary(phase.requirements ?? [])}
                   </ThemedText>
 
                   <View style={styles.phaseButtonRow}>
@@ -338,112 +380,195 @@ export default function Phase10Screen() {
                   </View>
 
                   <View style={styles.phaseButtonRow}>
-                    <Pressable
-                      disabled={phase.setCount === 1}
-                      onPress={() => {
-                        setDraftConfig((current) => ({
-                          ...current,
-                          phases: renumberPhases(
-                            current.phases.map((candidate, phaseIndex) =>
-                              phaseIndex === index
-                                ? {
-                                    ...candidate,
-                                    setCount: Math.max(
-                                      1,
-                                      candidate.setCount - 1,
-                                    ),
-                                  }
-                                : candidate,
+                    {(['set', 'color', 'run'] as const).map((type) => (
+                      <Pressable
+                        key={`${phase.id}-${type}`}
+                        onPress={() => {
+                          setDraftConfig((current) => ({
+                            ...current,
+                            phases: renumberPhases(
+                              current.phases.map((candidate, phaseIndex) =>
+                                phaseIndex === index
+                                  ? {
+                                      ...candidate,
+                                      requirements: [
+                                        ...(candidate.requirements ?? []),
+                                        createDefaultRequirement(type),
+                                      ],
+                                    }
+                                  : candidate,
+                              ),
                             ),
-                          ),
-                        }));
-                      }}
-                      style={({ pressed }) => [
-                        styles.secondaryButton,
-                        {
-                          borderColor,
-                          opacity:
-                            phase.setCount === 1 ? 0.45 : pressed ? 0.82 : 1,
-                        },
-                      ]}
-                    >
-                      <ThemedText type="defaultSemiBold">Sets -</ThemedText>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => {
-                        setDraftConfig((current) => ({
-                          ...current,
-                          phases: renumberPhases(
-                            current.phases.map((candidate, phaseIndex) =>
-                              phaseIndex === index
-                                ? {
-                                    ...candidate,
-                                    setCount: candidate.setCount + 1,
-                                  }
-                                : candidate,
-                            ),
-                          ),
-                        }));
-                      }}
-                      style={({ pressed }) => [
-                        styles.secondaryButton,
-                        { borderColor, opacity: pressed ? 0.82 : 1 },
-                      ]}
-                    >
-                      <ThemedText type="defaultSemiBold">Sets +</ThemedText>
-                    </Pressable>
-                    <Pressable
-                      disabled={phase.setSize === 1}
-                      onPress={() => {
-                        setDraftConfig((current) => ({
-                          ...current,
-                          phases: renumberPhases(
-                            current.phases.map((candidate, phaseIndex) =>
-                              phaseIndex === index
-                                ? {
-                                    ...candidate,
-                                    setSize: Math.max(1, candidate.setSize - 1),
-                                  }
-                                : candidate,
-                            ),
-                          ),
-                        }));
-                      }}
-                      style={({ pressed }) => [
-                        styles.secondaryButton,
-                        {
-                          borderColor,
-                          opacity:
-                            phase.setSize === 1 ? 0.45 : pressed ? 0.82 : 1,
-                        },
-                      ]}
-                    >
-                      <ThemedText type="defaultSemiBold">Size -</ThemedText>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => {
-                        setDraftConfig((current) => ({
-                          ...current,
-                          phases: renumberPhases(
-                            current.phases.map((candidate, phaseIndex) =>
-                              phaseIndex === index
-                                ? {
-                                    ...candidate,
-                                    setSize: candidate.setSize + 1,
-                                  }
-                                : candidate,
-                            ),
-                          ),
-                        }));
-                      }}
-                      style={({ pressed }) => [
-                        styles.secondaryButton,
-                        { borderColor, opacity: pressed ? 0.82 : 1 },
-                      ]}
-                    >
-                      <ThemedText type="defaultSemiBold">Size +</ThemedText>
-                    </Pressable>
+                          }));
+                        }}
+                        style={({ pressed }) => [
+                          styles.secondaryButton,
+                          { borderColor, opacity: pressed ? 0.82 : 1 },
+                        ]}
+                      >
+                        <ThemedText type="defaultSemiBold">
+                          {type === 'set'
+                            ? 'Add set'
+                            : type === 'color'
+                              ? 'Add color'
+                              : 'Add street'}
+                        </ThemedText>
+                      </Pressable>
+                    ))}
                   </View>
+
+                  {(phase.requirements ?? []).map(
+                    (requirement, requirementIndex) => (
+                      <View
+                        key={`${phase.id}-${requirementIndex}-${requirement.type}`}
+                        style={styles.phaseButtonRow}
+                      >
+                        <ThemedText style={{ color: mutedTextColor }}>
+                          {formatPhase10RequirementLabel(requirement)} (
+                          {requirement.size})
+                        </ThemedText>
+                        <Pressable
+                          disabled={
+                            requirement.size <=
+                            getPhaseRequirementMinSize(requirement)
+                          }
+                          onPress={() => {
+                            setDraftConfig((current) => ({
+                              ...current,
+                              phases: renumberPhases(
+                                current.phases.map((candidate, phaseIndex) =>
+                                  phaseIndex === index
+                                    ? {
+                                        ...candidate,
+                                        requirements: (
+                                          candidate.requirements ?? []
+                                        ).map((entry, entryIndex) =>
+                                          entryIndex === requirementIndex
+                                            ? {
+                                                ...entry,
+                                                size: Math.max(
+                                                  getPhaseRequirementMinSize(
+                                                    entry,
+                                                  ),
+                                                  entry.size - 1,
+                                                ),
+                                              }
+                                            : entry,
+                                        ),
+                                      }
+                                    : candidate,
+                                ),
+                              ),
+                            }));
+                          }}
+                          style={({ pressed }) => [
+                            styles.secondaryButton,
+                            {
+                              borderColor,
+                              opacity:
+                                requirement.size <=
+                                getPhaseRequirementMinSize(requirement)
+                                  ? 0.45
+                                  : pressed
+                                    ? 0.82
+                                    : 1,
+                            },
+                          ]}
+                        >
+                          <ThemedText type="defaultSemiBold">Size -</ThemedText>
+                        </Pressable>
+                        <Pressable
+                          disabled={
+                            requirement.size >=
+                            getPhaseRequirementMaxSize(requirement)
+                          }
+                          onPress={() => {
+                            setDraftConfig((current) => ({
+                              ...current,
+                              phases: renumberPhases(
+                                current.phases.map((candidate, phaseIndex) =>
+                                  phaseIndex === index
+                                    ? {
+                                        ...candidate,
+                                        requirements: (
+                                          candidate.requirements ?? []
+                                        ).map((entry, entryIndex) =>
+                                          entryIndex === requirementIndex
+                                            ? {
+                                                ...entry,
+                                                size: Math.min(
+                                                  getPhaseRequirementMaxSize(
+                                                    entry,
+                                                  ),
+                                                  entry.size + 1,
+                                                ),
+                                              }
+                                            : entry,
+                                        ),
+                                      }
+                                    : candidate,
+                                ),
+                              ),
+                            }));
+                          }}
+                          style={({ pressed }) => [
+                            styles.secondaryButton,
+                            {
+                              borderColor,
+                              opacity:
+                                requirement.size >=
+                                getPhaseRequirementMaxSize(requirement)
+                                  ? 0.45
+                                  : pressed
+                                    ? 0.82
+                                    : 1,
+                            },
+                          ]}
+                        >
+                          <ThemedText type="defaultSemiBold">Size +</ThemedText>
+                        </Pressable>
+                        <Pressable
+                          disabled={(phase.requirements ?? []).length === 1}
+                          onPress={() => {
+                            setDraftConfig((current) => ({
+                              ...current,
+                              phases: renumberPhases(
+                                current.phases.map((candidate, phaseIndex) =>
+                                  phaseIndex === index
+                                    ? {
+                                        ...candidate,
+                                        requirements: (
+                                          candidate.requirements ?? []
+                                        ).filter(
+                                          (_, entryIndex) =>
+                                            entryIndex !== requirementIndex,
+                                        ),
+                                      }
+                                    : candidate,
+                                ),
+                              ),
+                            }));
+                          }}
+                          style={({ pressed }) => [
+                            styles.secondaryButton,
+                            {
+                              borderColor,
+                              opacity:
+                                (phase.requirements ?? []).length === 1
+                                  ? 0.45
+                                  : pressed
+                                    ? 0.82
+                                    : 1,
+                            },
+                          ]}
+                        >
+                          <ThemedText type="defaultSemiBold">
+                            Remove group
+                          </ThemedText>
+                        </Pressable>
+                      </View>
+                    ),
+                  )}
                 </ThemedView>
               ))}
             </ThemedView>

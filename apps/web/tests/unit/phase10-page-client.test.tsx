@@ -140,6 +140,10 @@ vi.mock('@repo/game-phase-10', () => ({
     {
       id: 'phase-1',
       label: 'Phase 1: 2 sets of 3',
+      requirements: [
+        { size: 3, type: 'set' },
+        { size: 3, type: 'set' },
+      ],
       setCount: 2,
       setSize: 3,
     },
@@ -152,10 +156,27 @@ vi.mock('@repo/game-phase-10', () => ({
     setSize: 3,
   },
   formatPhase10PhaseLabel: (
-    setCount: number,
-    setSize: number,
-    phaseNumber?: number,
-  ) => `Phase ${phaseNumber ?? 1}: ${setCount} sets of ${setSize}`,
+    requirementsOrSetCount: number | Array<{ size: number; type: string }>,
+    setSizeOrPhaseNumber?: number,
+    maybePhaseNumber?: number,
+  ) => {
+    if (Array.isArray(requirementsOrSetCount)) {
+      return `Phase ${setSizeOrPhaseNumber ?? 1}: ${requirementsOrSetCount
+        .map((requirement) => `${requirement.type}-${requirement.size}`)
+        .join(' + ')}`;
+    }
+
+    return `Phase ${maybePhaseNumber ?? 1}: ${requirementsOrSetCount} sets of ${setSizeOrPhaseNumber}`;
+  },
+  formatPhase10RequirementLabel: (requirement: {
+    size: number;
+    type: string;
+  }) =>
+    requirement.type === 'set'
+      ? `set of ${requirement.size}`
+      : requirement.type === 'color'
+        ? `${requirement.size} cards of one color`
+        : `street of ${requirement.size}`,
   getPhase10ExamplePreset: (presetId: string) => ({
     hotseat: presetId !== 'bot-duel',
     seats: [{ displayName: 'Player One', playerId: 'p1' }],
@@ -258,7 +279,7 @@ describe('Phase10PageClient', () => {
     expect(sessionSpies.restart).toHaveBeenCalledTimes(1);
     expect(sessionSpies.subscribe).toHaveBeenCalled();
     expect(window.location.search).toContain('preset=mixed-table');
-    expect(window.location.search).toContain('phases=2x3');
+    expect(window.location.search).toContain('phases=s3%2Bs3');
   });
 
   it('shows the hotseat takeover flow when the next human player must confirm', () => {

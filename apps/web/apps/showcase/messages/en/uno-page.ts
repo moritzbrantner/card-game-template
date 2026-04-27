@@ -11,6 +11,7 @@ export const unoPage = {
   botAmountLabel: 'Bots',
   botAmountHint:
     'Reserved bot seats are filled automatically when the host starts the lobby.',
+  completedMatchStatus: 'Match finished and saved to past games.',
   openLobbiesTitle: 'Your open lobbies',
   emptyOpenLobbies: 'No open lobbies are available yet.',
   lobbyReadyTitle: 'Current lobby',
@@ -47,6 +48,7 @@ export const unoPage = {
   recentMatchesTitle: 'Recent matches',
   activeMatchesTitle: 'Your active matches',
   noActiveMatch: 'Create a lobby, join an invite, or resume an active match.',
+  reviewReplayAction: 'Review replay',
   legalActionsTitle: 'Legal actions',
   analysisTitle: 'Analysis',
 };

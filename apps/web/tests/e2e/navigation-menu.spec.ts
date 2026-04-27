@@ -1,6 +1,17 @@
 import { expect, test } from '@playwright/test';
 import { gotoAndWaitForHydration } from '@/tests/e2e/helpers';
 
+test('home page exposes a direct phase 10 entry point', async ({ page }) => {
+  await gotoAndWaitForHydration(page, '/en');
+
+  await page.getByRole('link', { name: 'Open Phase 10 Example' }).click();
+
+  await expect(page).toHaveURL(/\/en\/phase-10(?:\?.*)?$/);
+  await expect(
+    page.getByRole('heading', { name: 'Phase 10 local showcase' }),
+  ).toBeVisible();
+});
+
 test('navbar groups destinations into categories and reveals submenu links on click', async ({
   page,
 }) => {

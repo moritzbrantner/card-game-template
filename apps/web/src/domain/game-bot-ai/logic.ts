@@ -2,8 +2,10 @@ import type { GameMove, MatchState, PlayerId } from '@repo/game-contracts';
 import { createSeededRandom } from '@repo/game-engine';
 import {
   choosePhase10Move,
+  getPhase10PhaseRequirements,
   type Phase10Card,
   type Phase10Move,
+  type Phase10PhaseRequirement,
   type Phase10PhaseDefinition,
   type Phase10State,
 } from '@repo/game-phase-10';
@@ -804,6 +806,8 @@ function isHelpfulPhase10CardForCurrentPhase(
     return false;
   }
 
+  const numberCard = card;
+
   const targetPhase = getPhase10Definition(state, playerId);
 
   if (!targetPhase) {
@@ -811,15 +815,79 @@ function isHelpfulPhase10CardForCurrentPhase(
   }
 
   const hand = state.state.hands[playerId] ?? [];
-  const sameValueCount = hand.filter(
-    (candidate) =>
-      candidate.kind === 'number' && candidate.value === card.value,
-  ).length;
   const wildCount = hand.filter(
     (candidate) => candidate.kind === 'wild',
   ).length;
 
-  return sameValueCount + wildCount + 1 >= targetPhase.setSize;
+  function helpsRun(size: number) {
+    if (typeof numberCard.value !== 'number' || size > 12) {
+      return false;
+    }
+
+    const values = new Set<number>(
+      hand
+        .filter(
+          (
+            candidate,
+          ): candidate is Phase10Card & { kind: 'number'; value: number } =>
+            candidate.kind === 'number' && typeof candidate.value === 'number',
+        )
+        .map((candidate) => candidate.value),
+    );
+    values.add(numberCard.value);
+
+    for (let start = 1; start <= 13 - size; start += 1) {
+      const end = start + size - 1;
+
+      if (numberCard.value < start || numberCard.value > end) {
+        continue;
+      }
+
+      let presentCount = 0;
+
+      for (let value = start; value <= end; value += 1) {
+        if (values.has(value)) {
+          presentCount += 1;
+        }
+      }
+
+      if (size - presentCount <= wildCount) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function helpsRequirement(requirement: Phase10PhaseRequirement) {
+    if (requirement.type === 'set') {
+      return (
+        hand.filter(
+          (candidate) =>
+            candidate.kind === 'number' && candidate.value === numberCard.value,
+        ).length +
+          wildCount >=
+        requirement.size
+      );
+    }
+
+    if (requirement.type === 'color') {
+      return (
+        hand.filter(
+          (candidate) =>
+            candidate.kind === 'number' && candidate.color === numberCard.color,
+        ).length +
+          wildCount >=
+        requirement.size
+      );
+    }
+
+    return helpsRun(requirement.size);
+  }
+
+  return getPhase10PhaseRequirements(targetPhase).some((requirement) =>
+    helpsRequirement(requirement),
+  );
 }
 
 function scorePhase10DiscardMove(input: {

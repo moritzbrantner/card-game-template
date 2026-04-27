@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { UnoPageClient } from '@/apps/showcase/components/uno-page-client';
@@ -17,6 +23,7 @@ const labels = {
   analysisTitle: 'Analysis',
   botAmountHint: 'Reserved bot seats fill automatically when the lobby starts.',
   botAmountLabel: 'Bots',
+  completedMatchStatus: 'Match finished and saved to past games.',
   copyInviteAction: 'Copy invite link',
   copyInviteStatus: 'Invite link copied.',
   createAction: 'Create lobby',
@@ -46,6 +53,7 @@ const labels = {
   readyToStart: 'Ready to start.',
   recentMatchesTitle: 'Recent matches',
   reloadAction: 'Reload',
+  reviewReplayAction: 'Review replay',
   reservedBotsLabel: 'Reserved bots',
   resumeAction: 'Resume',
   roomSizeLabel: 'Table size',
@@ -209,6 +217,26 @@ function createSnapshot(
   };
 }
 
+function createListResult(activeSnapshot: PersistedUnoMatchSnapshotDto) {
+  return {
+    active: [
+      {
+        analysis: activeSnapshot.analysis,
+        finishedAt: activeSnapshot.finishedAt,
+        gameId: activeSnapshot.gameId,
+        lastSequence: activeSnapshot.lastSequence,
+        matchId: activeSnapshot.matchId,
+        participants: activeSnapshot.participants,
+        result: activeSnapshot.result,
+        startedAt: activeSnapshot.startedAt,
+        status: activeSnapshot.status,
+        updatedAt: activeSnapshot.updatedAt,
+      },
+    ],
+    recent: [],
+  } satisfies ListUnoMatchesResult;
+}
+
 describe('UnoPageClient live updates', () => {
   const fetchMock = vi.fn<typeof fetch>();
 
@@ -226,23 +254,7 @@ describe('UnoPageClient live updates', () => {
 
   it('uses a websocket for active matches and applies pushed snapshots', async () => {
     const activeSnapshot = createSnapshot();
-    const listResult: ListUnoMatchesResult = {
-      active: [
-        {
-          analysis: activeSnapshot.analysis,
-          finishedAt: activeSnapshot.finishedAt,
-          gameId: activeSnapshot.gameId,
-          lastSequence: activeSnapshot.lastSequence,
-          matchId: activeSnapshot.matchId,
-          participants: activeSnapshot.participants,
-          result: activeSnapshot.result,
-          startedAt: activeSnapshot.startedAt,
-          status: activeSnapshot.status,
-          updatedAt: activeSnapshot.updatedAt,
-        },
-      ],
-      recent: [],
-    };
+    const listResult = createListResult(activeSnapshot);
 
     fetchMock.mockImplementation(async (input) => {
       const url = String(input);
@@ -323,5 +335,391 @@ describe('UnoPageClient live updates', () => {
 
     unmount();
     expect(MockWebSocket.instances[0]?.closed).toBe(true);
+  });
+
+  it('renders opponents above the center piles and the viewer hand below', async () => {
+    const activeSnapshot = createSnapshot();
+    const listResult = createListResult(activeSnapshot);
+
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input);
+
+      if (url === '/api/games/uno/matches') {
+        return Response.json(listResult);
+      }
+
+      if (url === '/api/games/rooms') {
+        return Response.json([]);
+      }
+
+      if (url === `/api/games/uno/matches/${activeSnapshot.matchId}`) {
+        return Response.json(activeSnapshot);
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    render(<UnoPageClient labels={labels} pastGamesHref="/en/past-games" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alice to act')).toBeTruthy();
+    });
+
+    const opponents = screen.getByTestId('uno-opponents');
+    const centerPiles = screen.getByTestId('uno-center-piles');
+    const viewerSeat = screen.getByTestId('uno-viewer-seat');
+
+    expect(
+      opponents.compareDocumentPosition(centerPiles) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      centerPiles.compareDocumentPosition(viewerSeat) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    expect(within(opponents).getByText('Bot Bravo')).toBeTruthy();
+    expect(within(opponents).queryByText('You')).toBeNull();
+    expect(
+      within(centerPiles).getByLabelText('Draw pile: 42 hidden cards'),
+    ).toBeTruthy();
+    expect(within(centerPiles).getByText('Discard pile')).toBeTruthy();
+    expect(within(viewerSeat).getByText('Alice')).toBeTruthy();
+    expect(within(viewerSeat).getByText('You')).toBeTruthy();
+    expect(within(viewerSeat).getByLabelText('red-5')).toBeTruthy();
+  });
+
+  it('plays a visible card when the viewer clicks it', async () => {
+    const activeSnapshot = createSnapshot({
+      view: {
+        ...createSnapshot().view,
+        legalActions: [
+          {
+            id: 'play-red-five-safe',
+            label: 'red-5',
+            move: {
+              kind: 'play-card',
+              createdAt: '2026-04-25T09:00:01.000Z',
+              playerId: 'p1',
+              payload: {
+                cardId: 'red-5',
+                sayUno: false,
+              },
+            },
+          },
+          {
+            id: 'play-red-five-uno',
+            label: 'red-5 call UNO',
+            move: {
+              kind: 'play-card',
+              createdAt: '2026-04-25T09:00:02.000Z',
+              playerId: 'p1',
+              payload: {
+                cardId: 'red-5',
+                sayUno: true,
+              },
+            },
+          },
+        ],
+      },
+    });
+    const listResult = createListResult(activeSnapshot);
+    const submittedSnapshot = createSnapshot({
+      updatedAt: '2026-04-25T09:00:03.000Z',
+      view: {
+        ...activeSnapshot.view,
+        players: [
+          {
+            ...activeSnapshot.view.players[0]!,
+            handCount: 6,
+            isActive: false,
+            visibleCards: [],
+          },
+          {
+            ...activeSnapshot.view.players[1]!,
+            isActive: true,
+          },
+        ],
+        status: 'Bot Bravo to act',
+      },
+    });
+
+    fetchMock.mockImplementation(async (input, init) => {
+      const url = String(input);
+
+      if (url === '/api/games/uno/matches') {
+        return Response.json(listResult);
+      }
+
+      if (url === '/api/games/rooms') {
+        return Response.json([]);
+      }
+
+      if (url === `/api/games/uno/matches/${activeSnapshot.matchId}`) {
+        if ((init?.method ?? 'GET') === 'POST') {
+          expect(init?.body).toBe(
+            JSON.stringify({
+              move: activeSnapshot.view.legalActions[1]!.move,
+            }),
+          );
+          return Response.json(submittedSnapshot);
+        }
+
+        return Response.json(activeSnapshot);
+      }
+
+      if (url === `/api/games/uno/matches/${activeSnapshot.matchId}/moves`) {
+        expect(init?.body).toBe(
+          JSON.stringify({
+            move: activeSnapshot.view.legalActions[1]!.move,
+          }),
+        );
+        return Response.json(submittedSnapshot);
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    render(<UnoPageClient labels={labels} pastGamesHref="/en/past-games" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alice to act')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByLabelText('red-5'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Bot Bravo to act')).toBeTruthy();
+    });
+  });
+
+  it('plays a visible card when the viewer drops it on the discard pile', async () => {
+    const activeSnapshot = createSnapshot({
+      view: {
+        ...createSnapshot().view,
+        legalActions: [
+          {
+            id: 'play-red-five',
+            label: 'red-5',
+            move: {
+              kind: 'play-card',
+              createdAt: '2026-04-25T09:00:01.000Z',
+              playerId: 'p1',
+              payload: {
+                cardId: 'red-5',
+                sayUno: true,
+              },
+            },
+          },
+        ],
+      },
+    });
+    const listResult = createListResult(activeSnapshot);
+    const submittedSnapshot = createSnapshot({
+      updatedAt: '2026-04-25T09:00:04.000Z',
+      view: {
+        ...activeSnapshot.view,
+        players: [
+          {
+            ...activeSnapshot.view.players[0]!,
+            handCount: 6,
+            isActive: false,
+            visibleCards: [],
+          },
+          {
+            ...activeSnapshot.view.players[1]!,
+            isActive: true,
+          },
+        ],
+        status: 'Bot Bravo to act',
+      },
+    });
+
+    fetchMock.mockImplementation(async (input, init) => {
+      const url = String(input);
+
+      if (url === '/api/games/uno/matches') {
+        return Response.json(listResult);
+      }
+
+      if (url === '/api/games/rooms') {
+        return Response.json([]);
+      }
+
+      if (url === `/api/games/uno/matches/${activeSnapshot.matchId}`) {
+        return Response.json(activeSnapshot);
+      }
+
+      if (url === `/api/games/uno/matches/${activeSnapshot.matchId}/moves`) {
+        expect(init?.body).toBe(
+          JSON.stringify({
+            move: activeSnapshot.view.legalActions[0]!.move,
+          }),
+        );
+        return Response.json(submittedSnapshot);
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    render(<UnoPageClient labels={labels} pastGamesHref="/en/past-games" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alice to act')).toBeTruthy();
+    });
+
+    const card = screen.getByLabelText('red-5');
+    const dropZone = screen.getByTestId('uno-discard-drop-zone');
+    const dataTransfer = {
+      data: new Map<string, string>(),
+      dropEffect: '',
+      effectAllowed: '',
+      getData(type: string) {
+        return this.data.get(type) ?? '';
+      },
+      setData(type: string, value: string) {
+        this.data.set(type, value);
+      },
+    };
+
+    fireEvent.dragStart(card, { dataTransfer });
+    fireEvent.dragOver(dropZone, { dataTransfer });
+    fireEvent.drop(dropZone, { dataTransfer });
+
+    await waitFor(() => {
+      expect(screen.getByText('Bot Bravo to act')).toBeTruthy();
+    });
+  });
+
+  it('announces completed matches and links directly to the replay', async () => {
+    const activeSnapshot = createSnapshot({
+      view: {
+        ...createSnapshot().view,
+        legalActions: [
+          {
+            id: 'play-red-five',
+            label: 'Play red-5',
+            move: {
+              kind: 'play-card',
+              createdAt: '2026-04-25T09:00:01.000Z',
+              playerId: 'p1',
+              payload: {
+                cardId: 'red-5',
+                sayUno: true,
+              },
+            },
+          },
+        ],
+      },
+    });
+    const completedSnapshot = createSnapshot({
+      status: 'completed',
+      finishedAt: '2026-04-25T09:00:02.000Z',
+      updatedAt: '2026-04-25T09:00:02.000Z',
+      result: {
+        matchId: activeSnapshot.matchId,
+        gameId: activeSnapshot.gameId,
+        executionMode: 'server-authoritative',
+        finishedAt: '2026-04-25T09:00:02.000Z',
+        rankings: [
+          { playerId: 'p1', position: 1, score: 0 },
+          { playerId: 'p2', position: 2, score: 0 },
+        ],
+        winnerIds: ['p1'],
+      },
+      analysis: createAnalysis(1, 1),
+      lastSequence: 1,
+      view: {
+        ...activeSnapshot.view,
+        legalActions: [],
+        matchResultBanner: 'Winner: Alice',
+        players: [
+          {
+            ...activeSnapshot.view.players[0]!,
+            handCount: 0,
+            isActive: false,
+            visibleCards: [],
+          },
+          {
+            ...activeSnapshot.view.players[1]!,
+            isActive: false,
+          },
+        ],
+        status: 'Match complete',
+      },
+    });
+
+    let matchListCalls = 0;
+    let snapshotCalls = 0;
+
+    fetchMock.mockImplementation(async (input, init) => {
+      const url = String(input);
+
+      if (url === '/api/games/uno/matches') {
+        matchListCalls += 1;
+
+        if (matchListCalls === 1) {
+          return Response.json(createListResult(activeSnapshot));
+        }
+
+        return Response.json({
+          active: [],
+          recent: [
+            {
+              analysis: completedSnapshot.analysis,
+              finishedAt: completedSnapshot.finishedAt,
+              gameId: completedSnapshot.gameId,
+              lastSequence: completedSnapshot.lastSequence,
+              matchId: completedSnapshot.matchId,
+              participants: completedSnapshot.participants,
+              result: completedSnapshot.result,
+              startedAt: completedSnapshot.startedAt,
+              status: completedSnapshot.status,
+              updatedAt: completedSnapshot.updatedAt,
+            },
+          ],
+        } satisfies ListUnoMatchesResult);
+      }
+
+      if (url === '/api/games/rooms') {
+        return Response.json([]);
+      }
+
+      if (url === `/api/games/uno/matches/${activeSnapshot.matchId}`) {
+        snapshotCalls += 1;
+        return Response.json(snapshotCalls === 1 ? activeSnapshot : completedSnapshot);
+      }
+
+      if (url === `/api/games/uno/matches/${activeSnapshot.matchId}/moves`) {
+        expect(init?.body).toBe(
+          JSON.stringify({
+            move: activeSnapshot.view.legalActions[0]!.move,
+          }),
+        );
+        return Response.json(completedSnapshot);
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    render(<UnoPageClient labels={labels} pastGamesHref="/en/past-games" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alice to act')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play red-5' }));
+
+    await waitFor(() => {
+      const reviewLink = screen.getByRole('link', { name: 'Review replay' });
+
+      expect(
+        screen.getByText('Match finished and saved to past games.'),
+      ).toBeTruthy();
+      expect(reviewLink.getAttribute('href')).toBe(
+        '/en/past-games/match-uno-1',
+      );
+      expect(screen.getByText('Winner: Alice')).toBeTruthy();
+    });
   });
 });

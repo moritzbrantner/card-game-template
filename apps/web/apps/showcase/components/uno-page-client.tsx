@@ -2,6 +2,8 @@
 
 import {
   startTransition,
+  type DragEvent,
+  type KeyboardEvent,
   useEffect,
   useEffectEvent,
   useRef,
@@ -37,6 +39,7 @@ type UnoPageLabels = {
   botAmountLabel: string;
   copyInviteAction: string;
   copyInviteStatus: string;
+  completedMatchStatus: string;
   createAction: string;
   createHint: string;
   createTitle: string;
@@ -63,6 +66,7 @@ type UnoPageLabels = {
   readyToStart: string;
   recentMatchesTitle: string;
   reloadAction: string;
+  reviewReplayAction: string;
   reservedBotsLabel: string;
   resumeAction: string;
   roomSizeLabel: string;
@@ -72,6 +76,21 @@ type UnoPageLabels = {
   title: string;
   waitingForPlayers: string;
   legalActionsTitle: string;
+};
+
+type UnoMatchPlayerView =
+  PersistedUnoMatchSnapshotDto['view']['players'][number];
+type UnoLegalAction =
+  PersistedUnoMatchSnapshotDto['view']['legalActions'][number];
+type UnoDirectPlayAction = UnoLegalAction & {
+  move: UnoLegalAction['move'] & {
+    payload: {
+      cardId: string;
+      chosenColor?: string;
+      sayUno?: boolean;
+      targetPlayerId?: string;
+    };
+  };
 };
 
 async function readJson<T>(response: Response) {
@@ -172,6 +191,10 @@ function buildInviteUrl(roomId: string) {
   return url.toString();
 }
 
+function buildReplayHref(pastGamesHref: string, matchId: string) {
+  return `${pastGamesHref}/${matchId}`;
+}
+
 function replaceRoomUrl(roomId: string | null) {
   const url = new URL(window.location.href);
 
@@ -186,6 +209,82 @@ function replaceRoomUrl(roomId: string | null) {
 
 function getOpenRooms(rooms: readonly GameRoomDto[]) {
   return rooms.filter((room) => room.status === 'open');
+}
+
+function isUnoPlayCardAction(
+  action: UnoLegalAction,
+): action is UnoDirectPlayAction {
+  return (
+    action.move.kind === 'play-card' &&
+    typeof action.move.payload === 'object' &&
+    action.move.payload !== null &&
+    'cardId' in action.move.payload
+  );
+}
+
+function chooseDirectPlayAction(input: {
+  actionCandidates: readonly UnoLegalAction[];
+  activeColor: PersistedUnoMatchSnapshotDto['view']['activeColor'];
+  cardId: string;
+  players: readonly UnoMatchPlayerView[];
+  viewerPlayer: UnoMatchPlayerView | null;
+}) {
+  const playActions = input.actionCandidates.filter(
+    (action) =>
+      isUnoPlayCardAction(action) &&
+      action.move.payload.cardId === input.cardId,
+  );
+
+  if (playActions.length === 0) {
+    return null;
+  }
+
+  const remainingColorCounts = new Map<string, number>();
+  const targetHandCounts = new Map(
+    input.players.map((player) => [player.playerId, player.handCount] as const),
+  );
+
+  for (const card of input.viewerPlayer?.visibleCards ?? []) {
+    if (card.id === input.cardId || card.color === 'wild') {
+      continue;
+    }
+
+    remainingColorCounts.set(
+      card.color,
+      (remainingColorCounts.get(card.color) ?? 0) + 1,
+    );
+  }
+
+  let bestAction: (typeof playActions)[number] | null = null;
+  let bestScore = Number.NEGATIVE_INFINITY;
+
+  for (const action of playActions) {
+    let score = 0;
+
+    if (action.move.payload.sayUno) {
+      score += 1000;
+    }
+
+    if (action.move.payload.chosenColor) {
+      score +=
+        (remainingColorCounts.get(action.move.payload.chosenColor) ?? 0) * 100;
+
+      if (action.move.payload.chosenColor === input.activeColor) {
+        score += 1;
+      }
+    }
+
+    if (action.move.payload.targetPlayerId) {
+      score -= targetHandCounts.get(action.move.payload.targetPlayerId) ?? 99;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestAction = action;
+    }
+  }
+
+  return bestAction;
 }
 
 export function UnoPageClient({
@@ -208,6 +307,8 @@ export function UnoPageClient({
   const [botCount, setBotCount] = useState('1');
   const [inviteRoomId, setInviteRoomId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
+  const [isDiscardDropActive, setIsDiscardDropActive] = useState(false);
   const [state, setState] = useState<{ announcement?: string; error?: string }>(
     {},
   );
@@ -216,6 +317,21 @@ export function UnoPageClient({
     currentMatch?.status === 'active' ? currentMatch.matchId : null;
   const activeMatchStatus = currentMatch?.status ?? null;
   const currentMatchRef = useRef<PersistedUnoMatchSnapshotDto | null>(null);
+  const currentMatchPlayers = currentMatch?.view.players ?? [];
+  const viewerPlayer =
+    currentMatchPlayers.find((player) => player.isViewer) ??
+    currentMatchPlayers[0] ??
+    null;
+  const opponentPlayers = viewerPlayer
+    ? currentMatchPlayers.filter(
+        (player) => player.playerId !== viewerPlayer.playerId,
+      )
+    : currentMatchPlayers;
+  const directPlayableActions =
+    currentMatch?.view.legalActions.filter(isUnoPlayCardAction) ?? [];
+  const directPlayableCardIds = new Set(
+    directPlayableActions.map((action) => action.move.payload.cardId),
+  );
 
   useEffect(() => {
     currentMatchRef.current = currentMatch;
@@ -283,9 +399,12 @@ export function UnoPageClient({
 
   const handleLiveUpdate = useEffectEvent(
     async (snapshot: PersistedUnoMatchSnapshotDto) => {
-      setState((current) =>
-        current.error ? { ...current, error: undefined } : current,
-      );
+      setState((current) => ({
+        ...(current.error ? { ...current, error: undefined } : current),
+        ...(snapshot.status === 'completed'
+          ? { announcement: labels.completedMatchStatus }
+          : {}),
+      }));
       setCurrentMatch(snapshot);
 
       if (snapshot.status !== 'active') {
@@ -690,10 +809,85 @@ export function UnoPageClient({
     setCurrentMatch(snapshot);
 
     if (snapshot.status !== 'active') {
+      if (snapshot.status === 'completed') {
+        setState({ announcement: labels.completedMatchStatus });
+      }
       await refresh(snapshot.matchId);
     }
 
     setPending(false);
+  }
+
+  function resolveDirectPlay(cardId: string) {
+    if (!currentMatch || pending || currentMatch.status !== 'active') {
+      return null;
+    }
+
+    return chooseDirectPlayAction({
+      actionCandidates: currentMatch.view.legalActions,
+      activeColor: currentMatch.view.activeColor,
+      cardId,
+      players: currentMatch.view.players,
+      viewerPlayer,
+    });
+  }
+
+  async function handleDirectCardPlay(cardId: string) {
+    const action = resolveDirectPlay(cardId);
+
+    if (!action) {
+      return;
+    }
+
+    await handleSubmitMove(action.move);
+  }
+
+  function handleCardDragStart(
+    event: DragEvent<HTMLDivElement>,
+    cardId: string,
+  ) {
+    if (!resolveDirectPlay(cardId)) {
+      event.preventDefault();
+      return;
+    }
+
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', cardId);
+    setDraggedCardId(cardId);
+    setIsDiscardDropActive(false);
+  }
+
+  function handleCardDragEnd() {
+    setDraggedCardId(null);
+    setIsDiscardDropActive(false);
+  }
+
+  function handleDiscardDragOver(event: DragEvent<HTMLDivElement>) {
+    if (!draggedCardId || !resolveDirectPlay(draggedCardId)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    setIsDiscardDropActive(true);
+  }
+
+  function handleDiscardDragLeave() {
+    setIsDiscardDropActive(false);
+  }
+
+  async function handleDiscardDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const cardId = event.dataTransfer.getData('text/plain') || draggedCardId;
+
+    setIsDiscardDropActive(false);
+    setDraggedCardId(null);
+
+    if (!cardId) {
+      return;
+    }
+
+    await handleDirectCardPlay(cardId);
   }
 
   async function handleAbandon() {
@@ -735,48 +929,51 @@ export function UnoPageClient({
     (seat) => seat.playerId === currentRoom.viewerPlayerId,
   );
   const hasFocusedSession = currentRoom !== null || currentMatch !== null;
+  const currentReplayHref = currentMatch
+    ? buildReplayHref(pastGamesHref, currentMatch.matchId)
+    : null;
 
   return (
     <section className="space-y-6">
       {!hasFocusedSession ? (
         <div className="rounded-[2rem] border border-zinc-200 bg-zinc-50 p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="space-y-4">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">
-            {catalogEntry?.definition.name ?? 'UNO-style'}
-          </p>
-          <h1 className="text-4xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-            {labels.title}
-          </h1>
-          <p className="max-w-3xl text-base leading-7 text-zinc-700 dark:text-zinc-300">
-            {labels.description}
-          </p>
-        </div>
+          <div className="space-y-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">
+              {catalogEntry?.definition.name ?? 'UNO-style'}
+            </p>
+            <h1 className="text-4xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+              {labels.title}
+            </h1>
+            <p className="max-w-3xl text-base leading-7 text-zinc-700 dark:text-zinc-300">
+              {labels.description}
+            </p>
+          </div>
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          <a
-            href={pastGamesHref}
-            className={buttonVariants({ variant: 'default' })}
-          >
-            {labels.pastGamesCta}
-          </a>
-          <button
-            type="button"
-            className={buttonVariants({ variant: 'outline' })}
-            disabled={pending}
-            onClick={() => {
-              void refresh().catch((error) => {
-                setState({
-                  error:
-                    error instanceof Error
-                      ? error.message
-                      : 'Unable to reload matches.',
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a
+              href={pastGamesHref}
+              className={buttonVariants({ variant: 'default' })}
+            >
+              {labels.pastGamesCta}
+            </a>
+            <button
+              type="button"
+              className={buttonVariants({ variant: 'outline' })}
+              disabled={pending}
+              onClick={() => {
+                void refresh().catch((error) => {
+                  setState({
+                    error:
+                      error instanceof Error
+                        ? error.message
+                        : 'Unable to reload matches.',
+                  });
                 });
-              });
-            }}
-          >
-            {labels.reloadAction}
-          </button>
-        </div>
+              }}
+            >
+              {labels.reloadAction}
+            </button>
+          </div>
         </div>
       ) : null}
 
@@ -789,224 +986,224 @@ export function UnoPageClient({
       >
         {!hasFocusedSession ? (
           <article className="rounded-[1.75rem] border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-          {inviteRoomId && !currentRoom ? (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
-                  {labels.inviteTitle}
-                </h2>
-                <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                  {labels.inviteDescription}
-                </p>
-              </div>
+            {inviteRoomId && !currentRoom ? (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
+                    {labels.inviteTitle}
+                  </h2>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                    {labels.inviteDescription}
+                  </p>
+                </div>
 
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                {labels.nameLabel}
-                <input
-                  className="mt-2 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-                  value={draftName}
-                  onChange={(event) => {
-                    setDraftName(event.target.value);
-                  }}
-                />
-              </label>
-
-              <button
-                type="button"
-                className={buttonVariants({ variant: 'default' })}
-                disabled={pending}
-                onClick={() => {
-                  void handleJoinInvite();
-                }}
-              >
-                {labels.joinAction}
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
-                  {labels.createTitle}
-                </h2>
-                <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                  {labels.createHint}
-                </p>
-              </div>
-
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                {labels.nameLabel}
-                <input
-                  className="mt-2 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-                  value={draftName}
-                  onChange={(event) => {
-                    setDraftName(event.target.value);
-                  }}
-                />
-              </label>
-
-              <div className="grid gap-4 md:grid-cols-2">
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                  {labels.roomSizeLabel}
-                  <select
+                  {labels.nameLabel}
+                  <input
                     className="mt-2 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-                    value={roomSize}
+                    value={draftName}
                     onChange={(event) => {
-                      const nextRoomSize = event.target.value;
-                      setRoomSize(nextRoomSize);
-                      setBotCount((current) =>
-                        String(
-                          Math.min(
-                            Number(current),
-                            Math.max(Number(nextRoomSize) - 1, 0),
+                      setDraftName(event.target.value);
+                    }}
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  className={buttonVariants({ variant: 'default' })}
+                  disabled={pending}
+                  onClick={() => {
+                    void handleJoinInvite();
+                  }}
+                >
+                  {labels.joinAction}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
+                    {labels.createTitle}
+                  </h2>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                    {labels.createHint}
+                  </p>
+                </div>
+
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  {labels.nameLabel}
+                  <input
+                    className="mt-2 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+                    value={draftName}
+                    onChange={(event) => {
+                      setDraftName(event.target.value);
+                    }}
+                  />
+                </label>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                    {labels.roomSizeLabel}
+                    <select
+                      className="mt-2 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+                      value={roomSize}
+                      onChange={(event) => {
+                        const nextRoomSize = event.target.value;
+                        setRoomSize(nextRoomSize);
+                        setBotCount((current) =>
+                          String(
+                            Math.min(
+                              Number(current),
+                              Math.max(Number(nextRoomSize) - 1, 0),
+                            ),
                           ),
-                        ),
-                      );
-                    }}
-                  >
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                  </select>
-                </label>
+                        );
+                      }}
+                    >
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                    </select>
+                  </label>
 
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                  {labels.botAmountLabel}
-                  <select
-                    className="mt-2 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-                    value={botCount}
-                    onChange={(event) => {
-                      setBotCount(event.target.value);
-                    }}
-                  >
-                    {Array.from(
-                      { length: Math.max(Number(roomSize), 2) },
-                      (_, index) => index,
-                    )
-                      .filter((value) => value < Number(roomSize))
-                      .map((value) => (
-                        <option key={value} value={String(value)}>
-                          {value}
-                        </option>
-                      ))}
-                  </select>
-                </label>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                    {labels.botAmountLabel}
+                    <select
+                      className="mt-2 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+                      value={botCount}
+                      onChange={(event) => {
+                        setBotCount(event.target.value);
+                      }}
+                    >
+                      {Array.from(
+                        { length: Math.max(Number(roomSize), 2) },
+                        (_, index) => index,
+                      )
+                        .filter((value) => value < Number(roomSize))
+                        .map((value) => (
+                          <option key={value} value={String(value)}>
+                            {value}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                </div>
+
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                  {labels.botAmountHint}
+                </p>
+
+                <button
+                  type="button"
+                  className={buttonVariants({ variant: 'default' })}
+                  disabled={pending}
+                  onClick={() => {
+                    void handleCreateLobby();
+                  }}
+                >
+                  {labels.createAction}
+                </button>
               </div>
+            )}
 
-              <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                {labels.botAmountHint}
-              </p>
-
-              <button
-                type="button"
-                className={buttonVariants({ variant: 'default' })}
-                disabled={pending}
-                onClick={() => {
-                  void handleCreateLobby();
-                }}
-              >
-                {labels.createAction}
-              </button>
+            <div className="mt-8 space-y-3">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                {labels.openLobbiesTitle}
+              </h3>
+              {openRooms.length > 0 ? (
+                openRooms.map((room) => (
+                  <div
+                    key={room.roomId}
+                    className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-zinc-950 dark:text-zinc-50">
+                          {room.roomName}
+                        </p>
+                        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                          {room.seats
+                            .map((seat) => seat.displayName)
+                            .filter(Boolean)
+                            .join(', ')}
+                        </p>
+                        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                          {labels.reservedBotsLabel}: {room.botCount}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className={buttonVariants({ variant: 'outline' })}
+                        disabled={pending}
+                        onClick={() => {
+                          replaceRoomUrl(room.roomId);
+                          setCurrentRoom(room);
+                          setCurrentMatch(null);
+                        }}
+                      >
+                        {labels.resumeAction}
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                  {labels.emptyOpenLobbies}
+                </p>
+              )}
             </div>
-          )}
 
-          <div className="mt-8 space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-              {labels.openLobbiesTitle}
-            </h3>
-            {openRooms.length > 0 ? (
-              openRooms.map((room) => (
-                <div
-                  key={room.roomId}
-                  className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-medium text-zinc-950 dark:text-zinc-50">
-                        {room.roomName}
-                      </p>
-                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                        {room.seats
-                          .map((seat) => seat.displayName)
-                          .filter(Boolean)
-                          .join(', ')}
-                      </p>
-                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                        {labels.reservedBotsLabel}: {room.botCount}
-                      </p>
+            <div className="mt-8 space-y-3">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                {labels.activeMatchesTitle}
+              </h3>
+              {matches.active.length > 0 ? (
+                matches.active.map((match) => (
+                  <div
+                    key={match.matchId}
+                    className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-zinc-950 dark:text-zinc-50">
+                          {match.participants
+                            .map((participant) => participant.displayName)
+                            .join(', ')}
+                        </p>
+                        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                          {new Date(match.updatedAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className={buttonVariants({ variant: 'outline' })}
+                        disabled={pending}
+                        onClick={() => {
+                          void handleResume(match.matchId);
+                        }}
+                      >
+                        {labels.resumeAction}
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      className={buttonVariants({ variant: 'outline' })}
-                      disabled={pending}
-                      onClick={() => {
-                        replaceRoomUrl(room.roomId);
-                        setCurrentRoom(room);
-                        setCurrentMatch(null);
-                      }}
-                    >
-                      {labels.resumeAction}
-                    </button>
                   </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                {labels.emptyOpenLobbies}
-              </p>
-            )}
-          </div>
+                ))
+              ) : (
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                  {labels.noActiveMatch}
+                </p>
+              )}
+            </div>
 
-          <div className="mt-8 space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-              {labels.activeMatchesTitle}
-            </h3>
-            {matches.active.length > 0 ? (
-              matches.active.map((match) => (
-                <div
-                  key={match.matchId}
-                  className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-medium text-zinc-950 dark:text-zinc-50">
-                        {match.participants
-                          .map((participant) => participant.displayName)
-                          .join(', ')}
-                      </p>
-                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                        {new Date(match.updatedAt).toLocaleString()}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      className={buttonVariants({ variant: 'outline' })}
-                      disabled={pending}
-                      onClick={() => {
-                        void handleResume(match.matchId);
-                      }}
-                    >
-                      {labels.resumeAction}
-                    </button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                {labels.noActiveMatch}
+            {state.error ? (
+              <p className="mt-6 text-sm text-red-600 dark:text-red-400">
+                {state.error}
               </p>
-            )}
-          </div>
-
-          {state.error ? (
-            <p className="mt-6 text-sm text-red-600 dark:text-red-400">
-              {state.error}
-            </p>
-          ) : null}
-          {state.announcement ? (
-            <p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">
-              {state.announcement}
-            </p>
-          ) : null}
+            ) : null}
+            {state.announcement ? (
+              <p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">
+                {state.announcement}
+              </p>
+            ) : null}
           </article>
         ) : null}
 
@@ -1075,65 +1272,12 @@ export function UnoPageClient({
                       : 'crimson'
                 }
               >
-                <div className="grid gap-6 2xl:grid-cols-[minmax(19rem,0.42fr)_minmax(0,1fr)]">
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
-                        Active color
-                      </p>
-                      <div className="mt-3">
-                        <UnoColorBadge color={currentMatch.view.activeColor} />
-                      </div>
-                      {currentMatch.view.pendingDrawAmount > 0 ? (
-                        <p className="mt-3 text-sm text-white/72">
-                          Pending draw: {currentMatch.view.pendingDrawAmount}
-                        </p>
-                      ) : null}
-                    </div>
-
-                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
-                        Draw pile
-                      </p>
-                      <div className="mt-4">
-                        <HiddenUnoCardStack
-                          cardCount={currentMatch.view.drawPileCount}
-                          label="Draw pile"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm sm:col-span-2 xl:col-span-1">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
-                            Discard pile
-                          </p>
-                          <p className="mt-2 text-sm text-white/72">
-                            Top card sets the current color and legal plays.
-                          </p>
-                        </div>
-                        <span className="rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-white/72">
-                          {currentMatch.view.discardTop?.label ?? 'No discard'}
-                        </span>
-                      </div>
-                      <div className="mt-4">
-                        {currentMatch.view.discardTop ? (
-                          <UnoCardVisual
-                            card={currentMatch.view.discardTop}
-                            selected
-                          />
-                        ) : (
-                          <p className="text-sm text-white/72">
-                            No discard card available.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {currentMatch.view.players.map((player) => {
+                <div className="flex min-h-[36rem] flex-col justify-between gap-6">
+                  <div
+                    className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+                    data-testid="uno-opponents"
+                  >
+                    {opponentPlayers.map((player: UnoMatchPlayerView) => {
                       const hiddenCount = Math.max(
                         player.handCount - player.visibleCards.length,
                         0,
@@ -1149,11 +1293,6 @@ export function UnoPageClient({
                               <p className="truncate font-medium text-white">
                                 {player.displayName}
                               </p>
-                              {player.isViewer ? (
-                                <span className="rounded-full border border-sky-300/40 bg-sky-400/15 px-2 py-0.5 text-xs font-medium text-sky-100">
-                                  You
-                                </span>
-                              ) : null}
                               {player.isActive ? (
                                 <span className="rounded-full border border-emerald-300/40 bg-emerald-400/15 px-2 py-0.5 text-xs font-medium text-emerald-100">
                                   Active
@@ -1175,6 +1314,171 @@ export function UnoPageClient({
                       );
                     })}
                   </div>
+
+                  <div
+                    className="mx-auto grid w-full max-w-5xl gap-4"
+                    data-testid="uno-center-piles"
+                  >
+                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+                            Active color
+                          </p>
+                          <div className="mt-3">
+                            <UnoColorBadge
+                              color={currentMatch.view.activeColor}
+                            />
+                          </div>
+                        </div>
+                        {currentMatch.view.pendingDrawAmount > 0 ? (
+                          <span className="rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-white/72">
+                            Pending draw: {currentMatch.view.pendingDrawAmount}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+                          Draw pile
+                        </p>
+                        <div className="mt-4 flex justify-center">
+                          <HiddenUnoCardStack
+                            cardCount={currentMatch.view.drawPileCount}
+                            label="Draw pile"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+                              Discard pile
+                            </p>
+                            <p className="mt-2 text-sm text-white/72">
+                              Top card sets the current color and legal plays.
+                              Drop a card here to play it.
+                            </p>
+                          </div>
+                          <span className="rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-white/72">
+                            {currentMatch.view.discardTop?.label ??
+                              'No discard'}
+                          </span>
+                        </div>
+                        <div
+                          aria-label="Discard pile drop target"
+                          className={`mt-4 flex justify-center rounded-[1.2rem] border border-dashed px-4 py-5 transition ${
+                            isDiscardDropActive
+                              ? 'border-emerald-300/60 bg-emerald-400/10'
+                              : 'border-white/10'
+                          }`}
+                          data-testid="uno-discard-drop-zone"
+                          onDragLeave={handleDiscardDragLeave}
+                          onDragOver={handleDiscardDragOver}
+                          onDrop={(event) => {
+                            void handleDiscardDrop(event);
+                          }}
+                        >
+                          {currentMatch.view.discardTop ? (
+                            <UnoCardVisual
+                              card={currentMatch.view.discardTop}
+                              selected
+                            />
+                          ) : (
+                            <p className="text-sm text-white/72">
+                              No discard card available.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {viewerPlayer ? (
+                    <div
+                      className="rounded-[1.4rem] border border-sky-300/30 bg-sky-400/10 p-4 backdrop-blur-sm"
+                      data-testid="uno-viewer-seat"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <p className="truncate font-medium text-white">
+                            {viewerPlayer.displayName}
+                          </p>
+                          <span className="rounded-full border border-sky-300/40 bg-sky-400/15 px-2 py-0.5 text-xs font-medium text-sky-100">
+                            You
+                          </span>
+                          {viewerPlayer.isActive ? (
+                            <span className="rounded-full border border-emerald-300/40 bg-emerald-400/15 px-2 py-0.5 text-xs font-medium text-emerald-100">
+                              Active
+                            </span>
+                          ) : null}
+                        </div>
+                        <span className="text-sm text-white/72">
+                          {viewerPlayer.handCount} cards
+                        </span>
+                      </div>
+
+                      <UnoHandPreview
+                        className="mt-4"
+                        getCardProps={(card) => {
+                          const isPlayable =
+                            !pending &&
+                            currentMatch.status === 'active' &&
+                            directPlayableCardIds.has(card.id);
+
+                          return {
+                            'aria-disabled': !isPlayable,
+                            className: isPlayable
+                              ? draggedCardId === card.id
+                                ? 'cursor-grabbing opacity-70'
+                                : 'cursor-grab'
+                              : 'opacity-80',
+                            draggable: isPlayable,
+                            interactive: isPlayable,
+                            onClick: isPlayable
+                              ? () => {
+                                  void handleDirectCardPlay(card.id);
+                                }
+                              : undefined,
+                            onDragEnd: isPlayable
+                              ? () => {
+                                  handleCardDragEnd();
+                                }
+                              : undefined,
+                            onDragStart: isPlayable
+                              ? (event: DragEvent<HTMLDivElement>) => {
+                                  handleCardDragStart(event, card.id);
+                                }
+                              : undefined,
+                            onKeyDown: isPlayable
+                              ? (event: KeyboardEvent<HTMLDivElement>) => {
+                                  if (
+                                    event.key === 'Enter' ||
+                                    event.key === ' '
+                                  ) {
+                                    event.preventDefault();
+                                    void handleDirectCardPlay(card.id);
+                                  }
+                                }
+                              : undefined,
+                            role: isPlayable ? 'button' : 'img',
+                            tabIndex: isPlayable ? 0 : -1,
+                          };
+                        }}
+                        hiddenCount={Math.max(
+                          viewerPlayer.handCount -
+                            viewerPlayer.visibleCards.length,
+                          0,
+                        )}
+                        label={viewerPlayer.displayName}
+                        size="md"
+                        visibleCards={viewerPlayer.visibleCards}
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </CardTable>
 
@@ -1251,6 +1555,13 @@ export function UnoPageClient({
                 >
                   {labels.exitGame}
                 </button>
+              ) : currentReplayHref ? (
+                <a
+                  href={currentReplayHref}
+                  className={buttonVariants({ variant: 'default' })}
+                >
+                  {labels.reviewReplayAction}
+                </a>
               ) : null}
             </div>
           ) : currentRoom ? (

@@ -11,6 +11,8 @@ export const unoPage = {
   botAmountLabel: 'Bots',
   botAmountHint:
     'Reservierte Bot-Sitze werden automatisch gefuellt, sobald der Host die Lobby startet.',
+  completedMatchStatus:
+    'Partie beendet und in den vergangenen Spielen gespeichert.',
   openLobbiesTitle: 'Deine offenen Lobbys',
   emptyOpenLobbies: 'Es gibt noch keine offenen Lobbys.',
   lobbyReadyTitle: 'Aktuelle Lobby',
@@ -49,6 +51,7 @@ export const unoPage = {
   activeMatchesTitle: 'Deine aktiven Partien',
   noActiveMatch:
     'Erstelle eine Lobby, tritt einer Einladung bei oder setze eine aktive Partie fort.',
+  reviewReplayAction: 'Replay ansehen',
   legalActionsTitle: 'Zulaessige Aktionen',
   analysisTitle: 'Analyse',
 };

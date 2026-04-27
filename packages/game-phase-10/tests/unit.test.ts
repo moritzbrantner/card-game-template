@@ -196,14 +196,44 @@ test('Phase 10 setup accepts a custom ordered phase list', () => {
     {
       id: 'phase-1',
       label: formatPhase10PhaseLabel(1, 4, 1),
+      requirements: [{ size: 4, type: 'set' }],
       setCount: 1,
       setSize: 4,
     },
     {
       id: 'phase-2',
       label: 'Final sprint',
+      requirements: [
+        { size: 2, type: 'set' },
+        { size: 2, type: 'set' },
+        { size: 2, type: 'set' },
+      ],
       setCount: 3,
       setSize: 2,
+    },
+  ]);
+});
+
+test('Phase 10 setup accepts mixed requirement phases', () => {
+  const parsed = parsePhase10Setup({
+    phases: [
+      {
+        requirements: [
+          { size: 4, type: 'color' },
+          { size: 4, type: 'run' },
+        ],
+      },
+    ],
+  });
+
+  assert.deepEqual(parsed.phases, [
+    {
+      id: 'phase-1',
+      label: 'Phase 1: 4 cards of one color + street of 4',
+      requirements: [
+        { size: 4, type: 'color' },
+        { size: 4, type: 'run' },
+      ],
     },
   ]);
 });
@@ -342,6 +372,70 @@ test('configured phases can require a different number of sets and card counts',
   ]);
 });
 
+test('configured phases can combine one-color groups and streets', () => {
+  const customPhases: readonly Phase10PhaseDefinition[] = [
+    {
+      id: 'phase-1',
+      label: 'Phase 1: 4 cards of one color + street of 4',
+      requirements: [
+        { size: 4, type: 'color' },
+        { size: 4, type: 'run' },
+      ],
+    },
+  ];
+  const state = createState({
+    drawnCardThisTurn: true,
+    hands: {
+      p1: [
+        numberCard('red', 1, 'red-1'),
+        numberCard('red', 6, 'red-6'),
+        numberCard('red', 9, 'red-9'),
+        wild('wild-color'),
+        numberCard('blue', 2, 'blue-2'),
+        numberCard('yellow', 3, 'yellow-3'),
+        numberCard('green', 4, 'green-4'),
+        numberCard('red', 5, 'red-5'),
+      ],
+      p2: [numberCard('yellow', 8, 'p2-yellow-8')],
+      p3: [numberCard('green', 8, 'p3-green-8')],
+    },
+    phaseDefinitions: customPhases,
+    phases: {
+      p1: {
+        label: customPhases[0]!.label,
+        laidGroups: null,
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
+      p2: {
+        label: customPhases[0]!.label,
+        laidGroups: null,
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
+      p3: {
+        label: customPhases[0]!.label,
+        laidGroups: null,
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
+    },
+  });
+
+  const layMove = adapter
+    .listLegalMoves(state)
+    .find(
+      (move): move is Extract<Phase10Move, { kind: 'lay-phase' }> =>
+        move.kind === 'lay-phase',
+    );
+
+  assert.ok(layMove);
+  assert.deepEqual(layMove.payload.groups, [
+    ['red-1', 'red-6', 'red-9', 'wild-color'],
+    ['blue-2', 'yellow-3', 'green-4', 'red-5'],
+  ]);
+});
+
 test('hitting adds a matching card onto an existing laid set', () => {
   const state = createState({
     drawnCardThisTurn: true,
@@ -408,6 +502,88 @@ test('hitting adds a matching card onto an existing laid set', () => {
 
   assert.equal(firstGroup?.cards.length, 4);
   assert.equal(nextState.state.hands.p1?.length, 0);
+});
+
+test('hitting can extend laid one-color groups and streets', () => {
+  const state = createState({
+    drawnCardThisTurn: true,
+    hands: {
+      p1: [numberCard('red', 11, 'red-11'), numberCard('blue', 6, 'blue-6')],
+      p2: [numberCard('yellow', 8, 'yellow-8')],
+      p3: [numberCard('green', 10, 'green-10')],
+    },
+    phases: {
+      p1: {
+        label: 'Phase 1: 4 red cards + street of 4',
+        laidGroups: [
+          {
+            cards: [
+              numberCard('red', 1, 'laid-red-1'),
+              numberCard('red', 3, 'laid-red-3'),
+              numberCard('red', 7, 'laid-red-7'),
+              wild('laid-wild-red'),
+            ],
+            cardIds: [
+              'laid-red-1',
+              'laid-red-3',
+              'laid-red-7',
+              'laid-wild-red',
+            ],
+            color: 'red',
+            label: '4 red cards + wild',
+            type: 'color',
+          },
+          {
+            cards: [
+              numberCard('yellow', 2, 'laid-yellow-2'),
+              numberCard('green', 3, 'laid-green-3'),
+              numberCard('red', 4, 'laid-red-4'),
+              numberCard('blue', 5, 'laid-blue-5'),
+            ],
+            cardIds: [
+              'laid-yellow-2',
+              'laid-green-3',
+              'laid-red-4',
+              'laid-blue-5',
+            ],
+            label: 'Street 2-5',
+            runEnd: 5,
+            runStart: 2,
+            type: 'run',
+          },
+        ],
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
+      p2: {
+        label: defaultPhase10Phases[0]!.label,
+        laidGroups: null,
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
+      p3: {
+        label: defaultPhase10Phases[0]!.label,
+        laidGroups: null,
+        phaseIndex: 0,
+        phaseNumber: 1,
+      },
+    },
+  });
+
+  const hitMoves = adapter
+    .listLegalMoves(state)
+    .filter(
+      (move): move is Extract<Phase10Move, { kind: 'hit-phase' }> =>
+        move.kind === 'hit-phase',
+    );
+
+  assert.equal(hitMoves.length, 2);
+
+  const colorHitState = adapter.applyMove(state, hitMoves[0]!);
+  const runHitState = adapter.applyMove(state, hitMoves[1]!);
+
+  assert.equal(colorHitState.state.phases.p1?.laidGroups?.[0]?.cards.length, 5);
+  assert.equal(runHitState.state.phases.p1?.laidGroups?.[1]?.cards.length, 5);
 });
 
 test('drawing from an empty pile recycles older discards with the match seed', () => {

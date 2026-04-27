@@ -1,11 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { and, eq } from 'drizzle-orm';
+import type { MatchState, PlayerProfile } from '@repo/game-contracts';
 import {
   createPokerAdapter,
   type PokerMove,
   type PokerState,
 } from '@repo/game-poker';
+import {
+  defaultUnoRules,
+  type UnoCard,
+  type UnoMove,
+  type UnoState,
+} from '@repo/game-uno';
 import {
   createServerGameSession,
   resumeServerGameSession,
@@ -20,11 +27,68 @@ import {
 } from '@/src/db/schema';
 import type { PersistedGameMatchRecord } from '@/src/domain/game-matches/contracts';
 
+const unoPlayers: readonly PlayerProfile[] = [
+  { playerId: 'p1', displayName: 'Guest Player', seat: 1 },
+  { playerId: 'p2', displayName: 'Bot Rival', seat: 2 },
+] as const;
+
 async function clearGameTables() {
   const db = getDb();
   await db.delete(gameMatchMoves);
   await db.delete(gameMatchParticipants);
   await db.delete(gameMatches);
+}
+
+function createUnoCard(
+  color: UnoCard['color'],
+  kind: UnoCard['kind'],
+  id: string,
+  value?: number,
+): UnoCard {
+  return {
+    color,
+    kind,
+    id,
+    value,
+    label: id,
+  };
+}
+
+function createNearFinishedUnoState(
+  matchId: string,
+): MatchState<UnoState> {
+  return {
+    matchId,
+    gameId: 'uno-style',
+    players: unoPlayers,
+    activePlayerId: 'p1',
+    turn: 7,
+    executionMode: 'server-authoritative',
+    state: {
+      currentColor: 'red',
+      direction: 1,
+      discardPile: [createUnoCard('red', 'number', 'discard-5', 5)],
+      drawPile: [
+        createUnoCard('yellow', 'number', 'draw-1', 1),
+        createUnoCard('green', 'number', 'draw-2', 2),
+        createUnoCard('blue', 'number', 'draw-3', 3),
+      ],
+      drawnCardThisTurnId: null,
+      hands: {
+        p1: [createUnoCard('red', 'number', 'red-9', 9)],
+        p2: [
+          createUnoCard('blue', 'number', 'blue-1', 1),
+          createUnoCard('green', 'number', 'green-2', 2),
+        ],
+      },
+      lastEvent: 'Guest Player is about to play the final card.',
+      pendingDrawAmount: 0,
+      pendingDrawSource: null,
+      rules: defaultUnoRules,
+      seed: `${matchId}:seed`,
+      winnerPlayerId: null,
+    },
+  };
 }
 
 function mockGuestIdentity() {
@@ -372,6 +436,154 @@ describe('game matches', () => {
       data: expect.objectContaining({
         matchId: created.data.matchId,
         status: 'active',
+      }),
+    });
+  });
+
+  it('records a finished UNO match in the database and exposes its replay', async () => {
+    mockGuestIdentity();
+    const { getUnoReplayUseCase, listUnoMatchesUseCase, submitUnoMoveUseCase } =
+      await import('@/src/domain/game-matches/use-cases');
+
+    const matchId = 'uno-finish-persisted';
+    const nearFinishedState = createNearFinishedUnoState(matchId);
+
+    await getDb().insert(gameMatches).values({
+      id: matchId,
+      gameId: 'uno-style',
+      status: 'active',
+      executionMode: 'server-authoritative',
+      replayFormatVersion: 2,
+      startedAt: new Date('2026-04-22T12:00:00.000Z'),
+      finishedAt: null,
+      updatedAt: new Date('2026-04-22T12:00:00.000Z'),
+      createdAt: new Date('2026-04-22T12:00:00.000Z'),
+      createdByKind: 'guest',
+      createdByAccountId: null,
+      createdByGuestId: 'guest-1',
+      initialStateJson: nearFinishedState,
+      latestStateJson: nearFinishedState,
+      resultJson: null,
+      analysisJson: null,
+      lastSequence: 0,
+    });
+    await getDb().insert(gameMatchParticipants).values([
+      {
+        matchId,
+        playerId: 'p1',
+        seat: 1,
+        displayName: 'Guest Player',
+        identityKind: 'guest',
+        accountId: null,
+        guestId: 'guest-1',
+        isBot: false,
+      },
+      {
+        matchId,
+        playerId: 'p2',
+        seat: 2,
+        displayName: 'Bot Rival',
+        identityKind: 'bot',
+        accountId: null,
+        guestId: null,
+        isBot: true,
+      },
+    ]);
+
+    const submitted = await submitUnoMoveUseCase(null, matchId, {
+      move: {
+        playerId: 'p1',
+        kind: 'play-card',
+        createdAt: '2026-04-22T12:00:05.000Z',
+        payload: {
+          cardId: 'red-9',
+          sayUno: true,
+        },
+      } satisfies UnoMove,
+    });
+
+    expect(submitted).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        matchId,
+        status: 'completed',
+        finishedAt: '2026-04-22T12:00:05.000Z',
+        result: expect.objectContaining({
+          winnerIds: ['p1'],
+        }),
+      }),
+    });
+
+    const [match] = await getDb()
+      .select()
+      .from(gameMatches)
+      .where(eq(gameMatches.id, matchId));
+    const moves = await getDb()
+      .select()
+      .from(gameMatchMoves)
+      .where(eq(gameMatchMoves.matchId, matchId));
+
+    expect(match?.status).toBe('completed');
+    expect(match?.finishedAt?.toISOString()).toBe('2026-04-22T12:00:05.000Z');
+    expect(match?.resultJson).toEqual(
+      expect.objectContaining({
+        winnerIds: ['p1'],
+      }),
+    );
+    expect(match?.analysisJson).toEqual(
+      expect.objectContaining({
+        generic: expect.objectContaining({
+          acceptedMoveCount: 1,
+          winnerIds: ['p1'],
+        }),
+        uno: expect.objectContaining({
+          players: expect.arrayContaining([
+            expect.objectContaining({
+              playerId: 'p1',
+              won: true,
+            }),
+          ]),
+        }),
+      }),
+    );
+    expect(moves).toHaveLength(1);
+    expect(moves[0]?.moveKind).toBe('play-card');
+
+    const listed = await listUnoMatchesUseCase(null);
+
+    expect(listed).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        recent: expect.arrayContaining([
+          expect.objectContaining({
+            matchId,
+            status: 'completed',
+          }),
+        ]),
+      }),
+    });
+
+    const replay = await getUnoReplayUseCase(null, matchId);
+
+    expect(replay).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        summary: expect.objectContaining({
+          matchId,
+          status: 'completed',
+        }),
+        analysis: expect.objectContaining({
+          acceptedMoveCount: 1,
+          winnerIds: ['p1'],
+        }),
+        unoAnalysis: expect.objectContaining({
+          players: expect.arrayContaining([
+            expect.objectContaining({
+              playerId: 'p1',
+              won: true,
+            }),
+          ]),
+        }),
       }),
     });
   });

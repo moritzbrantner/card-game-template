@@ -771,49 +771,8 @@ export async function createUnoMatchUseCase(
       });
 
       await createGameMatch(tx, {
-        match: {
-          id: persistedMatch.matchId,
-          gameId: persistedMatch.gameId,
-          status: persistedMatch.status,
-          executionMode: persistedMatch.executionMode,
-          replayFormatVersion: persistedMatch.replayFormatVersion,
-          startedAt: new Date(persistedMatch.startedAt),
-          finishedAt: persistedMatch.finishedAt
-            ? new Date(persistedMatch.finishedAt)
-            : null,
-          updatedAt: new Date(persistedMatch.updatedAt),
-          createdAt: new Date(persistedMatch.createdAt),
-          createdByKind: persistedMatch.createdBy.kind,
-          createdByAccountId:
-            persistedMatch.createdBy.kind === 'account'
-              ? persistedMatch.createdBy.accountId
-              : null,
-          createdByGuestId:
-            persistedMatch.createdBy.kind === 'guest'
-              ? persistedMatch.createdBy.guestId
-              : null,
-          initialStateJson: persistedMatch.initialState,
-          latestStateJson: persistedMatch.latestState,
-          resultJson: persistedMatch.result,
-          analysisJson: persistedMatch.analysis,
-          lastSequence: persistedMatch.lastSequence,
-        },
-        participants: persistedMatch.participants.map((participant) => ({
-          matchId: persistedMatch.matchId,
-          playerId: participant.playerId,
-          seat: participant.seat,
-          displayName: participant.displayName,
-          identityKind: participant.identity.kind,
-          accountId:
-            participant.identity.kind === 'account'
-              ? participant.identity.accountId
-              : null,
-          guestId:
-            participant.identity.kind === 'guest'
-              ? participant.identity.guestId
-              : null,
-          isBot: participant.isBot,
-        })),
+        match: buildMatchInsert(persistedMatch),
+        participants: buildParticipantRows(persistedMatch),
         moves: buildMoveRows(persistedMatch, 0),
       });
 

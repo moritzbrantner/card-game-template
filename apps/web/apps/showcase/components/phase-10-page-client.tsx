@@ -29,12 +29,14 @@ import {
   defaultPhase10Phases,
   defaultPhase10Rules,
   formatPhase10PhaseLabel,
+  formatPhase10RequirementLabel,
   getPhase10ExamplePreset,
   phase10ExamplePresets,
   projectPhase10PlayerView,
   type Phase10Card,
   type Phase10ExamplePresetId,
   type Phase10PhaseDefinition,
+  type Phase10PhaseRequirement,
   type Phase10Move,
   type Phase10PlayerView,
   type Phase10State,
@@ -88,8 +90,52 @@ type Phase10TableConfig = {
   presetId: Phase10ExamplePresetId;
 };
 
+function clonePhaseRequirement(
+  requirement: Phase10PhaseRequirement,
+): Phase10PhaseRequirement {
+  return { ...requirement };
+}
+
 function clonePhaseDefinitions(phases: readonly Phase10PhaseDefinition[]) {
-  return phases.map((phase) => ({ ...phase }));
+  return phases.map((phase) => ({
+    ...phase,
+    requirements: (phase.requirements ?? []).map(clonePhaseRequirement),
+  }));
+}
+
+function createDefaultRequirement(
+  type: Phase10PhaseRequirement['type'] = 'set',
+): Phase10PhaseRequirement {
+  return {
+    size: type === 'set' ? 2 : 4,
+    type,
+  };
+}
+
+function createDefaultPhaseDefinition(index: number): Phase10PhaseDefinition {
+  const requirements = [createDefaultRequirement()];
+
+  return {
+    id: `phase-${index + 1}`,
+    label: formatPhase10PhaseLabel(requirements, index + 1),
+    requirements,
+  };
+}
+
+function getPhaseRequirementMinSize(_requirement: Phase10PhaseRequirement) {
+  return 2;
+}
+
+function getPhaseRequirementMaxSize(requirement: Phase10PhaseRequirement) {
+  return requirement.type === 'set' ? 6 : 12;
+}
+
+function formatPhaseRequirementSummary(
+  requirements: readonly Phase10PhaseRequirement[],
+) {
+  return requirements
+    .map((requirement) => formatPhase10RequirementLabel(requirement))
+    .join(' + ');
 }
 
 function createDefaultTableConfig(): Phase10TableConfig {
@@ -101,13 +147,21 @@ function createDefaultTableConfig(): Phase10TableConfig {
 
 function serializePhaseConfig(phases: readonly Phase10PhaseDefinition[]) {
   return phases
-    .map((phase) => `${phase.setCount}x${phase.setSize}:${phase.label}`)
-    .join('|');
+    .map((phase) =>
+      (phase.requirements ?? [])
+        .map((requirement) => `${requirement.type[0]}${requirement.size}`)
+        .join('+'),
+    )
+    .join(',');
 }
 
 function serializePhaseUrlValue(phases: readonly Phase10PhaseDefinition[]) {
   return phases
-    .map((phase) => `${phase.setCount}x${phase.setSize}`)
+    .map((phase) =>
+      (phase.requirements ?? [])
+        .map((requirement) => `${requirement.type[0]}${requirement.size}`)
+        .join('+'),
+    )
     .join(',');
 }
 
@@ -121,28 +175,57 @@ function parsePhaseUrlValue(value: string | null) {
     .map((entry) => entry.trim())
     .filter(Boolean)
     .map((entry, index) => {
-      const [rawSetCount, rawSetSize] = entry.split('x');
-      const setCount = Number(rawSetCount);
-      const setSize = Number(rawSetSize);
+      const requirements = entry
+        .split('+')
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .map((part) => {
+          const typeKey = part[0];
+          const size = Number(part.slice(1));
+          const type =
+            typeKey === 's'
+              ? 'set'
+              : typeKey === 'c'
+                ? 'color'
+                : typeKey === 'r'
+                  ? 'run'
+                  : null;
+
+          if (!type || !Number.isInteger(size) || size < 2) {
+            return null;
+          }
+
+          const requirement = {
+            size,
+            type,
+          } satisfies Phase10PhaseRequirement;
+
+          return size <= getPhaseRequirementMaxSize(requirement)
+            ? requirement
+            : null;
+        });
 
       if (
-        !Number.isInteger(setCount) ||
-        !Number.isInteger(setSize) ||
-        setCount < 1 ||
-        setSize < 1
+        requirements.length === 0 ||
+        requirements.some((requirement) => requirement === null)
       ) {
         return null;
       }
 
       return {
         id: `phase-${index + 1}`,
-        label: formatPhase10PhaseLabel(setCount, setSize, index + 1),
-        setCount,
-        setSize,
+        label: formatPhase10PhaseLabel(
+          requirements as Phase10PhaseRequirement[],
+          index + 1,
+        ),
+        requirements: requirements as Phase10PhaseRequirement[],
       } satisfies Phase10PhaseDefinition;
     });
 
-  if (parsedPhases.length === 0 || parsedPhases.some((phase) => phase === null)) {
+  if (
+    parsedPhases.length === 0 ||
+    parsedPhases.some((phase) => phase === null)
+  ) {
     return null;
   }
 
@@ -155,7 +238,8 @@ function renumberPhases(
   return phases.map((phase, index) => ({
     ...phase,
     id: `phase-${index + 1}`,
-    label: formatPhase10PhaseLabel(phase.setCount, phase.setSize, index + 1),
+    label: formatPhase10PhaseLabel(phase.requirements ?? [], index + 1),
+    requirements: (phase.requirements ?? []).map(clonePhaseRequirement),
   }));
 }
 
@@ -501,16 +585,7 @@ export function Phase10PageClient({
                       ...current,
                       phases: renumberPhases([
                         ...current.phases,
-                        {
-                          id: `phase-${current.phases.length + 1}`,
-                          label: formatPhase10PhaseLabel(
-                            2,
-                            3,
-                            current.phases.length + 1,
-                          ),
-                          setCount: 2,
-                          setSize: 3,
-                        },
+                        createDefaultPhaseDefinition(current.phases.length),
                       ]),
                     }));
                   }}
@@ -533,7 +608,10 @@ export function Phase10PageClient({
                           {phase.label}
                         </p>
                         <p className="text-sm text-white/60">
-                          {labels.phaseOrderTitle} {index + 1}
+                          {labels.phaseOrderTitle} {index + 1} ·{' '}
+                          {formatPhaseRequirementSummary(
+                            phase.requirements ?? [],
+                          )}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -594,39 +672,10 @@ export function Phase10PageClient({
                       </div>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <div className="flex items-center gap-2 rounded-full border border-white/12 px-3 py-2">
-                        <span className="text-sm text-white/70">Sets</span>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {(['set', 'color', 'run'] as const).map((type) => (
                         <Button
-                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
-                          disabled={phase.setCount === 1}
-                          onClick={() => {
-                            setDraftConfig((current) => ({
-                              ...current,
-                              phases: renumberPhases(
-                                current.phases.map((candidate, phaseIndex) =>
-                                  phaseIndex === index
-                                    ? {
-                                        ...candidate,
-                                        setCount: Math.max(
-                                          1,
-                                          candidate.setCount - 1,
-                                        ),
-                                      }
-                                    : candidate,
-                                ),
-                              ),
-                            }));
-                          }}
-                          size="sm"
-                          variant="outline"
-                        >
-                          {labels.decreaseSetCountAction}
-                        </Button>
-                        <span className="min-w-6 text-center text-sm font-semibold text-white">
-                          {phase.setCount}
-                        </span>
-                        <Button
+                          key={type}
                           className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
                           onClick={() => {
                             setDraftConfig((current) => ({
@@ -636,7 +685,10 @@ export function Phase10PageClient({
                                   phaseIndex === index
                                     ? {
                                         ...candidate,
-                                        setCount: candidate.setCount + 1,
+                                        requirements: [
+                                          ...(candidate.requirements ?? []),
+                                          createDefaultRequirement(type),
+                                        ],
                                       }
                                     : candidate,
                                 ),
@@ -646,64 +698,144 @@ export function Phase10PageClient({
                           size="sm"
                           variant="outline"
                         >
-                          {labels.increaseSetCountAction}
+                          {type === 'set'
+                            ? 'Add set'
+                            : type === 'color'
+                              ? 'Add color'
+                              : 'Add street'}
                         </Button>
-                      </div>
+                      ))}
+                    </div>
 
-                      <div className="flex items-center gap-2 rounded-full border border-white/12 px-3 py-2">
-                        <span className="text-sm text-white/70">Size</span>
-                        <Button
-                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
-                          disabled={phase.setSize === 1}
-                          onClick={() => {
-                            setDraftConfig((current) => ({
-                              ...current,
-                              phases: renumberPhases(
-                                current.phases.map((candidate, phaseIndex) =>
-                                  phaseIndex === index
-                                    ? {
-                                        ...candidate,
-                                        setSize: Math.max(
-                                          1,
-                                          candidate.setSize - 1,
-                                        ),
-                                      }
-                                    : candidate,
-                                ),
-                              ),
-                            }));
-                          }}
-                          size="sm"
-                          variant="outline"
-                        >
-                          {labels.decreaseSetSizeAction}
-                        </Button>
-                        <span className="min-w-6 text-center text-sm font-semibold text-white">
-                          {phase.setSize}
-                        </span>
-                        <Button
-                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
-                          onClick={() => {
-                            setDraftConfig((current) => ({
-                              ...current,
-                              phases: renumberPhases(
-                                current.phases.map((candidate, phaseIndex) =>
-                                  phaseIndex === index
-                                    ? {
-                                        ...candidate,
-                                        setSize: candidate.setSize + 1,
-                                      }
-                                    : candidate,
-                                ),
-                              ),
-                            }));
-                          }}
-                          size="sm"
-                          variant="outline"
-                        >
-                          {labels.increaseSetSizeAction}
-                        </Button>
-                      </div>
+                    <div className="mt-4 space-y-3">
+                      {(phase.requirements ?? []).map(
+                        (requirement, requirementIndex) => (
+                          <div
+                            key={`${phase.id}-${requirementIndex}-${requirement.type}`}
+                            className="flex flex-wrap items-center gap-2 rounded-full border border-white/12 px-3 py-2"
+                          >
+                            <span className="text-sm font-medium text-white">
+                              {formatPhase10RequirementLabel(requirement)}
+                            </span>
+                            <span className="text-sm text-white/60">Size</span>
+                            <Button
+                              className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                              disabled={
+                                requirement.size <=
+                                getPhaseRequirementMinSize(requirement)
+                              }
+                              onClick={() => {
+                                setDraftConfig((current) => ({
+                                  ...current,
+                                  phases: renumberPhases(
+                                    current.phases.map(
+                                      (candidate, phaseIndex) =>
+                                        phaseIndex === index
+                                          ? {
+                                              ...candidate,
+                                              requirements: (
+                                                candidate.requirements ?? []
+                                              ).map((entry, entryIndex) =>
+                                                entryIndex === requirementIndex
+                                                  ? {
+                                                      ...entry,
+                                                      size: Math.max(
+                                                        getPhaseRequirementMinSize(
+                                                          entry,
+                                                        ),
+                                                        entry.size - 1,
+                                                      ),
+                                                    }
+                                                  : entry,
+                                              ),
+                                            }
+                                          : candidate,
+                                    ),
+                                  ),
+                                }));
+                              }}
+                              size="sm"
+                              variant="outline"
+                            >
+                              {labels.decreaseSetSizeAction}
+                            </Button>
+                            <span className="min-w-6 text-center text-sm font-semibold text-white">
+                              {requirement.size}
+                            </span>
+                            <Button
+                              className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                              disabled={
+                                requirement.size >=
+                                getPhaseRequirementMaxSize(requirement)
+                              }
+                              onClick={() => {
+                                setDraftConfig((current) => ({
+                                  ...current,
+                                  phases: renumberPhases(
+                                    current.phases.map(
+                                      (candidate, phaseIndex) =>
+                                        phaseIndex === index
+                                          ? {
+                                              ...candidate,
+                                              requirements: (
+                                                candidate.requirements ?? []
+                                              ).map((entry, entryIndex) =>
+                                                entryIndex === requirementIndex
+                                                  ? {
+                                                      ...entry,
+                                                      size: Math.min(
+                                                        getPhaseRequirementMaxSize(
+                                                          entry,
+                                                        ),
+                                                        entry.size + 1,
+                                                      ),
+                                                    }
+                                                  : entry,
+                                              ),
+                                            }
+                                          : candidate,
+                                    ),
+                                  ),
+                                }));
+                              }}
+                              size="sm"
+                              variant="outline"
+                            >
+                              {labels.increaseSetSizeAction}
+                            </Button>
+                            <Button
+                              className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                              disabled={(phase.requirements ?? []).length === 1}
+                              onClick={() => {
+                                setDraftConfig((current) => ({
+                                  ...current,
+                                  phases: renumberPhases(
+                                    current.phases.map(
+                                      (candidate, phaseIndex) =>
+                                        phaseIndex === index
+                                          ? {
+                                              ...candidate,
+                                              requirements: (
+                                                candidate.requirements ?? []
+                                              ).filter(
+                                                (_, entryIndex) =>
+                                                  entryIndex !==
+                                                  requirementIndex,
+                                              ),
+                                            }
+                                          : candidate,
+                                    ),
+                                  ),
+                                }));
+                              }}
+                              size="sm"
+                              variant="outline"
+                            >
+                              Remove group
+                            </Button>
+                          </div>
+                        ),
+                      )}
                     </div>
                   </div>
                 ))}

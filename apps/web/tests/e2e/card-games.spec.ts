@@ -1,6 +1,14 @@
 import { expect, test } from './card-game-pages.fixture';
 
 test.describe('card game page fixtures', () => {
+  test('Phase 10 page can configure, play, and restart a local round', async ({
+    phase10Page,
+  }) => {
+    await phase10Page.goto();
+    await phase10Page.configureBotDuelRound();
+    await phase10Page.verifyLegalActionsAreAvailable();
+  });
+
   test('poker page can create, play, and reload an authoritative match', async ({
     pokerPage,
   }) => {

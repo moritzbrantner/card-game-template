@@ -1,5 +1,7 @@
 'use client';
 
+import { type ComponentPropsWithoutRef } from 'react';
+
 import {
   CardStack,
   PlayerHand,
@@ -146,14 +148,33 @@ export function UnoCardVisual({
   size = 'sm',
   selected = false,
   className,
+  interactive = false,
+  ...cardProps
 }: {
   card: UnoCard;
   size?: PlayingCardSize;
   selected?: boolean;
   className?: string;
-}) {
+  interactive?: boolean;
+} & Omit<
+  ComponentPropsWithoutRef<typeof PlayingCard>,
+  | 'aria-label'
+  | 'artwork'
+  | 'badge'
+  | 'children'
+  | 'className'
+  | 'description'
+  | 'effect'
+  | 'interactive'
+  | 'rank'
+  | 'selected'
+  | 'size'
+  | 'suit'
+  | 'tone'
+>) {
   return (
     <PlayingCard
+      {...cardProps}
       aria-label={card.label}
       artwork={
         <div className="grid place-items-center gap-3 text-center">
@@ -169,7 +190,7 @@ export function UnoCardVisual({
       className={joinClasses('shrink-0', className)}
       description={card.label}
       effect={getCardEffect(card)}
-      interactive={false}
+      interactive={interactive}
       rank={getCardRank(card)}
       selected={selected}
       size={size}
@@ -248,12 +269,30 @@ export function UnoHandPreview({
   label,
   size = 'sm',
   className,
+  getCardProps,
 }: {
   visibleCards: readonly UnoCard[];
   hiddenCount: number;
   label: string;
   size?: PlayingCardSize;
   className?: string;
+  getCardProps?: (
+    card: UnoCard,
+    index: number,
+  ) => Omit<
+    ComponentPropsWithoutRef<typeof PlayingCard>,
+    | 'aria-label'
+    | 'artwork'
+    | 'badge'
+    | 'children'
+    | 'description'
+    | 'effect'
+    | 'rank'
+    | 'selected'
+    | 'size'
+    | 'suit'
+    | 'tone'
+  > & { interactive?: boolean };
 }) {
   if (visibleCards.length === 0 && hiddenCount <= 0) {
     return null;
@@ -273,6 +312,7 @@ export function UnoHandPreview({
             <UnoCardVisual
               key={card.id}
               card={card}
+              {...getCardProps?.(card, index)}
               selected={index === visibleCards.length - 1 && hiddenCount === 0}
               size={size}
             />

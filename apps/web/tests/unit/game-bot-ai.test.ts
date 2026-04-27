@@ -124,6 +124,7 @@ function createPhase10MatchState(
         {
           id: 'phase-1',
           label: 'Phase 1: 1 set of 3',
+          requirements: [{ size: 3, type: 'set' }],
           setCount: 1,
           setSize: 3,
         },
