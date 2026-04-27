@@ -90,6 +90,19 @@ function isoNow() {
   return new Date().toISOString();
 }
 
+function createAcceptedAtClock(initialTimestamp: string) {
+  const parsedInitialTimestamp = Date.parse(initialTimestamp);
+  let nextAcceptedAt = Number.isNaN(parsedInitialTimestamp)
+    ? Date.now()
+    : parsedInitialTimestamp;
+
+  return () => {
+    const acceptedAt = new Date(nextAcceptedAt).toISOString();
+    nextAcceptedAt += 1;
+    return acceptedAt;
+  };
+}
+
 function isNewerTimestamp(current: string, previous?: string | null) {
   if (!previous) {
     return true;
@@ -639,7 +652,7 @@ export async function submitPokerMoveUseCase(
         });
       }
 
-      const now = () => isoNow();
+      const now = createAcceptedAtClock(input.move.createdAt);
       const serverSession = createResumedPokerSession(persistedMatch, now);
 
       serverSession.submitMove(input.move);
@@ -890,7 +903,7 @@ export async function submitUnoMoveUseCase(
         });
       }
 
-      const now = () => isoNow();
+      const now = createAcceptedAtClock(input.move.createdAt);
       const serverSession = createResumedSession(persistedMatch, now);
 
       serverSession.submitMove(input.move);

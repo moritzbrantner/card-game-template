@@ -119,8 +119,11 @@ class Phase10Page {
 
   async configureBotDuelRound() {
     await this.page.getByRole('button', { name: 'Bot duel' }).click();
-    await this.page.getByRole('button', { name: 'Sets +' }).first().click();
-    await this.page.getByRole('button', { name: 'Size +' }).first().click();
+    await this.page.getByRole('button', { name: 'Add set' }).click();
+    await this.page.getByRole('button', { name: 'Size +' }).nth(0).click();
+    await this.page.getByRole('button', { name: 'Size +' }).nth(1).click();
+    await this.page.getByRole('button', { name: 'Size +' }).nth(2).click();
+    await this.page.getByRole('button', { name: 'Size +' }).nth(2).click();
     await this.page
       .getByRole('button', { name: 'Start configured round' })
       .click();
@@ -151,9 +154,13 @@ export class UnoMatchesPage {
 
   async createMatch(input: { playerName: string; preset?: UnoPreset }) {
     await this.page.getByLabel('Player name').fill(input.playerName);
-    await this.page.getByLabel('Table size').selectOption(
-      input.preset === 'hotseat-duo' || input.preset === 'bot-duel' ? '2' : '4',
-    );
+    await this.page
+      .getByLabel('Table size')
+      .selectOption(
+        input.preset === 'hotseat-duo' || input.preset === 'bot-duel'
+          ? '2'
+          : '4',
+      );
     await this.page
       .getByLabel('Bots')
       .selectOption(input.preset === 'bot-duel' ? '1' : '0');

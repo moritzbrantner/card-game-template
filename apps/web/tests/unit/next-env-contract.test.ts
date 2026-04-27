@@ -11,7 +11,9 @@ describe('next-env contract', () => {
     );
 
     expect(nextEnv).toContain('/// <reference types="next" />');
-    expect(nextEnv).toContain('/// <reference types="next/image-types/global" />');
+    expect(nextEnv).toContain(
+      '/// <reference types="next/image-types/global" />',
+    );
     expect(nextEnv).toContain('import "./.next/types/routes.d.ts";');
     expect(nextEnv).not.toContain('.next/dev/types/routes.d.ts');
   });

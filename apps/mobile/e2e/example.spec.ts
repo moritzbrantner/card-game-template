@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('mobile web smoke flow covers navigation, theme, profile, and gameplay', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
 
   await expect(page.getByText('Welcome!')).toBeVisible();
 
@@ -19,7 +19,7 @@ test('mobile web smoke flow covers navigation, theme, profile, and gameplay', as
   await expect(page.getByText('Mobile profile', { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/profile\/@/);
 
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.getByText('Profiles')).toBeVisible();
 
   await page.getByRole('tab', { name: /UNO-style/ }).click();

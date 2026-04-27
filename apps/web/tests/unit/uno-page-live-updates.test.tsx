@@ -687,7 +687,9 @@ describe('UnoPageClient live updates', () => {
 
       if (url === `/api/games/uno/matches/${activeSnapshot.matchId}`) {
         snapshotCalls += 1;
-        return Response.json(snapshotCalls === 1 ? activeSnapshot : completedSnapshot);
+        return Response.json(
+          snapshotCalls === 1 ? activeSnapshot : completedSnapshot,
+        );
       }
 
       if (url === `/api/games/uno/matches/${activeSnapshot.matchId}/moves`) {

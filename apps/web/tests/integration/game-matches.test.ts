@@ -54,9 +54,7 @@ function createUnoCard(
   };
 }
 
-function createNearFinishedUnoState(
-  matchId: string,
-): MatchState<UnoState> {
+function createNearFinishedUnoState(matchId: string): MatchState<UnoState> {
   return {
     matchId,
     gameId: 'uno-style',
@@ -448,47 +446,51 @@ describe('game matches', () => {
     const matchId = 'uno-finish-persisted';
     const nearFinishedState = createNearFinishedUnoState(matchId);
 
-    await getDb().insert(gameMatches).values({
-      id: matchId,
-      gameId: 'uno-style',
-      status: 'active',
-      executionMode: 'server-authoritative',
-      replayFormatVersion: 2,
-      startedAt: new Date('2026-04-22T12:00:00.000Z'),
-      finishedAt: null,
-      updatedAt: new Date('2026-04-22T12:00:00.000Z'),
-      createdAt: new Date('2026-04-22T12:00:00.000Z'),
-      createdByKind: 'guest',
-      createdByAccountId: null,
-      createdByGuestId: 'guest-1',
-      initialStateJson: nearFinishedState,
-      latestStateJson: nearFinishedState,
-      resultJson: null,
-      analysisJson: null,
-      lastSequence: 0,
-    });
-    await getDb().insert(gameMatchParticipants).values([
-      {
-        matchId,
-        playerId: 'p1',
-        seat: 1,
-        displayName: 'Guest Player',
-        identityKind: 'guest',
-        accountId: null,
-        guestId: 'guest-1',
-        isBot: false,
-      },
-      {
-        matchId,
-        playerId: 'p2',
-        seat: 2,
-        displayName: 'Bot Rival',
-        identityKind: 'bot',
-        accountId: null,
-        guestId: null,
-        isBot: true,
-      },
-    ]);
+    await getDb()
+      .insert(gameMatches)
+      .values({
+        id: matchId,
+        gameId: 'uno-style',
+        status: 'active',
+        executionMode: 'server-authoritative',
+        replayFormatVersion: 2,
+        startedAt: new Date('2026-04-22T12:00:00.000Z'),
+        finishedAt: null,
+        updatedAt: new Date('2026-04-22T12:00:00.000Z'),
+        createdAt: new Date('2026-04-22T12:00:00.000Z'),
+        createdByKind: 'guest',
+        createdByAccountId: null,
+        createdByGuestId: 'guest-1',
+        initialStateJson: nearFinishedState,
+        latestStateJson: nearFinishedState,
+        resultJson: null,
+        analysisJson: null,
+        lastSequence: 0,
+      });
+    await getDb()
+      .insert(gameMatchParticipants)
+      .values([
+        {
+          matchId,
+          playerId: 'p1',
+          seat: 1,
+          displayName: 'Guest Player',
+          identityKind: 'guest',
+          accountId: null,
+          guestId: 'guest-1',
+          isBot: false,
+        },
+        {
+          matchId,
+          playerId: 'p2',
+          seat: 2,
+          displayName: 'Bot Rival',
+          identityKind: 'bot',
+          accountId: null,
+          guestId: null,
+          isBot: true,
+        },
+      ]);
 
     const submitted = await submitUnoMoveUseCase(null, matchId, {
       move: {
