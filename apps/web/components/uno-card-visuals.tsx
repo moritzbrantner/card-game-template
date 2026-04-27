@@ -266,8 +266,8 @@ export function UnoHandPreview({
           aria-label={`${label} visible hand`}
           className="-mx-3 overflow-x-auto px-3 pb-2"
           curve={10}
-          overlap={72}
-          spreadDegrees={18}
+          overlap={44}
+          spreadDegrees={12}
         >
           {visibleCards.map((card, index) => (
             <UnoCardVisual

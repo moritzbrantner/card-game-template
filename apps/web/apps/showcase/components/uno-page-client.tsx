@@ -104,6 +104,19 @@ async function loadRoomList() {
   return readJson<readonly GameRoomDto[]>(response);
 }
 
+async function loadRoom(roomId: string) {
+  const response = await fetch(`/api/games/rooms/${roomId}`, {
+    method: 'GET',
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw await readProblemDetail(response, 'Unable to load room.');
+  }
+
+  return readJson<GameRoomDto>(response);
+}
+
 async function loadRoomEvents(roomId: string, sinceUpdatedAt?: string | null) {
   const params = new URLSearchParams();
 
@@ -159,6 +172,18 @@ function buildInviteUrl(roomId: string) {
   return url.toString();
 }
 
+function replaceRoomUrl(roomId: string | null) {
+  const url = new URL(window.location.href);
+
+  if (roomId) {
+    url.searchParams.set('invite', roomId);
+  } else {
+    url.searchParams.delete('invite');
+  }
+
+  window.history.replaceState({}, '', url);
+}
+
 function getOpenRooms(rooms: readonly GameRoomDto[]) {
   return rooms.filter((room) => room.status === 'open');
 }
@@ -197,9 +222,16 @@ export function UnoPageClient({
   }, [currentMatch]);
 
   async function refresh(matchId?: string, roomId?: string) {
-    const [nextMatches, nextRooms] = await Promise.all([
+    const targetRoomId =
+      roomId ??
+      currentRoom?.roomId ??
+      new URL(window.location.href).searchParams.get('invite');
+    const [nextMatches, nextRooms, targetedRoom] = await Promise.all([
       loadMatchList(),
       loadRoomList(),
+      targetRoomId
+        ? loadRoom(targetRoomId).catch(() => null)
+        : Promise.resolve(null),
     ]);
 
     setMatches(nextMatches);
@@ -207,6 +239,7 @@ export function UnoPageClient({
 
     const openRooms = getOpenRooms(nextRooms);
     const nextCurrentRoom =
+      (targetedRoom?.status === 'open' ? targetedRoom : null) ??
       (roomId ? openRooms.find((room) => room.roomId === roomId) : null) ??
       (currentRoom
         ? openRooms.find((room) => room.roomId === currentRoom.roomId)
@@ -215,11 +248,20 @@ export function UnoPageClient({
       null;
     setCurrentRoom(nextCurrentRoom);
 
+    if (targetedRoom && targetedRoom.status !== 'closed') {
+      replaceRoomUrl(targetedRoom.roomId);
+    } else if (!nextCurrentRoom && !matchId) {
+      replaceRoomUrl(null);
+    }
+
     const activeRoomMatchId =
+      targetedRoom?.activeMatchId ??
       nextRooms.find((room) => room.status === 'active' && room.activeMatchId)
-        ?.activeMatchId ?? null;
+        ?.activeMatchId ??
+      null;
     const targetMatchId =
       matchId ??
+      targetedRoom?.activeMatchId ??
       currentMatchRef.current?.matchId ??
       nextMatches.active[0]?.matchId ??
       activeRoomMatchId;
@@ -440,6 +482,7 @@ export function UnoPageClient({
     setCurrentRoom(room);
     setCurrentMatch(null);
     setState({ announcement: labels.joinedLobbyStatus });
+    replaceRoomUrl(room.roomId);
     setPending(false);
   }
 
@@ -479,6 +522,7 @@ export function UnoPageClient({
     ]);
     setCurrentRoom(room);
     setState({ announcement: labels.joinedLobbyStatus });
+    replaceRoomUrl(room.roomId);
     setPending(false);
   }
 
@@ -564,6 +608,7 @@ export function UnoPageClient({
     );
     setCurrentRoom(null);
     setState({ announcement: labels.startedGameStatus });
+    replaceRoomUrl(room.roomId);
 
     if (room.activeMatchId) {
       const snapshot = await loadMatchSnapshot(room.activeMatchId);
@@ -679,6 +724,7 @@ export function UnoPageClient({
     const snapshot = await readJson<PersistedUnoMatchSnapshotDto>(response);
     setCurrentMatch(snapshot);
     setState({ announcement: labels.exitedGameStatus });
+    replaceRoomUrl(null);
     await refresh();
     setPending(false);
   }
@@ -688,10 +734,12 @@ export function UnoPageClient({
   const viewerSeat = currentRoom?.seats.find(
     (seat) => seat.playerId === currentRoom.viewerPlayerId,
   );
+  const hasFocusedSession = currentRoom !== null || currentMatch !== null;
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[2rem] border border-zinc-200 bg-zinc-50 p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      {!hasFocusedSession ? (
+        <div className="rounded-[2rem] border border-zinc-200 bg-zinc-50 p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div className="space-y-4">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">
             {catalogEntry?.definition.name ?? 'UNO-style'}
@@ -729,10 +777,18 @@ export function UnoPageClient({
             {labels.reloadAction}
           </button>
         </div>
-      </div>
+        </div>
+      ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <article className="rounded-[1.75rem] border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <div
+        className={
+          hasFocusedSession
+            ? 'grid gap-4'
+            : 'grid gap-4 xl:grid-cols-[0.9fr_1.1fr]'
+        }
+      >
+        {!hasFocusedSession ? (
+          <article className="rounded-[1.75rem] border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
           {inviteRoomId && !currentRoom ? (
             <div className="space-y-6">
               <div className="space-y-2">
@@ -883,6 +939,7 @@ export function UnoPageClient({
                       className={buttonVariants({ variant: 'outline' })}
                       disabled={pending}
                       onClick={() => {
+                        replaceRoomUrl(room.roomId);
                         setCurrentRoom(room);
                         setCurrentMatch(null);
                       }}
@@ -950,9 +1007,42 @@ export function UnoPageClient({
               {state.announcement}
             </p>
           ) : null}
-        </article>
+          </article>
+        ) : null}
 
-        <article className="rounded-[1.75rem] border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <article
+          className={`rounded-[1.75rem] border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 ${
+            hasFocusedSession ? 'p-4 sm:p-6 xl:p-8' : 'p-6'
+          }`}
+        >
+          {hasFocusedSession ? (
+            <div className="mb-6 flex flex-wrap gap-3">
+              <a
+                href={pastGamesHref}
+                className={buttonVariants({ variant: 'outline' })}
+              >
+                {labels.pastGamesCta}
+              </a>
+              <button
+                type="button"
+                className={buttonVariants({ variant: 'outline' })}
+                disabled={pending}
+                onClick={() => {
+                  void refresh().catch((error) => {
+                    setState({
+                      error:
+                        error instanceof Error
+                          ? error.message
+                          : 'Unable to reload matches.',
+                    });
+                  });
+                }}
+              >
+                {labels.reloadAction}
+              </button>
+            </div>
+          ) : null}
+
           {currentMatch ? (
             <div className="space-y-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -976,6 +1066,7 @@ export function UnoPageClient({
                   `${currentMatch.view.drawPileCount} cards remain in the draw pile.`
                 }
                 title={currentMatch.view.status}
+                className={hasFocusedSession ? 'min-h-[44rem]' : undefined}
                 tone={
                   currentMatch.view.activeColor === 'green'
                     ? 'emerald'
@@ -984,7 +1075,7 @@ export function UnoPageClient({
                       : 'crimson'
                 }
               >
-                <div className="grid gap-4 xl:grid-cols-[0.78fr_1.22fr]">
+                <div className="grid gap-6 2xl:grid-cols-[minmax(19rem,0.42fr)_minmax(0,1fr)]">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                     <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
@@ -1041,7 +1132,7 @@ export function UnoPageClient({
                     </div>
                   </div>
 
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {currentMatch.view.players.map((player) => {
                       const hiddenCount = Math.max(
                         player.handCount - player.visibleCards.length,
@@ -1277,6 +1368,17 @@ export function UnoPageClient({
               </p>
             </div>
           )}
+
+          {hasFocusedSession && state.error ? (
+            <p className="mt-6 text-sm text-red-600 dark:text-red-400">
+              {state.error}
+            </p>
+          ) : null}
+          {hasFocusedSession && state.announcement ? (
+            <p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">
+              {state.announcement}
+            </p>
+          ) : null}
         </article>
       </div>
 

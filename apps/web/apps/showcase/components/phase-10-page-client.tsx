@@ -105,6 +105,50 @@ function serializePhaseConfig(phases: readonly Phase10PhaseDefinition[]) {
     .join('|');
 }
 
+function serializePhaseUrlValue(phases: readonly Phase10PhaseDefinition[]) {
+  return phases
+    .map((phase) => `${phase.setCount}x${phase.setSize}`)
+    .join(',');
+}
+
+function parsePhaseUrlValue(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const parsedPhases = value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry, index) => {
+      const [rawSetCount, rawSetSize] = entry.split('x');
+      const setCount = Number(rawSetCount);
+      const setSize = Number(rawSetSize);
+
+      if (
+        !Number.isInteger(setCount) ||
+        !Number.isInteger(setSize) ||
+        setCount < 1 ||
+        setSize < 1
+      ) {
+        return null;
+      }
+
+      return {
+        id: `phase-${index + 1}`,
+        label: formatPhase10PhaseLabel(setCount, setSize, index + 1),
+        setCount,
+        setSize,
+      } satisfies Phase10PhaseDefinition;
+    });
+
+  if (parsedPhases.length === 0 || parsedPhases.some((phase) => phase === null)) {
+    return null;
+  }
+
+  return parsedPhases as Phase10PhaseDefinition[];
+}
+
 function renumberPhases(
   phases: readonly Phase10PhaseDefinition[],
 ): Phase10PhaseDefinition[] {
@@ -196,6 +240,28 @@ function getCardSubtitle(card: Phase10Card) {
   return `${card.color} set`;
 }
 
+function readPhase10TableConfigFromUrl(): Phase10TableConfig {
+  const fallback = createDefaultTableConfig();
+  const url = new URL(window.location.href);
+  const presetId = url.searchParams.get('preset');
+  const phases =
+    parsePhaseUrlValue(url.searchParams.get('phases')) ?? fallback.phases;
+
+  return {
+    phases,
+    presetId: phase10ExamplePresets.some((preset) => preset.id === presetId)
+      ? (presetId as Phase10ExamplePresetId)
+      : fallback.presetId,
+  };
+}
+
+function replacePhase10Url(config: Phase10TableConfig) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('preset', config.presetId);
+  url.searchParams.set('phases', serializePhaseUrlValue(config.phases));
+  window.history.replaceState({}, '', url);
+}
+
 function renderCard(
   card: Phase10Card,
   {
@@ -241,6 +307,7 @@ export function Phase10PageClient({
   labels: Phase10PageLabels;
 }) {
   const catalogEntry = defaultGameCatalog.get('phase-10');
+  const [hasInitializedFromUrl, setHasInitializedFromUrl] = useState(false);
   const [activeConfig, setActiveConfig] = useState<Phase10TableConfig>(() =>
     createDefaultTableConfig(),
   );
@@ -273,6 +340,25 @@ export function Phase10PageClient({
   );
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const nextConfig = readPhase10TableConfigFromUrl();
+    setActiveConfig(nextConfig);
+    setDraftConfig(nextConfig);
+    setHasInitializedFromUrl(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasInitializedFromUrl || typeof window === 'undefined') {
+      return;
+    }
+
+    replacePhase10Url(activeConfig);
+  }, [activeConfig, hasInitializedFromUrl]);
+
+  useEffect(() => {
     const session = createSession(activeConfig, botAiProfiles);
     sessionRef.current = session;
 
@@ -294,7 +380,7 @@ export function Phase10PageClient({
     snapshot.view.players.find((player) => player.isViewer) ?? null;
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 md:px-8">
+    <div className="mx-auto flex w-full max-w-[112rem] flex-col gap-6 px-4 py-8 md:px-8">
       <CardTable
         eyebrow={
           <span className="inline-flex items-center gap-2">
@@ -310,7 +396,7 @@ export function Phase10PageClient({
         title={labels.title}
         tone="crimson"
       >
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.9fr)]">
+        <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.7fr)_minmax(22rem,0.72fr)]">
           <div className="space-y-4">
             <div className="grid gap-3 rounded-[1.5rem] border border-white/14 bg-black/18 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:grid-cols-3">
               <div>
@@ -775,7 +861,7 @@ export function Phase10PageClient({
         </div>
       </CardTable>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,0.7fr)]">
         <Card className="border border-border/70 shadow-sm">
           <CardHeader>
             <CardTitle>{labels.handTitle}</CardTitle>
@@ -787,7 +873,13 @@ export function Phase10PageClient({
           </CardHeader>
           <CardContent>
             {viewer?.visibleCards.length ? (
-              <PlayerHand aria-label={`${viewer.displayName} hand`}>
+              <PlayerHand
+                aria-label={`${viewer.displayName} hand`}
+                className="-mx-2 px-2"
+                curve={10}
+                overlap={36}
+                spreadDegrees={12}
+              >
                 {viewer.visibleCards.map((card) => renderCard(card))}
               </PlayerHand>
             ) : (
@@ -842,6 +934,9 @@ export function Phase10PageClient({
                         <PlayerHand
                           aria-label={`${player.displayName} laid group ${index + 1}`}
                           className="mt-3"
+                          curve={8}
+                          overlap={30}
+                          spreadDegrees={10}
                         >
                           {group.cards.map((card) =>
                             renderCard(card, { compact: true }),

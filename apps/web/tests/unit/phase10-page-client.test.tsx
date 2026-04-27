@@ -215,6 +215,7 @@ const labels = {
 
 describe('Phase10PageClient', () => {
   beforeEach(() => {
+    window.history.replaceState({}, '', '/en/phase-10');
     sessionSpies.confirmHotseat.mockReset();
     sessionSpies.restart.mockReset();
     sessionSpies.submitMove.mockReset();
@@ -242,6 +243,9 @@ describe('Phase10PageClient', () => {
     ).toBeTruthy();
     expect(screen.getByText('/phase-10')).toBeTruthy();
 
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Start configured round' }),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Draw Red 9' }));
     fireEvent.click(screen.getByRole('button', { name: 'Restart round' }));
 
@@ -252,7 +256,9 @@ describe('Phase10PageClient', () => {
       playerId: 'p1',
     });
     expect(sessionSpies.restart).toHaveBeenCalledTimes(1);
-    expect(sessionSpies.subscribe).toHaveBeenCalledTimes(1);
+    expect(sessionSpies.subscribe).toHaveBeenCalled();
+    expect(window.location.search).toContain('preset=mixed-table');
+    expect(window.location.search).toContain('phases=2x3');
   });
 
   it('shows the hotseat takeover flow when the next human player must confirm', () => {
