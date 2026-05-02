@@ -42,6 +42,55 @@ stop_database() {
   fi
 }
 
+wait_for_process_exit() {
+  local pid="$1"
+  local timeout_seconds="${2:-15}"
+  local start_time
+  start_time="$(date +%s)"
+
+  while kill -0 "$pid" >/dev/null 2>&1; do
+    if (( $(date +%s) - start_time >= timeout_seconds )); then
+      return 1
+    fi
+
+    sleep 1
+  done
+
+  return 0
+}
+
+stop_existing_dev_app_processes() {
+  local pid=""
+  local cwd=""
+
+  while IFS= read -r pid; do
+    [[ -z "$pid" ]] && continue
+    [[ "$pid" == "$$" ]] && continue
+
+    cwd="$(readlink -f "/proc/${pid}/cwd" 2>/dev/null || true)"
+    if [[ "$cwd" != "$APP_ROOT" ]]; then
+      continue
+    fi
+
+    echo "Stopping existing app dev process ${pid}..."
+    kill "$pid" >/dev/null 2>&1 || true
+
+    if wait_for_process_exit "$pid" 15; then
+      continue
+    fi
+
+    echo "App dev process ${pid} did not stop gracefully; forcing shutdown..."
+    kill -9 "$pid" >/dev/null 2>&1 || true
+    wait_for_process_exit "$pid" 5 || true
+  done < <(
+    ps -eo pid=,args= | awk '
+      index($0, "scripts/next-websocket-server.ts --dev") > 0 {
+        print $1
+      }
+    '
+  )
+}
+
 cleanup() {
   local exit_code=$?
   trap - EXIT INT TERM
@@ -197,6 +246,7 @@ fi
 
 trap cleanup EXIT INT TERM
 
+stop_existing_dev_app_processes
 stop_database
 
 echo "Waiting for dev database readiness..."
