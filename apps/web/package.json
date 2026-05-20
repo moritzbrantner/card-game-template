@@ -41,7 +41,13 @@
     "checks:main": "./scripts/ci/tier-main.sh",
     "checks:all": "./scripts/ci/tier-all.sh",
     "db:schema:generate": "bun ./scripts/generate-db-schema.ts",
-    "jobs:work": "bun ./scripts/run-jobs.ts --watch"
+    "jobs:work": "bun ./scripts/run-jobs.ts --watch",
+    "services:up": "docker compose up -d postgres mailpit minio",
+    "services:down": "docker compose stop postgres mailpit minio",
+    "services:clean": "docker compose down -v --remove-orphans",
+    "services:ps": "docker compose ps",
+    "check:hygiene": "bash scripts/check_repo_hygiene.sh",
+    "test:with-services": "COMPOSE_SERVICES=\"postgres mailpit minio\" bash scripts/run-with-compose-services.sh bun run test:e2e"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",

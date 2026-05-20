@@ -1,14 +1,16 @@
+name: card-game-template-web
+
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: next-template-postgres
+    container_name: card-game-template-web-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: next_template
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - '${POSTGRES_PORT:-55433}:5432'
+      - '${POSTGRES_PORT:-55437}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -27,7 +29,7 @@ services:
       POSTGRES_USER: '${DEV_DB_USER:-postgres}'
       POSTGRES_PASSWORD: '${DEV_DB_PASSWORD:-postgres}'
     ports:
-      - '${DEV_DB_PORT:-55434}:5432'
+      - '${DEV_DB_PORT:-55438}:5432'
     tmpfs:
       - /var/lib/postgresql/data:rw
     healthcheck:
@@ -50,14 +52,14 @@ services:
       POSTGRES_DB: '${DEV_DB_NAME:-next_template}'
       POSTGRES_USER: '${DEV_DB_USER:-postgres}'
       POSTGRES_PASSWORD: '${DEV_DB_PASSWORD:-postgres}'
-    command: postgres -c "port=${DEV_DB_PORT:-55434}"
+    command: postgres -c "port=${DEV_DB_PORT:-55438}"
     tmpfs:
       - /var/lib/postgresql/data:rw
     healthcheck:
       test:
         [
           'CMD-SHELL',
-          'pg_isready -U ${DEV_DB_USER:-postgres} -d ${DEV_DB_NAME:-next_template} -p ${DEV_DB_PORT:-55434}',
+          'pg_isready -U ${DEV_DB_USER:-postgres} -d ${DEV_DB_NAME:-next_template} -p ${DEV_DB_PORT:-55438}',
         ]
       interval: 2s
       timeout: 5s
@@ -73,7 +75,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - '${TEST_POSTGRES_PORT:-55435}:5432'
+      - '${TEST_POSTGRES_PORT:-55437}:5432'
     tmpfs:
       - /var/lib/postgresql/data:rw
     healthcheck:
@@ -86,20 +88,20 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     ports:
-      - '1025:1025' # SMTP
-      - '8025:8025' # Web UI
+      - '1029:1025' # SMTP
+      - '8029:8025' # Web UI
 
   minio:
     image: minio/minio:latest
-    container_name: next-template-minio
+    container_name: card-game-template-web-minio
     restart: unless-stopped
     environment:
       MINIO_ROOT_USER: '${MINIO_ROOT_USER:-minioadmin}'
       MINIO_ROOT_PASSWORD: '${MINIO_ROOT_PASSWORD:-minioadmin}'
     command: server /data --console-address ":9001"
     ports:
-      - '${MINIO_API_PORT:-9000}:9000' # S3 API
-      - '${MINIO_CONSOLE_PORT:-9001}:9001' # Web console
+      - '${MINIO_API_PORT:-9002}:9000' # S3 API
+      - '${MINIO_CONSOLE_PORT:-9003}:9001' # Web console
     volumes:
       - minio_data:/data
 
@@ -124,3 +126,9 @@ services:
 volumes:
   postgres_data:
   minio_data:
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 10.90.14.0/24
