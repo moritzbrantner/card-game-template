@@ -29,6 +29,9 @@ describe('game match persistence contract', () => {
     expect(contracts).toMatch(
       /export type PersistedPokerMatchRecord = PersistedGameMatchRecord<\s*['"]texas-holdem['"]/,
     );
+    expect(contracts).toMatch(
+      /export type PersistedTcgMatchRecord = PersistedGameMatchRecord<\s*['"]arcane-duel['"]/,
+    );
     expect(contracts).toContain('export type PersistedGameMatchSummaryDto<');
   });
 
@@ -42,7 +45,20 @@ describe('game match persistence contract', () => {
     expect(repository).toContain('export async function loadOwnedGameMatch');
     expect(repository).toContain('gameId?: GameId');
     expect(repository).not.toContain('@repo/game-uno');
+    expect(repository).not.toContain('@repo/game-poker');
+    expect(repository).not.toContain('@repo/game-tcg');
     expect(repository).not.toContain("gameId: 'uno-style'");
+  });
+
+  it('registers all web match runtime game ids', () => {
+    const runtime = readFileSync(
+      path.join(process.cwd(), 'src/domain/game-matches/runtime.ts'),
+      'utf8',
+    );
+
+    expect(runtime).toContain("'uno-style':");
+    expect(runtime).toContain("'texas-holdem':");
+    expect(runtime).toContain("'arcane-duel':");
   });
 
   it('keeps private rooms persisted separately from match replay state', () => {

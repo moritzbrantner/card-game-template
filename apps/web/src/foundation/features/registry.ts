@@ -107,6 +107,11 @@ export const foundationFeatureModules: readonly FoundationFeatureModule[] = [
     requiredContentCollections: [],
   },
   {
+    featureKey: 'showcase.tcg',
+    requiredMessageNamespaces: [],
+    requiredContentCollections: [],
+  },
+  {
     featureKey: 'showcase.uno',
     requiredMessageNamespaces: ['UnoPage', 'PastGamesPage'],
     requiredContentCollections: [],

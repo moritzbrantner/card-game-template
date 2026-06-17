@@ -1,7 +1,5 @@
 import * as z from 'zod';
-import { parseUnoMove } from '@repo/game-uno';
 
-import type { SubmitUnoMoveInput } from '@/src/domain/game-matches/contracts';
 import { publishUnoMatchSnapshot } from '@/src/domain/game-matches/realtime';
 import { submitUnoMoveUseCase } from '@/src/domain/game-matches/use-cases';
 import { problem, ProblemError } from '@/src/http/errors';
@@ -21,28 +19,9 @@ export const POST = createApiRoute({
   featureKey: 'showcase.uno',
   bodySchema: submitMoveBodySchema,
   async handler({ body, request, session }) {
-    let input: SubmitUnoMoveInput;
-
-    try {
-      input = {
-        move: parseUnoMove(body.move),
-      };
-    } catch (error) {
-      throw new ProblemError(
-        problem(
-          '/problems/uno-match-move',
-          'Unable to submit move',
-          400,
-          error instanceof Error ? error.message : 'Invalid UNO move.',
-        ),
-      );
-    }
-
-    const result = await submitUnoMoveUseCase(
-      session,
-      getMatchId(request),
-      input,
-    );
+    const result = await submitUnoMoveUseCase(session, getMatchId(request), {
+      move: body.move,
+    });
 
     if (!result.ok) {
       const status =

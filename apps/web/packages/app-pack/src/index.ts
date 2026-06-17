@@ -25,6 +25,7 @@ export const foundationFeatureKeys = [
   'showcase.forms',
   'showcase.phase10',
   'showcase.poker',
+  'showcase.tcg',
   'showcase.uno',
   'showcase.story',
   'showcase.communication',

@@ -663,9 +663,269 @@ function resolveTargetUnit(
   );
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parseOptionalNumber(
+  value: unknown,
+  fallback: number,
+  label: string,
+): number {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new TypeError(`${label} must be a finite number.`);
+  }
+
+  return value;
+}
+
+function parseOptionalString(
+  value: unknown,
+  label: string,
+): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new TypeError(`${label} must be a string.`);
+  }
+
+  return value;
+}
+
+function parseTcgMoveBase(value: unknown) {
+  if (!isRecord(value)) {
+    throw new TypeError('TCG move must be an object.');
+  }
+
+  if (typeof value.playerId !== 'string' || value.playerId.length === 0) {
+    throw new TypeError('TCG move playerId is required.');
+  }
+
+  if (typeof value.createdAt !== 'string' || value.createdAt.length === 0) {
+    throw new TypeError('TCG move createdAt is required.');
+  }
+
+  return {
+    createdAt: value.createdAt,
+    kind: value.kind,
+    payload: isRecord(value.payload) ? value.payload : {},
+    playerId: value.playerId,
+  };
+}
+
+export function parseTcgSetup(value: unknown): TcgSetup {
+  if (value === undefined || value === null) {
+    return {};
+  }
+
+  if (!isRecord(value)) {
+    throw new TypeError('TCG setup must be an object.');
+  }
+
+  const setup: TcgSetup = {};
+
+  if (value.seed !== undefined) {
+    if (typeof value.seed !== 'string' && typeof value.seed !== 'number') {
+      throw new TypeError('TCG setup seed must be a string or number.');
+    }
+
+    setup.seed = value.seed;
+  }
+
+  if (value.rules !== undefined) {
+    if (!isRecord(value.rules)) {
+      throw new TypeError('TCG setup rules must be an object.');
+    }
+
+    setup.rules = {
+      maxBattlefieldSize: parseOptionalNumber(
+        value.rules.maxBattlefieldSize,
+        defaultTcgRules.maxBattlefieldSize,
+        'TCG max battlefield size',
+      ),
+      maxMana: parseOptionalNumber(
+        value.rules.maxMana,
+        defaultTcgRules.maxMana,
+        'TCG max mana',
+      ),
+      startingHandSize: parseOptionalNumber(
+        value.rules.startingHandSize,
+        defaultTcgRules.startingHandSize,
+        'TCG starting hand size',
+      ),
+      startingLife: parseOptionalNumber(
+        value.rules.startingLife,
+        defaultTcgRules.startingLife,
+        'TCG starting life',
+      ),
+    };
+  }
+
+  if (value.collections !== undefined) {
+    if (!isRecord(value.collections)) {
+      throw new TypeError('TCG setup collections must be an object.');
+    }
+
+    setup.collections = Object.fromEntries(
+      Object.entries(value.collections).map(([playerId, collection]) => {
+        if (!isRecord(collection)) {
+          throw new TypeError('TCG setup collection must be an object.');
+        }
+
+        return [
+          playerId,
+          Object.fromEntries(
+            Object.entries(collection).map(([cardId, count]) => {
+              if (typeof count !== 'number' || !Number.isFinite(count)) {
+                throw new TypeError(
+                  'TCG setup collection counts must be finite numbers.',
+                );
+              }
+
+              return [cardId, count];
+            }),
+          ),
+        ];
+      }),
+    );
+  }
+
+  if (value.deckLists !== undefined) {
+    if (!isRecord(value.deckLists)) {
+      throw new TypeError('TCG setup deckLists must be an object.');
+    }
+
+    setup.deckLists = Object.fromEntries(
+      Object.entries(value.deckLists).map(([playerId, deckList]) => {
+        if (!Array.isArray(deckList)) {
+          throw new TypeError('TCG setup deck list must be an array.');
+        }
+
+        return [
+          playerId,
+          deckList.map((cardId) => {
+            if (typeof cardId !== 'string' || cardId.length === 0) {
+              throw new TypeError(
+                'TCG setup deck list values must be strings.',
+              );
+            }
+
+            return cardId;
+          }),
+        ];
+      }),
+    );
+  }
+
+  return setup;
+}
+
+export function parseTcgMove(value: unknown): TcgMove {
+  const base = parseTcgMoveBase(value);
+
+  if (base.kind === 'end-turn') {
+    return {
+      playerId: base.playerId,
+      kind: 'end-turn',
+      createdAt: base.createdAt,
+      payload: {},
+    };
+  }
+
+  if (base.kind === 'play-card') {
+    if (
+      typeof base.payload.cardId !== 'string' ||
+      base.payload.cardId.length === 0
+    ) {
+      throw new TypeError('TCG play-card cardId is required.');
+    }
+
+    return {
+      playerId: base.playerId,
+      kind: 'play-card',
+      createdAt: base.createdAt,
+      payload: {
+        cardId: base.payload.cardId,
+        ...(parseOptionalString(
+          base.payload.targetPlayerId,
+          'TCG play-card targetPlayerId',
+        )
+          ? {
+              targetPlayerId: parseOptionalString(
+                base.payload.targetPlayerId,
+                'TCG play-card targetPlayerId',
+              ),
+            }
+          : {}),
+        ...(parseOptionalString(
+          base.payload.targetUnitId,
+          'TCG play-card targetUnitId',
+        )
+          ? {
+              targetUnitId: parseOptionalString(
+                base.payload.targetUnitId,
+                'TCG play-card targetUnitId',
+              ),
+            }
+          : {}),
+      },
+    };
+  }
+
+  if (base.kind === 'attack') {
+    if (
+      typeof base.payload.attackerUnitId !== 'string' ||
+      base.payload.attackerUnitId.length === 0
+    ) {
+      throw new TypeError('TCG attack attackerUnitId is required.');
+    }
+
+    return {
+      playerId: base.playerId,
+      kind: 'attack',
+      createdAt: base.createdAt,
+      payload: {
+        attackerUnitId: base.payload.attackerUnitId,
+        ...(parseOptionalString(
+          base.payload.targetPlayerId,
+          'TCG attack targetPlayerId',
+        )
+          ? {
+              targetPlayerId: parseOptionalString(
+                base.payload.targetPlayerId,
+                'TCG attack targetPlayerId',
+              ),
+            }
+          : {}),
+        ...(parseOptionalString(
+          base.payload.targetUnitId,
+          'TCG attack targetUnitId',
+        )
+          ? {
+              targetUnitId: parseOptionalString(
+                base.payload.targetUnitId,
+                'TCG attack targetUnitId',
+              ),
+            }
+          : {}),
+      },
+    };
+  }
+
+  throw new TypeError('TCG move kind is not supported.');
+}
+
 export function createTcgAdapter(): GameAdapter<TcgSetup, TcgState, TcgMove> {
   return {
     definition: tcgDefinition,
+    validateSetup: parseTcgSetup,
+    validateMove: parseTcgMove,
     createInitialState({
       executionMode,
       matchId,

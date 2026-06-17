@@ -1,26 +1,17 @@
-import * as z from 'zod';
-
-import { submitPokerMoveUseCase } from '@/src/domain/game-matches/use-cases';
+import { getTcgReplayUseCase } from '@/src/domain/game-matches/use-cases';
 import { problem, ProblemError } from '@/src/http/errors';
 import { createApiRoute } from '@/src/http/route';
-
-const submitMoveBodySchema = z.object({
-  move: z.unknown(),
-});
 
 function getMatchId(request: Request) {
   const segments = new URL(request.url).pathname.split('/');
   return segments[segments.length - 2] ?? '';
 }
 
-export const POST = createApiRoute({
-  action: 'games.poker.matches.submitMove',
-  featureKey: 'showcase.poker',
-  bodySchema: submitMoveBodySchema,
-  async handler({ body, request, session }) {
-    const result = await submitPokerMoveUseCase(session, getMatchId(request), {
-      move: body.move,
-    });
+export const GET = createApiRoute({
+  action: 'games.tcg.matches.replay',
+  featureKey: 'showcase.tcg',
+  async handler({ request, session }) {
+    const result = await getTcgReplayUseCase(session, getMatchId(request));
 
     if (!result.ok) {
       const status =
@@ -31,8 +22,8 @@ export const POST = createApiRoute({
             : 400;
       throw new ProblemError(
         problem(
-          '/problems/poker-match-move',
-          'Unable to submit move',
+          '/problems/tcg-match-replay',
+          'Unable to load replay',
           status,
           result.error.message,
         ),

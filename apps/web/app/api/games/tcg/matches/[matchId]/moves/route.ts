@@ -1,6 +1,6 @@
 import * as z from 'zod';
 
-import { submitPokerMoveUseCase } from '@/src/domain/game-matches/use-cases';
+import { submitTcgMoveUseCase } from '@/src/domain/game-matches/use-cases';
 import { problem, ProblemError } from '@/src/http/errors';
 import { createApiRoute } from '@/src/http/route';
 
@@ -14,11 +14,11 @@ function getMatchId(request: Request) {
 }
 
 export const POST = createApiRoute({
-  action: 'games.poker.matches.submitMove',
-  featureKey: 'showcase.poker',
+  action: 'games.tcg.matches.submitMove',
+  featureKey: 'showcase.tcg',
   bodySchema: submitMoveBodySchema,
   async handler({ body, request, session }) {
-    const result = await submitPokerMoveUseCase(session, getMatchId(request), {
+    const result = await submitTcgMoveUseCase(session, getMatchId(request), {
       move: body.move,
     });
 
@@ -31,7 +31,7 @@ export const POST = createApiRoute({
             : 400;
       throw new ProblemError(
         problem(
-          '/problems/poker-match-move',
+          '/problems/tcg-match-move',
           'Unable to submit move',
           status,
           result.error.message,

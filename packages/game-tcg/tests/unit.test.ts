@@ -13,6 +13,7 @@ import {
   createTcgDeckFromList,
   createStarterTcgDeckList,
   defaultTcgRules,
+  parseTcgMove,
   tcgCardCatalog,
   TCG_DECK_SIZE,
   TCG_MAX_COPIES_PER_CARD,
@@ -58,6 +59,135 @@ const sun: TcgCard = {
   cost: 1,
   effect: 'heal-2',
 };
+
+test('parseTcgMove accepts supported move kinds', () => {
+  assert.deepEqual(
+    parseTcgMove({
+      playerId: 'p1',
+      kind: 'end-turn',
+      createdAt: '2026-04-21T12:00:00.000Z',
+      payload: {
+        ignored: true,
+      },
+    }),
+    {
+      playerId: 'p1',
+      kind: 'end-turn',
+      createdAt: '2026-04-21T12:00:00.000Z',
+      payload: {},
+    },
+  );
+
+  assert.deepEqual(
+    parseTcgMove({
+      playerId: 'p1',
+      kind: 'play-card',
+      createdAt: '2026-04-21T12:00:01.000Z',
+      payload: {
+        cardId: 'card-1',
+        targetPlayerId: 'p2',
+      },
+    }),
+    {
+      playerId: 'p1',
+      kind: 'play-card',
+      createdAt: '2026-04-21T12:00:01.000Z',
+      payload: {
+        cardId: 'card-1',
+        targetPlayerId: 'p2',
+      },
+    },
+  );
+
+  assert.deepEqual(
+    parseTcgMove({
+      playerId: 'p1',
+      kind: 'attack',
+      createdAt: '2026-04-21T12:00:02.000Z',
+      payload: {
+        attackerUnitId: 'unit-1',
+        targetUnitId: 'unit-2',
+      },
+    }),
+    {
+      playerId: 'p1',
+      kind: 'attack',
+      createdAt: '2026-04-21T12:00:02.000Z',
+      payload: {
+        attackerUnitId: 'unit-1',
+        targetUnitId: 'unit-2',
+      },
+    },
+  );
+});
+
+test('parseTcgMove rejects invalid move payloads', () => {
+  assert.throws(
+    () =>
+      parseTcgMove({
+        kind: 'end-turn',
+        createdAt: '2026-04-21T12:00:00.000Z',
+        payload: {},
+      }),
+    /playerId is required/,
+  );
+  assert.throws(
+    () =>
+      parseTcgMove({
+        playerId: 'p1',
+        kind: 'end-turn',
+        payload: {},
+      }),
+    /createdAt is required/,
+  );
+  assert.throws(
+    () =>
+      parseTcgMove({
+        playerId: 'p1',
+        kind: 'mulligan',
+        createdAt: '2026-04-21T12:00:00.000Z',
+        payload: {},
+      }),
+    /kind is not supported/,
+  );
+  assert.throws(
+    () =>
+      parseTcgMove({
+        playerId: 'p1',
+        kind: 'play-card',
+        createdAt: '2026-04-21T12:00:00.000Z',
+        payload: {},
+      }),
+    /cardId is required/,
+  );
+  assert.throws(
+    () =>
+      parseTcgMove({
+        playerId: 'p1',
+        kind: 'attack',
+        createdAt: '2026-04-21T12:00:00.000Z',
+        payload: {},
+      }),
+    /attackerUnitId is required/,
+  );
+});
+
+test('createTcgAdapter wires move validation', () => {
+  assert.deepEqual(
+    adapter.validateMove?.({
+      playerId: 'p1',
+      kind: 'end-turn',
+      createdAt: '2026-04-21T12:00:00.000Z',
+      payload: {},
+    }),
+    {
+      playerId: 'p1',
+      kind: 'end-turn',
+      createdAt: '2026-04-21T12:00:00.000Z',
+      payload: {},
+    },
+  );
+});
 
 function unit(
   card: TcgCard,

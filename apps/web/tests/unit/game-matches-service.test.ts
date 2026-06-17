@@ -1,19 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  buildRoomMatchParticipants,
-  buildUnoParticipants,
-} from '@/src/domain/game-matches/service';
+import { buildRoomMatchParticipants } from '@/src/domain/game-matches/service';
+import { registeredGameRuntimes } from '@/src/domain/game-matches/runtime';
 
 describe('game match service', () => {
   it('converts non-owner preset seats into bots for authoritative solo play', () => {
-    const participants = buildUnoParticipants({
+    const participants = registeredGameRuntimes['uno-style'].buildParticipants({
       identity: {
         kind: 'guest',
         guestId: 'guest-1',
       },
       fallbackDisplayName: null,
-      matchInput: {
+      input: {
         presetId: 'mixed-table',
         displayName: 'Guest Player',
       },
@@ -48,6 +46,114 @@ describe('game match service', () => {
         playerId: 'p4',
         seat: 4,
         displayName: 'Table Bot',
+        identity: { kind: 'bot' },
+        isBot: true,
+      },
+    ]);
+  });
+
+  it('converts poker non-owner preset seats into bots through the runtime', () => {
+    const participants = registeredGameRuntimes[
+      'texas-holdem'
+    ].buildParticipants({
+      identity: {
+        kind: 'guest',
+        guestId: 'guest-1',
+      },
+      fallbackDisplayName: null,
+      input: {
+        presetId: 'heads-up',
+        displayName: 'Poker Guest',
+      },
+    });
+
+    expect(participants).toEqual([
+      {
+        playerId: 'p1',
+        seat: 1,
+        displayName: 'Poker Guest',
+        identity: {
+          kind: 'guest',
+          guestId: 'guest-1',
+        },
+        isBot: false,
+      },
+      {
+        playerId: 'p2',
+        seat: 2,
+        displayName: 'Player Two Bot',
+        identity: { kind: 'bot' },
+        isBot: true,
+      },
+    ]);
+  });
+
+  it('builds a TCG bot-rival preset as one human and one bot', () => {
+    const participants = registeredGameRuntimes[
+      'arcane-duel'
+    ].buildParticipants({
+      identity: {
+        kind: 'guest',
+        guestId: 'guest-1',
+      },
+      fallbackDisplayName: null,
+      input: {
+        presetId: 'bot-rival',
+        displayName: 'Arcane Guest',
+      },
+    });
+
+    expect(participants).toEqual([
+      {
+        playerId: 'p1',
+        seat: 1,
+        displayName: 'Arcane Guest',
+        identity: {
+          kind: 'guest',
+          guestId: 'guest-1',
+        },
+        isBot: false,
+      },
+      {
+        playerId: 'p2',
+        seat: 2,
+        displayName: 'Arcane Bot',
+        identity: { kind: 'bot' },
+        isBot: true,
+      },
+    ]);
+  });
+
+  it('converts the second TCG duel human seat into a bot for solo play', () => {
+    const participants = registeredGameRuntimes[
+      'arcane-duel'
+    ].buildParticipants({
+      identity: {
+        kind: 'guest',
+        guestId: 'guest-1',
+      },
+      fallbackDisplayName: null,
+      input: {
+        presetId: 'duel',
+        displayName: 'Arcane Guest',
+      },
+    });
+
+    expect(participants).toEqual([
+      {
+        playerId: 'p1',
+        seat: 1,
+        displayName: 'Arcane Guest',
+        identity: {
+          kind: 'guest',
+          guestId: 'guest-1',
+        },
+        isBot: false,
+      },
+      {
+        playerId: 'p2',
+        seat: 2,
+        displayName: 'Player Two Bot',
         identity: { kind: 'bot' },
         isBot: true,
       },

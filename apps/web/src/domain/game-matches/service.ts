@@ -19,6 +19,17 @@ import {
   type PokerState,
 } from '@repo/game-poker';
 import {
+  createTcgAdapter,
+  createTcgBots,
+  getTcgExamplePreset,
+  projectTcgPlayerView,
+  type TcgExamplePresetId,
+  type TcgMove,
+  type TcgPlayerView,
+  type TcgSetup,
+  type TcgState,
+} from '@repo/game-tcg';
+import {
   createUnoAdapter,
   getUnoExamplePreset,
   projectUnoPlayerView,
@@ -50,6 +61,7 @@ import type { GameRoomParticipantRecord } from '@/src/domain/game-rooms/contract
 
 import type {
   CreatePokerMatchInput,
+  CreateTcgMatchInput,
   CreateUnoMatchInput,
   GenericGameMatchAnalysisRecord,
   GameMatchAnalysisRecord,
@@ -60,6 +72,10 @@ import type {
   PersistedPokerMatchSnapshotDto,
   PersistedPokerMatchSummaryDto,
   PersistedPokerReplayDto,
+  PersistedTcgMatchRecord,
+  PersistedTcgMatchSnapshotDto,
+  PersistedTcgMatchSummaryDto,
+  PersistedTcgReplayDto,
   PersistedUnoMatchRecord,
   PersistedUnoMatchSnapshotDto,
   PersistedUnoMatchSummaryDto,
@@ -68,8 +84,10 @@ import type {
 
 const unoAdapter = createUnoAdapter();
 const pokerAdapter = createPokerAdapter();
+const tcgAdapter = createTcgAdapter();
 type UnoServerSession = ServerGameSession<UnoState, UnoMove>;
 type PokerServerSession = ServerGameSession<PokerState, PokerMove>;
+type TcgServerSession = ServerGameSession<TcgState, TcgMove>;
 
 function matchesIdentity(
   identity: MatchOwnerIdentity,
@@ -86,7 +104,7 @@ function matchesIdentity(
         participant.identity.guestId === identity.guestId;
 }
 
-function toSessionParticipants(
+export function toSessionParticipants(
   participants: readonly GameMatchParticipantRecord[],
 ): SessionParticipant[] {
   return participants.map((participant) => ({
@@ -158,6 +176,25 @@ function buildPokerView(input: {
   });
 }
 
+function buildTcgView(input: {
+  participants: readonly GameMatchParticipantRecord[];
+  state: PersistedTcgMatchRecord['latestState'];
+  matchResult: PersistedTcgMatchRecord['result'];
+  legalMoves: readonly TcgMove[];
+  selectedActorPlayerId: string | null;
+  viewerPlayerId: string | null;
+}): TcgPlayerView {
+  return projectTcgPlayerView({
+    legalMoves: input.legalMoves,
+    matchResult: input.matchResult,
+    participants: toSessionParticipants(input.participants),
+    pendingHotseatPlayerId: null,
+    selectedActorPlayerId: input.selectedActorPlayerId,
+    state: input.state,
+    viewerPlayerId: input.viewerPlayerId,
+  });
+}
+
 export function createReplayFromPersistedMatch<
   TState,
   TMove extends GameMove,
@@ -205,6 +242,23 @@ export function buildPersistedPokerMatchSummaryDto(
   return {
     matchId: match.matchId,
     gameId: 'texas-holdem',
+    status: match.status,
+    startedAt: match.startedAt,
+    finishedAt: match.finishedAt,
+    updatedAt: match.updatedAt,
+    participants: match.participants,
+    result: match.result,
+    analysis: match.analysis,
+    lastSequence: match.lastSequence,
+  };
+}
+
+export function buildPersistedTcgMatchSummaryDto(
+  match: PersistedTcgMatchRecord,
+): PersistedTcgMatchSummaryDto {
+  return {
+    matchId: match.matchId,
+    gameId: 'arcane-duel',
     status: match.status,
     startedAt: match.startedAt,
     finishedAt: match.finishedAt,
@@ -351,6 +405,74 @@ export function buildPersistedPokerReplayDto(
   };
 }
 
+export function buildPersistedTcgMatchSnapshotDto(
+  match: PersistedTcgMatchRecord,
+  identity: MatchOwnerIdentity,
+): PersistedTcgMatchSnapshotDto {
+  const viewerPlayerId = getViewerPlayerId(match.participants, identity);
+
+  if (match.status !== 'active') {
+    return {
+      ...buildPersistedTcgMatchSummaryDto(match),
+      executionMode: 'server-authoritative',
+      replayFormatVersion: match.replayFormatVersion,
+      match: match.latestState,
+      legalMoves: [],
+      selectedActorPlayerId: null,
+      view: buildTcgView({
+        participants: match.participants,
+        state: match.latestState,
+        matchResult: match.result,
+        legalMoves: [],
+        selectedActorPlayerId: null,
+        viewerPlayerId,
+      }),
+    };
+  }
+
+  const session = resumeServerGameSession({
+    adapter: tcgAdapter,
+    participants: toSessionParticipants(match.participants),
+    replay: createReplayFromPersistedMatch(match),
+  });
+  const snapshot = session.getSnapshot();
+
+  return {
+    ...buildPersistedTcgMatchSummaryDto(match),
+    executionMode: 'server-authoritative',
+    replayFormatVersion: match.replayFormatVersion,
+    match: snapshot.match,
+    legalMoves: snapshot.legalMoves,
+    selectedActorPlayerId: snapshot.selectedActorPlayerId,
+    view: buildTcgView({
+      participants: match.participants,
+      state: snapshot.match,
+      matchResult: snapshot.matchResult,
+      legalMoves: snapshot.legalMoves,
+      selectedActorPlayerId: snapshot.selectedActorPlayerId,
+      viewerPlayerId,
+    }),
+  };
+}
+
+export function buildPersistedTcgReplayDto(
+  match: PersistedTcgMatchRecord,
+): PersistedTcgReplayDto {
+  const replay = createReplayFromPersistedMatch<TcgState, TcgMove, TcgSetup>(
+    match,
+  );
+  const analysis = match.analysis ?? {
+    generic: summarizeMatchReplay(replay),
+  };
+
+  return {
+    summary: buildPersistedTcgMatchSummaryDto(match),
+    replay,
+    moves: replay.acceptedMoves,
+    analysis: analysis.generic,
+  };
+}
+
 function buildParticipantDisplayName(input: {
   requestedDisplayName: string | null | undefined;
   fallbackDisplayName: string | null;
@@ -446,6 +568,41 @@ export function buildPokerParticipants(input: {
   matchInput: CreatePokerMatchInput;
 }): readonly GameMatchParticipantRecord[] {
   const preset = getPokerExamplePreset(input.matchInput.presetId);
+  const ownerDisplayName = buildParticipantDisplayName({
+    requestedDisplayName: input.matchInput.displayName,
+    fallbackDisplayName: input.fallbackDisplayName,
+  });
+
+  return preset.seats.map((seat, index) => {
+    if (index === 0) {
+      return {
+        playerId: seat.playerId,
+        seat: seat.seat,
+        displayName: ownerDisplayName,
+        identity: input.identity,
+        isBot: false,
+      };
+    }
+
+    return {
+      playerId: seat.playerId,
+      seat: seat.seat,
+      displayName:
+        seat.controller === 'bot'
+          ? seat.displayName
+          : `${seat.displayName} Bot`,
+      identity: { kind: 'bot' } satisfies PlayerIdentityRef,
+      isBot: true,
+    };
+  });
+}
+
+export function buildTcgParticipants(input: {
+  identity: MatchOwnerIdentity;
+  fallbackDisplayName: string | null;
+  matchInput: CreateTcgMatchInput;
+}): readonly GameMatchParticipantRecord[] {
+  const preset = getTcgExamplePreset(input.matchInput.presetId);
   const ownerDisplayName = buildParticipantDisplayName({
     requestedDisplayName: input.matchInput.displayName,
     fallbackDisplayName: input.fallbackDisplayName,
@@ -595,6 +752,64 @@ export function createPokerMatchSessionFromParticipants(input: {
   };
 }
 
+export function createTcgMatchSession(input: {
+  matchId: string;
+  identity: MatchOwnerIdentity;
+  fallbackDisplayName: string | null;
+  presetId: TcgExamplePresetId;
+  displayName?: string | null;
+  now?: () => string;
+}) {
+  const participants = buildTcgParticipants({
+    identity: input.identity,
+    fallbackDisplayName: input.fallbackDisplayName,
+    matchInput: {
+      presetId: input.presetId,
+      displayName: input.displayName,
+    },
+  });
+  const sessionParticipants = toSessionParticipants(participants);
+  const session = createServerGameSession({
+    adapter: tcgAdapter,
+    matchId: input.matchId,
+    participants: sessionParticipants,
+    setup: {
+      seed: input.matchId,
+    },
+    now: input.now,
+  });
+
+  processTcgBots(session, participants);
+
+  return {
+    participants,
+    session,
+  };
+}
+
+export function createTcgMatchSessionFromParticipants(input: {
+  matchId: string;
+  participants: readonly GameMatchParticipantRecord[];
+  now?: () => string;
+}) {
+  const session = createServerGameSession({
+    adapter: tcgAdapter,
+    matchId: input.matchId,
+    participants: toSessionParticipants(input.participants),
+    setup: {
+      seed: input.matchId,
+    },
+    now: input.now,
+  });
+
+  processTcgBots(session, input.participants);
+
+  return {
+    participants: input.participants,
+    session,
+  };
+}
+
 export function processUnoBots(
   session: UnoServerSession,
   participants: readonly GameMatchParticipantRecord[],
@@ -670,6 +885,45 @@ export function processPokerBots(
         state: snapshot.match.state,
       }) ??
       snapshot.legalMoves[0] ??
+      null;
+
+    if (!move) {
+      break;
+    }
+
+    session.submitMove(move);
+  }
+}
+
+export function processTcgBots(
+  session: TcgServerSession,
+  participants: readonly GameMatchParticipantRecord[],
+) {
+  const bots = createTcgBots(toSessionParticipants(participants));
+
+  while (!session.getSnapshot().matchResult) {
+    const snapshot = session.getSnapshot();
+    const selectedActorPlayerId = snapshot.selectedActorPlayerId;
+    const activeParticipant = selectedActorPlayerId
+      ? participants.find(
+          (participant) => participant.playerId === selectedActorPlayerId,
+        )
+      : null;
+
+    if (!activeParticipant?.isBot) {
+      break;
+    }
+
+    const move =
+      bots[activeParticipant.playerId]?.chooseMove({
+        legalMoves: snapshot.legalMoves,
+        participants: toSessionParticipants(participants),
+        playerId: activeParticipant.playerId,
+        state: snapshot.match,
+      }) ??
+      snapshot.legalMoves.find(
+        (candidate) => candidate.playerId === activeParticipant.playerId,
+      ) ??
       null;
 
     if (!move) {
@@ -764,5 +1018,22 @@ export function buildPersistedPokerMatchRecord(input: {
     PokerMove,
     GenericGameMatchAnalysisRecord,
     PokerSetup
+  >(input);
+}
+
+export function buildPersistedTcgMatchRecord(input: {
+  createdAt: string;
+  createdBy: MatchOwnerIdentity;
+  participants: readonly GameMatchParticipantRecord[];
+  session: TcgServerSession;
+  status?: PersistedTcgMatchRecord['status'];
+  finishedAt?: string | null;
+}) {
+  return buildPersistedGameMatchRecord<
+    'arcane-duel',
+    TcgState,
+    TcgMove,
+    GenericGameMatchAnalysisRecord,
+    TcgSetup
   >(input);
 }

@@ -392,6 +392,189 @@ describe('game matches', () => {
     });
   });
 
+  it('creates, updates, polls, and replays a guest-owned authoritative TCG match', async () => {
+    mockGuestIdentity();
+    const {
+      createTcgMatchUseCase,
+      getTcgMatchRealtimeUseCase,
+      getTcgMatchSnapshotUseCase,
+      getTcgReplayUseCase,
+      submitTcgMoveUseCase,
+    } = await import('@/src/domain/game-matches/use-cases');
+
+    const created = await createTcgMatchUseCase(null, {
+      presetId: 'bot-rival',
+      displayName: 'TCG Guest',
+    });
+
+    expect(created.ok).toBe(true);
+    if (!created.ok) {
+      return;
+    }
+
+    expect(created.data.gameId).toBe('arcane-duel');
+    expect(created.data.match.gameId).toBe('arcane-duel');
+    expect(created.data.view.players).toHaveLength(2);
+    expect(created.data.view.legalActions.length).toBeGreaterThan(0);
+
+    const reloaded = await getTcgMatchSnapshotUseCase(
+      null,
+      created.data.matchId,
+    );
+
+    expect(reloaded).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        matchId: created.data.matchId,
+        gameId: 'arcane-duel',
+        status: 'active',
+      }),
+    });
+
+    const submitted = await submitTcgMoveUseCase(null, created.data.matchId, {
+      move: created.data.view.legalActions[0]!.move,
+    });
+
+    expect(submitted.ok).toBe(true);
+    if (!submitted.ok) {
+      return;
+    }
+
+    expect(submitted.data.gameId).toBe('arcane-duel');
+    expect(submitted.data.lastSequence).toBeGreaterThan(
+      created.data.lastSequence,
+    );
+
+    const tcgUpdates = await getTcgMatchRealtimeUseCase(
+      null,
+      created.data.matchId,
+      {
+        afterSequence: created.data.lastSequence,
+        sinceUpdatedAt: created.data.updatedAt,
+      },
+    );
+
+    expect(tcgUpdates).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        hasChanges: true,
+        snapshot: expect.objectContaining({
+          gameId: 'arcane-duel',
+          lastSequence: submitted.data.lastSequence,
+        }),
+        events: expect.arrayContaining([
+          expect.objectContaining({
+            type: 'move.accepted',
+            gameId: 'arcane-duel',
+            matchId: created.data.matchId,
+          }),
+        ]),
+      }),
+    });
+
+    const currentCursor = await getTcgMatchRealtimeUseCase(
+      null,
+      created.data.matchId,
+      {
+        afterSequence: submitted.data.lastSequence,
+        sinceUpdatedAt: submitted.data.updatedAt,
+      },
+    );
+
+    expect(currentCursor).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        hasChanges: false,
+        events: [],
+        cursor: {
+          lastSequence: submitted.data.lastSequence,
+          updatedAt: submitted.data.updatedAt,
+        },
+      }),
+    });
+
+    const db = getDb();
+    const [match] = await db
+      .select()
+      .from(gameMatches)
+      .where(eq(gameMatches.id, created.data.matchId));
+    const moves = await db
+      .select()
+      .from(gameMatchMoves)
+      .where(eq(gameMatchMoves.matchId, created.data.matchId));
+
+    expect(match?.gameId).toBe('arcane-duel');
+    expect(match?.lastSequence).toBe(submitted.data.lastSequence);
+    expect(moves).toHaveLength(submitted.data.lastSequence);
+
+    const replay = await getTcgReplayUseCase(null, created.data.matchId);
+
+    expect(replay).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        analysis: expect.objectContaining({
+          acceptedMoveCount: submitted.data.lastSequence,
+          gameId: 'arcane-duel',
+        }),
+        replay: expect.objectContaining({
+          gameId: 'arcane-duel',
+          metadata: expect.objectContaining({
+            gameVersion: 'arcane-duel',
+            rulesetVersion: 'arcane-duel',
+            setup: expect.objectContaining({
+              seed: created.data.matchId,
+            }),
+          }),
+        }),
+        summary: expect.objectContaining({
+          gameId: 'arcane-duel',
+        }),
+      }),
+    });
+
+    const invalid = await submitTcgMoveUseCase(null, created.data.matchId, {
+      move: {
+        playerId: 'p1',
+        kind: 'play-card',
+        createdAt: '2026-04-22T12:00:00.000Z',
+        payload: {},
+      },
+    });
+
+    expect(invalid).toEqual({
+      ok: false,
+      error: expect.objectContaining({
+        code: 'VALIDATION_ERROR',
+      }),
+    });
+
+    await db
+      .update(gameMatches)
+      .set({ status: 'completed' })
+      .where(eq(gameMatches.id, created.data.matchId));
+
+    const completedSubmit = await submitTcgMoveUseCase(
+      null,
+      created.data.matchId,
+      {
+        move: {
+          playerId: 'p1',
+          kind: 'end-turn',
+          createdAt: '2026-04-22T12:00:01.000Z',
+          payload: {},
+        },
+      },
+    );
+
+    expect(completedSubmit).toEqual({
+      ok: false,
+      error: {
+        code: 'CONFLICT',
+        message: 'Completed matches cannot accept more moves.',
+      },
+    });
+  });
+
   it('creates and reloads a guest-owned authoritative match', async () => {
     mockGuestIdentity();
     const { createUnoMatchUseCase, getUnoMatchSnapshotUseCase } =

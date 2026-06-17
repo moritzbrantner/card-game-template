@@ -28,6 +28,7 @@ const enabledFeatures = {
   'showcase.forms': true,
   'showcase.phase10': true,
   'showcase.poker': true,
+  'showcase.tcg': true,
   'showcase.story': true,
   'showcase.communication': true,
   'showcase.uno': true,

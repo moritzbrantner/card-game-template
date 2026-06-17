@@ -146,6 +146,12 @@ export const foundationFeatureMetadata: Record<
     category: 'showcase',
     supportsUserOverrides: false,
   },
+  'showcase.tcg': {
+    label: 'Showcase Arcane Duel',
+    description: 'Expose Arcane Duel server-authoritative matches.',
+    category: 'showcase',
+    supportsUserOverrides: false,
+  },
   'showcase.uno': {
     label: 'Showcase UNO-style',
     description: 'Expose the shared UNO-style example page.',

@@ -1,24 +1,11 @@
 import { randomUUID } from 'node:crypto';
 
-import { IllegalMoveError } from '@repo/game-engine';
 import { defaultGameCatalog } from '@repo/game-catalog';
-import {
-  createPokerAdapter,
-  type PokerMove,
-  type PokerState,
-} from '@repo/game-poker';
-import { createUnoAdapter, type UnoMove, type UnoState } from '@repo/game-uno';
-import {
-  resumeServerGameSession,
-  type ServerGameSession,
-} from '@repo/game-session';
+import type { GameId } from '@repo/game-contracts';
+import { IllegalMoveError } from '@repo/game-engine';
 
 import type { AppSession } from '@/src/auth';
 import { getDb } from '@/src/db/client';
-import {
-  listPokerBotAiProfiles,
-  listUnoBotAiProfiles,
-} from '@/src/domain/game-bot-ai/service';
 import {
   failure,
   success,
@@ -27,27 +14,32 @@ import {
 
 import type {
   CreatePokerMatchInput,
+  CreateTcgMatchInput,
   CreateUnoMatchInput,
   GameMatchRealtimeInput,
   ListPokerMatchesResult,
+  ListTcgMatchesResult,
   ListUnoMatchesResult,
   MatchOwnerIdentity,
   PersistedGameMatchRecord,
   PersistedGameMatchRealtimeDto,
+  PersistedPokerMatchRealtimeDto,
+  PersistedPokerMatchSnapshotDto,
+  PersistedPokerReplayDto,
+  PersistedTcgMatchRealtimeDto,
+  PersistedTcgMatchSnapshotDto,
+  PersistedTcgReplayDto,
+  PersistedUnoMatchRecord,
+  PersistedUnoMatchRealtimeDto,
+  PersistedUnoMatchSnapshotDto,
+  PersistedUnoReplayDto,
   PlayerGameHistoryDto,
   PlayerGameHistoryTotalsDto,
   PlayerGameOutcome,
   PlayerGameStatsByGameDto,
   PlayerRecentGameMatchDto,
-  PersistedPokerMatchRecord,
-  PersistedPokerMatchRealtimeDto,
-  PersistedPokerMatchSnapshotDto,
-  PersistedPokerReplayDto,
-  PersistedUnoMatchRecord,
-  PersistedUnoMatchRealtimeDto,
-  PersistedUnoMatchSnapshotDto,
-  PersistedUnoReplayDto,
   SubmitPokerMoveInput,
+  SubmitTcgMoveInput,
   SubmitUnoMoveInput,
 } from './contracts';
 import {
@@ -64,27 +56,21 @@ import {
   StaleMatchProgressError,
 } from './repository';
 import {
-  buildPersistedPokerMatchRecord,
-  buildPersistedPokerMatchSnapshotDto,
-  buildPersistedPokerMatchSummaryDto,
-  buildPersistedPokerReplayDto,
-  buildPersistedUnoMatchRecord,
-  buildPersistedUnoMatchSnapshotDto,
-  buildPersistedUnoMatchSummaryDto,
-  buildPersistedUnoReplayDto,
-  createReplayFromPersistedMatch,
-  createPokerMatchSession,
-  createUnoMatchSession,
-  processPokerBots,
-  processUnoBots,
-} from './service';
+  createRegisteredRuntimeSession,
+  getRegisteredGameRuntime,
+  resumeRegisteredRuntimeSession,
+} from './runtime';
+import { buildPersistedUnoMatchSnapshotDto } from './service';
 
 type MatchUseCaseError = {
   code: 'VALIDATION_ERROR' | 'NOT_FOUND' | 'CONFLICT';
   message: string;
 };
-type UnoServerSession = ServerGameSession<UnoState, UnoMove>;
-type PokerServerSession = ServerGameSession<PokerState, PokerMove>;
+
+type ListGameMatchesResult = {
+  active: readonly unknown[];
+  recent: readonly unknown[];
+};
 
 function isoNow() {
   return new Date().toISOString();
@@ -118,29 +104,33 @@ function mapMissingIdentity() {
   });
 }
 
-function splitSummaries(
-  matches: readonly PersistedUnoMatchRecord[],
-): ListUnoMatchesResult {
-  return {
-    active: matches
-      .filter((match) => match.status === 'active')
-      .map(buildPersistedUnoMatchSummaryDto),
-    recent: matches
-      .filter((match) => match.status !== 'active')
-      .map(buildPersistedUnoMatchSummaryDto),
-  };
+function mapMissingRuntime() {
+  return failure<MatchUseCaseError>({
+    code: 'NOT_FOUND',
+    message: 'Match not found.',
+  });
 }
 
-function splitPokerSummaries(
-  matches: readonly PersistedPokerMatchRecord[],
-): ListPokerMatchesResult {
+async function resolveOwnedIdentity(
+  session: AppSession | null,
+  createGuest: boolean,
+) {
+  return createGuest
+    ? resolveOrCreateMatchOwnerIdentity(session)
+    : resolveExistingMatchOwnerIdentity(session);
+}
+
+function splitSummaries(
+  matches: readonly PersistedGameMatchRecord[],
+  buildSummaryDto: (match: PersistedGameMatchRecord) => unknown,
+): ListGameMatchesResult {
   return {
     active: matches
       .filter((match) => match.status === 'active')
-      .map(buildPersistedPokerMatchSummaryDto),
+      .map(buildSummaryDto),
     recent: matches
       .filter((match) => match.status !== 'active')
-      .map(buildPersistedPokerMatchSummaryDto),
+      .map(buildSummaryDto),
   };
 }
 
@@ -182,6 +172,10 @@ function resolveReplayHref(match: PersistedGameMatchRecord) {
 
   if (match.gameId === 'texas-holdem') {
     return `/api/games/poker/matches/${match.matchId}/replay`;
+  }
+
+  if (match.gameId === 'arcane-duel') {
+    return `/api/games/tcg/matches/${match.matchId}/replay`;
   }
 
   return null;
@@ -287,15 +281,6 @@ function buildPlayerGameHistory(
     ),
     recent: recent.slice(0, 10),
   };
-}
-
-async function resolveOwnedIdentity(
-  session: AppSession | null,
-  createGuest: boolean,
-) {
-  return createGuest
-    ? resolveOrCreateMatchOwnerIdentity(session)
-    : resolveExistingMatchOwnerIdentity(session);
 }
 
 function buildMoveRows(
@@ -420,82 +405,308 @@ function buildMatchRealtimeDto<TSnapshot>(input: {
   };
 }
 
-function createResumedSession(
-  match: PersistedUnoMatchRecord,
-  now: () => string,
-) {
-  return resumeServerGameSession({
-    adapter: createUnoAdapter(),
-    participants: match.participants.map((participant) => ({
-      playerId: participant.playerId,
-      displayName: participant.displayName,
-      seat: participant.seat,
-      controller: participant.isBot ? 'bot' : 'human',
-      ...(participant.identity.kind === 'account'
-        ? { accountId: participant.identity.accountId }
-        : {}),
-      ...(participant.identity.kind === 'guest' ? { isGuest: true } : {}),
-    })),
-    replay: createReplayFromPersistedMatch(match),
-    now,
-  });
-}
-
-function createResumedPokerSession(
-  match: PersistedPokerMatchRecord,
-  now: () => string,
-) {
-  return resumeServerGameSession({
-    adapter: createPokerAdapter(),
-    participants: match.participants.map((participant) => ({
-      playerId: participant.playerId,
-      displayName: participant.displayName,
-      seat: participant.seat,
-      controller: participant.isBot ? 'bot' : 'human',
-      ...(participant.identity.kind === 'account'
-        ? { accountId: participant.identity.accountId }
-        : {}),
-      ...(participant.identity.kind === 'guest' ? { isGuest: true } : {}),
-    })),
-    replay: createReplayFromPersistedMatch(match),
-    now,
-  });
-}
-
-function finalizePersistedMatch(input: {
-  session: UnoServerSession;
-  persistedMatch: PersistedUnoMatchRecord;
-}) {
-  return buildPersistedUnoMatchRecord({
-    createdAt: input.persistedMatch.createdAt,
-    createdBy: input.persistedMatch.createdBy,
-    participants: input.persistedMatch.participants,
-    session: input.session,
-  });
-}
-
-function finalizePersistedPokerMatch(input: {
-  session: PokerServerSession;
-  persistedMatch: PersistedPokerMatchRecord;
-}) {
-  return buildPersistedPokerMatchRecord({
-    createdAt: input.persistedMatch.createdAt,
-    createdBy: input.persistedMatch.createdBy,
-    participants: input.persistedMatch.participants,
-    session: input.session,
-  });
-}
-
-export async function listPokerMatchesUseCase(
+export async function listGameMatchesUseCase(
   session: AppSession | null,
-): Promise<ServiceResult<ListPokerMatchesResult, never>> {
+  gameId: GameId,
+): Promise<ServiceResult<ListGameMatchesResult, MatchUseCaseError>> {
+  const runtime = getRegisteredGameRuntime(gameId);
+
+  if (!runtime) {
+    return mapMissingRuntime();
+  }
+
   const resolvedIdentity = await resolveOwnedIdentity(session, true);
-  const matches = await listOwnedGameMatches<PersistedPokerMatchRecord>(
+  const matches = await listOwnedGameMatches<PersistedGameMatchRecord>(
     getDb(),
     resolvedIdentity.identity as MatchOwnerIdentity,
-    { gameId: 'texas-holdem' },
+    { gameId },
   );
-  return success(splitPokerSummaries(matches));
+
+  return success(splitSummaries(matches, runtime.buildSummaryDto));
+}
+
+export async function createGameMatchUseCase(
+  session: AppSession | null,
+  gameId: GameId,
+  input: unknown,
+): Promise<ServiceResult<unknown, MatchUseCaseError>> {
+  const runtime = getRegisteredGameRuntime(gameId);
+
+  if (!runtime) {
+    return mapMissingRuntime();
+  }
+
+  const resolvedIdentity = await resolveOwnedIdentity(session, true);
+
+  try {
+    const botContext = await runtime.loadBotContext();
+    const snapshot = await getDb().transaction(async (tx) => {
+      const createdAt = isoNow();
+      const matchId = randomUUID();
+      const identity = resolvedIdentity.identity as MatchOwnerIdentity;
+      const participants = runtime.buildParticipants({
+        identity,
+        fallbackDisplayName: resolvedIdentity.displayName,
+        input,
+      });
+      const serverSession = createRegisteredRuntimeSession({
+        runtime,
+        matchId,
+        participants,
+        createInput: input,
+      });
+
+      runtime.processBots(serverSession, participants, botContext);
+
+      const persistedMatch = runtime.buildPersistedRecord({
+        createdAt,
+        createdBy: identity,
+        participants,
+        session: serverSession,
+      });
+
+      await createGameMatch(tx, {
+        match: buildMatchInsert(persistedMatch),
+        participants: buildParticipantRows(persistedMatch),
+        moves: buildMoveRows(persistedMatch, 0),
+      });
+
+      return runtime.buildSnapshotDto(persistedMatch, identity);
+    });
+
+    return success(snapshot);
+  } catch (error) {
+    return failure({
+      code: 'VALIDATION_ERROR',
+      message:
+        error instanceof Error ? error.message : 'Unable to create match.',
+    });
+  }
+}
+
+export async function getGameMatchSnapshotUseCase(
+  session: AppSession | null,
+  gameId: GameId,
+  matchId: string,
+): Promise<ServiceResult<unknown, MatchUseCaseError>> {
+  const runtime = getRegisteredGameRuntime(gameId);
+
+  if (!runtime) {
+    return mapMissingRuntime();
+  }
+
+  const resolvedIdentity = await resolveOwnedIdentity(session, false);
+
+  if (!resolvedIdentity.identity) {
+    return mapMissingIdentity();
+  }
+
+  const match = await loadOwnedGameMatch<PersistedGameMatchRecord>(
+    getDb(),
+    resolvedIdentity.identity as MatchOwnerIdentity,
+    matchId,
+    { gameId },
+  );
+
+  if (!match) {
+    return mapMissingIdentity();
+  }
+
+  return success(
+    runtime.buildSnapshotDto(
+      match,
+      resolvedIdentity.identity as MatchOwnerIdentity,
+    ),
+  );
+}
+
+export async function getGameMatchRealtimeUseCase(
+  session: AppSession | null,
+  gameId: GameId,
+  matchId: string,
+  input: GameMatchRealtimeInput = {},
+): Promise<
+  ServiceResult<PersistedGameMatchRealtimeDto<unknown>, MatchUseCaseError>
+> {
+  const runtime = getRegisteredGameRuntime(gameId);
+
+  if (!runtime) {
+    return mapMissingRuntime();
+  }
+
+  const resolvedIdentity = await resolveOwnedIdentity(session, false);
+
+  if (!resolvedIdentity.identity) {
+    return mapMissingIdentity();
+  }
+
+  const match = await loadOwnedGameMatch<PersistedGameMatchRecord>(
+    getDb(),
+    resolvedIdentity.identity as MatchOwnerIdentity,
+    matchId,
+    { gameId },
+  );
+
+  if (!match) {
+    return mapMissingIdentity();
+  }
+
+  return success(
+    buildMatchRealtimeDto({
+      match,
+      snapshot: runtime.buildSnapshotDto(
+        match,
+        resolvedIdentity.identity as MatchOwnerIdentity,
+      ),
+      realtimeInput: input,
+    }),
+  );
+}
+
+export async function submitGameMoveUseCase(
+  session: AppSession | null,
+  gameId: GameId,
+  matchId: string,
+  input: { move: unknown },
+): Promise<ServiceResult<unknown, MatchUseCaseError>> {
+  const runtime = getRegisteredGameRuntime(gameId);
+
+  if (!runtime) {
+    return mapMissingRuntime();
+  }
+
+  const resolvedIdentity = await resolveOwnedIdentity(session, false);
+
+  if (!resolvedIdentity.identity) {
+    return mapMissingIdentity();
+  }
+
+  try {
+    const move = runtime.parseMove(input.move);
+    const botContext = await runtime.loadBotContext();
+    const snapshot = await getDb().transaction(async (tx) => {
+      const identity = resolvedIdentity.identity as MatchOwnerIdentity;
+      const persistedMatch = await loadOwnedGameMatch<PersistedGameMatchRecord>(
+        tx,
+        identity,
+        matchId,
+        { gameId },
+      );
+
+      if (!persistedMatch) {
+        throw failure<MatchUseCaseError>({
+          code: 'NOT_FOUND',
+          message: 'Match not found.',
+        });
+      }
+
+      if (persistedMatch.status !== 'active') {
+        throw failure<MatchUseCaseError>({
+          code: 'CONFLICT',
+          message: 'Completed matches cannot accept more moves.',
+        });
+      }
+
+      const serverSession = resumeRegisteredRuntimeSession({
+        runtime,
+        match: persistedMatch,
+        now: createAcceptedAtClock(move.createdAt),
+      });
+
+      serverSession.submitMove(move);
+      runtime.processBots(
+        serverSession,
+        persistedMatch.participants,
+        botContext,
+      );
+
+      const updatedMatch = runtime.buildPersistedRecord({
+        createdAt: persistedMatch.createdAt,
+        createdBy: persistedMatch.createdBy,
+        participants: persistedMatch.participants,
+        session: serverSession,
+      });
+
+      await appendGameMatchProgress(tx, {
+        matchId: updatedMatch.matchId,
+        latestStateJson: updatedMatch.latestState,
+        resultJson: updatedMatch.result,
+        analysisJson: updatedMatch.analysis,
+        status: updatedMatch.status,
+        finishedAt: updatedMatch.finishedAt
+          ? new Date(updatedMatch.finishedAt)
+          : null,
+        updatedAt: new Date(updatedMatch.updatedAt),
+        lastSequence: updatedMatch.lastSequence,
+        previousLastSequence: persistedMatch.lastSequence,
+        moves: buildMoveRows(updatedMatch, persistedMatch.lastSequence),
+      });
+
+      return runtime.buildSnapshotDto(updatedMatch, identity);
+    });
+
+    return success(snapshot);
+  } catch (error) {
+    if (error instanceof IllegalMoveError) {
+      return failure({
+        code: 'CONFLICT',
+        message: error.reason,
+      });
+    }
+
+    if (error instanceof StaleMatchProgressError) {
+      return failure({
+        code: 'CONFLICT',
+        message: 'Match was updated by another request. Reload and try again.',
+      });
+    }
+
+    if (
+      error &&
+      typeof error === 'object' &&
+      'ok' in error &&
+      error.ok === false
+    ) {
+      return error as ServiceResult<never, MatchUseCaseError>;
+    }
+
+    return failure({
+      code: 'VALIDATION_ERROR',
+      message:
+        error instanceof Error ? error.message : 'Unable to submit move.',
+    });
+  }
+}
+
+export async function getGameReplayUseCase(
+  session: AppSession | null,
+  gameId: GameId,
+  matchId: string,
+): Promise<ServiceResult<unknown, MatchUseCaseError>> {
+  const runtime = getRegisteredGameRuntime(gameId);
+
+  if (!runtime) {
+    return mapMissingRuntime();
+  }
+
+  const resolvedIdentity = await resolveOwnedIdentity(session, false);
+
+  if (!resolvedIdentity.identity) {
+    return mapMissingIdentity();
+  }
+
+  const match = await loadOwnedGameMatch<PersistedGameMatchRecord>(
+    getDb(),
+    resolvedIdentity.identity as MatchOwnerIdentity,
+    matchId,
+    { gameId },
+  );
+
+  if (!match) {
+    return mapMissingIdentity();
+  }
+
+  return success(runtime.buildReplayDto(match));
 }
 
 export async function getPlayerGameHistoryUseCase(
@@ -505,81 +716,35 @@ export async function getPlayerGameHistoryUseCase(
   return success(buildPlayerGameHistory(accountId, matches));
 }
 
+export async function listPokerMatchesUseCase(
+  session: AppSession | null,
+): Promise<ServiceResult<ListPokerMatchesResult, never>> {
+  return (await listGameMatchesUseCase(
+    session,
+    'texas-holdem',
+  )) as ServiceResult<ListPokerMatchesResult, never>;
+}
+
 export async function createPokerMatchUseCase(
   session: AppSession | null,
   input: CreatePokerMatchInput,
 ): Promise<ServiceResult<PersistedPokerMatchSnapshotDto, MatchUseCaseError>> {
-  const resolvedIdentity = await resolveOwnedIdentity(session, true);
-  const botAiProfiles = await listPokerBotAiProfiles();
-
-  try {
-    const snapshot = await getDb().transaction(async (tx) => {
-      const createdAt = isoNow();
-      const matchId = randomUUID();
-      const { participants, session: serverSession } = createPokerMatchSession({
-        matchId,
-        identity: resolvedIdentity.identity as MatchOwnerIdentity,
-        fallbackDisplayName: resolvedIdentity.displayName,
-        presetId: input.presetId,
-        displayName: input.displayName,
-        botAiProfiles,
-      });
-      const persistedMatch = buildPersistedPokerMatchRecord({
-        createdAt,
-        createdBy: resolvedIdentity.identity as MatchOwnerIdentity,
-        participants,
-        session: serverSession,
-      });
-
-      await createGameMatch(tx, {
-        match: buildMatchInsert(persistedMatch),
-        participants: buildParticipantRows(persistedMatch),
-        moves: buildMoveRows(persistedMatch, 0),
-      });
-
-      return buildPersistedPokerMatchSnapshotDto(
-        persistedMatch,
-        resolvedIdentity.identity as MatchOwnerIdentity,
-      );
-    });
-
-    return success(snapshot);
-  } catch (error) {
-    return failure({
-      code: 'VALIDATION_ERROR',
-      message:
-        error instanceof Error ? error.message : 'Unable to create match.',
-    });
-  }
+  return (await createGameMatchUseCase(
+    session,
+    'texas-holdem',
+    input,
+  )) as ServiceResult<PersistedPokerMatchSnapshotDto, MatchUseCaseError>;
 }
 
 export async function getPokerMatchSnapshotUseCase(
   session: AppSession | null,
   matchId: string,
 ): Promise<ServiceResult<PersistedPokerMatchSnapshotDto, MatchUseCaseError>> {
-  const resolvedIdentity = await resolveOwnedIdentity(session, false);
-
-  if (!resolvedIdentity.identity) {
-    return mapMissingIdentity();
-  }
-
-  const match = await loadOwnedGameMatch<PersistedPokerMatchRecord>(
-    getDb(),
-    resolvedIdentity.identity as MatchOwnerIdentity,
+  return (await getGameMatchSnapshotUseCase(
+    session,
+    'texas-holdem',
     matchId,
-    { gameId: 'texas-holdem' },
-  );
-
-  if (!match) {
-    return mapMissingIdentity();
-  }
-
-  return success(
-    buildPersistedPokerMatchSnapshotDto(
-      match,
-      resolvedIdentity.identity as MatchOwnerIdentity,
-    ),
-  );
+  )) as ServiceResult<PersistedPokerMatchSnapshotDto, MatchUseCaseError>;
 }
 
 export async function getPokerMatchRealtimeUseCase(
@@ -587,251 +752,67 @@ export async function getPokerMatchRealtimeUseCase(
   matchId: string,
   input: GameMatchRealtimeInput = {},
 ): Promise<ServiceResult<PersistedPokerMatchRealtimeDto, MatchUseCaseError>> {
-  const resolvedIdentity = await resolveOwnedIdentity(session, false);
-
-  if (!resolvedIdentity.identity) {
-    return mapMissingIdentity();
-  }
-
-  const match = await loadOwnedGameMatch<PersistedPokerMatchRecord>(
-    getDb(),
-    resolvedIdentity.identity as MatchOwnerIdentity,
+  return (await getGameMatchRealtimeUseCase(
+    session,
+    'texas-holdem',
     matchId,
-    { gameId: 'texas-holdem' },
-  );
-
-  if (!match) {
-    return mapMissingIdentity();
-  }
-
-  return success(
-    buildMatchRealtimeDto({
-      match,
-      snapshot: buildPersistedPokerMatchSnapshotDto(
-        match,
-        resolvedIdentity.identity as MatchOwnerIdentity,
-      ),
-      realtimeInput: input,
-    }),
-  );
+    input,
+  )) as ServiceResult<PersistedPokerMatchRealtimeDto, MatchUseCaseError>;
 }
 
 export async function submitPokerMoveUseCase(
   session: AppSession | null,
   matchId: string,
-  input: SubmitPokerMoveInput,
+  input: SubmitPokerMoveInput | { move: unknown },
 ): Promise<ServiceResult<PersistedPokerMatchSnapshotDto, MatchUseCaseError>> {
-  const resolvedIdentity = await resolveOwnedIdentity(session, false);
-
-  if (!resolvedIdentity.identity) {
-    return mapMissingIdentity();
-  }
-
-  try {
-    const botAiProfiles = await listPokerBotAiProfiles();
-    const snapshot = await getDb().transaction(async (tx) => {
-      const persistedMatch =
-        await loadOwnedGameMatch<PersistedPokerMatchRecord>(
-          tx,
-          resolvedIdentity.identity as MatchOwnerIdentity,
-          matchId,
-          { gameId: 'texas-holdem' },
-        );
-
-      if (!persistedMatch) {
-        throw failure<MatchUseCaseError>({
-          code: 'NOT_FOUND',
-          message: 'Match not found.',
-        });
-      }
-
-      if (persistedMatch.status !== 'active') {
-        throw failure<MatchUseCaseError>({
-          code: 'CONFLICT',
-          message: 'Completed matches cannot accept more moves.',
-        });
-      }
-
-      const now = createAcceptedAtClock(input.move.createdAt);
-      const serverSession = createResumedPokerSession(persistedMatch, now);
-
-      serverSession.submitMove(input.move);
-      processPokerBots(
-        serverSession,
-        persistedMatch.participants,
-        botAiProfiles,
-      );
-
-      const updatedMatch = finalizePersistedPokerMatch({
-        session: serverSession,
-        persistedMatch,
-      });
-
-      await appendGameMatchProgress(tx, {
-        matchId: updatedMatch.matchId,
-        latestStateJson: updatedMatch.latestState,
-        resultJson: updatedMatch.result,
-        analysisJson: updatedMatch.analysis,
-        status: updatedMatch.status,
-        finishedAt: updatedMatch.finishedAt
-          ? new Date(updatedMatch.finishedAt)
-          : null,
-        updatedAt: new Date(updatedMatch.updatedAt),
-        lastSequence: updatedMatch.lastSequence,
-        previousLastSequence: persistedMatch.lastSequence,
-        moves: buildMoveRows(updatedMatch, persistedMatch.lastSequence),
-      });
-
-      return buildPersistedPokerMatchSnapshotDto(
-        updatedMatch,
-        resolvedIdentity.identity as MatchOwnerIdentity,
-      );
-    });
-
-    return success(snapshot);
-  } catch (error) {
-    if (error instanceof IllegalMoveError) {
-      return failure({
-        code: 'CONFLICT',
-        message: error.reason,
-      });
-    }
-
-    if (error instanceof StaleMatchProgressError) {
-      return failure({
-        code: 'CONFLICT',
-        message: 'Match was updated by another request. Reload and try again.',
-      });
-    }
-
-    if (
-      error &&
-      typeof error === 'object' &&
-      'ok' in error &&
-      error.ok === false
-    ) {
-      return error as ServiceResult<never, MatchUseCaseError>;
-    }
-
-    return failure({
-      code: 'VALIDATION_ERROR',
-      message:
-        error instanceof Error ? error.message : 'Unable to submit move.',
-    });
-  }
+  return (await submitGameMoveUseCase(
+    session,
+    'texas-holdem',
+    matchId,
+    input,
+  )) as ServiceResult<PersistedPokerMatchSnapshotDto, MatchUseCaseError>;
 }
 
 export async function getPokerReplayUseCase(
   session: AppSession | null,
   matchId: string,
 ): Promise<ServiceResult<PersistedPokerReplayDto, MatchUseCaseError>> {
-  const resolvedIdentity = await resolveOwnedIdentity(session, false);
-
-  if (!resolvedIdentity.identity) {
-    return mapMissingIdentity();
-  }
-
-  const match = await loadOwnedGameMatch<PersistedPokerMatchRecord>(
-    getDb(),
-    resolvedIdentity.identity as MatchOwnerIdentity,
+  return (await getGameReplayUseCase(
+    session,
+    'texas-holdem',
     matchId,
-    { gameId: 'texas-holdem' },
-  );
-
-  if (!match) {
-    return mapMissingIdentity();
-  }
-
-  return success(buildPersistedPokerReplayDto(match));
+  )) as ServiceResult<PersistedPokerReplayDto, MatchUseCaseError>;
 }
 
 export async function listUnoMatchesUseCase(
   session: AppSession | null,
 ): Promise<ServiceResult<ListUnoMatchesResult, never>> {
-  const resolvedIdentity = await resolveOwnedIdentity(session, true);
-  const matches = await listOwnedGameMatches<PersistedUnoMatchRecord>(
-    getDb(),
-    resolvedIdentity.identity as MatchOwnerIdentity,
-    { gameId: 'uno-style' },
-  );
-  return success(splitSummaries(matches));
+  return (await listGameMatchesUseCase(session, 'uno-style')) as ServiceResult<
+    ListUnoMatchesResult,
+    never
+  >;
 }
 
 export async function createUnoMatchUseCase(
   session: AppSession | null,
   input: CreateUnoMatchInput,
 ): Promise<ServiceResult<PersistedUnoMatchSnapshotDto, MatchUseCaseError>> {
-  const resolvedIdentity = await resolveOwnedIdentity(session, true);
-
-  try {
-    const botAiProfiles = await listUnoBotAiProfiles();
-    const snapshot = await getDb().transaction(async (tx) => {
-      const createdAt = isoNow();
-      const matchId = randomUUID();
-      const { participants, session: serverSession } = createUnoMatchSession({
-        matchId,
-        identity: resolvedIdentity.identity as MatchOwnerIdentity,
-        fallbackDisplayName: resolvedIdentity.displayName,
-        presetId: input.presetId,
-        displayName: input.displayName,
-        botAiProfiles,
-      });
-      const persistedMatch = buildPersistedUnoMatchRecord({
-        createdAt,
-        createdBy: resolvedIdentity.identity as MatchOwnerIdentity,
-        participants,
-        session: serverSession,
-      });
-
-      await createGameMatch(tx, {
-        match: buildMatchInsert(persistedMatch),
-        participants: buildParticipantRows(persistedMatch),
-        moves: buildMoveRows(persistedMatch, 0),
-      });
-
-      return buildPersistedUnoMatchSnapshotDto(
-        persistedMatch,
-        resolvedIdentity.identity as MatchOwnerIdentity,
-      );
-    });
-
-    return success(snapshot);
-  } catch (error) {
-    return failure({
-      code: 'VALIDATION_ERROR',
-      message:
-        error instanceof Error ? error.message : 'Unable to create match.',
-    });
-  }
+  return (await createGameMatchUseCase(
+    session,
+    'uno-style',
+    input,
+  )) as ServiceResult<PersistedUnoMatchSnapshotDto, MatchUseCaseError>;
 }
 
 export async function getUnoMatchSnapshotUseCase(
   session: AppSession | null,
   matchId: string,
 ): Promise<ServiceResult<PersistedUnoMatchSnapshotDto, MatchUseCaseError>> {
-  const resolvedIdentity = await resolveOwnedIdentity(session, false);
-
-  if (!resolvedIdentity.identity) {
-    return mapMissingIdentity();
-  }
-
-  const match = await loadOwnedGameMatch<PersistedUnoMatchRecord>(
-    getDb(),
-    resolvedIdentity.identity as MatchOwnerIdentity,
+  return (await getGameMatchSnapshotUseCase(
+    session,
+    'uno-style',
     matchId,
-    { gameId: 'uno-style' },
-  );
-
-  if (!match) {
-    return mapMissingIdentity();
-  }
-
-  return success(
-    buildPersistedUnoMatchSnapshotDto(
-      match,
-      resolvedIdentity.identity as MatchOwnerIdentity,
-    ),
-  );
+  )) as ServiceResult<PersistedUnoMatchSnapshotDto, MatchUseCaseError>;
 }
 
 export async function getUnoMatchRealtimeUseCase(
@@ -839,133 +820,104 @@ export async function getUnoMatchRealtimeUseCase(
   matchId: string,
   input: GameMatchRealtimeInput = {},
 ): Promise<ServiceResult<PersistedUnoMatchRealtimeDto, MatchUseCaseError>> {
-  const resolvedIdentity = await resolveOwnedIdentity(session, false);
-
-  if (!resolvedIdentity.identity) {
-    return mapMissingIdentity();
-  }
-
-  const match = await loadOwnedGameMatch<PersistedUnoMatchRecord>(
-    getDb(),
-    resolvedIdentity.identity as MatchOwnerIdentity,
+  return (await getGameMatchRealtimeUseCase(
+    session,
+    'uno-style',
     matchId,
-    { gameId: 'uno-style' },
-  );
-
-  if (!match) {
-    return mapMissingIdentity();
-  }
-
-  return success(
-    buildMatchRealtimeDto({
-      match,
-      snapshot: buildPersistedUnoMatchSnapshotDto(
-        match,
-        resolvedIdentity.identity as MatchOwnerIdentity,
-      ),
-      realtimeInput: input,
-    }),
-  );
+    input,
+  )) as ServiceResult<PersistedUnoMatchRealtimeDto, MatchUseCaseError>;
 }
 
 export async function submitUnoMoveUseCase(
   session: AppSession | null,
   matchId: string,
-  input: SubmitUnoMoveInput,
+  input: SubmitUnoMoveInput | { move: unknown },
 ): Promise<ServiceResult<PersistedUnoMatchSnapshotDto, MatchUseCaseError>> {
-  const resolvedIdentity = await resolveOwnedIdentity(session, false);
+  return (await submitGameMoveUseCase(
+    session,
+    'uno-style',
+    matchId,
+    input,
+  )) as ServiceResult<PersistedUnoMatchSnapshotDto, MatchUseCaseError>;
+}
 
-  if (!resolvedIdentity.identity) {
-    return mapMissingIdentity();
-  }
+export async function getUnoReplayUseCase(
+  session: AppSession | null,
+  matchId: string,
+): Promise<ServiceResult<PersistedUnoReplayDto, MatchUseCaseError>> {
+  return (await getGameReplayUseCase(
+    session,
+    'uno-style',
+    matchId,
+  )) as ServiceResult<PersistedUnoReplayDto, MatchUseCaseError>;
+}
 
-  try {
-    const botAiProfiles = await listUnoBotAiProfiles();
-    const snapshot = await getDb().transaction(async (tx) => {
-      const persistedMatch = await loadOwnedGameMatch<PersistedUnoMatchRecord>(
-        tx,
-        resolvedIdentity.identity as MatchOwnerIdentity,
-        matchId,
-        { gameId: 'uno-style' },
-      );
+export async function listTcgMatchesUseCase(
+  session: AppSession | null,
+): Promise<ServiceResult<ListTcgMatchesResult, never>> {
+  return (await listGameMatchesUseCase(
+    session,
+    'arcane-duel',
+  )) as ServiceResult<ListTcgMatchesResult, never>;
+}
 
-      if (!persistedMatch) {
-        throw failure<MatchUseCaseError>({
-          code: 'NOT_FOUND',
-          message: 'Match not found.',
-        });
-      }
+export async function createTcgMatchUseCase(
+  session: AppSession | null,
+  input: CreateTcgMatchInput,
+): Promise<ServiceResult<PersistedTcgMatchSnapshotDto, MatchUseCaseError>> {
+  return (await createGameMatchUseCase(
+    session,
+    'arcane-duel',
+    input,
+  )) as ServiceResult<PersistedTcgMatchSnapshotDto, MatchUseCaseError>;
+}
 
-      if (persistedMatch.status !== 'active') {
-        throw failure<MatchUseCaseError>({
-          code: 'CONFLICT',
-          message: 'Completed matches cannot accept more moves.',
-        });
-      }
+export async function getTcgMatchSnapshotUseCase(
+  session: AppSession | null,
+  matchId: string,
+): Promise<ServiceResult<PersistedTcgMatchSnapshotDto, MatchUseCaseError>> {
+  return (await getGameMatchSnapshotUseCase(
+    session,
+    'arcane-duel',
+    matchId,
+  )) as ServiceResult<PersistedTcgMatchSnapshotDto, MatchUseCaseError>;
+}
 
-      const now = createAcceptedAtClock(input.move.createdAt);
-      const serverSession = createResumedSession(persistedMatch, now);
+export async function getTcgMatchRealtimeUseCase(
+  session: AppSession | null,
+  matchId: string,
+  input: GameMatchRealtimeInput = {},
+): Promise<ServiceResult<PersistedTcgMatchRealtimeDto, MatchUseCaseError>> {
+  return (await getGameMatchRealtimeUseCase(
+    session,
+    'arcane-duel',
+    matchId,
+    input,
+  )) as ServiceResult<PersistedTcgMatchRealtimeDto, MatchUseCaseError>;
+}
 
-      serverSession.submitMove(input.move);
-      processUnoBots(serverSession, persistedMatch.participants, botAiProfiles);
+export async function submitTcgMoveUseCase(
+  session: AppSession | null,
+  matchId: string,
+  input: SubmitTcgMoveInput | { move: unknown },
+): Promise<ServiceResult<PersistedTcgMatchSnapshotDto, MatchUseCaseError>> {
+  return (await submitGameMoveUseCase(
+    session,
+    'arcane-duel',
+    matchId,
+    input,
+  )) as ServiceResult<PersistedTcgMatchSnapshotDto, MatchUseCaseError>;
+}
 
-      const updatedMatch = finalizePersistedMatch({
-        session: serverSession,
-        persistedMatch,
-      });
-
-      await appendGameMatchProgress(tx, {
-        matchId: updatedMatch.matchId,
-        latestStateJson: updatedMatch.latestState,
-        resultJson: updatedMatch.result,
-        analysisJson: updatedMatch.analysis,
-        status: updatedMatch.status,
-        finishedAt: updatedMatch.finishedAt
-          ? new Date(updatedMatch.finishedAt)
-          : null,
-        updatedAt: new Date(updatedMatch.updatedAt),
-        lastSequence: updatedMatch.lastSequence,
-        previousLastSequence: persistedMatch.lastSequence,
-        moves: buildMoveRows(updatedMatch, persistedMatch.lastSequence),
-      });
-
-      return buildPersistedUnoMatchSnapshotDto(
-        updatedMatch,
-        resolvedIdentity.identity as MatchOwnerIdentity,
-      );
-    });
-
-    return success(snapshot);
-  } catch (error) {
-    if (error instanceof IllegalMoveError) {
-      return failure({
-        code: 'CONFLICT',
-        message: error.reason,
-      });
-    }
-
-    if (error instanceof StaleMatchProgressError) {
-      return failure({
-        code: 'CONFLICT',
-        message: 'Match was updated by another request. Reload and try again.',
-      });
-    }
-
-    if (
-      error &&
-      typeof error === 'object' &&
-      'ok' in error &&
-      error.ok === false
-    ) {
-      return error as ServiceResult<never, MatchUseCaseError>;
-    }
-
-    return failure({
-      code: 'VALIDATION_ERROR',
-      message:
-        error instanceof Error ? error.message : 'Unable to submit move.',
-    });
-  }
+export async function getTcgReplayUseCase(
+  session: AppSession | null,
+  matchId: string,
+): Promise<ServiceResult<PersistedTcgReplayDto, MatchUseCaseError>> {
+  return (await getGameReplayUseCase(
+    session,
+    'arcane-duel',
+    matchId,
+  )) as ServiceResult<PersistedTcgReplayDto, MatchUseCaseError>;
 }
 
 export async function abandonUnoMatchUseCase(
@@ -1025,28 +977,4 @@ export async function abandonUnoMatchUseCase(
   });
 
   return result;
-}
-
-export async function getUnoReplayUseCase(
-  session: AppSession | null,
-  matchId: string,
-): Promise<ServiceResult<PersistedUnoReplayDto, MatchUseCaseError>> {
-  const resolvedIdentity = await resolveOwnedIdentity(session, false);
-
-  if (!resolvedIdentity.identity) {
-    return mapMissingIdentity();
-  }
-
-  const match = await loadOwnedGameMatch<PersistedUnoMatchRecord>(
-    getDb(),
-    resolvedIdentity.identity as MatchOwnerIdentity,
-    matchId,
-    { gameId: 'uno-style' },
-  );
-
-  if (!match) {
-    return mapMissingIdentity();
-  }
-
-  return success(buildPersistedUnoReplayDto(match));
 }
