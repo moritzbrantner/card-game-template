@@ -43,7 +43,7 @@ describe('local service configuration', () => {
     expect(env.get('DATABASE_URL')).toBe(
       'postgresql://postgres:postgres@127.0.0.1:55433/next_template?schema=public',
     );
-    expect(env.get('DEV_DB_PORT')).toBe('55434');
+    expect(env.get('DEV_DB_PORT')).toBe('55435');
     expect(env.get('DEV_DB_NAME')).toBe('next_template');
     expect(env.get('DEV_DB_USER')).toBe('postgres');
     expect(env.get('DEV_DB_PASSWORD')).toBe('postgres');
@@ -70,7 +70,7 @@ describe('local service configuration', () => {
     expect(compose).toContain('postgres-dev-host:');
     expect(compose).toContain('postgres-test:');
     expect(compose).toContain('${POSTGRES_PORT:-55433}:5432');
-    expect(compose).toContain('${DEV_DB_PORT:-55434}:5432');
+    expect(compose).toContain('${DEV_DB_PORT:-55435}:5432');
     expect(compose).toContain('${TEST_POSTGRES_PORT:-55435}:5432');
     expect(compose).toContain('network_mode: host');
     expect(compose).toContain('/var/lib/postgresql/data:rw');

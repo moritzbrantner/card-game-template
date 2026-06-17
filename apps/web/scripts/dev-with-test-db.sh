@@ -6,7 +6,7 @@ APP_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 APP_NAME="$(basename "$APP_ROOT" | tr -cs '[:alnum:]' '-' | sed 's/^-*//; s/-*$//')"
 COMPOSE_FILE_PATH="${APP_ROOT}/docker-compose.yml"
 
-export DEV_DB_PORT="${DEV_DB_PORT:-55434}"
+export DEV_DB_PORT="${DEV_DB_PORT:-55435}"
 export DEV_DB_NAME="${DEV_DB_NAME:-next_template}"
 export DEV_DB_USER="${DEV_DB_USER:-postgres}"
 export DEV_DB_PASSWORD="${DEV_DB_PASSWORD:-postgres}"

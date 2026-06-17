@@ -29,7 +29,7 @@ services:
       POSTGRES_USER: '${DEV_DB_USER:-postgres}'
       POSTGRES_PASSWORD: '${DEV_DB_PASSWORD:-postgres}'
     ports:
-      - '${DEV_DB_PORT:-55434}:5432'
+      - '${DEV_DB_PORT:-55435}:5432'
     tmpfs:
       - /var/lib/postgresql/data:rw
     healthcheck:
@@ -52,14 +52,14 @@ services:
       POSTGRES_DB: '${DEV_DB_NAME:-next_template}'
       POSTGRES_USER: '${DEV_DB_USER:-postgres}'
       POSTGRES_PASSWORD: '${DEV_DB_PASSWORD:-postgres}'
-    command: postgres -c "port=${DEV_DB_PORT:-55434}"
+    command: postgres -c "port=${DEV_DB_PORT:-55435}"
     tmpfs:
       - /var/lib/postgresql/data:rw
     healthcheck:
       test:
         [
           'CMD-SHELL',
-          'pg_isready -U ${DEV_DB_USER:-postgres} -d ${DEV_DB_NAME:-next_template} -p ${DEV_DB_PORT:-55434}',
+          'pg_isready -U ${DEV_DB_USER:-postgres} -d ${DEV_DB_NAME:-next_template} -p ${DEV_DB_PORT:-55435}',
         ]
       interval: 2s
       timeout: 5s
