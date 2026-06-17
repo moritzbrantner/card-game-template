@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { UnoPageClient } from '@/apps/showcase/components/uno-page-client';
 import { MATCH_REPLAY_FORMAT_VERSION } from '@repo/game-contracts';
+import type { UnoColor } from '@repo/game-uno';
 import type {
   ListUnoMatchesResult,
   PersistedUnoMatchSnapshotDto,
@@ -63,6 +64,9 @@ const labels = {
   startedGameStatus: 'Game started.',
   title: 'UNO-style matches',
   waitingForPlayers: 'Waiting for players.',
+  wildChoiceCancel: 'Cancel',
+  wildChoiceDescription: 'Pick the color this wild card should set.',
+  wildChoiceTitle: 'Choose wild color',
 };
 
 function createAnalysis(acceptedMoveCount: number, turnsCompleted: number) {
@@ -492,6 +496,165 @@ describe('UnoPageClient live updates', () => {
     await waitFor(() => {
       expect(screen.getByText('Bot Bravo to act')).toBeTruthy();
     });
+  });
+
+  it('asks for a wild color before submitting a direct wild card play', async () => {
+    const baseSnapshot = createSnapshot();
+    const wildCard = {
+      color: 'wild',
+      id: 'wild-1',
+      kind: 'wild',
+      label: 'wild',
+    } as const;
+    const wildActionInputs = [
+      {
+        color: 'red',
+        id: 'play-wild-red',
+        label: 'Wild red',
+      },
+      {
+        color: 'blue',
+        id: 'play-wild-blue',
+        label: 'Wild blue',
+      },
+      {
+        color: 'green',
+        id: 'play-wild-green',
+        label: 'Wild green',
+      },
+      {
+        color: 'yellow',
+        id: 'play-wild-yellow',
+        label: 'Wild yellow',
+      },
+    ] as const satisfies ReadonlyArray<{
+      color: UnoColor;
+      id: string;
+      label: string;
+    }>;
+    const wildActions = wildActionInputs.map(({ color, id, label }) => ({
+      id,
+      label,
+      move: {
+        kind: 'play-card' as const,
+        createdAt: '2026-04-25T09:00:01.000Z',
+        playerId: 'p1',
+        payload: {
+          cardId: wildCard.id,
+          chosenColor: color,
+          sayUno: true,
+        },
+      },
+    }));
+    const activeSnapshot = createSnapshot({
+      view: {
+        ...baseSnapshot.view,
+        legalActions: wildActions,
+        players: [
+          {
+            ...baseSnapshot.view.players[0]!,
+            visibleCards: [wildCard],
+          },
+          baseSnapshot.view.players[1]!,
+        ],
+      },
+    });
+    const listResult = createListResult(activeSnapshot);
+    const submittedSnapshot = createSnapshot({
+      updatedAt: '2026-04-25T09:00:03.000Z',
+      view: {
+        ...activeSnapshot.view,
+        activeColor: 'blue',
+        players: [
+          {
+            ...activeSnapshot.view.players[0]!,
+            handCount: 6,
+            isActive: false,
+            visibleCards: [],
+          },
+          {
+            ...activeSnapshot.view.players[1]!,
+            isActive: true,
+          },
+        ],
+        status: 'Bot Bravo to act',
+      },
+    });
+    let moveSubmissions = 0;
+
+    fetchMock.mockImplementation(async (input, init) => {
+      const url = String(input);
+
+      if (url === '/api/games/uno/matches') {
+        return Response.json(listResult);
+      }
+
+      if (url === '/api/games/rooms') {
+        return Response.json([]);
+      }
+
+      if (url === `/api/games/uno/matches/${activeSnapshot.matchId}`) {
+        return Response.json(activeSnapshot);
+      }
+
+      if (url === `/api/games/uno/matches/${activeSnapshot.matchId}/moves`) {
+        moveSubmissions += 1;
+        expect(init?.body).toBe(
+          JSON.stringify({
+            move: wildActions[1]!.move,
+          }),
+        );
+        return Response.json(submittedSnapshot);
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    render(<UnoPageClient labels={labels} pastGamesHref="/en/past-games" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alice to act')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByLabelText('wild'));
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Choose wild color' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Red' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Blue' })).toBeTruthy();
+    expect(moveSubmissions).toBe(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    expect(moveSubmissions).toBe(0);
+
+    const card = screen.getByLabelText('wild');
+    const dropZone = screen.getByTestId('uno-discard-drop-zone');
+    const dataTransfer = {
+      data: new Map<string, string>(),
+      dropEffect: '',
+      effectAllowed: '',
+      getData(type: string) {
+        return this.data.get(type) ?? '';
+      },
+      setData(type: string, value: string) {
+        this.data.set(type, value);
+      },
+    };
+
+    fireEvent.dragStart(card, { dataTransfer });
+    fireEvent.dragOver(dropZone, { dataTransfer });
+    fireEvent.drop(dropZone, { dataTransfer });
+    fireEvent.click(await screen.findByRole('button', { name: 'Blue' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Bot Bravo to act')).toBeTruthy();
+    });
+    expect(moveSubmissions).toBe(1);
   });
 
   it('plays a visible card when the viewer drops it on the discard pile', async () => {

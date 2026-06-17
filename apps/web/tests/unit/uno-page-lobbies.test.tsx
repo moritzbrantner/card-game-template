@@ -53,6 +53,9 @@ const labels = {
   startedGameStatus: 'Game started.',
   title: 'UNO-style matches',
   waitingForPlayers: 'Waiting for players.',
+  wildChoiceCancel: 'Cancel',
+  wildChoiceDescription: 'Pick the color this wild card should set.',
+  wildChoiceTitle: 'Choose wild color',
 };
 
 describe('UnoPageClient lobby flow', () => {

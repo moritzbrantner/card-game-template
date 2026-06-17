@@ -13,6 +13,7 @@ import {
 import { CardTable } from '@moritzbrantner/card-games';
 import { buttonVariants } from '@moritzbrantner/ui';
 import { defaultGameCatalog } from '@repo/game-catalog';
+import type { UnoColor } from '@repo/game-uno';
 
 import {
   HiddenUnoCardStack,
@@ -77,6 +78,9 @@ type UnoPageLabels = {
   title: string;
   waitingForPlayers: string;
   legalActionsTitle: string;
+  wildChoiceCancel: string;
+  wildChoiceDescription: string;
+  wildChoiceTitle: string;
 };
 
 type UnoMatchPlayerView =
@@ -92,6 +96,10 @@ type UnoDirectPlayAction = UnoLegalAction & {
       targetPlayerId?: string;
     };
   };
+};
+type PendingWildChoice = {
+  actions: readonly UnoDirectPlayAction[];
+  cardId: string;
 };
 
 async function readJson<T>(response: Response) {
@@ -288,6 +296,39 @@ function chooseDirectPlayAction(input: {
   return bestAction;
 }
 
+function getDirectPlayActionsForCard(
+  actionCandidates: readonly UnoLegalAction[],
+  cardId: string,
+) {
+  return actionCandidates.filter(
+    (action): action is UnoDirectPlayAction =>
+      isUnoPlayCardAction(action) && action.move.payload.cardId === cardId,
+  );
+}
+
+function shouldPromptForWildChoice(actions: readonly UnoDirectPlayAction[]) {
+  return (
+    new Set(
+      actions
+        .map((action) => action.move.payload.chosenColor)
+        .filter(isUnoColor),
+    ).size > 1
+  );
+}
+
+function isUnoColor(color: unknown): color is UnoColor {
+  return (
+    color === 'red' ||
+    color === 'yellow' ||
+    color === 'green' ||
+    color === 'blue'
+  );
+}
+
+function colorChoiceLabel(color: UnoColor) {
+  return `${color[0]?.toUpperCase() ?? ''}${color.slice(1)}`;
+}
+
 export function UnoPageClient({
   labels,
   pastGamesHref,
@@ -310,6 +351,8 @@ export function UnoPageClient({
   const [pending, setPending] = useState(false);
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [isDiscardDropActive, setIsDiscardDropActive] = useState(false);
+  const [pendingWildChoice, setPendingWildChoice] =
+    useState<PendingWildChoice | null>(null);
   const [manualOverview, setManualOverview] = useState(false);
   const [state, setState] = useState<{ announcement?: string; error?: string }>(
     {},
@@ -334,10 +377,32 @@ export function UnoPageClient({
   const directPlayableCardIds = new Set(
     directPlayableActions.map((action) => action.move.payload.cardId),
   );
+  const pendingWildChoiceCardId = pendingWildChoice?.cardId ?? null;
 
   useEffect(() => {
     currentMatchRef.current = currentMatch;
   }, [currentMatch]);
+
+  useEffect(() => {
+    if (!pendingWildChoiceCardId || !currentMatch) {
+      return;
+    }
+
+    const nextActions = getDirectPlayActionsForCard(
+      currentMatch.view.legalActions,
+      pendingWildChoiceCardId,
+    );
+
+    if (!shouldPromptForWildChoice(nextActions)) {
+      setPendingWildChoice(null);
+      return;
+    }
+
+    setPendingWildChoice({
+      actions: nextActions,
+      cardId: pendingWildChoiceCardId,
+    });
+  }, [currentMatch, pendingWildChoiceCardId]);
 
   function showOverview() {
     currentMatchRef.current = null;
@@ -868,13 +933,33 @@ export function UnoPageClient({
     });
   }
 
+  function resolveDirectPlayChoices(cardId: string) {
+    if (!currentMatch || pending || currentMatch.status !== 'active') {
+      return [];
+    }
+
+    return getDirectPlayActionsForCard(currentMatch.view.legalActions, cardId);
+  }
+
   async function handleDirectCardPlay(cardId: string) {
+    const actions = resolveDirectPlayChoices(cardId);
+
+    if (shouldPromptForWildChoice(actions)) {
+      setPendingWildChoice({ actions, cardId });
+      return;
+    }
+
     const action = resolveDirectPlay(cardId);
 
     if (!action) {
       return;
     }
 
+    await handleSubmitMove(action.move);
+  }
+
+  async function handleWildChoiceSubmit(action: UnoDirectPlayAction) {
+    setPendingWildChoice(null);
     await handleSubmitMove(action.move);
   }
 
@@ -965,6 +1050,28 @@ export function UnoPageClient({
   const viewerSeat = currentRoom?.seats.find(
     (seat) => seat.playerId === currentRoom.viewerPlayerId,
   );
+  const wildChoiceOptions =
+    pendingWildChoice && currentMatch
+      ? Array.from(
+          new Set(
+            pendingWildChoice.actions
+              .map((action) => action.move.payload.chosenColor)
+              .filter(isUnoColor),
+          ),
+        )
+          .map((color) =>
+            chooseDirectPlayAction({
+              actionCandidates: pendingWildChoice.actions.filter(
+                (action) => action.move.payload.chosenColor === color,
+              ),
+              activeColor: currentMatch.view.activeColor,
+              cardId: pendingWildChoice.cardId,
+              players: currentMatch.view.players,
+              viewerPlayer,
+            }),
+          )
+          .filter((action): action is UnoDirectPlayAction => action !== null)
+      : [];
   const hasFocusedSession = currentRoom !== null || currentMatch !== null;
   const currentReplayHref = currentMatch
     ? buildReplayHref(pastGamesHref, currentMatch.matchId)
@@ -1248,7 +1355,7 @@ export function UnoPageClient({
         ) : null}
 
         <article
-          className={`rounded-[1.75rem] border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 ${
+          className={`min-w-0 overflow-hidden rounded-[1.75rem] border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 ${
             hasFocusedSession ? 'p-4 sm:p-6 xl:p-8' : 'p-6'
           }`}
         >
@@ -1315,7 +1422,7 @@ export function UnoPageClient({
                   `${currentMatch.view.drawPileCount} cards remain in the draw pile.`
                 }
                 title={currentMatch.view.status}
-                className={hasFocusedSession ? 'min-h-[44rem]' : undefined}
+                className="min-w-0"
                 tone={
                   currentMatch.view.activeColor === 'green'
                     ? 'emerald'
@@ -1324,9 +1431,9 @@ export function UnoPageClient({
                       : 'crimson'
                 }
               >
-                <div className="flex min-h-[36rem] flex-col justify-between gap-6">
+                <div className="flex min-w-0 flex-col gap-4 xl:gap-5">
                   <div
-                    className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+                    className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3"
                     data-testid="uno-opponents"
                   >
                     {opponentPlayers.map((player: UnoMatchPlayerView) => {
@@ -1338,7 +1445,7 @@ export function UnoPageClient({
                       return (
                         <div
                           key={player.playerId}
-                          className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm"
+                          className="min-w-0 rounded-[1.4rem] border border-white/12 bg-white/8 p-3 backdrop-blur-sm sm:p-4"
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex min-w-0 items-center gap-2">
@@ -1357,9 +1464,10 @@ export function UnoPageClient({
                           </div>
 
                           <UnoHandPreview
-                            className="mt-4"
+                            className="mt-3"
                             hiddenCount={hiddenCount}
                             label={player.displayName}
+                            layout="wrap"
                             visibleCards={player.visibleCards}
                           />
                         </div>
@@ -1368,10 +1476,10 @@ export function UnoPageClient({
                   </div>
 
                   <div
-                    className="mx-auto grid w-full max-w-5xl gap-4"
+                    className="mx-auto grid min-w-0 w-full max-w-5xl gap-3"
                     data-testid="uno-center-piles"
                   >
-                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
+                    <div className="min-w-0 rounded-[1.4rem] border border-white/12 bg-white/8 p-3 backdrop-blur-sm sm:p-4">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
@@ -1391,20 +1499,21 @@ export function UnoPageClient({
                       </div>
                     </div>
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
+                    <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+                      <div className="min-w-0 rounded-[1.4rem] border border-white/12 bg-white/8 p-3 backdrop-blur-sm sm:p-4">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
                           Draw pile
                         </p>
-                        <div className="mt-4 flex justify-center">
+                        <div className="mt-3 flex justify-center">
                           <HiddenUnoCardStack
                             cardCount={currentMatch.view.drawPileCount}
+                            compact
                             label="Draw pile"
                           />
                         </div>
                       </div>
 
-                      <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
+                      <div className="min-w-0 rounded-[1.4rem] border border-white/12 bg-white/8 p-3 backdrop-blur-sm sm:p-4">
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
@@ -1422,7 +1531,7 @@ export function UnoPageClient({
                         </div>
                         <div
                           aria-label="Discard pile drop target"
-                          className={`mt-4 flex justify-center rounded-[1.2rem] border border-dashed px-4 py-5 transition ${
+                          className={`mt-3 flex justify-center rounded-[1.2rem] border border-dashed px-3 py-4 transition ${
                             isDiscardDropActive
                               ? 'border-emerald-300/60 bg-emerald-400/10'
                               : 'border-white/10'
@@ -1438,6 +1547,7 @@ export function UnoPageClient({
                             <UnoCardVisual
                               card={currentMatch.view.discardTop}
                               selected
+                              variant="compact"
                             />
                           ) : (
                             <p className="text-sm text-white/72">
@@ -1451,7 +1561,7 @@ export function UnoPageClient({
 
                   {viewerPlayer ? (
                     <div
-                      className="rounded-[1.4rem] border border-sky-300/30 bg-sky-400/10 p-4 backdrop-blur-sm"
+                      className="min-w-0 rounded-[1.4rem] border border-sky-300/30 bg-sky-400/10 p-3 backdrop-blur-sm sm:p-4"
                       data-testid="uno-viewer-seat"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1526,7 +1636,8 @@ export function UnoPageClient({
                           0,
                         )}
                         label={viewerPlayer.displayName}
-                        size="md"
+                        layout="wrap"
+                        size="sm"
                         visibleCards={viewerPlayer.visibleCards}
                       />
                     </div>
@@ -1744,6 +1855,85 @@ export function UnoPageClient({
           ) : null}
         </article>
       </div>
+
+      {pendingWildChoice && wildChoiceOptions.length > 0 ? (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-zinc-950/70 px-4 py-6 backdrop-blur-sm"
+          onClick={() => {
+            setPendingWildChoice(null);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              setPendingWildChoice(null);
+            }
+          }}
+          role="presentation"
+        >
+          <div
+            aria-modal="true"
+            className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950"
+            role="dialog"
+            aria-labelledby="uno-wild-choice-title"
+            aria-describedby="uno-wild-choice-description"
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+          >
+            <div className="space-y-2">
+              <h3
+                className="text-lg font-semibold text-zinc-950 dark:text-zinc-50"
+                id="uno-wild-choice-title"
+              >
+                {labels.wildChoiceTitle}
+              </h3>
+              <p
+                className="text-sm text-zinc-600 dark:text-zinc-300"
+                id="uno-wild-choice-description"
+              >
+                {labels.wildChoiceDescription}
+              </p>
+            </div>
+
+            <div className="mt-5 grid gap-2">
+              {wildChoiceOptions.map((action) => {
+                const chosenColor = action.move.payload.chosenColor;
+
+                if (!isUnoColor(chosenColor)) {
+                  return null;
+                }
+
+                return (
+                  <button
+                    key={action.id}
+                    type="button"
+                    className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-left text-sm font-medium text-zinc-950 transition hover:border-zinc-400 hover:bg-white disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50 dark:hover:border-zinc-600 dark:hover:bg-zinc-950"
+                    disabled={pending}
+                    onClick={() => {
+                      void handleWildChoiceSubmit(action);
+                    }}
+                  >
+                    <UnoColorBadge
+                      color={chosenColor}
+                      label={colorChoiceLabel(chosenColor)}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              className={`${buttonVariants({ variant: 'outline' })} mt-5 w-full`}
+              disabled={pending}
+              onClick={() => {
+                setPendingWildChoice(null);
+              }}
+            >
+              {labels.wildChoiceCancel}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <article className="rounded-[1.75rem] border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
         <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">

@@ -52,4 +52,7 @@ export const unoPage = {
   reviewReplayAction: 'Review replay',
   legalActionsTitle: 'Legal actions',
   analysisTitle: 'Analysis',
+  wildChoiceTitle: 'Choose wild color',
+  wildChoiceDescription: 'Pick the color this wild card should set.',
+  wildChoiceCancel: 'Cancel',
 };

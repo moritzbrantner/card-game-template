@@ -55,4 +55,7 @@ export const unoPage = {
   reviewReplayAction: 'Replay ansehen',
   legalActionsTitle: 'Zulaessige Aktionen',
   analysisTitle: 'Analyse',
+  wildChoiceTitle: 'Wild-Farbe waehlen',
+  wildChoiceDescription: 'Waehle die Farbe, die diese Wild-Karte setzen soll.',
+  wildChoiceCancel: 'Abbrechen',
 };

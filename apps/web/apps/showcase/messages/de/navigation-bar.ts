@@ -6,6 +6,7 @@ export const navigationBar = {
     uno: 'UNO-aehnlich',
     phase10: 'Phase 10',
     poker: 'Poker',
+    tcg: 'TCG',
     pastGames: 'Vergangene Spiele',
     remocn: 'remocn',
     forms: 'Formular-Demo',
