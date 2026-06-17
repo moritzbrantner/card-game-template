@@ -8,6 +8,7 @@ import { phase10Page } from './phase-10-page';
 import { pokerPage } from './poker-page';
 import { remocnPage } from './remocn-page';
 import { storyPage } from './story-page';
+import { tcgPage } from './tcg-page';
 import { unoPage } from './uno-page';
 import { uploadsPage } from './uploads-page';
 
@@ -21,6 +22,7 @@ const showcaseMessages = {
   StoryPage: storyPage,
   Phase10Page: phase10Page,
   PokerPage: pokerPage,
+  TcgPage: tcgPage,
   UnoPage: unoPage,
   PastGamesPage: pastGamesPage,
   UploadsPage: uploadsPage,

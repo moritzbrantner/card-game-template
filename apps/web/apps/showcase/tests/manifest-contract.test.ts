@@ -89,4 +89,18 @@ describe('showcase manifest contract', () => {
     expect(phase10Page?.namespace).toBe('Phase10Page');
     expect(phase10Nav?.category).toBe('discover');
   });
+
+  it('exposes Arcane Duel as a feature-gated public showcase route', () => {
+    const tcgPage = showcaseManifest.publicPages.find(
+      (page) => page.id === 'tcg',
+    );
+    const tcgNav = showcaseManifest.publicNavigation.find(
+      (item) => item.pageId === 'tcg',
+    );
+
+    expect(tcgPage?.slug).toBe('tcg');
+    expect(tcgPage?.featureKey).toBe('showcase.tcg');
+    expect(tcgPage?.namespace).toBe('TcgPage');
+    expect(tcgNav?.category).toBe('discover');
+  });
 });

@@ -84,6 +84,18 @@ const showcaseManifest: AppManifest = {
       },
     },
     {
+      id: 'tcg',
+      slug: 'tcg',
+      kind: 'component',
+      namespace: 'TcgPage',
+      featureKey: 'showcase.tcg',
+      render: async ({ locale }) => {
+        const pageModule = await import('./pages/tcg-page');
+        const TcgPage = pageModule.default;
+        return createElement(TcgPage, { locale });
+      },
+    },
+    {
       id: 'uno',
       slug: 'uno',
       kind: 'component',
@@ -262,6 +274,12 @@ const showcaseManifest: AppManifest = {
       category: 'discover',
       hotkey: ['alt', 'x'],
       order: 35,
+    },
+    {
+      pageId: 'tcg',
+      category: 'discover',
+      hotkey: ['alt', 'i'],
+      order: 37,
     },
     {
       pageId: 'pastGames',

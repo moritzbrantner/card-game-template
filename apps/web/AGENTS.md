@@ -22,4 +22,3 @@ Codex/T3 rules:
 - Before finalizing Docker-sensitive work, run `services:ps` or `docker compose ps` and report remaining containers.
 - Use `services:down` after dev sessions. Use `services:clean` only when deleting disposable test data is acceptable.
 - Format touched files only unless the task explicitly asks for a repo-wide format.
-
