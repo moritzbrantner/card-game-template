@@ -1019,12 +1019,20 @@ export function UnoPageClient({
     setPending(true);
     setState({});
 
-    const response = await fetch(
-      `/api/games/uno/matches/${currentMatch.matchId}/abandon`,
-      {
-        method: 'POST',
-      },
-    );
+    let response: Response;
+
+    try {
+      response = await fetch(
+        `/api/games/uno/matches/${currentMatch.matchId}/abandon`,
+        {
+          method: 'POST',
+        },
+      );
+    } catch {
+      setState({ error: 'Unable to abandon match.' });
+      setPending(false);
+      return;
+    }
 
     if (!response.ok) {
       const problem = await readProblemDetail(

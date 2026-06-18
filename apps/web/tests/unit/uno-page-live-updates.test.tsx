@@ -891,4 +891,44 @@ describe('UnoPageClient live updates', () => {
       expect(screen.queryByRole('link', { name: 'Review replay' })).toBeNull();
     });
   });
+
+  it('shows an inline error when abandoning an active match cannot reach the API', async () => {
+    const activeSnapshot = createSnapshot();
+    const listResult = createListResult(activeSnapshot);
+
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input);
+
+      if (url === '/api/games/uno/matches') {
+        return Response.json(listResult);
+      }
+
+      if (url === '/api/games/rooms') {
+        return Response.json([]);
+      }
+
+      if (url === `/api/games/uno/matches/${activeSnapshot.matchId}`) {
+        return Response.json(activeSnapshot);
+      }
+
+      if (url === `/api/games/uno/matches/${activeSnapshot.matchId}/abandon`) {
+        throw new TypeError('Failed to fetch');
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    render(<UnoPageClient labels={labels} pastGamesHref="/en/past-games" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alice to act')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abandon match' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Unable to abandon match.')).toBeTruthy();
+    });
+    expect(screen.queryByText('Match abandoned.')).toBeNull();
+  });
 });
