@@ -17,10 +17,13 @@ import {
   defaultUnoRules,
   parseUnoMove,
   parseUnoSetup,
+  projectUnoPlayerView,
   summarizeUnoReplay,
   type UnoCard,
+  type UnoColor,
   type UnoEvent,
   type UnoMove,
+  type UnoPlayCardMove,
   type UnoState,
 } from '../src/index.ts';
 
@@ -35,6 +38,14 @@ const tablePlayers: readonly PlayerProfile[] = [
   { playerId: 'p3', displayName: 'Casey', seat: 3 },
   { playerId: 'p4', displayName: 'Dana', seat: 4 },
 ];
+const sessionPlayers = players.map((player) => ({
+  ...player,
+  controller: 'human' as const,
+}));
+const tableSessionPlayers = tablePlayers.map((player) => ({
+  ...player,
+  controller: 'human' as const,
+}));
 
 function createCard(
   color: UnoCard['color'],
@@ -141,6 +152,65 @@ function applyMove(state: MatchState<UnoState>, move: UnoMove) {
   };
 }
 
+function createPlayCardAction(input: {
+  cardId: string;
+  chosenColor?: UnoColor;
+  playerId?: string;
+  sayUno?: boolean;
+  targetPlayerId?: string;
+}): UnoPlayCardMove {
+  return {
+    createdAt: '2026-04-17T12:00:00.000Z',
+    kind: 'play-card',
+    playerId: input.playerId ?? 'p1',
+    payload: {
+      cardId: input.cardId,
+      ...(input.chosenColor ? { chosenColor: input.chosenColor } : {}),
+      ...(input.sayUno !== undefined ? { sayUno: input.sayUno } : {}),
+      ...(input.targetPlayerId ? { targetPlayerId: input.targetPlayerId } : {}),
+    },
+  };
+}
+
+function projectViewForLegalMoves(input: {
+  hands: UnoState['hands'];
+  legalMoves: readonly UnoMove[];
+  players?: typeof sessionPlayers;
+  state?: Partial<UnoState>;
+}) {
+  const currentPlayers = input.players ?? sessionPlayers;
+  const state = createState(
+    {
+      hands: input.hands,
+      ...(input.state ?? {}),
+    },
+    'p1',
+    currentPlayers,
+  );
+
+  return projectUnoPlayerView({
+    legalMoves: input.legalMoves,
+    matchResult: null,
+    participants: currentPlayers,
+    pendingHotseatPlayerId: null,
+    selectedActorPlayerId: 'p1',
+    state,
+    viewerPlayerId: 'p1',
+  });
+}
+
+function viewerCardDirectPlay(
+  view: ReturnType<typeof projectUnoPlayerView>,
+  cardId: string,
+) {
+  const viewer = view.players.find((player) => player.isViewer);
+  const card = viewer?.visibleCards.find(
+    (candidate) => candidate.id === cardId,
+  );
+  assert.ok(card);
+  return card.directPlay;
+}
+
 test('UNO-style initial state is deterministic for the same seed', () => {
   const first = adapter.createInitialState({
     matchId: 'uno-1',
@@ -240,6 +310,165 @@ test('UNO runtime parser accepts valid draw and pass moves with empty payloads',
       createdAt: '2026-04-17T12:00:01.000Z',
       payload: {},
     },
+  );
+});
+
+test('UNO player view attaches direct-play actions only to playable visible cards', () => {
+  const view = projectViewForLegalMoves({
+    hands: {
+      p1: [
+        createCard('red', 'number', 'red-4', 4),
+        createCard('blue', 'number', 'blue-1', 1),
+      ],
+      p2: [createCard('green', 'number', 'green-1', 1)],
+    },
+    legalMoves: [createPlayCardAction({ cardId: 'red-4' })],
+  });
+  const viewer = view.players.find((player) => player.isViewer);
+
+  assert.ok(viewer);
+  assert.notEqual(
+    viewer.visibleCards.find((card) => card.id === 'red-4')?.directPlay,
+    null,
+  );
+  assert.equal(
+    viewer.visibleCards.find((card) => card.id === 'blue-1')?.directPlay,
+    null,
+  );
+});
+
+test('UNO player view direct-play default prioritizes saying UNO', () => {
+  const view = projectViewForLegalMoves({
+    hands: {
+      p1: [createCard('wild', 'wild', 'wild')],
+      p2: [createCard('green', 'number', 'green-1', 1)],
+    },
+    legalMoves: [
+      createPlayCardAction({ cardId: 'wild', chosenColor: 'red' }),
+      createPlayCardAction({
+        cardId: 'wild',
+        chosenColor: 'blue',
+        sayUno: true,
+      }),
+    ],
+  });
+  const directPlay = viewerCardDirectPlay(view, 'wild');
+  const defaultAction = directPlay?.actions.find(
+    (action) => action.id === directPlay.defaultActionId,
+  );
+
+  assert.equal(defaultAction?.sayUno, true);
+});
+
+test('UNO player view direct-play default preserves remaining-color scoring', () => {
+  const view = projectViewForLegalMoves({
+    hands: {
+      p1: [
+        createCard('wild', 'wild', 'wild'),
+        createCard('green', 'number', 'green-1', 1),
+        createCard('green', 'number', 'green-2', 2),
+        createCard('blue', 'number', 'blue-1', 1),
+      ],
+      p2: [createCard('yellow', 'number', 'yellow-1', 1)],
+    },
+    legalMoves: [
+      createPlayCardAction({ cardId: 'wild', chosenColor: 'blue' }),
+      createPlayCardAction({ cardId: 'wild', chosenColor: 'green' }),
+    ],
+  });
+  const directPlay = viewerCardDirectPlay(view, 'wild');
+  const defaultAction = directPlay?.actions.find(
+    (action) => action.id === directPlay.defaultActionId,
+  );
+
+  assert.equal(defaultAction?.chosenColor, 'green');
+});
+
+test('UNO player view direct-play default preserves active-color tie-break', () => {
+  const view = projectViewForLegalMoves({
+    hands: {
+      p1: [createCard('wild', 'wild', 'wild')],
+      p2: [createCard('yellow', 'number', 'yellow-1', 1)],
+    },
+    legalMoves: [
+      createPlayCardAction({ cardId: 'wild', chosenColor: 'blue' }),
+      createPlayCardAction({ cardId: 'wild', chosenColor: 'red' }),
+    ],
+    state: {
+      currentColor: 'red',
+    },
+  });
+  const directPlay = viewerCardDirectPlay(view, 'wild');
+  const defaultAction = directPlay?.actions.find(
+    (action) => action.id === directPlay.defaultActionId,
+  );
+
+  assert.equal(defaultAction?.chosenColor, 'red');
+});
+
+test('UNO player view direct-play default targets the smallest hand', () => {
+  const view = projectViewForLegalMoves({
+    hands: {
+      p1: [createCard('red', 'number', 'red-7', 7)],
+      p2: [
+        createCard('blue', 'number', 'p2-1', 1),
+        createCard('blue', 'number', 'p2-2', 2),
+      ],
+      p3: [createCard('green', 'number', 'p3-1', 1)],
+      p4: [
+        createCard('yellow', 'number', 'p4-1', 1),
+        createCard('yellow', 'number', 'p4-2', 2),
+        createCard('yellow', 'number', 'p4-3', 3),
+      ],
+    },
+    legalMoves: [
+      createPlayCardAction({ cardId: 'red-7', targetPlayerId: 'p2' }),
+      createPlayCardAction({ cardId: 'red-7', targetPlayerId: 'p3' }),
+      createPlayCardAction({ cardId: 'red-7', targetPlayerId: 'p4' }),
+    ],
+    players: tableSessionPlayers,
+  });
+  const directPlay = viewerCardDirectPlay(view, 'red-7');
+  const defaultAction = directPlay?.actions.find(
+    (action) => action.id === directPlay.defaultActionId,
+  );
+
+  assert.equal(defaultAction?.targetPlayerId, 'p3');
+});
+
+test('UNO player view direct-play marks color-choice prompts only for multiple colors', () => {
+  const multiColorView = projectViewForLegalMoves({
+    hands: {
+      p1: [createCard('wild', 'wild', 'wild')],
+      p2: [createCard('yellow', 'number', 'yellow-1', 1)],
+    },
+    legalMoves: [
+      createPlayCardAction({ cardId: 'wild', chosenColor: 'blue' }),
+      createPlayCardAction({ cardId: 'wild', chosenColor: 'red' }),
+    ],
+  });
+  const singleColorView = projectViewForLegalMoves({
+    hands: {
+      p1: [createCard('wild', 'wild', 'wild')],
+      p2: [createCard('yellow', 'number', 'yellow-1', 1)],
+    },
+    legalMoves: [
+      createPlayCardAction({ cardId: 'wild', chosenColor: 'blue' }),
+      createPlayCardAction({
+        cardId: 'wild',
+        chosenColor: 'blue',
+        sayUno: true,
+      }),
+    ],
+  });
+
+  assert.equal(
+    viewerCardDirectPlay(multiColorView, 'wild')?.promptsForColorChoice,
+    true,
+  );
+  assert.equal(
+    viewerCardDirectPlay(singleColorView, 'wild')?.promptsForColorChoice,
+    false,
   );
 });
 

@@ -1,6 +1,6 @@
 import './index.css';
 
-import { createSharedButtonLabel } from '@moritzbrantner/ui';
+import { createSharedButtonLabel } from '@repo/ui';
 import { defaultGameCatalog } from '@repo/game-catalog';
 import {
   createLocalGameSession,

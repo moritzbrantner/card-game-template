@@ -10,11 +10,8 @@ import {
   useState,
 } from 'react';
 
-import { CardTable } from '@moritzbrantner/card-games';
 import { buttonVariants } from '@moritzbrantner/ui';
 import { defaultGameCatalog } from '@repo/game-catalog';
-import type { UnoColor } from '@repo/game-uno';
-
 import {
   HiddenUnoCardStack,
   UnoColorBadge,
@@ -30,6 +27,7 @@ import type {
   GameRoomRealtimeDto,
 } from '@/src/domain/game-rooms/contracts';
 import { readProblemDetail } from '@/src/http/problem-client';
+import { GameSessionFrame } from './game-session';
 
 type UnoPageLabels = {
   activeMatchDescription: string;
@@ -85,22 +83,15 @@ type UnoPageLabels = {
 
 type UnoMatchPlayerView =
   PersistedUnoMatchSnapshotDto['view']['players'][number];
-type UnoLegalAction =
-  PersistedUnoMatchSnapshotDto['view']['legalActions'][number];
-type UnoDirectPlayAction = UnoLegalAction & {
-  move: UnoLegalAction['move'] & {
-    payload: {
-      cardId: string;
-      chosenColor?: string;
-      sayUno?: boolean;
-      targetPlayerId?: string;
-    };
-  };
-};
+type UnoVisibleCardView = UnoMatchPlayerView['visibleCards'][number];
+type UnoDirectPlay = NonNullable<UnoVisibleCardView['directPlay']>;
+type UnoDirectPlayAction = UnoDirectPlay['actions'][number];
 type PendingWildChoice = {
   actions: readonly UnoDirectPlayAction[];
   cardId: string;
+  defaultActionId: string | null;
 };
+const EMPTY_UNO_VISIBLE_CARDS: readonly UnoVisibleCardView[] = [];
 
 async function readJson<T>(response: Response) {
   return response.json() as Promise<T>;
@@ -220,112 +211,9 @@ function getOpenRooms(rooms: readonly GameRoomDto[]) {
   return rooms.filter((room) => room.status === 'open');
 }
 
-function isUnoPlayCardAction(
-  action: UnoLegalAction,
-): action is UnoDirectPlayAction {
-  return (
-    action.move.kind === 'play-card' &&
-    typeof action.move.payload === 'object' &&
-    action.move.payload !== null &&
-    'cardId' in action.move.payload
-  );
-}
-
-function chooseDirectPlayAction(input: {
-  actionCandidates: readonly UnoLegalAction[];
-  activeColor: PersistedUnoMatchSnapshotDto['view']['activeColor'];
-  cardId: string;
-  players: readonly UnoMatchPlayerView[];
-  viewerPlayer: UnoMatchPlayerView | null;
-}) {
-  const playActions = input.actionCandidates.filter(
-    (action) =>
-      isUnoPlayCardAction(action) &&
-      action.move.payload.cardId === input.cardId,
-  );
-
-  if (playActions.length === 0) {
-    return null;
-  }
-
-  const remainingColorCounts = new Map<string, number>();
-  const targetHandCounts = new Map(
-    input.players.map((player) => [player.playerId, player.handCount] as const),
-  );
-
-  for (const card of input.viewerPlayer?.visibleCards ?? []) {
-    if (card.id === input.cardId || card.color === 'wild') {
-      continue;
-    }
-
-    remainingColorCounts.set(
-      card.color,
-      (remainingColorCounts.get(card.color) ?? 0) + 1,
-    );
-  }
-
-  let bestAction: (typeof playActions)[number] | null = null;
-  let bestScore = Number.NEGATIVE_INFINITY;
-
-  for (const action of playActions) {
-    let score = 0;
-
-    if (action.move.payload.sayUno) {
-      score += 1000;
-    }
-
-    if (action.move.payload.chosenColor) {
-      score +=
-        (remainingColorCounts.get(action.move.payload.chosenColor) ?? 0) * 100;
-
-      if (action.move.payload.chosenColor === input.activeColor) {
-        score += 1;
-      }
-    }
-
-    if (action.move.payload.targetPlayerId) {
-      score -= targetHandCounts.get(action.move.payload.targetPlayerId) ?? 99;
-    }
-
-    if (score > bestScore) {
-      bestScore = score;
-      bestAction = action;
-    }
-  }
-
-  return bestAction;
-}
-
-function getDirectPlayActionsForCard(
-  actionCandidates: readonly UnoLegalAction[],
-  cardId: string,
+function colorChoiceLabel(
+  color: NonNullable<UnoDirectPlayAction['chosenColor']>,
 ) {
-  return actionCandidates.filter(
-    (action): action is UnoDirectPlayAction =>
-      isUnoPlayCardAction(action) && action.move.payload.cardId === cardId,
-  );
-}
-
-function shouldPromptForWildChoice(actions: readonly UnoDirectPlayAction[]) {
-  return (
-    new Set(
-      actions
-        .map((action) => action.move.payload.chosenColor)
-        .filter(isUnoColor),
-    ).size > 1
-  );
-}
-
-function isUnoColor(color: unknown): color is UnoColor {
-  return (
-    color === 'red' ||
-    color === 'yellow' ||
-    color === 'green' ||
-    color === 'blue'
-  );
-}
-
-function colorChoiceLabel(color: UnoColor) {
   return `${color[0]?.toUpperCase() ?? ''}${color.slice(1)}`;
 }
 
@@ -372,12 +260,20 @@ export function UnoPageClient({
         (player) => player.playerId !== viewerPlayer.playerId,
       )
     : currentMatchPlayers;
-  const directPlayableActions =
-    currentMatch?.view.legalActions.filter(isUnoPlayCardAction) ?? [];
+  const viewerVisibleCards =
+    viewerPlayer?.visibleCards ?? EMPTY_UNO_VISIBLE_CARDS;
   const directPlayableCardIds = new Set(
-    directPlayableActions.map((action) => action.move.payload.cardId),
+    viewerVisibleCards
+      .filter((card) => card.directPlay !== null)
+      .map((card) => card.id),
   );
   const pendingWildChoiceCardId = pendingWildChoice?.cardId ?? null;
+
+  function getViewerDirectPlay(cardId: string) {
+    return (
+      viewerVisibleCards.find((card) => card.id === cardId)?.directPlay ?? null
+    );
+  }
 
   useEffect(() => {
     currentMatchRef.current = currentMatch;
@@ -388,21 +284,21 @@ export function UnoPageClient({
       return;
     }
 
-    const nextActions = getDirectPlayActionsForCard(
-      currentMatch.view.legalActions,
-      pendingWildChoiceCardId,
-    );
+    const nextDirectPlay =
+      viewerVisibleCards.find((card) => card.id === pendingWildChoiceCardId)
+        ?.directPlay ?? null;
 
-    if (!shouldPromptForWildChoice(nextActions)) {
+    if (!nextDirectPlay?.promptsForColorChoice) {
       setPendingWildChoice(null);
       return;
     }
 
     setPendingWildChoice({
-      actions: nextActions,
+      actions: nextDirectPlay.actions,
       cardId: pendingWildChoiceCardId,
+      defaultActionId: nextDirectPlay.defaultActionId,
     });
-  }, [currentMatch, pendingWildChoiceCardId]);
+  }, [currentMatch, pendingWildChoiceCardId, viewerVisibleCards]);
 
   function showOverview() {
     currentMatchRef.current = null;
@@ -924,28 +820,24 @@ export function UnoPageClient({
       return null;
     }
 
-    return chooseDirectPlayAction({
-      actionCandidates: currentMatch.view.legalActions,
-      activeColor: currentMatch.view.activeColor,
-      cardId,
-      players: currentMatch.view.players,
-      viewerPlayer,
-    });
-  }
+    const directPlay = getViewerDirectPlay(cardId);
 
-  function resolveDirectPlayChoices(cardId: string) {
-    if (!currentMatch || pending || currentMatch.status !== 'active') {
-      return [];
-    }
-
-    return getDirectPlayActionsForCard(currentMatch.view.legalActions, cardId);
+    return (
+      directPlay?.actions.find(
+        (action) => action.id === directPlay.defaultActionId,
+      ) ?? null
+    );
   }
 
   async function handleDirectCardPlay(cardId: string) {
-    const actions = resolveDirectPlayChoices(cardId);
+    const directPlay = getViewerDirectPlay(cardId);
 
-    if (shouldPromptForWildChoice(actions)) {
-      setPendingWildChoice({ actions, cardId });
+    if (directPlay?.promptsForColorChoice) {
+      setPendingWildChoice({
+        actions: directPlay.actions,
+        cardId,
+        defaultActionId: directPlay.defaultActionId,
+      });
       return;
     }
 
@@ -1058,28 +950,22 @@ export function UnoPageClient({
   const viewerSeat = currentRoom?.seats.find(
     (seat) => seat.playerId === currentRoom.viewerPlayerId,
   );
-  const wildChoiceOptions =
-    pendingWildChoice && currentMatch
-      ? Array.from(
-          new Set(
-            pendingWildChoice.actions
-              .map((action) => action.move.payload.chosenColor)
-              .filter(isUnoColor),
-          ),
-        )
-          .map((color) =>
-            chooseDirectPlayAction({
-              actionCandidates: pendingWildChoice.actions.filter(
-                (action) => action.move.payload.chosenColor === color,
-              ),
-              activeColor: currentMatch.view.activeColor,
-              cardId: pendingWildChoice.cardId,
-              players: currentMatch.view.players,
-              viewerPlayer,
-            }),
-          )
-          .filter((action): action is UnoDirectPlayAction => action !== null)
-      : [];
+  const wildChoiceOptions = pendingWildChoice
+    ? Array.from(
+        new Map(
+          [...pendingWildChoice.actions]
+            .sort((left, right) =>
+              left.id === pendingWildChoice.defaultActionId
+                ? -1
+                : right.id === pendingWildChoice.defaultActionId
+                  ? 1
+                  : 0,
+            )
+            .filter((action) => action.chosenColor !== null)
+            .map((action) => [action.chosenColor, action] as const),
+        ).values(),
+      )
+    : [];
   const hasFocusedSession = currentRoom !== null || currentMatch !== null;
   const currentReplayHref = currentMatch
     ? buildReplayHref(pastGamesHref, currentMatch.matchId)
@@ -1408,37 +1294,62 @@ export function UnoPageClient({
           ) : null}
 
           {currentMatch ? (
-            <div className="space-y-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
-                    {labels.activeMatchTitle}
-                  </h2>
-                  <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    {labels.activeMatchDescription}
-                  </p>
-                </div>
-                <span className="rounded-full border border-zinc-300 px-4 py-2 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
-                  {currentMatch.status}
-                </span>
-              </div>
-
-              <CardTable
-                eyebrow={labels.activeMatchTitle}
-                subtitle={
-                  currentMatch.view.matchResultBanner ??
-                  `${currentMatch.view.drawPileCount} cards remain in the draw pile.`
-                }
-                title={currentMatch.view.status}
-                className="min-w-0"
-                tone={
-                  currentMatch.view.activeColor === 'green'
-                    ? 'emerald'
-                    : currentMatch.view.activeColor === 'blue'
-                      ? 'midnight'
-                      : 'crimson'
-                }
-              >
+            <GameSessionFrame
+              actions={currentMatch.view.legalActions.map((action) => ({
+                disabled: currentMatch.status !== 'active',
+                id: action.id,
+                label: action.label,
+                onSelect: () => {
+                  void handleSubmitMove(action.move);
+                },
+              }))}
+              actionsLabel={labels.legalActionsTitle}
+              badges={[
+                {
+                  id: 'status',
+                  label: currentMatch.status,
+                  tone:
+                    currentMatch.status === 'active' ? 'success' : 'neutral',
+                },
+              ]}
+              emptyActionsLabel={labels.waitingForPlayers}
+              error={state.error}
+              eyebrow={labels.activeMatchTitle}
+              participants={currentMatch.view.players.map((player) => ({
+                detail: `${player.handCount} cards`,
+                displayName: player.displayName,
+                id: player.playerId,
+                isActive: player.isActive,
+                isActor: player.isActor,
+                isViewer: player.isViewer,
+              }))}
+              pending={pending}
+              result={currentMatch.view.matchResultBanner}
+              statusItems={[
+                {
+                  id: 'status',
+                  label: 'Status',
+                  value: currentMatch.view.status,
+                },
+                {
+                  id: 'active-color',
+                  label: 'Active color',
+                  value: (
+                    <UnoColorBadge color={currentMatch.view.activeColor} />
+                  ),
+                },
+                {
+                  id: 'draw-pile',
+                  label: 'Draw pile',
+                  value: `${currentMatch.view.drawPileCount} cards`,
+                  detail:
+                    currentMatch.view.pendingDrawAmount > 0
+                      ? `Pending draw: ${currentMatch.view.pendingDrawAmount}`
+                      : null,
+                },
+              ]}
+              subtitle={labels.activeMatchDescription}
+              table={
                 <div className="flex min-w-0 flex-col gap-4 xl:gap-5">
                   <div
                     className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3"
@@ -1651,90 +1562,63 @@ export function UnoPageClient({
                     </div>
                   ) : null}
                 </div>
-              </CardTable>
+              }
+              title={labels.activeMatchTitle}
+              footer={
+                <div className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                        {labels.analysisTitle}
+                      </h3>
+                      <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-200">
+                        {currentMatch.analysis?.generic.acceptedMoveCount ?? 0}{' '}
+                        accepted moves
+                      </p>
+                      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-200">
+                        {currentMatch.analysis?.generic.turnsCompleted ?? 0}{' '}
+                        turns completed
+                      </p>
+                    </div>
 
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-                  {labels.legalActionsTitle}
-                </h3>
-                {currentMatch.view.legalActions.length > 0 ? (
-                  <div
-                    className="flex flex-wrap gap-3"
-                    role="group"
-                    aria-label={labels.legalActionsTitle}
-                  >
-                    {currentMatch.view.legalActions.map((action) => (
-                      <button
-                        key={action.id}
-                        type="button"
-                        className={buttonVariants({ variant: 'default' })}
-                        disabled={pending || currentMatch.status !== 'active'}
-                        onClick={() => {
-                          void handleSubmitMove(action.move);
-                        }}
-                      >
-                        {action.label}
-                      </button>
-                    ))}
+                    <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                        {labels.recentMatchesTitle}
+                      </h3>
+                      {matches.recent[0] ? (
+                        <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-200">
+                          Last winner: {winnerLabel(matches.recent[0])}
+                        </p>
+                      ) : (
+                        <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">
+                          {labels.emptyRecentMatches}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                    {labels.waitingForPlayers}
-                  </p>
-                )}
-              </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-                    {labels.analysisTitle}
-                  </h3>
-                  <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-200">
-                    {currentMatch.analysis?.generic.acceptedMoveCount ?? 0}{' '}
-                    accepted moves
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-200">
-                    {currentMatch.analysis?.generic.turnsCompleted ?? 0} turns
-                    completed
-                  </p>
+                  {currentMatch.status === 'active' ? (
+                    <button
+                      type="button"
+                      className={buttonVariants({ variant: 'destructive' })}
+                      disabled={pending}
+                      onClick={() => {
+                        void handleAbandon();
+                      }}
+                    >
+                      {labels.exitGame}
+                    </button>
+                  ) : currentReplayHref ? (
+                    <a
+                      href={currentReplayHref}
+                      className={buttonVariants({ variant: 'default' })}
+                    >
+                      {labels.reviewReplayAction}
+                    </a>
+                  ) : null}
                 </div>
-
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-                    {labels.recentMatchesTitle}
-                  </h3>
-                  {matches.recent[0] ? (
-                    <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-200">
-                      Last winner: {winnerLabel(matches.recent[0])}
-                    </p>
-                  ) : (
-                    <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">
-                      {labels.emptyRecentMatches}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {currentMatch.status === 'active' ? (
-                <button
-                  type="button"
-                  className={buttonVariants({ variant: 'destructive' })}
-                  disabled={pending}
-                  onClick={() => {
-                    void handleAbandon();
-                  }}
-                >
-                  {labels.exitGame}
-                </button>
-              ) : currentReplayHref ? (
-                <a
-                  href={currentReplayHref}
-                  className={buttonVariants({ variant: 'default' })}
-                >
-                  {labels.reviewReplayAction}
-                </a>
-              ) : null}
-            </div>
+              }
+            />
           ) : currentRoom ? (
             <div className="space-y-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1851,7 +1735,7 @@ export function UnoPageClient({
             </div>
           )}
 
-          {hasFocusedSession && state.error ? (
+          {hasFocusedSession && state.error && !currentMatch ? (
             <p className="mt-6 text-sm text-red-600 dark:text-red-400">
               {state.error}
             </p>
@@ -1904,9 +1788,9 @@ export function UnoPageClient({
 
             <div className="mt-5 grid gap-2">
               {wildChoiceOptions.map((action) => {
-                const chosenColor = action.move.payload.chosenColor;
+                const chosenColor = action.chosenColor;
 
-                if (!isUnoColor(chosenColor)) {
+                if (chosenColor === null) {
                   return null;
                 }
 

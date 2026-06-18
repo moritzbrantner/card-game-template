@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { UnoPageClient } from '@/apps/showcase/components/uno-page-client';
 import { MATCH_REPLAY_FORMAT_VERSION } from '@repo/game-contracts';
-import type { UnoColor } from '@repo/game-uno';
+import type { UnoColor, UnoPlayCardMove } from '@repo/game-uno';
 import type {
   ListUnoMatchesResult,
   PersistedUnoMatchSnapshotDto,
@@ -196,6 +196,7 @@ function createSnapshot(
           visibleCards: [
             {
               color: 'red',
+              directPlay: null,
               id: 'red-5',
               kind: 'number',
               label: 'red-5',
@@ -240,6 +241,53 @@ function createListResult(activeSnapshot: PersistedUnoMatchSnapshotDto) {
     ],
     recent: [],
   } satisfies ListUnoMatchesResult;
+}
+
+function attachDirectPlayToViewerCard(
+  view: PersistedUnoMatchSnapshotDto['view'],
+  input: {
+    cardId: string;
+    defaultActionId: string | null;
+    promptsForColorChoice?: boolean;
+  },
+): PersistedUnoMatchSnapshotDto['view'] {
+  const actions = view.legalActions
+    .filter(
+      (action): action is typeof action & { move: UnoPlayCardMove } =>
+        action.move.kind === 'play-card',
+    )
+    .map((action) => ({
+      chosenColor: action.move.payload.chosenColor ?? null,
+      id: action.id,
+      label: action.label,
+      move: action.move,
+      sayUno: action.move.payload.sayUno ?? false,
+      targetPlayerId: action.move.payload.targetPlayerId ?? null,
+    }));
+
+  return {
+    ...view,
+    players: view.players.map((player) =>
+      player.isViewer
+        ? {
+            ...player,
+            visibleCards: player.visibleCards.map((card) =>
+              card.id === input.cardId
+                ? {
+                    ...card,
+                    directPlay: {
+                      actions,
+                      defaultActionId: input.defaultActionId,
+                      promptsForColorChoice:
+                        input.promptsForColorChoice ?? false,
+                    },
+                  }
+                : card,
+            ),
+          }
+        : player,
+    ),
+  };
 }
 
 describe('UnoPageClient live updates', () => {
@@ -314,6 +362,7 @@ describe('UnoPageClient live updates', () => {
               visibleCards: [
                 {
                   color: 'green',
+                  directPlay: null,
                   id: 'green-7',
                   kind: 'number',
                   label: 'green-7',
@@ -395,37 +444,46 @@ describe('UnoPageClient live updates', () => {
   });
 
   it('plays a visible card when the viewer clicks it', async () => {
+    const legalActions = [
+      {
+        id: 'play-red-five-safe',
+        label: 'red-5',
+        move: {
+          kind: 'play-card' as const,
+          createdAt: '2026-04-25T09:00:01.000Z',
+          playerId: 'p1',
+          payload: {
+            cardId: 'red-5',
+            sayUno: false,
+          },
+        },
+      },
+      {
+        id: 'play-red-five-uno',
+        label: 'red-5 call UNO',
+        move: {
+          kind: 'play-card' as const,
+          createdAt: '2026-04-25T09:00:02.000Z',
+          playerId: 'p1',
+          payload: {
+            cardId: 'red-5',
+            sayUno: true,
+          },
+        },
+      },
+    ];
     const activeSnapshot = createSnapshot({
       view: {
-        ...createSnapshot().view,
-        legalActions: [
+        ...attachDirectPlayToViewerCard(
           {
-            id: 'play-red-five-safe',
-            label: 'red-5',
-            move: {
-              kind: 'play-card',
-              createdAt: '2026-04-25T09:00:01.000Z',
-              playerId: 'p1',
-              payload: {
-                cardId: 'red-5',
-                sayUno: false,
-              },
-            },
+            ...createSnapshot().view,
+            legalActions,
           },
           {
-            id: 'play-red-five-uno',
-            label: 'red-5 call UNO',
-            move: {
-              kind: 'play-card',
-              createdAt: '2026-04-25T09:00:02.000Z',
-              playerId: 'p1',
-              payload: {
-                cardId: 'red-5',
-                sayUno: true,
-              },
-            },
+            cardId: 'red-5',
+            defaultActionId: 'play-red-five-uno',
           },
-        ],
+        ),
       },
     });
     const listResult = createListResult(activeSnapshot);
@@ -502,6 +560,7 @@ describe('UnoPageClient live updates', () => {
     const baseSnapshot = createSnapshot();
     const wildCard = {
       color: 'wild',
+      directPlay: null,
       id: 'wild-1',
       kind: 'wild',
       label: 'wild',
@@ -533,6 +592,7 @@ describe('UnoPageClient live updates', () => {
       label: string;
     }>;
     const wildActions = wildActionInputs.map(({ color, id, label }) => ({
+      chosenColor: color,
       id,
       label,
       move: {
@@ -545,7 +605,17 @@ describe('UnoPageClient live updates', () => {
           sayUno: true,
         },
       },
+      sayUno: true,
+      targetPlayerId: null,
     }));
+    const playableWildCard = {
+      ...wildCard,
+      directPlay: {
+        actions: wildActions,
+        defaultActionId: 'play-wild-blue',
+        promptsForColorChoice: true,
+      },
+    };
     const activeSnapshot = createSnapshot({
       view: {
         ...baseSnapshot.view,
@@ -553,7 +623,7 @@ describe('UnoPageClient live updates', () => {
         players: [
           {
             ...baseSnapshot.view.players[0]!,
-            visibleCards: [wildCard],
+            visibleCards: [playableWildCard],
           },
           baseSnapshot.view.players[1]!,
         ],
@@ -658,24 +728,33 @@ describe('UnoPageClient live updates', () => {
   });
 
   it('plays a visible card when the viewer drops it on the discard pile', async () => {
+    const legalActions = [
+      {
+        id: 'play-red-five',
+        label: 'red-5',
+        move: {
+          kind: 'play-card' as const,
+          createdAt: '2026-04-25T09:00:01.000Z',
+          playerId: 'p1',
+          payload: {
+            cardId: 'red-5',
+            sayUno: true,
+          },
+        },
+      },
+    ];
     const activeSnapshot = createSnapshot({
       view: {
-        ...createSnapshot().view,
-        legalActions: [
+        ...attachDirectPlayToViewerCard(
           {
-            id: 'play-red-five',
-            label: 'red-5',
-            move: {
-              kind: 'play-card',
-              createdAt: '2026-04-25T09:00:01.000Z',
-              playerId: 'p1',
-              payload: {
-                cardId: 'red-5',
-                sayUno: true,
-              },
-            },
+            ...createSnapshot().view,
+            legalActions,
           },
-        ],
+          {
+            cardId: 'red-5',
+            defaultActionId: 'play-red-five',
+          },
+        ),
       },
     });
     const listResult = createListResult(activeSnapshot);

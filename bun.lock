@@ -27,7 +27,6 @@
         "@moritzbrantner/electron-json-store": "file:packages/electron-json-store",
         "@moritzbrantner/electron-preferences": "file:packages/electron-preferences",
         "@moritzbrantner/electron-window-state": "file:packages/electron-window-state",
-        "@moritzbrantner/ui": "^0.1.0",
         "@repo/auth-contract": "workspace:*",
         "@repo/game-catalog": "workspace:*",
         "@repo/game-contracts": "workspace:*",
@@ -37,6 +36,7 @@
         "@repo/game-tcg": "workspace:*",
         "@repo/game-uno": "workspace:*",
         "@repo/multiplayer-contract": "workspace:*",
+        "@repo/ui": "workspace:*",
         "@tanstack/react-query": "^5.90.21",
         "electron-squirrel-startup": "^1.0.1",
         "motion": "^12.35.2",
@@ -5697,8 +5697,6 @@
     "desktop/@moritzbrantner/electron-preferences": ["@moritzbrantner/electron-preferences@file:apps/desktop/packages/electron-preferences", {}],
 
     "desktop/@moritzbrantner/electron-window-state": ["@moritzbrantner/electron-window-state@file:apps/desktop/packages/electron-window-state", {}],
-
-    "desktop/@moritzbrantner/ui": ["@moritzbrantner/ui@0.1.0", "https://npm.pkg.github.com/@moritzbrantner/ui/-/ui-0.1.0.tgz", {}, "sha512-msi+k/+fttd1hLqcbYzrscLWNbqqkrLDXJHYSVF3adnA9un7z5+8RmrALyw6vUPZGQLWR9ThNIBFl7I+hcYcyA=="],
 
     "dir-compare/minimatch": ["minimatch@3.1.5", "", { "dependencies": { "brace-expansion": "1.1.12" } }, "sha512-VgjWUsnnT6n+NUk6eZq77zeFdpW2LWDzP6zFGrCbHXiYNul5Dzqk2HHQ5uFH2DNW5Xbp8+jVzaeNt94ssEEl4w=="],
 

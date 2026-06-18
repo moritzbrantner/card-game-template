@@ -8,17 +8,8 @@ import {
   useState,
 } from 'react';
 
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  cn,
-} from '@moritzbrantner/ui';
-import { CardTable, PlayerHand, PlayingCard } from '@moritzbrantner/card-games';
+import { Badge, Button, cn } from '@moritzbrantner/ui';
+import { PlayerHand, PlayingCard } from '@moritzbrantner/card-games';
 import { defaultGameCatalog } from '@repo/game-catalog';
 import {
   createLocalGameSession,
@@ -47,6 +38,7 @@ import {
   getDefaultPhase10BotAiProfiles,
   type Phase10BotAiProfile,
 } from '@/src/domain/game-bot-ai/logic';
+import { GameSessionFrame } from './game-session';
 
 type Phase10PageLabels = {
   addPhaseAction: string;
@@ -465,463 +457,481 @@ export function Phase10PageClient({
 
   return (
     <div className="mx-auto flex w-full max-w-[112rem] flex-col gap-6 px-4 py-8 md:px-8">
-      <CardTable
-        eyebrow={
-          <span className="inline-flex items-center gap-2">
-            <span>{labels.localModeBadge}</span>
-            {snapshot.view.matchResultBanner ? (
-              <Badge className="border-white/20 bg-white/10 text-white hover:bg-white/10">
-                {snapshot.view.matchResultBanner}
-              </Badge>
-            ) : null}
-          </span>
-        }
-        subtitle={labels.description}
-        title={labels.title}
-        tone="crimson"
-      >
-        <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.7fr)_minmax(22rem,0.72fr)]">
-          <div className="space-y-4">
-            <div className="grid gap-3 rounded-[1.5rem] border border-white/14 bg-black/18 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:grid-cols-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
-                  {labels.phaseLabel}
-                </p>
-                <p className="mt-2 text-lg font-semibold text-white">
-                  {snapshot.view.phaseLabel}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-white/70">
-                  {labels.subtitle}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-white/60">
-                  {labels.roundLabel}: {snapshot.view.round}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
-                  {labels.catalogRouteLabel}
-                </p>
-                <p className="mt-2 text-lg font-semibold text-white">
-                  {catalogEntry?.metadata?.route ?? '/phase-10'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
-                  {labels.drawPileLabel}
-                </p>
-                <p className="mt-2 text-lg font-semibold text-white">
-                  {snapshot.view.drawPileCount} cards
-                </p>
-              </div>
-            </div>
+      <section className="rounded-[2rem] border border-slate-800 bg-slate-950 p-5 shadow-sm sm:p-6">
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/60">
+              {labels.localModeBadge}
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">
+              {labels.title}
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/70">
+              {labels.description}
+            </p>
+          </div>
+          {snapshot.view.matchResultBanner ? (
+            <Badge className="border-white/20 bg-white/10 text-white hover:bg-white/10">
+              {snapshot.view.matchResultBanner}
+            </Badge>
+          ) : null}
+        </div>
 
-            <div className="rounded-[1.5rem] border border-white/14 bg-black/18 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="mr-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
-                  {labels.presetsTitle}
-                </p>
-                {phase10ExamplePresets.map((preset) => (
-                  <Button
-                    key={preset.id}
-                    aria-pressed={preset.id === draftConfig.presetId}
-                    className={cn(
-                      'border-white/16 text-white hover:border-white/26 hover:bg-white/10',
-                      preset.id === draftConfig.presetId
-                        ? 'bg-white text-slate-950 hover:bg-white/90'
-                        : 'bg-transparent',
-                    )}
-                    onClick={() => {
-                      setDraftConfig((current) => ({
-                        ...current,
-                        presetId: preset.id,
-                      }));
-                    }}
-                    size="sm"
-                    variant="outline"
-                  >
-                    {preset.label}
-                  </Button>
-                ))}
-                <Button
-                  className="border-white/16 bg-white text-slate-950 hover:bg-white/90"
-                  onClick={() => {
-                    setActiveConfig({
-                      phases: clonePhaseDefinitions(draftConfig.phases),
-                      presetId: draftConfig.presetId,
-                    });
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  {labels.startConfiguredRoundAction}
-                </Button>
-                <Button
-                  className="ml-auto border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
-                  onClick={() => {
-                    sessionRef.current?.restart();
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  {labels.restartAction}
-                </Button>
-              </div>
+        <div className="space-y-4">
+          <div className="grid gap-3 rounded-[1.5rem] border border-white/14 bg-black/18 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:grid-cols-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+                {labels.phaseLabel}
+              </p>
+              <p className="mt-2 text-lg font-semibold text-white">
+                {snapshot.view.phaseLabel}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-white/70">
+                {labels.subtitle}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-white/60">
+                {labels.roundLabel}: {snapshot.view.round}
+              </p>
             </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+                {labels.catalogRouteLabel}
+              </p>
+              <p className="mt-2 text-lg font-semibold text-white">
+                {catalogEntry?.metadata?.route ?? '/phase-10'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+                {labels.drawPileLabel}
+              </p>
+              <p className="mt-2 text-lg font-semibold text-white">
+                {snapshot.view.drawPileCount} cards
+              </p>
+            </div>
+          </div>
 
-            <div className="rounded-[1.5rem] border border-white/14 bg-black/18 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
-                    {labels.phaseConfiguratorTitle}
-                  </p>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
-                    {labels.phaseConfiguratorDescription}
-                  </p>
-                </div>
+          <div className="rounded-[1.5rem] border border-white/14 bg-black/18 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="mr-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+                {labels.presetsTitle}
+              </p>
+              {phase10ExamplePresets.map((preset) => (
                 <Button
-                  className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                  key={preset.id}
+                  aria-pressed={preset.id === draftConfig.presetId}
+                  className={cn(
+                    'border-white/16 text-white hover:border-white/26 hover:bg-white/10',
+                    preset.id === draftConfig.presetId
+                      ? 'bg-white text-slate-950 hover:bg-white/90'
+                      : 'bg-transparent',
+                  )}
                   onClick={() => {
                     setDraftConfig((current) => ({
                       ...current,
-                      phases: renumberPhases([
-                        ...current.phases,
-                        createDefaultPhaseDefinition(current.phases.length),
-                      ]),
+                      presetId: preset.id,
                     }));
                   }}
                   size="sm"
                   variant="outline"
                 >
-                  {labels.addPhaseAction}
+                  {preset.label}
                 </Button>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                {draftConfig.phases.map((phase, index) => (
-                  <div
-                    key={phase.id}
-                    className="rounded-[1.25rem] border border-white/12 bg-black/18 p-4"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-white">
-                          {phase.label}
-                        </p>
-                        <p className="text-sm text-white/60">
-                          {labels.phaseOrderTitle} {index + 1} ·{' '}
-                          {formatPhaseRequirementSummary(
-                            phase.requirements ?? [],
-                          )}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
-                          disabled={index === 0}
-                          onClick={() => {
-                            setDraftConfig((current) => ({
-                              ...current,
-                              phases: movePhase(
-                                current.phases,
-                                index,
-                                index - 1,
-                              ),
-                            }));
-                          }}
-                          size="sm"
-                          variant="outline"
-                        >
-                          {labels.movePhaseEarlierAction}
-                        </Button>
-                        <Button
-                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
-                          disabled={index === draftConfig.phases.length - 1}
-                          onClick={() => {
-                            setDraftConfig((current) => ({
-                              ...current,
-                              phases: movePhase(
-                                current.phases,
-                                index,
-                                index + 1,
-                              ),
-                            }));
-                          }}
-                          size="sm"
-                          variant="outline"
-                        >
-                          {labels.movePhaseLaterAction}
-                        </Button>
-                        <Button
-                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
-                          disabled={draftConfig.phases.length === 1}
-                          onClick={() => {
-                            setDraftConfig((current) => ({
-                              ...current,
-                              phases: renumberPhases(
-                                current.phases.filter(
-                                  (_, phaseIndex) => phaseIndex !== index,
-                                ),
-                              ),
-                            }));
-                          }}
-                          size="sm"
-                          variant="outline"
-                        >
-                          {labels.removePhaseAction}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {(['set', 'color', 'run'] as const).map((type) => (
-                        <Button
-                          key={type}
-                          className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
-                          onClick={() => {
-                            setDraftConfig((current) => ({
-                              ...current,
-                              phases: renumberPhases(
-                                current.phases.map((candidate, phaseIndex) =>
-                                  phaseIndex === index
-                                    ? {
-                                        ...candidate,
-                                        requirements: [
-                                          ...(candidate.requirements ?? []),
-                                          createDefaultRequirement(type),
-                                        ],
-                                      }
-                                    : candidate,
-                                ),
-                              ),
-                            }));
-                          }}
-                          size="sm"
-                          variant="outline"
-                        >
-                          {type === 'set'
-                            ? 'Add set'
-                            : type === 'color'
-                              ? 'Add color'
-                              : 'Add street'}
-                        </Button>
-                      ))}
-                    </div>
-
-                    <div className="mt-4 space-y-3">
-                      {(phase.requirements ?? []).map(
-                        (requirement, requirementIndex) => (
-                          <div
-                            key={`${phase.id}-${requirementIndex}-${requirement.type}`}
-                            className="flex flex-wrap items-center gap-2 rounded-full border border-white/12 px-3 py-2"
-                          >
-                            <span className="text-sm font-medium text-white">
-                              {formatPhase10RequirementLabel(requirement)}
-                            </span>
-                            <span className="text-sm text-white/60">Size</span>
-                            <Button
-                              className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
-                              disabled={
-                                requirement.size <=
-                                getPhaseRequirementMinSize(requirement)
-                              }
-                              onClick={() => {
-                                setDraftConfig((current) => ({
-                                  ...current,
-                                  phases: renumberPhases(
-                                    current.phases.map(
-                                      (candidate, phaseIndex) =>
-                                        phaseIndex === index
-                                          ? {
-                                              ...candidate,
-                                              requirements: (
-                                                candidate.requirements ?? []
-                                              ).map((entry, entryIndex) =>
-                                                entryIndex === requirementIndex
-                                                  ? {
-                                                      ...entry,
-                                                      size: Math.max(
-                                                        getPhaseRequirementMinSize(
-                                                          entry,
-                                                        ),
-                                                        entry.size - 1,
-                                                      ),
-                                                    }
-                                                  : entry,
-                                              ),
-                                            }
-                                          : candidate,
-                                    ),
-                                  ),
-                                }));
-                              }}
-                              size="sm"
-                              variant="outline"
-                            >
-                              {labels.decreaseSetSizeAction}
-                            </Button>
-                            <span className="min-w-6 text-center text-sm font-semibold text-white">
-                              {requirement.size}
-                            </span>
-                            <Button
-                              className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
-                              disabled={
-                                requirement.size >=
-                                getPhaseRequirementMaxSize(requirement)
-                              }
-                              onClick={() => {
-                                setDraftConfig((current) => ({
-                                  ...current,
-                                  phases: renumberPhases(
-                                    current.phases.map(
-                                      (candidate, phaseIndex) =>
-                                        phaseIndex === index
-                                          ? {
-                                              ...candidate,
-                                              requirements: (
-                                                candidate.requirements ?? []
-                                              ).map((entry, entryIndex) =>
-                                                entryIndex === requirementIndex
-                                                  ? {
-                                                      ...entry,
-                                                      size: Math.min(
-                                                        getPhaseRequirementMaxSize(
-                                                          entry,
-                                                        ),
-                                                        entry.size + 1,
-                                                      ),
-                                                    }
-                                                  : entry,
-                                              ),
-                                            }
-                                          : candidate,
-                                    ),
-                                  ),
-                                }));
-                              }}
-                              size="sm"
-                              variant="outline"
-                            >
-                              {labels.increaseSetSizeAction}
-                            </Button>
-                            <Button
-                              className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
-                              disabled={(phase.requirements ?? []).length === 1}
-                              onClick={() => {
-                                setDraftConfig((current) => ({
-                                  ...current,
-                                  phases: renumberPhases(
-                                    current.phases.map(
-                                      (candidate, phaseIndex) =>
-                                        phaseIndex === index
-                                          ? {
-                                              ...candidate,
-                                              requirements: (
-                                                candidate.requirements ?? []
-                                              ).filter(
-                                                (_, entryIndex) =>
-                                                  entryIndex !==
-                                                  requirementIndex,
-                                              ),
-                                            }
-                                          : candidate,
-                                    ),
-                                  ),
-                                }));
-                              }}
-                              size="sm"
-                              variant="outline"
-                            >
-                              Remove group
-                            </Button>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[1.5rem] border border-white/14 bg-black/18 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
-                  {labels.tableDrawLabel}
-                </p>
-                <div className="mt-4 flex items-center gap-4">
-                  <PlayingCard
-                    aria-label="Draw pile"
-                    className="w-24 min-w-[6rem]"
-                    face="back"
-                    interactive={false}
-                    rank="10"
-                    size="sm"
-                    tone="midnight"
-                  />
-                  <div className="space-y-1">
-                    <p className="text-xl font-semibold text-white">
-                      {snapshot.view.drawPileCount}
-                    </p>
-                    <p className="text-sm text-white/70">Cards left to draw</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-[1.5rem] border border-white/14 bg-black/18 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
-                  {labels.tableDiscardLabel}
-                </p>
-                <div className="mt-4 flex items-center gap-4">
-                  {snapshot.view.discardTop ? (
-                    renderCard(snapshot.view.discardTop, { compact: true })
-                  ) : (
-                    <PlayingCard
-                      aria-label="Empty discard pile"
-                      className="w-24 min-w-[6rem]"
-                      face="back"
-                      interactive={false}
-                      rank="0"
-                      size="sm"
-                      tone="classic"
-                    />
-                  )}
-                  <div className="space-y-1">
-                    <p className="text-xl font-semibold text-white">
-                      {snapshot.view.discardTop?.label ?? 'Empty pile'}
-                    </p>
-                    <p className="text-sm text-white/70">
-                      {snapshot.view.status}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              ))}
+              <Button
+                className="border-white/16 bg-white text-slate-950 hover:bg-white/90"
+                onClick={() => {
+                  setActiveConfig({
+                    phases: clonePhaseDefinitions(draftConfig.phases),
+                    presetId: draftConfig.presetId,
+                  });
+                }}
+                size="sm"
+                variant="outline"
+              >
+                {labels.startConfiguredRoundAction}
+              </Button>
             </div>
           </div>
 
           <div className="rounded-[1.5rem] border border-white/14 bg-black/18 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
-                  {labels.statusTitle}
+                  {labels.phaseConfiguratorTitle}
                 </p>
-                <p className="mt-2 text-lg font-semibold text-white">
-                  {snapshot.view.status}
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
+                  {labels.phaseConfiguratorDescription}
                 </p>
               </div>
-              {snapshot.view.players
-                .filter((player) => player.isActive)
-                .map((player) => (
-                  <Badge
-                    key={player.playerId}
-                    className="border-white/18 bg-white/10 text-white hover:bg-white/10"
-                    variant="outline"
-                  >
-                    {player.displayName} active
-                  </Badge>
-                ))}
+              <Button
+                className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                onClick={() => {
+                  setDraftConfig((current) => ({
+                    ...current,
+                    phases: renumberPhases([
+                      ...current.phases,
+                      createDefaultPhaseDefinition(current.phases.length),
+                    ]),
+                  }));
+                }}
+                size="sm"
+                variant="outline"
+              >
+                {labels.addPhaseAction}
+              </Button>
             </div>
 
+            <div className="mt-4 space-y-3">
+              {draftConfig.phases.map((phase, index) => (
+                <div
+                  key={phase.id}
+                  className="rounded-[1.25rem] border border-white/12 bg-black/18 p-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        {phase.label}
+                      </p>
+                      <p className="text-sm text-white/60">
+                        {labels.phaseOrderTitle} {index + 1} ·{' '}
+                        {formatPhaseRequirementSummary(
+                          phase.requirements ?? [],
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                        disabled={index === 0}
+                        onClick={() => {
+                          setDraftConfig((current) => ({
+                            ...current,
+                            phases: movePhase(current.phases, index, index - 1),
+                          }));
+                        }}
+                        size="sm"
+                        variant="outline"
+                      >
+                        {labels.movePhaseEarlierAction}
+                      </Button>
+                      <Button
+                        className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                        disabled={index === draftConfig.phases.length - 1}
+                        onClick={() => {
+                          setDraftConfig((current) => ({
+                            ...current,
+                            phases: movePhase(current.phases, index, index + 1),
+                          }));
+                        }}
+                        size="sm"
+                        variant="outline"
+                      >
+                        {labels.movePhaseLaterAction}
+                      </Button>
+                      <Button
+                        className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                        disabled={draftConfig.phases.length === 1}
+                        onClick={() => {
+                          setDraftConfig((current) => ({
+                            ...current,
+                            phases: renumberPhases(
+                              current.phases.filter(
+                                (_, phaseIndex) => phaseIndex !== index,
+                              ),
+                            ),
+                          }));
+                        }}
+                        size="sm"
+                        variant="outline"
+                      >
+                        {labels.removePhaseAction}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {(['set', 'color', 'run'] as const).map((type) => (
+                      <Button
+                        key={type}
+                        className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                        onClick={() => {
+                          setDraftConfig((current) => ({
+                            ...current,
+                            phases: renumberPhases(
+                              current.phases.map((candidate, phaseIndex) =>
+                                phaseIndex === index
+                                  ? {
+                                      ...candidate,
+                                      requirements: [
+                                        ...(candidate.requirements ?? []),
+                                        createDefaultRequirement(type),
+                                      ],
+                                    }
+                                  : candidate,
+                              ),
+                            ),
+                          }));
+                        }}
+                        size="sm"
+                        variant="outline"
+                      >
+                        {type === 'set'
+                          ? 'Add set'
+                          : type === 'color'
+                            ? 'Add color'
+                            : 'Add street'}
+                      </Button>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {(phase.requirements ?? []).map(
+                      (requirement, requirementIndex) => (
+                        <div
+                          key={`${phase.id}-${requirementIndex}-${requirement.type}`}
+                          className="flex flex-wrap items-center gap-2 rounded-full border border-white/12 px-3 py-2"
+                        >
+                          <span className="text-sm font-medium text-white">
+                            {formatPhase10RequirementLabel(requirement)}
+                          </span>
+                          <span className="text-sm text-white/60">Size</span>
+                          <Button
+                            className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                            disabled={
+                              requirement.size <=
+                              getPhaseRequirementMinSize(requirement)
+                            }
+                            onClick={() => {
+                              setDraftConfig((current) => ({
+                                ...current,
+                                phases: renumberPhases(
+                                  current.phases.map((candidate, phaseIndex) =>
+                                    phaseIndex === index
+                                      ? {
+                                          ...candidate,
+                                          requirements: (
+                                            candidate.requirements ?? []
+                                          ).map((entry, entryIndex) =>
+                                            entryIndex === requirementIndex
+                                              ? {
+                                                  ...entry,
+                                                  size: Math.max(
+                                                    getPhaseRequirementMinSize(
+                                                      entry,
+                                                    ),
+                                                    entry.size - 1,
+                                                  ),
+                                                }
+                                              : entry,
+                                          ),
+                                        }
+                                      : candidate,
+                                  ),
+                                ),
+                              }));
+                            }}
+                            size="sm"
+                            variant="outline"
+                          >
+                            {labels.decreaseSetSizeAction}
+                          </Button>
+                          <span className="min-w-6 text-center text-sm font-semibold text-white">
+                            {requirement.size}
+                          </span>
+                          <Button
+                            className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                            disabled={
+                              requirement.size >=
+                              getPhaseRequirementMaxSize(requirement)
+                            }
+                            onClick={() => {
+                              setDraftConfig((current) => ({
+                                ...current,
+                                phases: renumberPhases(
+                                  current.phases.map((candidate, phaseIndex) =>
+                                    phaseIndex === index
+                                      ? {
+                                          ...candidate,
+                                          requirements: (
+                                            candidate.requirements ?? []
+                                          ).map((entry, entryIndex) =>
+                                            entryIndex === requirementIndex
+                                              ? {
+                                                  ...entry,
+                                                  size: Math.min(
+                                                    getPhaseRequirementMaxSize(
+                                                      entry,
+                                                    ),
+                                                    entry.size + 1,
+                                                  ),
+                                                }
+                                              : entry,
+                                          ),
+                                        }
+                                      : candidate,
+                                  ),
+                                ),
+                              }));
+                            }}
+                            size="sm"
+                            variant="outline"
+                          >
+                            {labels.increaseSetSizeAction}
+                          </Button>
+                          <Button
+                            className="border-white/16 bg-transparent text-white hover:border-white/26 hover:bg-white/10"
+                            disabled={(phase.requirements ?? []).length === 1}
+                            onClick={() => {
+                              setDraftConfig((current) => ({
+                                ...current,
+                                phases: renumberPhases(
+                                  current.phases.map((candidate, phaseIndex) =>
+                                    phaseIndex === index
+                                      ? {
+                                          ...candidate,
+                                          requirements: (
+                                            candidate.requirements ?? []
+                                          ).filter(
+                                            (_, entryIndex) =>
+                                              entryIndex !== requirementIndex,
+                                          ),
+                                        }
+                                      : candidate,
+                                  ),
+                                ),
+                              }));
+                            }}
+                            size="sm"
+                            variant="outline"
+                          >
+                            Remove group
+                          </Button>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <GameSessionFrame
+        actions={[
+          ...snapshot.view.legalActions.map((action) => ({
+            id: action.id,
+            label: action.label,
+            onSelect: () => {
+              sessionRef.current?.submitMove(action.move);
+            },
+          })),
+          {
+            id: 'restart',
+            label: labels.restartAction,
+            onSelect: () => {
+              sessionRef.current?.restart();
+            },
+            tone: 'secondary' as const,
+          },
+        ]}
+        actionsLabel={labels.legalActionsTitle}
+        badges={[
+          {
+            id: 'mode',
+            label: labels.localModeBadge,
+            tone: 'neutral',
+          },
+        ]}
+        emptyActionsLabel={labels.waitingForPlayers}
+        eyebrow={labels.localModeBadge}
+        participants={snapshot.view.players.map((player) => ({
+          detail: `${player.controller} - ${player.handCount} cards - ${player.phaseLabel}`,
+          displayName: player.displayName,
+          id: player.playerId,
+          isActive: player.isActive,
+          isViewer: player.isViewer,
+        }))}
+        result={snapshot.view.matchResultBanner}
+        statusItems={[
+          {
+            id: 'status',
+            label: labels.statusTitle,
+            value: snapshot.view.status,
+          },
+          {
+            detail: `${labels.roundLabel}: ${snapshot.view.round}`,
+            id: 'phase',
+            label: labels.phaseLabel,
+            value: snapshot.view.phaseLabel,
+          },
+          {
+            id: 'draw',
+            label: labels.drawPileLabel,
+            value: `${snapshot.view.drawPileCount} cards`,
+          },
+        ]}
+        subtitle={labels.description}
+        table={
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-[1.5rem] border border-white/14 bg-black/18 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+                {labels.tableDrawLabel}
+              </p>
+              <div className="mt-4 flex items-center gap-4">
+                <PlayingCard
+                  aria-label="Draw pile"
+                  className="w-24 min-w-[6rem]"
+                  face="back"
+                  interactive={false}
+                  rank="10"
+                  size="sm"
+                  tone="midnight"
+                />
+                <div className="space-y-1">
+                  <p className="text-xl font-semibold text-white">
+                    {snapshot.view.drawPileCount}
+                  </p>
+                  <p className="text-sm text-white/70">Cards left to draw</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-white/14 bg-black/18 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+                {labels.tableDiscardLabel}
+              </p>
+              <div className="mt-4 flex items-center gap-4">
+                {snapshot.view.discardTop ? (
+                  renderCard(snapshot.view.discardTop, { compact: true })
+                ) : (
+                  <PlayingCard
+                    aria-label="Empty discard pile"
+                    className="w-24 min-w-[6rem]"
+                    face="back"
+                    interactive={false}
+                    rank="0"
+                    size="sm"
+                    tone="classic"
+                  />
+                )}
+                <div className="space-y-1">
+                  <p className="text-xl font-semibold text-white">
+                    {snapshot.view.discardTop?.label ?? 'Empty pile'}
+                  </p>
+                  <p className="text-sm text-white/70">
+                    {snapshot.view.status}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+        aside={
+          <div className="space-y-4">
             {snapshot.pendingHotseatPlayerId ? (
-              <div className="mt-6 rounded-[1.25rem] border border-amber-200/30 bg-amber-50/10 p-4 text-white">
+              <div className="rounded-[1.25rem] border border-amber-200/30 bg-amber-50/10 p-4 text-white">
                 <p className="text-sm font-semibold">{labels.hotseatTitle}</p>
                 <p className="mt-2 text-sm leading-6 text-white/76">
                   {labels.hotseatDescription.replace(
@@ -942,7 +952,7 @@ export function Phase10PageClient({
               </div>
             ) : null}
 
-            <div className="mt-6">
+            <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
                 {labels.phaseOrderTitle}
               </p>
@@ -958,131 +968,106 @@ export function Phase10PageClient({
                 ))}
               </div>
             </div>
-
-            <div className="mt-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
-                {labels.legalActionsTitle}
+          </div>
+        }
+        title={labels.statusTitle}
+        footer={
+          <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,0.7fr)]">
+            <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+              <h3 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+                {labels.handTitle}
+              </h3>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                {viewer
+                  ? `${viewer.displayName} can currently inspect ${viewer.visibleCards.length} cards.`
+                  : 'The current hand is hidden until the next local player confirms takeover.'}
               </p>
-              <div
-                aria-label={labels.legalActionsTitle}
-                className="mt-4 flex flex-wrap gap-2"
-                role="group"
-              >
-                {snapshot.view.legalActions.length > 0 ? (
-                  snapshot.view.legalActions.map((action) => (
-                    <Button
-                      key={action.id}
-                      className="border-white/16 bg-white/8 text-white hover:border-white/26 hover:bg-white/14"
-                      onClick={() => {
-                        sessionRef.current?.submitMove(action.move);
-                      }}
-                      size="sm"
-                      variant="outline"
-                    >
-                      {action.label}
-                    </Button>
-                  ))
+              <div className="mt-4">
+                {viewer?.visibleCards.length ? (
+                  <PlayerHand
+                    aria-label={`${viewer.displayName} hand`}
+                    className="-mx-2 px-2"
+                    curve={10}
+                    overlap={36}
+                    spreadDegrees={12}
+                  >
+                    {viewer.visibleCards.map((card) => renderCard(card))}
+                  </PlayerHand>
                 ) : (
-                  <p className="text-sm leading-6 text-white/70">
+                  <div className="rounded-2xl border border-dashed border-zinc-300 p-6 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
                     {labels.waitingForPlayers}
-                  </p>
+                  </div>
                 )}
               </div>
-            </div>
-          </div>
-        </div>
-      </CardTable>
+            </section>
 
-      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,0.7fr)]">
-        <Card className="border border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle>{labels.handTitle}</CardTitle>
-            <CardDescription>
-              {viewer
-                ? `${viewer.displayName} can currently inspect ${viewer.visibleCards.length} cards.`
-                : 'The current hand is hidden until the next local player confirms takeover.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {viewer?.visibleCards.length ? (
-              <PlayerHand
-                aria-label={`${viewer.displayName} hand`}
-                className="-mx-2 px-2"
-                curve={10}
-                overlap={36}
-                spreadDegrees={12}
-              >
-                {viewer.visibleCards.map((card) => renderCard(card))}
-              </PlayerHand>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-border p-6 text-sm text-muted-foreground">
-                {labels.waitingForPlayers}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+              <h3 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+                {labels.playersTitle}
+              </h3>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                Each seat reflects the local round state projected from the
+                shared Phase 10 engine.
+              </p>
+              <div className="mt-4 space-y-3">
+                {snapshot.view.players.map((player) => (
+                  <div
+                    key={player.playerId}
+                    className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-zinc-950 dark:text-zinc-50">
+                        {player.displayName}
+                      </p>
+                      <Badge variant={player.isActive ? 'default' : 'outline'}>
+                        {player.controller}
+                      </Badge>
+                      {player.phaseComplete ? (
+                        <Badge variant="secondary">Phase laid</Badge>
+                      ) : null}
+                      {player.skipped ? (
+                        <Badge variant="destructive">Skipped</Badge>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                      {player.handCount} cards remaining
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                      {player.phaseLabel}
+                    </p>
 
-        <Card className="border border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle>{labels.playersTitle}</CardTitle>
-            <CardDescription>
-              Each seat reflects the local round state projected from the shared
-              Phase 10 engine.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {snapshot.view.players.map((player) => (
-              <div
-                key={player.playerId}
-                className="rounded-2xl border border-border/80 bg-muted/35 p-4"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-medium">{player.displayName}</p>
-                  <Badge variant={player.isActive ? 'default' : 'outline'}>
-                    {player.controller}
-                  </Badge>
-                  {player.phaseComplete ? (
-                    <Badge variant="secondary">Phase laid</Badge>
-                  ) : null}
-                  {player.skipped ? (
-                    <Badge variant="destructive">Skipped</Badge>
-                  ) : null}
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {player.handCount} cards remaining
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {player.phaseLabel}
-                </p>
-
-                {player.laidGroups.length > 0 ? (
-                  <div className="mt-3 space-y-3">
-                    {player.laidGroups.map((group, index) => (
-                      <div
-                        key={`${player.playerId}-${index}`}
-                        className="rounded-xl border border-border/80 bg-background p-3"
-                      >
-                        <p className="text-sm font-medium">{group.label}</p>
-                        <PlayerHand
-                          aria-label={`${player.displayName} laid group ${index + 1}`}
-                          className="mt-3"
-                          curve={8}
-                          overlap={30}
-                          spreadDegrees={10}
-                        >
-                          {group.cards.map((card) =>
-                            renderCard(card, { compact: true }),
-                          )}
-                        </PlayerHand>
+                    {player.laidGroups.length > 0 ? (
+                      <div className="mt-3 space-y-3">
+                        {player.laidGroups.map((group, index) => (
+                          <div
+                            key={`${player.playerId}-${index}`}
+                            className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950"
+                          >
+                            <p className="text-sm font-medium text-zinc-950 dark:text-zinc-50">
+                              {group.label}
+                            </p>
+                            <PlayerHand
+                              aria-label={`${player.displayName} laid group ${index + 1}`}
+                              className="mt-3"
+                              curve={8}
+                              overlap={30}
+                              spreadDegrees={10}
+                            >
+                              {group.cards.map((card) =>
+                                renderCard(card, { compact: true }),
+                              )}
+                            </PlayerHand>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    ) : null}
                   </div>
-                ) : null}
+                ))}
               </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+            </section>
+          </div>
+        }
+      />
     </div>
   );
 }

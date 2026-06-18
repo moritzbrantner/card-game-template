@@ -154,10 +154,27 @@ export type UnoPlayerView = {
     isActive: boolean;
     isViewer: boolean;
     playerId: PlayerId;
-    visibleCards: readonly UnoCard[];
+    visibleCards: readonly UnoVisibleCardView[];
   }>;
   status: string;
   viewerPlayerId: PlayerId | null;
+};
+
+export type UnoDirectPlayActionView = {
+  id: string;
+  label: string;
+  move: UnoPlayCardMove;
+  chosenColor: UnoColor | null;
+  targetPlayerId: PlayerId | null;
+  sayUno: boolean;
+};
+
+export type UnoVisibleCardView = UnoCard & {
+  directPlay: {
+    actions: readonly UnoDirectPlayActionView[];
+    defaultActionId: string | null;
+    promptsForColorChoice: boolean;
+  } | null;
 };
 
 export type UnoReplayPlayerSummary = MatchReplayPlayerSummary & {
@@ -1526,9 +1543,156 @@ function describeMove(
   return fragments.join(' • ');
 }
 
+function isUnoPlayCardMove(move: UnoMove): move is UnoPlayCardMove {
+  return move.kind === 'play-card';
+}
+
+function getDirectPlayActionsForCard(
+  actions: readonly UnoDirectPlayActionView[],
+  cardId: string,
+) {
+  return actions.filter((action) => action.move.payload.cardId === cardId);
+}
+
+function promptsForColorChoice(actions: readonly UnoDirectPlayActionView[]) {
+  return (
+    new Set(
+      actions
+        .map((action) => action.chosenColor)
+        .filter((color): color is UnoColor => color !== null),
+    ).size > 1
+  );
+}
+
+function chooseDefaultDirectPlayAction(input: {
+  activeColor: UnoColor;
+  actions: readonly UnoDirectPlayActionView[];
+  cardId: string;
+  targetHandCounts: ReadonlyMap<PlayerId, number>;
+  visibleCards: readonly UnoCard[];
+}) {
+  if (input.actions.length === 0) {
+    return null;
+  }
+
+  const remainingColorCounts = new Map<string, number>();
+
+  for (const card of input.visibleCards) {
+    if (card.id === input.cardId || card.color === 'wild') {
+      continue;
+    }
+
+    remainingColorCounts.set(
+      card.color,
+      (remainingColorCounts.get(card.color) ?? 0) + 1,
+    );
+  }
+
+  let bestAction: UnoDirectPlayActionView | null = null;
+  let bestScore = Number.NEGATIVE_INFINITY;
+
+  for (const action of input.actions) {
+    let score = 0;
+
+    if (action.sayUno) {
+      score += 1000;
+    }
+
+    if (action.chosenColor) {
+      score += (remainingColorCounts.get(action.chosenColor) ?? 0) * 100;
+
+      if (action.chosenColor === input.activeColor) {
+        score += 1;
+      }
+    }
+
+    if (action.targetPlayerId) {
+      score -= input.targetHandCounts.get(action.targetPlayerId) ?? 99;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestAction = action;
+    }
+  }
+
+  return bestAction;
+}
+
 export function projectUnoPlayerView(
   input: LocalGameSessionProjectViewInput<UnoState, UnoMove>,
 ): UnoPlayerView {
+  const legalActions = input.viewerPlayerId
+    ? input.legalMoves
+        .filter((move) => move.playerId === input.viewerPlayerId)
+        .map((move) => ({
+          id: `${move.kind}:${JSON.stringify(move.payload)}`,
+          label: describeMove(move, input.state.state, input.participants),
+          move,
+        }))
+    : [];
+  const directPlayActions = legalActions
+    .filter(
+      (
+        action,
+      ): action is (typeof legalActions)[number] & {
+        move: UnoPlayCardMove;
+      } => isUnoPlayCardMove(action.move),
+    )
+    .map(
+      (action): UnoDirectPlayActionView => ({
+        chosenColor: action.move.payload.chosenColor ?? null,
+        id: action.id,
+        label: action.label,
+        move: action.move,
+        sayUno: action.move.payload.sayUno ?? false,
+        targetPlayerId: action.move.payload.targetPlayerId ?? null,
+      }),
+    );
+  const targetHandCounts = new Map(
+    input.participants.map(
+      (participant) =>
+        [
+          participant.playerId,
+          input.state.state.hands[participant.playerId]?.length ?? 0,
+        ] as const,
+    ),
+  );
+  const visibleCardsForViewer = input.viewerPlayerId
+    ? [...(input.state.state.hands[input.viewerPlayerId] ?? [])]
+    : [];
+
+  function projectVisibleCards(
+    participant: SessionParticipant,
+  ): UnoVisibleCardView[] {
+    if (participant.playerId !== input.viewerPlayerId) {
+      return [];
+    }
+
+    return visibleCardsForViewer.map((card) => {
+      const actions = getDirectPlayActionsForCard(directPlayActions, card.id);
+      const defaultAction = chooseDefaultDirectPlayAction({
+        activeColor: input.state.state.currentColor,
+        actions,
+        cardId: card.id,
+        targetHandCounts,
+        visibleCards: visibleCardsForViewer,
+      });
+
+      return {
+        ...card,
+        directPlay:
+          actions.length > 0
+            ? {
+                actions,
+                defaultActionId: defaultAction?.id ?? null,
+                promptsForColorChoice: promptsForColorChoice(actions),
+              }
+            : null,
+      };
+    });
+  }
+
   return {
     activeColor: input.state.state.currentColor,
     activePlayerId: input.state.activePlayerId,
@@ -1536,15 +1700,7 @@ export function projectUnoPlayerView(
       input.state.state.discardPile[input.state.state.discardPile.length - 1] ??
       null,
     drawPileCount: input.state.state.drawPile.length,
-    legalActions: input.viewerPlayerId
-      ? input.legalMoves
-          .filter((move) => move.playerId === input.viewerPlayerId)
-          .map((move) => ({
-            id: `${move.kind}:${JSON.stringify(move.payload)}`,
-            label: describeMove(move, input.state.state, input.participants),
-            move,
-          }))
-      : [],
+    legalActions,
     matchResultBanner: input.matchResult
       ? `Winner: ${input.participants.find((player) => player.playerId === input.matchResult?.winnerIds[0])?.displayName ?? input.matchResult.winnerIds[0]}`
       : null,
@@ -1559,10 +1715,7 @@ export function projectUnoPlayerView(
       isActive: participant.playerId === input.state.activePlayerId,
       isViewer: participant.playerId === input.viewerPlayerId,
       playerId: participant.playerId,
-      visibleCards:
-        participant.playerId === input.viewerPlayerId
-          ? [...(input.state.state.hands[participant.playerId] ?? [])]
-          : [],
+      visibleCards: projectVisibleCards(participant),
     })),
     status: input.state.state.lastEvent,
     viewerPlayerId: input.viewerPlayerId,

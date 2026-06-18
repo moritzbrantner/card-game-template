@@ -1,0 +1,213 @@
+'use client';
+
+import { CardTable } from '@moritzbrantner/card-games';
+import { buttonVariants, cn } from '@moritzbrantner/ui';
+
+import type {
+  GameSessionAction,
+  GameSessionBadge,
+  GameSessionFrameProps,
+  GameSessionParticipant,
+} from './types';
+
+function badgeClassName(tone: GameSessionBadge['tone']) {
+  switch (tone) {
+    case 'success':
+      return 'border-emerald-300/60 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-100';
+    case 'warning':
+      return 'border-amber-300/70 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100';
+    case 'danger':
+      return 'border-red-300/70 bg-red-50 text-red-800 dark:border-red-400/30 dark:bg-red-400/10 dark:text-red-100';
+    case 'neutral':
+    default:
+      return 'border-zinc-300 bg-zinc-50 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200';
+  }
+}
+
+function actionVariant(tone: GameSessionAction['tone']) {
+  return tone === 'secondary' || tone === 'danger' ? 'outline' : 'default';
+}
+
+function participantBadges(participant: GameSessionParticipant) {
+  return [
+    participant.isViewer ? 'You' : null,
+    participant.isActor ? 'Actor' : null,
+    participant.isActive ? 'Active' : null,
+  ].filter((label): label is string => label !== null);
+}
+
+export function GameSessionFrame({
+  actions,
+  actionsLabel,
+  announcement,
+  aside,
+  badges = [],
+  emptyActionsLabel,
+  error,
+  eyebrow,
+  footer,
+  participants = [],
+  pending = false,
+  result,
+  statusItems = [],
+  subtitle,
+  table,
+  title,
+}: GameSessionFrameProps) {
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          {eyebrow ? (
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-400">
+              {eyebrow}
+            </p>
+          ) : null}
+          <h2 className="mt-2 text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
+            {title}
+          </h2>
+          {subtitle ? (
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+              {subtitle}
+            </p>
+          ) : null}
+        </div>
+        {badges.length > 0 ? (
+          <div className="flex flex-wrap justify-end gap-2">
+            {badges.map((badge) => (
+              <span
+                key={badge.id}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-sm font-medium',
+                  badgeClassName(badge.tone),
+                )}
+              >
+                {badge.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-400/30 dark:bg-red-400/10 dark:text-red-100">
+          {error}
+        </div>
+      ) : null}
+      {announcement ? (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-100">
+          {announcement}
+        </div>
+      ) : null}
+
+      <CardTable
+        eyebrow="Game session"
+        subtitle={result ?? subtitle}
+        title="Play surface"
+        tone="midnight"
+      >
+        <div className="space-y-5">
+          {statusItems.length > 0 || participants.length > 0 ? (
+            <div className="grid gap-3 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+              {statusItems.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {statusItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-lg border border-white/12 bg-white/8 p-4 backdrop-blur-sm"
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+                        {item.label}
+                      </p>
+                      <div className="mt-3 text-sm font-medium text-white">
+                        {item.value}
+                      </div>
+                      {item.detail ? (
+                        <div className="mt-2 text-sm leading-6 text-white/72">
+                          {item.detail}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              {participants.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {participants.map((participant) => (
+                    <div
+                      key={participant.id}
+                      className="rounded-lg border border-white/12 bg-white/8 p-4 backdrop-blur-sm"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-white">
+                            {participant.displayName}
+                          </p>
+                          {participant.detail ? (
+                            <div className="mt-1 text-sm leading-6 text-white/72">
+                              {participant.detail}
+                            </div>
+                          ) : null}
+                        </div>
+                        <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                          {participantBadges(participant).map((label) => (
+                            <span
+                              key={label}
+                              className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-xs font-medium text-white/80"
+                            >
+                              {label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="min-w-0">{table}</div>
+
+          {aside ? <div className="min-w-0">{aside}</div> : null}
+        </div>
+      </CardTable>
+
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+          {actionsLabel}
+        </h3>
+        {actions.length > 0 ? (
+          <div
+            className="flex flex-wrap gap-3"
+            role="group"
+            aria-label={actionsLabel}
+          >
+            {actions.map((action) => (
+              <button
+                key={action.id}
+                type="button"
+                className={buttonVariants({
+                  variant: actionVariant(action.tone),
+                })}
+                disabled={pending || action.pending || action.disabled}
+                onClick={() => {
+                  action.onSelect();
+                }}
+              >
+                {action.pending ? `${action.label}...` : action.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">
+            {emptyActionsLabel}
+          </p>
+        )}
+      </div>
+
+      {footer ? <div>{footer}</div> : null}
+    </div>
+  );
+}

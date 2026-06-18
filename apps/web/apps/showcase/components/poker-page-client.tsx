@@ -8,11 +8,7 @@ import {
   useState,
 } from 'react';
 
-import {
-  CardTable,
-  PlayingCard,
-  type CardSuit,
-} from '@moritzbrantner/card-games';
+import { PlayingCard, type CardSuit } from '@moritzbrantner/card-games';
 import { buttonVariants } from '@moritzbrantner/ui';
 import {
   pokerExamplePresets,
@@ -25,6 +21,7 @@ import type {
   PersistedPokerMatchSnapshotDto,
 } from '@/src/domain/game-matches/contracts';
 import { readProblemDetail } from '@/src/http/problem-client';
+import { GameSessionFrame } from './game-session';
 
 type PokerPageLabels = {
   activeMatchDescription: string;
@@ -435,64 +432,77 @@ export function PokerPageClient({ labels }: { labels: PokerPageLabels }) {
 
         <article className="rounded-[1.75rem] border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
           {currentMatch ? (
-            <div className="space-y-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
-                    {labels.activeMatchTitle}
-                  </h2>
-                  <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    {labels.activeMatchDescription}
-                  </p>
-                </div>
-                <span className="rounded-full border border-zinc-300 px-4 py-2 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
-                  {currentMatch.status}
-                </span>
-              </div>
-
-              <CardTable
-                eyebrow={labels.title}
-                subtitle={
-                  currentMatch.view.matchResultBanner ??
-                  `${currentMatch.view.pot} chips in the pot.`
-                }
-                title={currentMatch.view.status}
-                tone="midnight"
-              >
+            <GameSessionFrame
+              actions={currentMatch.view.legalActions.map((action) => ({
+                disabled: currentMatch.status !== 'active',
+                id: action.id,
+                label: action.label,
+                onSelect: () => {
+                  void handleSubmitMove(action.move);
+                },
+              }))}
+              actionsLabel={labels.legalActionsTitle}
+              badges={[
+                {
+                  id: 'status',
+                  label: currentMatch.status,
+                  tone:
+                    currentMatch.status === 'active' ? 'success' : 'neutral',
+                },
+              ]}
+              emptyActionsLabel={labels.waitingForPlayers}
+              error={state.error}
+              eyebrow={labels.title}
+              participants={currentMatch.view.players.map((player) => ({
+                detail: (
+                  <>
+                    {player.controller}
+                    {player.hasFolded ? ' - Folded' : ''}
+                    {' - '}
+                    {player.stack} chips
+                  </>
+                ),
+                displayName: player.displayName,
+                id: player.playerId,
+                isActive: player.isActive,
+                isViewer: player.isViewer,
+              }))}
+              pending={pending}
+              result={currentMatch.view.matchResultBanner}
+              statusItems={[
+                {
+                  id: 'status',
+                  label: labels.statusLabel,
+                  value: currentMatch.view.status,
+                },
+                {
+                  id: 'phase',
+                  label: labels.phaseLabel,
+                  value: currentMatch.view.phase,
+                },
+                {
+                  id: 'pot',
+                  label: labels.potLabel,
+                  value: currentMatch.view.pot,
+                  detail: `${currentMatch.view.pot} chips in the pot.`,
+                },
+              ]}
+              subtitle={labels.activeMatchDescription}
+              table={
                 <div className="grid gap-4 xl:grid-cols-[0.78fr_1.22fr]">
-                  <div className="grid gap-3">
-                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
-                        {labels.statusLabel}
+                  <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+                      {labels.communityCardsLabel}
+                    </p>
+                    {currentMatch.view.communityCards.length > 0 ? (
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        {currentMatch.view.communityCards.map(renderCard)}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-sm text-white/72">
+                        {labels.emptyBoard}
                       </p>
-                      <p className="mt-3 text-sm text-white">
-                        {currentMatch.view.status}
-                      </p>
-                    </div>
-
-                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
-                        {labels.phaseLabel}
-                      </p>
-                      <p className="mt-3 text-sm text-white">
-                        {currentMatch.view.phase}
-                      </p>
-                    </div>
-
-                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
-                        {labels.communityCardsLabel}
-                      </p>
-                      {currentMatch.view.communityCards.length > 0 ? (
-                        <div className="mt-4 flex flex-wrap gap-3">
-                          {currentMatch.view.communityCards.map(renderCard)}
-                        </div>
-                      ) : (
-                        <p className="mt-3 text-sm text-white/72">
-                          {labels.emptyBoard}
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </div>
 
                   <div className="grid gap-3 md:grid-cols-2">
@@ -508,9 +518,9 @@ export function PokerPageClient({ labels }: { labels: PokerPageLabels }) {
                             </p>
                             <p className="mt-1 text-sm text-white/72">
                               {player.controller}
-                              {player.hasFolded ? ' · Folded' : ''}
-                              {player.isActive ? ' · Active' : ''}
-                              {player.isViewer ? ' · You' : ''}
+                              {player.hasFolded ? ' - Folded' : ''}
+                              {player.isActive ? ' - Active' : ''}
+                              {player.isViewer ? ' - You' : ''}
                             </p>
                           </div>
                           <span className="text-sm text-white/72">
@@ -532,69 +542,40 @@ export function PokerPageClient({ labels }: { labels: PokerPageLabels }) {
                     ))}
                   </div>
                 </div>
-              </CardTable>
-
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-                  {labels.legalActionsTitle}
-                </h3>
-                {currentMatch.view.legalActions.length > 0 ? (
-                  <div
-                    className="flex flex-wrap gap-3"
-                    role="group"
-                    aria-label={labels.legalActionsTitle}
-                  >
-                    {currentMatch.view.legalActions.map((action) => (
-                      <button
-                        key={action.id}
-                        type="button"
-                        className={buttonVariants({ variant: 'default' })}
-                        disabled={pending || currentMatch.status !== 'active'}
-                        onClick={() => {
-                          void handleSubmitMove(action.move);
-                        }}
-                      >
-                        {action.label}
-                      </button>
-                    ))}
+              }
+              title={labels.activeMatchTitle}
+              footer={
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                      {labels.analysisTitle}
+                    </h3>
+                    <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-200">
+                      {currentMatch.analysis?.generic.acceptedMoveCount ?? 0}{' '}
+                      accepted moves
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-200">
+                      {currentMatch.analysis?.generic.turnsCompleted ?? 0} turns
+                      completed
+                    </p>
                   </div>
-                ) : (
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                    {labels.waitingForPlayers}
-                  </p>
-                )}
-              </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-                    {labels.analysisTitle}
-                  </h3>
-                  <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-200">
-                    {currentMatch.analysis?.generic.acceptedMoveCount ?? 0}{' '}
-                    accepted moves
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-200">
-                    {currentMatch.analysis?.generic.turnsCompleted ?? 0} turns
-                    completed
-                  </p>
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                      {labels.playersTitle}
+                    </h3>
+                    <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-200">
+                      {labels.potLabel}: {currentMatch.view.pot}
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-200">
+                      {currentMatch.view.players
+                        .map((player) => player.displayName)
+                        .join(', ')}
+                    </p>
+                  </div>
                 </div>
-
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-                    {labels.playersTitle}
-                  </h3>
-                  <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-200">
-                    {labels.potLabel}: {currentMatch.view.pot}
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-200">
-                    {currentMatch.view.players
-                      .map((player) => player.displayName)
-                      .join(', ')}
-                  </p>
-                </div>
-              </div>
-            </div>
+              }
+            />
           ) : (
             <article className="rounded-[1.75rem] border border-dashed border-zinc-300 bg-white p-8 shadow-sm dark:border-zinc-700 dark:bg-zinc-950">
               <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
