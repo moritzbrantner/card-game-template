@@ -40,11 +40,11 @@ const enabledFeatures = {
 
 const showcaseManifest: AppManifest = {
   id: 'showcase',
-  siteName: 'Next Template',
+  siteName: 'Card Game Template',
   defaultLocaleMetadata: {
-    title: 'Next Template',
+    title: 'Card Game Template',
     description:
-      'Next.js application with auth, admin examples, and Drizzle/Postgres persistence.',
+      'A reusable foundation for browser and multiplayer card games, demonstrated with playable game implementations.',
   },
   enabledFeatures,
   publicPages: [
@@ -261,68 +261,32 @@ const showcaseManifest: AppManifest = {
   ],
   publicNavigation: [
     { pageId: 'home', category: 'discover', hotkey: ['alt', 'h'], order: 10 },
-    { pageId: 'about', category: 'discover', hotkey: ['alt', 'a'], order: 20 },
-    { pageId: 'uno', category: 'discover', hotkey: ['alt', 'o'], order: 30 },
+    { pageId: 'uno', category: 'discover', hotkey: ['alt', 'o'], order: 20 },
     {
       pageId: 'phase10',
       category: 'discover',
       hotkey: ['alt', 'z'],
-      order: 33,
+      order: 30,
     },
     {
       pageId: 'poker',
       category: 'discover',
       hotkey: ['alt', 'x'],
-      order: 35,
+      order: 40,
     },
     {
       pageId: 'tcg',
       category: 'discover',
       hotkey: ['alt', 'i'],
-      order: 37,
+      order: 50,
     },
     {
       pageId: 'pastGames',
       category: 'discover',
       hotkey: ['alt', 'y'],
-      order: 40,
-    },
-    {
-      pageId: 'remocn',
-      category: 'discover',
-      hotkey: ['alt', 'v'],
-      prefetch: false,
-      order: 50,
-    },
-    {
-      pageId: 'story',
-      category: 'discover',
-      hotkey: ['alt', 's'],
-      prefetch: false,
       order: 60,
     },
-    {
-      pageId: 'communication',
-      category: 'discover',
-      hotkey: ['alt', 'c'],
-      prefetch: false,
-      order: 70,
-    },
-    {
-      pageId: 'forms',
-      category: 'workspace',
-      hotkey: ['alt', 'f'],
-      prefetch: false,
-      order: 80,
-    },
-    { pageId: 'table', category: 'workspace', hotkey: ['alt', 't'], order: 90 },
-    {
-      pageId: 'uploads',
-      category: 'workspace',
-      hotkey: ['alt', 'u'],
-      prefetch: false,
-      order: 100,
-    },
+    { pageId: 'about', category: 'discover', hotkey: ['alt', 'a'], order: 70 },
   ],
   contentRoots: {
     pages: ['apps/showcase/content/pages'],
