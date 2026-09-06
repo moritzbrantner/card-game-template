@@ -1,9 +1,9 @@
 export const aboutPage = {
-  title: 'About This Project',
+  title: 'About card-game-template',
   description:
-    'This page demonstrates locale routing in the App Router and a translation structure that mirrors the website.',
+    'A reusable foundation for building browser and multiplayer card games without coupling the platform to one ruleset.',
   paragraphOne:
-    'The language now lives in the URL, making routes like /en/about and /de/about possible while keeping navigation reusable.',
+    'Shared packages own game contracts, catalogs, legal-action boundaries, sessions, persistence, bots, and multiplayer integration. Individual games consume those contracts and keep their rules independently testable.',
   paragraphTwo:
-    'Each page has its own namespace module so translation bundles can be composed from page and component building blocks.',
+    'The GitHub Pages examples are executable demonstrations of that architecture: UNO-style, Phase 10-style, Texas Hold’em, and Arcane Duel all reuse the same foundation while retaining their own domain semantics.',
 };
