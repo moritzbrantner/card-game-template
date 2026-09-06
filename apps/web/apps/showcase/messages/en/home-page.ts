@@ -45,7 +45,7 @@ export const homePage = {
     },
   },
   foundationEyebrow: 'One foundation',
-  foundationTitle: 'Reusable where it should be, game-specific where it matters.',
+  foundationTitle: 'Reusable foundations, independent games.',
   foundationDescription:
     'The examples are consumers of the template architecture. They demonstrate the shared contracts without turning any one game into the platform itself.',
   foundation: {
