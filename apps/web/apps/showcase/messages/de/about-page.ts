@@ -1,9 +1,9 @@
 export const aboutPage = {
-  title: 'Über dieses Projekt',
+  title: 'Über card-game-template',
   description:
-    'Diese Seite zeigt lokalisierte Routen im App Router und eine Übersetzungsstruktur, die die Website widerspiegelt.',
+    'Ein wiederverwendbares Fundament für Browser- und Multiplayer-Kartenspiele, ohne die Plattform an ein einzelnes Regelwerk zu koppeln.',
   paragraphOne:
-    'Die Sprache ist jetzt Teil der URL, sodass Routen wie /en/about und /de/about möglich sind und die Navigation wiederverwendbar bleibt.',
+    'Gemeinsame Pakete besitzen Spielverträge, Kataloge, Grenzen erlaubter Aktionen, Sessions, Persistenz, Bots und Multiplayer-Integration. Einzelne Spiele verwenden diese Verträge und halten ihre Regeln unabhängig testbar.',
   paragraphTwo:
-    'Jede Seite besitzt ihr eigenes Namespace-Modul, damit Übersetzungen aus Seiten- und Komponentenbausteinen zusammengesetzt werden können.',
+    'Die GitHub-Pages-Beispiele sind ausführbare Demonstrationen dieser Architektur: UNO-artig, Phase-10-artig, Texas Hold’em und Arcane Duel verwenden dasselbe Fundament und behalten zugleich ihre eigenen Domain-Semantiken.',
 };
