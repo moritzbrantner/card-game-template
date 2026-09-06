@@ -45,7 +45,7 @@ export const homePage = {
     },
   },
   foundationEyebrow: 'Ein Fundament',
-  foundationTitle: 'Wiederverwendbar, wo es sinnvoll ist; spielspezifisch, wo es zählt.',
+  foundationTitle: 'Gemeinsames Fundament, unabhängige Spiele.',
   foundationDescription:
     'Die Beispiele sind Verbraucher der Template-Architektur. Sie demonstrieren die gemeinsamen Verträge, ohne ein einzelnes Spiel selbst zur Plattform zu machen.',
   foundation: {
