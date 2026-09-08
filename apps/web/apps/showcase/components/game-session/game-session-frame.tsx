@@ -78,20 +78,14 @@ function controlKind(kind: string): CardControlActionKind {
     return 'discard';
   }
 
-  if (
-    kind === 'hit-phase' ||
-    kind === 'lay-phase' ||
-    kind === 'play-card'
-  ) {
+  if (kind === 'hit-phase' || kind === 'lay-phase' || kind === 'play-card') {
     return 'move';
   }
 
   return 'other';
 }
 
-function actionTarget(
-  parsed: ParsedActionId,
-): CardActionTarget | undefined {
+function actionTarget(parsed: ParsedActionId): CardActionTarget | undefined {
   if (parsed.kind !== 'draw-card') {
     return undefined;
   }
@@ -129,8 +123,7 @@ function isContextualCardAction(action: GameSessionAction) {
   }
 
   return (
-    parsed.kind === 'play-card' &&
-    typeof parsed.payload?.sayUno === 'boolean'
+    parsed.kind === 'play-card' && typeof parsed.payload?.sayUno === 'boolean'
   );
 }
 
