@@ -30,6 +30,26 @@ function cardIdFromKey(key: unknown) {
   return value.startsWith('.$') ? value.slice(2) : value;
 }
 
+function getSelectedCardLabel(children: ReactNode, selectedCardId: string | null) {
+  if (!selectedCardId) {
+    return null;
+  }
+
+  const selectedChild = Children.toArray(children).find(
+    (child) =>
+      isValidElement<PlayingCardProps>(child) &&
+      child.type === PlayingCard &&
+      cardIdFromKey(child.key) === selectedCardId,
+  );
+
+  if (!isValidElement<PlayingCardProps>(selectedChild)) {
+    return null;
+  }
+
+  const childLabel = selectedChild.props['aria-label'];
+  return typeof childLabel === 'string' ? childLabel : null;
+}
+
 export function PlayerHand({
   label = 'Player hand',
   'aria-label': ariaLabel,
@@ -44,7 +64,7 @@ export function PlayerHand({
   const selectedActions = selectedCardId
     ? actionRegistry.filter((action) => action.cardId === selectedCardId)
     : [];
-  let selectedCardLabel: string | null = null;
+  const selectedCardLabel = getSelectedCardLabel(children, selectedCardId);
 
   useEffect(() => {
     if (
@@ -73,12 +93,6 @@ export function PlayerHand({
     }
 
     const selected = selectedCardId === cardId;
-    const childLabel = child.props['aria-label'];
-
-    if (selected && typeof childLabel === 'string') {
-      selectedCardLabel = childLabel;
-    }
-
     const childOnClick = child.props.onClick;
     const childOnKeyDown = child.props.onKeyDown;
 
