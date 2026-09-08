@@ -5,8 +5,10 @@ import type { KeyboardEvent, MouseEvent } from 'react';
 import { cx } from './lib/cx';
 import { PlayingCard, type PlayingCardProps } from './playing-card';
 
-export interface InteractivePlayingCardProps
-  extends Omit<PlayingCardProps, 'interactive'> {
+export interface InteractivePlayingCardProps extends Omit<
+  PlayingCardProps,
+  'interactive' | 'role'
+> {
   disabled?: boolean;
   onActivate: () => void;
 }
@@ -17,7 +19,6 @@ export function InteractivePlayingCard({
   onActivate,
   onClick,
   onKeyDown,
-  role,
   selected = false,
   tabIndex,
   ...cardProps
@@ -58,7 +59,7 @@ export function InteractivePlayingCard({
       interactive={!disabled}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      role={role ?? 'button'}
+      role="button"
       selected={selected}
       tabIndex={tabIndex ?? 0}
     />
