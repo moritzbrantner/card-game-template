@@ -3,6 +3,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { CardActionProvider } from '../src/card-action-context';
 import { CardControls } from '../src/card-controls';
 import { CardPileControl } from '../src/card-pile-control';
 import { CardTable } from '../src/card-table';
@@ -107,6 +108,53 @@ describe('@moritzbrantner/card-games', () => {
     expect(pile.getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(pile);
     expect(onActivate).toHaveBeenCalledOnce();
+  });
+
+  it('turns engine-addressed hand cards into contextual controls', () => {
+    const discard = vi.fn();
+
+    render(
+      <CardActionProvider
+        actions={[
+          {
+            cardId: 'red-5',
+            id: 'discard-red-5',
+            kind: 'discard',
+            label: 'Discard Red 5',
+            onActivate: discard,
+          },
+        ]}
+      >
+        <PlayerHand aria-label="Player One hand">
+          <PlayingCard
+            key="red-5"
+            aria-label="Red 5"
+            interactive={false}
+            rank="5"
+            size="sm"
+            suit="hearts"
+          />
+          <PlayingCard
+            key="blue-7"
+            aria-label="Blue 7"
+            interactive={false}
+            rank="7"
+            size="sm"
+            suit="spades"
+          />
+        </PlayerHand>
+      </CardActionProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Red 5' }));
+
+    expect(screen.getByText('Red 5 selected')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Blue 7' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discard Red 5' }));
+
+    expect(discard).toHaveBeenCalledOnce();
+    expect(screen.queryByText('Red 5 selected')).toBeNull();
   });
 
   it('renders engine-driven draw, move, flip, and discard actions', () => {
