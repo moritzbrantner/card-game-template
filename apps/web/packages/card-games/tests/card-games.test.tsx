@@ -132,7 +132,10 @@ describe('@moritzbrantner/card-games', () => {
 
     expect(draw).toHaveBeenCalledOnce();
     expect(discard).toHaveBeenCalledOnce();
-    expect(screen.getByRole('button', { name: 'Move left' })).toBeDisabled();
+    expect(
+      (screen.getByRole('button', { name: 'Move left' }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
     expect(screen.getByRole('button', { name: 'Flip' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
