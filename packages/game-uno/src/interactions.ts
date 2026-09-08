@@ -1,4 +1,4 @@
-import type { UnoPlayerView } from './index.ts';
+import type { UnoPlayerView } from './index';
 
 export type UnoProjectedAction = UnoPlayerView['legalActions'][number];
 
