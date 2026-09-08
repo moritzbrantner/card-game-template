@@ -1,15 +1,9 @@
 'use client';
 
-import type {
-  KeyboardEvent,
-  MouseEvent,
-} from 'react';
+import type { KeyboardEvent, MouseEvent } from 'react';
 
 import { cx } from './lib/cx';
-import {
-  PlayingCard,
-  type PlayingCardProps,
-} from './playing-card';
+import { PlayingCard, type PlayingCardProps } from './playing-card';
 
 export interface InteractivePlayingCardProps
   extends Omit<PlayingCardProps, 'interactive'> {
