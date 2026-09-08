@@ -1,4 +1,4 @@
-import type { Phase10PlayerView } from './index.ts';
+import type { Phase10PlayerView } from './index';
 
 export type Phase10ProjectedAction = Phase10PlayerView['legalActions'][number];
 export type Phase10DrawSource = 'draw' | 'discard';
