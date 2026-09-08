@@ -4,6 +4,7 @@ import {
   Children,
   cloneElement,
   isValidElement,
+  useEffect,
   useState,
   type KeyboardEvent,
   type MouseEvent,
@@ -20,8 +21,8 @@ export interface PlayerHandProps extends CardFanProps {
   label?: ReactNode;
 }
 
-function cardIdFromKey(key: string | number | null) {
-  if (key === null) {
+function cardIdFromKey(key: unknown) {
+  if (key === null || key === undefined) {
     return null;
   }
 
@@ -44,6 +45,15 @@ export function PlayerHand({
     ? actionRegistry.filter((action) => action.cardId === selectedCardId)
     : [];
   let selectedCardLabel: string | null = null;
+
+  useEffect(() => {
+    if (
+      selectedCardId &&
+      !actionRegistry.some((action) => action.cardId === selectedCardId)
+    ) {
+      setSelectedCardId(null);
+    }
+  }, [actionRegistry, selectedCardId]);
 
   const interactiveChildren = Children.map(children, (child) => {
     if (
