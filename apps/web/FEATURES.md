@@ -39,3 +39,15 @@
   - [x] Example pages are clearly separated from the core app surface.
   - [x] Example REST data is served from `/api/examples/*`.
   - [x] Home and navigation entry points label these routes as examples.
+
+### Card interaction controls
+
+- **Status:** in progress
+- **Summary:** Shared card-game presentation primitives expose accessible card selection and engine-driven controls for drawing, moving, flipping, discarding, and game-specific actions without taking ownership of game legality.
+- **Acceptance criteria:**
+  - [x] Selectable cards support pointer, Enter, and Space activation with pressed-state semantics.
+  - [x] Disabled selectable cards remain visible and focusable without activating.
+  - [x] A reusable touch-sized toolbar can expose draw, move, flip, discard, and custom actions.
+  - [x] The controls remain callback-driven so game engines stay authoritative for legal moves.
+  - [ ] Wire the primitives into the playable card-game showcases so legal actions can be triggered directly from cards and piles.
+  - [ ] Add pointer drag-and-drop for legal moves while retaining equivalent button/keyboard controls.
