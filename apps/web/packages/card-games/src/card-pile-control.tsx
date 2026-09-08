@@ -9,8 +9,10 @@ const ENABLED_CLASS_NAME =
 const SELECTED_CLASS_NAME =
   'border-zinc-400 bg-zinc-100/70 dark:border-zinc-600 dark:bg-zinc-900/70';
 
-export interface CardPileControlProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
+export interface CardPileControlProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'children'
+> {
   children: ReactNode;
   selected?: boolean;
 }
