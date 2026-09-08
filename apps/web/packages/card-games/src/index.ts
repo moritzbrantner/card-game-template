@@ -2,6 +2,7 @@
 
 export * from './card-controls';
 export * from './card-fan';
+export * from './card-pile-control';
 export * from './card-stack';
 export * from './card-table';
 export * from './interactive-playing-card';
