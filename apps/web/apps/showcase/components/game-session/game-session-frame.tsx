@@ -121,20 +121,17 @@ function toCardActionDescriptor(
   };
 }
 
-function isContextualCardAction(
-  action: GameSessionAction,
-  actionKinds: ReadonlySet<string>,
-) {
-  const kind = parseActionId(action.id).kind;
+function isContextualCardAction(action: GameSessionAction) {
+  const parsed = parseActionId(action.id);
 
-  if (kind === 'discard-card' || kind === 'hit-phase') {
+  if (parsed.kind === 'discard-card' || parsed.kind === 'hit-phase') {
     return true;
   }
 
-  const isUnoSession =
-    actionKinds.has('draw-card') && actionKinds.has('play-card');
-
-  return isUnoSession && kind === 'play-card';
+  return (
+    parsed.kind === 'play-card' &&
+    typeof parsed.payload?.sayUno === 'boolean'
+  );
 }
 
 export function GameSessionFrame({
@@ -158,11 +155,8 @@ export function GameSessionFrame({
   const actionRegistry = actions.map((action) =>
     toCardActionDescriptor(action, pending),
   );
-  const actionKinds = new Set(
-    actions.map((action) => parseActionId(action.id).kind),
-  );
   const surfaceActions = actions.filter(
-    (action) => !isContextualCardAction(action, actionKinds),
+    (action) => !isContextualCardAction(action),
   );
 
   return (
