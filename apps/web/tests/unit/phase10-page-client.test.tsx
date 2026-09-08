@@ -312,7 +312,9 @@ describe('Phase10PageClient', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Red 5' }));
 
     expect(screen.getByText('Red 5 selected')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Discard Red 5' })).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'Discard Red 5' }),
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Discard Red 5' }));
 
