@@ -26,8 +26,10 @@ export function CardPileControl({
         'group inline-flex min-h-11 min-w-11 items-center justify-center rounded-2xl border border-transparent p-2 text-left transition-[border-color,background-color,transform,opacity] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2',
         disabled
           ? 'cursor-not-allowed opacity-50'
-          : 'cursor-pointer hover:border-current/20 hover:bg-current/5 active:scale-[0.985]',
-        selected ? 'border-current/30 bg-current/8' : null,
+          : 'cursor-pointer hover:border-zinc-300 hover:bg-zinc-100/60 active:scale-[0.985] dark:hover:border-zinc-700 dark:hover:bg-zinc-900/60',
+        selected
+          ? 'border-zinc-400 bg-zinc-100/70 dark:border-zinc-600 dark:bg-zinc-900/70'
+          : null,
         className,
       )}
       disabled={disabled}
