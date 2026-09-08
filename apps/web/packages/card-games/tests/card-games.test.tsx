@@ -4,6 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { CardControls } from '../src/card-controls';
+import { CardPileControl } from '../src/card-pile-control';
 import { CardTable } from '../src/card-table';
 import { InteractivePlayingCard } from '../src/interactive-playing-card';
 import { PlayerHand } from '../src/player-hand';
@@ -84,6 +85,28 @@ describe('@moritzbrantner/card-games', () => {
     fireEvent.keyDown(card, { key: 'Enter' });
 
     expect(onActivate).not.toHaveBeenCalled();
+  });
+
+  it('activates an entire pile as one accessible control', () => {
+    const onActivate = vi.fn();
+
+    render(
+      <CardPileControl aria-label="Draw pile" onClick={onActivate} selected>
+        <PlayingCard
+          aria-label="Top draw card"
+          face="back"
+          interactive={false}
+          rank="?"
+          size="sm"
+        />
+      </CardPileControl>,
+    );
+
+    const pile = screen.getByRole('button', { name: 'Draw pile' });
+
+    expect(pile.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(pile);
+    expect(onActivate).toHaveBeenCalledOnce();
   });
 
   it('renders engine-driven draw, move, flip, and discard actions', () => {
