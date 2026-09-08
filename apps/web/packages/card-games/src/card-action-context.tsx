@@ -4,13 +4,16 @@ import { createContext, useContext, type ReactNode } from 'react';
 
 import type { CardControlActionKind } from './card-controls';
 
+export type CardActionTarget = 'draw-pile' | 'discard-pile';
+
 export type CardActionDescriptor = {
-  cardId: string;
+  cardId?: string;
   disabled?: boolean;
   id: string;
   kind?: CardControlActionKind;
   label: ReactNode;
   onActivate: () => void;
+  target?: CardActionTarget;
 };
 
 const CardActionContext = createContext<readonly CardActionDescriptor[]>([]);
@@ -41,4 +44,8 @@ export function useCardActions(cardId: string | null) {
   }
 
   return actions.filter((action) => action.cardId === cardId);
+}
+
+export function useCardPileActions(target: CardActionTarget) {
+  return useCardActionRegistry().filter((action) => action.target === target);
 }
