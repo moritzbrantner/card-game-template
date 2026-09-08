@@ -136,8 +136,8 @@ describe('@moritzbrantner/card-games', () => {
       (screen.getByRole('button', { name: 'Move left' }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
-    expect(screen.getByRole('button', { name: 'Flip' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Flip' }).getAttribute('aria-pressed'),
+    ).toBe('true');
   });
 });
