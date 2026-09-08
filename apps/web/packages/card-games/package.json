@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "lint": "oxfmt --check . && bun run lint:imports && bun run lint:code",
+    "lint": "oxfmt . && git diff --exit-code -- src tests && bun run lint:imports && bun run lint:code",
     "lint:imports": "bun ../../scripts/verify-package-imports.mjs ./src @/ next/",
     "lint:code": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
