@@ -108,6 +108,7 @@ function toCardActionDescriptor(
     typeof parsed.payload?.cardId === 'string'
       ? parsed.payload.cardId
       : undefined;
+  const target = actionTarget(parsed);
 
   return {
     ...(cardId ? { cardId } : {}),
@@ -116,13 +117,24 @@ function toCardActionDescriptor(
     kind: controlKind(parsed.kind),
     label: action.pending ? `${action.label}...` : action.label,
     onActivate: action.onSelect,
-    ...(actionTarget(parsed) ? { target: actionTarget(parsed) } : {}),
+    ...(target ? { target } : {}),
   };
 }
 
-function isContextualPhase10CardAction(action: GameSessionAction) {
+function isContextualCardAction(
+  action: GameSessionAction,
+  actionKinds: ReadonlySet<string>,
+) {
   const kind = parseActionId(action.id).kind;
-  return kind === 'discard-card' || kind === 'hit-phase';
+
+  if (kind === 'discard-card' || kind === 'hit-phase') {
+    return true;
+  }
+
+  const isUnoSession =
+    actionKinds.has('draw-card') && actionKinds.has('play-card');
+
+  return isUnoSession && kind === 'play-card';
 }
 
 export function GameSessionFrame({
@@ -146,8 +158,11 @@ export function GameSessionFrame({
   const actionRegistry = actions.map((action) =>
     toCardActionDescriptor(action, pending),
   );
+  const actionKinds = new Set(
+    actions.map((action) => parseActionId(action.id).kind),
+  );
   const surfaceActions = actions.filter(
-    (action) => !isContextualPhase10CardAction(action),
+    (action) => !isContextualCardAction(action, actionKinds),
   );
 
   return (
