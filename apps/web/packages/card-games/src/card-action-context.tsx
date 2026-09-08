@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  createContext,
-  useContext,
-  type ReactNode,
-} from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 
 import type { CardControlActionKind } from './card-controls';
 
@@ -33,8 +29,12 @@ export function CardActionProvider({
   );
 }
 
+export function useCardActionRegistry() {
+  return useContext(CardActionContext);
+}
+
 export function useCardActions(cardId: string | null) {
-  const actions = useContext(CardActionContext);
+  const actions = useCardActionRegistry();
 
   if (!cardId) {
     return [];
