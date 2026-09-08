@@ -30,7 +30,10 @@ function cardIdFromKey(key: unknown) {
   return value.startsWith('.$') ? value.slice(2) : value;
 }
 
-function getSelectedCardLabel(children: ReactNode, selectedCardId: string | null) {
+function getSelectedCardLabel(
+  children: ReactNode,
+  selectedCardId: string | null,
+) {
   if (!selectedCardId) {
     return null;
   }
