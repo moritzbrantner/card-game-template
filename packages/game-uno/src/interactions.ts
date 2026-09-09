@@ -1,4 +1,4 @@
-import type { UnoPlayerView } from './index';
+import type { UnoPlayerView } from './index.js';
 
 export type UnoProjectedAction = UnoPlayerView['legalActions'][number];
 
