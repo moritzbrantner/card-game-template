@@ -1,6 +1,10 @@
 'use client';
 
-import type { HTMLAttributes, ReactNode } from 'react';
+import type {
+  HTMLAttributes,
+  KeyboardEvent,
+  ReactNode,
+} from 'react';
 
 import { cx } from './lib/cx';
 
@@ -28,13 +32,63 @@ export interface CardControlsProps extends HTMLAttributes<HTMLDivElement> {
   selectionLabel?: ReactNode;
 }
 
+function matchesShortcut(
+  event: KeyboardEvent<HTMLDivElement>,
+  shortcut: string,
+) {
+  const parts = shortcut.split('+').map((part) => part.trim().toLowerCase());
+  const key = parts.at(-1);
+
+  if (!key) {
+    return false;
+  }
+
+  const expectedKey = key === 'space' ? ' ' : key;
+  const eventKey = event.key.length === 1 ? event.key.toLowerCase() : event.key.toLowerCase();
+  const hasControl = parts.includes('control') || parts.includes('ctrl');
+  const hasAlt = parts.includes('alt');
+  const hasShift = parts.includes('shift');
+  const hasMeta = parts.includes('meta');
+
+  return (
+    eventKey === expectedKey &&
+    event.ctrlKey === hasControl &&
+    event.altKey === hasAlt &&
+    event.shiftKey === hasShift &&
+    event.metaKey === hasMeta
+  );
+}
+
 export function CardControls({
   actions,
   className,
   label = 'Card controls',
+  onKeyDown,
   selectionLabel,
   ...divProps
 }: CardControlsProps) {
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    onKeyDown?.(event);
+
+    if (event.defaultPrevented || event.repeat) {
+      return;
+    }
+
+    const action = actions.find(
+      (candidate) =>
+        !candidate.disabled &&
+        candidate.shortcut &&
+        matchesShortcut(event, candidate.shortcut),
+    );
+
+    if (!action) {
+      return;
+    }
+
+    event.preventDefault();
+    action.onActivate();
+  };
+
   return (
     <div
       {...divProps}
@@ -43,6 +97,7 @@ export function CardControls({
         'mb-card-controls flex min-w-0 flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950',
         className,
       )}
+      onKeyDown={handleKeyDown}
       role="toolbar"
     >
       {selectionLabel ? (
