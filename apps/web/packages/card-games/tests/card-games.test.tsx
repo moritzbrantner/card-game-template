@@ -5,10 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CardActionProvider } from '../src/card-action-context';
 import { CardControls } from '../src/card-controls';
-import {
-  CARD_DRAG_MIME_TYPE,
-  CardDropZone,
-} from '../src/card-drop-zone';
+import { CARD_DRAG_MIME_TYPE, CardDropZone } from '../src/card-drop-zone';
 import { CardPileControl } from '../src/card-pile-control';
 import { CardTable } from '../src/card-table';
 import { InteractivePlayingCard } from '../src/interactive-playing-card';
@@ -25,7 +22,7 @@ function createDataTransfer() {
     setData: (type: string, value: string) => {
       data.set(type, value);
     },
-  } as DataTransfer;
+  } as unknown as DataTransfer;
 }
 
 describe('@moritzbrantner/card-games', () => {
@@ -174,112 +171,118 @@ describe('@moritzbrantner/card-games', () => {
     expect(screen.queryByText('Red 5 selected')).toBeNull();
   });
 
-  it('routes an unambiguous legal card drop through the registered action', () => {
-    const discard = vi.fn();
-    const dataTransfer = createDataTransfer();
+  it(
+    'routes an unambiguous legal card drop through the registered action',
+    () => {
+      const discard = vi.fn();
+      const dataTransfer = createDataTransfer();
 
-    render(
-      <CardActionProvider
-        actions={[
-          {
-            cardId: 'red-5',
-            id: 'discard-red-5',
-            kind: 'discard',
-            label: 'Discard Red 5',
-            onActivate: discard,
-            target: 'discard-pile',
-          },
-        ]}
-      >
-        <PlayerHand aria-label="Player One hand">
-          <PlayingCard
-            key="red-5"
-            aria-label="Red 5"
-            interactive={false}
-            rank="5"
-            size="sm"
-            suit="hearts"
-          />
-        </PlayerHand>
-        <CardDropZone
-          aria-label="Discard pile drop target"
-          target="discard-pile"
+      render(
+        <CardActionProvider
+          actions={[
+            {
+              cardId: 'red-5',
+              id: 'discard-red-5',
+              kind: 'discard',
+              label: 'Discard Red 5',
+              onActivate: discard,
+              target: 'discard-pile',
+            },
+          ]}
         >
-          Discard pile
-        </CardDropZone>
-      </CardActionProvider>,
-    );
+          <PlayerHand aria-label="Player One hand">
+            <PlayingCard
+              key="red-5"
+              aria-label="Red 5"
+              interactive={false}
+              rank="5"
+              size="sm"
+              suit="hearts"
+            />
+          </PlayerHand>
+          <CardDropZone
+            aria-label="Discard pile drop target"
+            target="discard-pile"
+          >
+            Discard pile
+          </CardDropZone>
+        </CardActionProvider>,
+      );
 
-    const card = screen.getByRole('button', { name: 'Red 5' });
-    const target = screen.getByLabelText('Discard pile drop target');
+      const card = screen.getByRole('button', { name: 'Red 5' });
+      const target = screen.getByLabelText('Discard pile drop target');
 
-    expect(card.getAttribute('draggable')).toBe('true');
+      expect(card.getAttribute('draggable')).toBe('true');
 
-    fireEvent.dragStart(card, { dataTransfer });
-    expect(dataTransfer.getData(CARD_DRAG_MIME_TYPE)).toBe('red-5');
+      fireEvent.dragStart(card, { dataTransfer });
+      expect(dataTransfer.getData(CARD_DRAG_MIME_TYPE)).toBe('red-5');
 
-    fireEvent.dragOver(target, { dataTransfer });
-    expect(target.getAttribute('data-card-drop-active')).toBe('true');
+      fireEvent.dragOver(target, { dataTransfer });
+      expect(target.getAttribute('data-card-drop-active')).toBe('true');
 
-    fireEvent.drop(target, { dataTransfer });
+      fireEvent.drop(target, { dataTransfer });
 
-    expect(discard).toHaveBeenCalledOnce();
-    expect(target.getAttribute('data-card-drop-active')).toBeNull();
-  });
+      expect(discard).toHaveBeenCalledOnce();
+      expect(target.getAttribute('data-card-drop-active')).toBeNull();
+    },
+  );
 
-  it('does not guess when one card has multiple legal actions for a drop target', () => {
-    const first = vi.fn();
-    const second = vi.fn();
-    const dataTransfer = createDataTransfer();
+  it(
+    'does not guess when one card has multiple legal actions for a drop target',
+    () => {
+      const first = vi.fn();
+      const second = vi.fn();
+      const dataTransfer = createDataTransfer();
 
-    render(
-      <CardActionProvider
-        actions={[
-          {
-            cardId: 'wild-1',
-            id: 'play-wild-red',
-            label: 'Play wild as red',
-            onActivate: first,
-            target: 'discard-pile',
-          },
-          {
-            cardId: 'wild-1',
-            id: 'play-wild-blue',
-            label: 'Play wild as blue',
-            onActivate: second,
-            target: 'discard-pile',
-          },
-        ]}
-      >
-        <PlayerHand aria-label="Player One hand">
-          <PlayingCard
-            key="wild-1"
-            aria-label="Wild card"
-            interactive={false}
-            rank="W"
-            size="sm"
-          />
-        </PlayerHand>
-        <CardDropZone
-          aria-label="Discard pile drop target"
-          target="discard-pile"
+      render(
+        <CardActionProvider
+          actions={[
+            {
+              cardId: 'wild-1',
+              id: 'play-wild-red',
+              label: 'Play wild as red',
+              onActivate: first,
+              target: 'discard-pile',
+            },
+            {
+              cardId: 'wild-1',
+              id: 'play-wild-blue',
+              label: 'Play wild as blue',
+              onActivate: second,
+              target: 'discard-pile',
+            },
+          ]}
         >
-          Discard pile
-        </CardDropZone>
-      </CardActionProvider>,
-    );
+          <PlayerHand aria-label="Player One hand">
+            <PlayingCard
+              key="wild-1"
+              aria-label="Wild card"
+              interactive={false}
+              rank="W"
+              size="sm"
+            />
+          </PlayerHand>
+          <CardDropZone
+            aria-label="Discard pile drop target"
+            target="discard-pile"
+          >
+            Discard pile
+          </CardDropZone>
+        </CardActionProvider>,
+      );
 
-    const card = screen.getByRole('button', { name: 'Wild card' });
-    const target = screen.getByLabelText('Discard pile drop target');
+      const card = screen.getByRole('button', { name: 'Wild card' });
+      const target = screen.getByLabelText('Discard pile drop target');
 
-    fireEvent.dragStart(card, { dataTransfer });
-    fireEvent.dragOver(target, { dataTransfer });
-    fireEvent.drop(target, { dataTransfer });
+      fireEvent.dragStart(card, { dataTransfer });
+      fireEvent.dragOver(target, { dataTransfer });
+      fireEvent.drop(target, { dataTransfer });
 
-    expect(first).not.toHaveBeenCalled();
-    expect(second).not.toHaveBeenCalled();
-    expect(target.getAttribute('data-card-drop-active')).toBeNull();
-  });
+      expect(first).not.toHaveBeenCalled();
+      expect(second).not.toHaveBeenCalled();
+      expect(target.getAttribute('data-card-drop-active')).toBeNull();
+    },
+  );
 
   it('renders engine-driven draw, move, flip, and discard actions', () => {
     const draw = vi.fn();
