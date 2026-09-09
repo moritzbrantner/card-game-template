@@ -1,28 +1,37 @@
 name: Deploy GitHub Pages
 
 on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - '.github/workflows/gh-pages.yml'
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'bun.lock'
   push:
-    branches: ['staging']
+    branches: [develop, staging]
+    paths:
+      - '.github/workflows/gh-pages.yml'
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'bun.lock'
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'deploy' }}
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout exact candidate
         uses: actions/checkout@v6
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v6
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -35,63 +44,51 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build GitHub Pages artifact
-        env:
-          AUTH_SECRET: 0123456789abcdef0123456789abcdef
-          AUTH_URL: https://example.invalid
-          NEXTAUTH_URL: https://example.invalid
-          GITHUB_PAGES: 'true'
-          VITE_GITHUB_PAGES: 'true'
-          GITHUB_PAGES_BASE_PATH: /${{ github.event.repository.name }}/
-        run: bun run --filter next-template build
+      - name: Verify web workspace packages
+        working-directory: apps/web
+        run: |
+          bun run packages:lint
+          bun run packages:typecheck
+          bun run packages:test
 
-      - name: Add GitHub Pages fallbacks
+      - name: Build and audit GitHub Pages artifact
+        working-directory: apps/web
+        env:
+          NEXT_DEPLOY_TARGET: gh-pages
+          GITHUB_PAGES_BASE_PATH: /${{ github.event.repository.name }}
+        run: bun run build:gh-pages
+
+      - name: Verify GitHub Pages artifact
+        working-directory: apps/web
         run: |
           set -euo pipefail
 
-          output_dir="apps/web/dist/client"
-          base_path="/${{ github.event.repository.name }}"
+          test -f .generated/unlighthouse/ci-result.json
+          test -f out/en/unlighthouse/index.html
+          test -f out/de/unlighthouse/index.html
 
-          if [[ -f "$output_dir/_shell.html" ]]; then
-            shell_src="$output_dir/_shell.html"
-          elif [[ -f "$output_dir/index.html" ]]; then
-            shell_src="$output_dir/index.html"
-          else
-            echo "No SPA shell found in $output_dir" >&2
-            ls -R "$output_dir" >&2 || true
-            exit 1
-          fi
+          for locale in en de; do
+            test -f "out/${locale}/index.html"
+            test -f "out/${locale}/uno/index.html"
+            test -f "out/${locale}/phase-10/index.html"
+            test -f "out/${locale}/poker/index.html"
+            test -f "out/${locale}/tcg/index.html"
+          done
 
-          # 404.html must be the real app shell for deep links on GitHub Pages
-          cp "$shell_src" "$output_dir/404.html"
-
-          # Root index redirects to the default locale
-          cat > "$output_dir/index.html" <<EOF
-          <!doctype html>
-          <html lang="en">
-            <head>
-              <meta charset="utf-8" />
-              <meta http-equiv="refresh" content="0; url=${base_path}/en/" />
-              <title>Redirecting...</title>
-              <script>
-                window.location.replace('${base_path}/en/');
-              </script>
-            </head>
-            <body>
-              <p><a href="${base_path}/en/">Continue to the app</a></p>
-            </body>
-          </html>
-          EOF
-
-          touch "$output_dir/.nojekyll"
+          touch out/.nojekyll
 
       - name: Upload GitHub Pages artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5
         with:
-          path: apps/web/dist/client
+          path: apps/web/out
 
   deploy:
+    if: github.event_name != 'pull_request'
     needs: build
+    permissions:
+      pages: write
+      id-token: write
     runs-on: ubuntu-latest
     environment:
       name: github-pages

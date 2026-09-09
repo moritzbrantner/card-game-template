@@ -21,6 +21,8 @@ const excludedPaths = [
   'app/[locale]/(admin)',
   'app/[locale]/(protected)',
   'app/[locale]/(public)/profile',
+  'app/[locale]/(public)/past-games/[matchId]',
+  'tests/integration',
 ];
 const scannedRoutes = [
   '/en',
@@ -37,6 +39,16 @@ const scannedRoutes = [
   '/de/report-problem',
   '/en/table',
   '/de/table',
+  '/en/uno',
+  '/de/uno',
+  '/en/phase-10',
+  '/de/phase-10',
+  '/en/poker',
+  '/de/poker',
+  '/en/tcg',
+  '/de/tcg',
+  '/en/past-games',
+  '/de/past-games',
   '/en/examples/forms',
   '/de/examples/forms',
   '/en/examples/story',
@@ -240,7 +252,7 @@ async function waitForStaticExport(url, timeoutMs = 60_000) {
 
 function runNextBuild() {
   return new Promise((resolve, reject) => {
-    const child = spawn('bun', ['run', 'build'], {
+    const child = spawn('bun', ['x', 'next', 'build'], {
       cwd: repoRoot,
       stdio: 'inherit',
       env: {
