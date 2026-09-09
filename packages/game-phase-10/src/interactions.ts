@@ -1,4 +1,4 @@
-import type { Phase10PlayerView } from './index';
+import type { Phase10PlayerView } from './index.js';
 
 export type Phase10ProjectedAction = Phase10PlayerView['legalActions'][number];
 export type Phase10DrawSource = 'draw' | 'discard';
