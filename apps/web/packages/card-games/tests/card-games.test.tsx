@@ -238,7 +238,7 @@ describe('@moritzbrantner/card-games', () => {
       />,
     );
 
-    const drawButton = screen.getByRole('button', { name: 'Draw D' });
+    const drawButton = screen.getByRole('button', { name: 'Draw' });
 
     expect(drawButton.getAttribute('aria-keyshortcuts')).toBe('D');
 
