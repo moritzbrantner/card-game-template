@@ -556,6 +556,68 @@ describe('UnoPageClient live updates', () => {
     });
   });
 
+  it('draws through the visible draw pile control', async () => {
+    const drawAction = {
+      id: 'draw-card:{}',
+      label: 'Draw a card',
+      move: {
+        kind: 'draw-card' as const,
+        createdAt: '2026-04-25T09:00:01.000Z',
+        playerId: 'p1',
+        payload: {},
+      },
+    };
+    const activeSnapshot = createSnapshot({
+      view: {
+        ...createSnapshot().view,
+        legalActions: [drawAction],
+      },
+    });
+    const submittedSnapshot = createSnapshot({
+      updatedAt: '2026-04-25T09:00:02.000Z',
+      view: {
+        ...activeSnapshot.view,
+        legalActions: [],
+        status: 'Bot Bravo to act',
+      },
+    });
+
+    fetchMock.mockImplementation(async (input, init) => {
+      const url = String(input);
+
+      if (url === '/api/games/uno/matches') {
+        return Response.json(createListResult(activeSnapshot));
+      }
+
+      if (url === '/api/games/rooms') {
+        return Response.json([]);
+      }
+
+      if (url === `/api/games/uno/matches/${activeSnapshot.matchId}`) {
+        return Response.json(activeSnapshot);
+      }
+
+      if (url === `/api/games/uno/matches/${activeSnapshot.matchId}/moves`) {
+        expect(init?.body).toBe(JSON.stringify({ move: drawAction.move }));
+        return Response.json(submittedSnapshot);
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    render(<UnoPageClient labels={labels} pastGamesHref="/en/past-games" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alice to act')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Draw pile' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Bot Bravo to act')).toBeTruthy();
+    });
+  });
+
   it('asks for a wild color before submitting a direct wild card play', async () => {
     const baseSnapshot = createSnapshot();
     const wildCard = {
