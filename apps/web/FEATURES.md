@@ -1,37 +1,27 @@
-# FEATURES.md
+# Features
 
-## Core platform features
+This document tracks user-facing capabilities that the application template guarantees.
 
-### User management
-
-- **Status:** done
-- **Summary:** Credential login, self-serve signup, email verification, password reset, session handling, account email change, account deletion, and profile updates are implemented.
-- **Acceptance criteria:**
-  - [x] Registration persists a user and issues a verification token.
-  - [x] Verification and password reset flows consume stored tokens.
-  - [x] Login creates an app session with role-aware user data.
-  - [x] Profile display name and profile image updates persist and refresh session state.
-  - [x] Account email change and account deletion validate current password.
-
-### Authorization and admin access
+## Application foundation
 
 - **Status:** done
-- **Summary:** Role-aware helpers, admin/workspace navigation, and protected admin APIs are implemented.
+- **Summary:** The template provides localized routing, authentication, profile management, admin controls, and typed service boundaries.
 - **Acceptance criteria:**
-  - [x] Role helpers cover workspace/admin/report permissions.
-  - [x] Admin routes enforce authentication and role checks.
-  - [x] Authorization reporting endpoint exposes rate-limited permission state.
+  - [x] Public and authenticated routes are separated explicitly.
+  - [x] Locale-aware navigation is part of the application shell.
+  - [x] Authentication and profile flows share one session boundary.
+  - [x] Admin-only routes enforce their authorization boundary server-side.
 
-### API hardening
+## Card-game showcase
 
 - **Status:** done
-- **Summary:** Shared rate limiting and audit logging protect public and privileged HTTP endpoints.
+- **Summary:** Shared game contracts, rules, sessions, bots, persistence, and multiplayer integration are demonstrated through playable card games without coupling the platform to one ruleset.
 - **Acceptance criteria:**
-  - [x] Shared security helper handles rate limits and audit outcomes.
-  - [x] Auth, account, profile, newsletter, report, data-entry, and admin mutation endpoints use the helper.
-  - [x] Audit metadata is sanitized before persistence.
+  - [x] UNO-style, Phase 10-style, Texas Hold'em, and Arcane Duel remain independent game implementations.
+  - [x] Shared packages own generic game/session contracts rather than game-specific rules.
+  - [x] Browser examples can exercise the game foundation without becoming the source of domain truth.
 
-### Example accelerators
+## Example routes
 
 - **Status:** done
 - **Summary:** Example routes demonstrate forms, storytelling, communication, uploads, and mock REST data under an explicit `/examples/*` namespace.
@@ -43,7 +33,7 @@
 ### Card interaction controls
 
 - **Status:** in progress
-- **Summary:** Shared card-game presentation primitives expose accessible card selection and engine-driven controls for drawing, moving, flipping, discarding, and game-specific actions without taking ownership of game legality. Phase 10 now binds discard/hit moves to the matching hand card, while UNO keeps its existing direct click/keyboard/drag play and removes those duplicate plays from the table action tray.
+- **Summary:** Shared card-game presentation primitives expose accessible card selection, legal-action drag/drop, and engine-driven controls for drawing, moving, flipping, discarding, and game-specific actions without taking ownership of game legality. Phase 10 can now discard an unambiguous legal hand card through the same registered move by button, keyboard, or desktop drag/drop, while UNO retains its prompt-aware direct-play path.
 - **Acceptance criteria:**
   - [x] Selectable cards support pointer, Enter, and Space activation with pressed-state semantics.
   - [x] Disabled selectable cards remain visible and focusable without activating.
@@ -51,5 +41,7 @@
   - [x] The controls remain callback-driven so game engines stay authoritative for legal moves.
   - [x] Phase 10 card-specific legal moves are triggered from contextual hand-card controls instead of duplicated generic buttons.
   - [x] UNO direct card play remains click/keyboard/drag driven while draw/pass actions live inside the play surface.
+  - [x] Phase 10 supports unambiguous legal discard drag/drop while retaining equivalent button and keyboard controls.
+  - [x] Ambiguous card-to-target mappings fail closed instead of choosing a move implicitly.
   - [ ] Make the visible draw/discard pile representations themselves direct controls across both showcases.
-  - [ ] Add Phase 10 pointer drag-and-drop for legal moves while retaining equivalent button/keyboard controls.
+  - [ ] Add touch-first pointer dragging so the shared drop path works consistently on mobile without removing keyboard/button controls.
