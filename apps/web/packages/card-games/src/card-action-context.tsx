@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 
 import type { CardControlActionKind } from './card-controls';
 
@@ -16,7 +16,20 @@ export type CardActionDescriptor = {
   target?: CardActionTarget;
 };
 
-const CardActionContext = createContext<readonly CardActionDescriptor[]>([]);
+type CardActionContextValue = {
+  actions: readonly CardActionDescriptor[];
+  draggedCardId: string | null;
+  endCardDrag: () => void;
+  startCardDrag: (cardId: string) => void;
+};
+
+const EMPTY_CARD_ACTIONS: readonly CardActionDescriptor[] = [];
+const CardActionContext = createContext<CardActionContextValue>({
+  actions: EMPTY_CARD_ACTIONS,
+  draggedCardId: null,
+  endCardDrag: () => undefined,
+  startCardDrag: () => undefined,
+});
 
 export function CardActionProvider({
   actions,
@@ -25,15 +38,31 @@ export function CardActionProvider({
   actions: readonly CardActionDescriptor[];
   children: ReactNode;
 }) {
+  const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
+
   return (
-    <CardActionContext.Provider value={actions}>
+    <CardActionContext.Provider
+      value={{
+        actions,
+        draggedCardId,
+        endCardDrag: () => setDraggedCardId(null),
+        startCardDrag: setDraggedCardId,
+      }}
+    >
       {children}
     </CardActionContext.Provider>
   );
 }
 
 export function useCardActionRegistry() {
-  return useContext(CardActionContext);
+  return useContext(CardActionContext).actions;
+}
+
+export function useCardDragState() {
+  const { draggedCardId, endCardDrag, startCardDrag } =
+    useContext(CardActionContext);
+
+  return { draggedCardId, endCardDrag, startCardDrag };
 }
 
 export function useCardActions(cardId: string | null) {

@@ -2,6 +2,7 @@
 
 export * from './card-action-context';
 export * from './card-controls';
+export * from './card-drop-zone';
 export * from './card-fan';
 export * from './card-pile-control';
 export * from './card-stack';

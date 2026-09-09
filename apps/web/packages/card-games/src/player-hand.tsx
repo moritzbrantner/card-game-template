@@ -6,12 +6,14 @@ import {
   isValidElement,
   useEffect,
   useState,
+  type DragEvent,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
 } from 'react';
 
-import { useCardActionRegistry } from './card-action-context';
+import { useCardActionRegistry, useCardDragState } from './card-action-context';
+import { CARD_DRAG_MIME_TYPE } from './card-drop-zone';
 import { CardControls } from './card-controls';
 import { CardFan, type CardFanProps } from './card-fan';
 import { cx } from './lib/cx';
@@ -61,6 +63,7 @@ export function PlayerHand({
   ...divProps
 }: PlayerHandProps) {
   const actionRegistry = useCardActionRegistry();
+  const { endCardDrag, startCardDrag } = useCardDragState();
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const accessibleLabel =
     ariaLabel ?? (typeof label === 'string' ? label : undefined);
@@ -96,7 +99,12 @@ export function PlayerHand({
     }
 
     const selected = selectedCardId === cardId;
+    const draggable = actions.some(
+      (action) => Boolean(action.target) && !action.disabled,
+    );
     const childOnClick = child.props.onClick;
+    const childOnDragEnd = child.props.onDragEnd;
+    const childOnDragStart = child.props.onDragStart;
     const childOnKeyDown = child.props.onKeyDown;
 
     const activateSelection = () => {
@@ -105,6 +113,12 @@ export function PlayerHand({
 
     return cloneElement(child, {
       'aria-pressed': selected,
+      className: cx(
+        child.props.className,
+        draggable ? 'cursor-grab active:cursor-grabbing' : null,
+      ),
+      'data-card-draggable': draggable || undefined,
+      draggable: child.props.draggable ?? draggable,
       interactive: true,
       onClick: (event: MouseEvent<HTMLDivElement>) => {
         childOnClick?.(event);
@@ -112,6 +126,22 @@ export function PlayerHand({
         if (!event.defaultPrevented) {
           activateSelection();
         }
+      },
+      onDragEnd: (event: DragEvent<HTMLDivElement>) => {
+        childOnDragEnd?.(event);
+        endCardDrag();
+      },
+      onDragStart: (event: DragEvent<HTMLDivElement>) => {
+        childOnDragStart?.(event);
+
+        if (event.defaultPrevented || !draggable) {
+          return;
+        }
+
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData(CARD_DRAG_MIME_TYPE, cardId);
+        event.dataTransfer.setData('text/plain', cardId);
+        startCardDrag(cardId);
       },
       onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
         childOnKeyDown?.(event);
