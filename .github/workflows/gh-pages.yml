@@ -9,16 +9,18 @@ on:
       - 'packages/**'
       - 'package.json'
       - 'bun.lock'
-  workflow_run:
-    workflows: [Develop, Staging]
-    types: [completed]
+  push:
     branches: [develop, staging]
+    paths:
+      - '.github/workflows/gh-pages.yml'
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'bun.lock'
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'deploy' }}
@@ -26,20 +28,10 @@ concurrency:
 
 jobs:
   build:
-    if: >-
-      github.event_name == 'pull_request' ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
-
-      - name: Configure GitHub Pages
-        if: github.event_name != 'pull_request'
-        uses: actions/configure-pages@v6
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -94,6 +86,9 @@ jobs:
   deploy:
     if: github.event_name != 'pull_request'
     needs: build
+    permissions:
+      pages: write
+      id-token: write
     runs-on: ubuntu-latest
     environment:
       name: github-pages
