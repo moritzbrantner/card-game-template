@@ -1,10 +1,6 @@
 'use client';
 
-import type {
-  HTMLAttributes,
-  KeyboardEvent,
-  ReactNode,
-} from 'react';
+import type { HTMLAttributes, KeyboardEvent, ReactNode } from 'react';
 
 import { cx } from './lib/cx';
 
@@ -44,7 +40,7 @@ function matchesShortcut(
   }
 
   const expectedKey = key === 'space' ? ' ' : key;
-  const eventKey = event.key.length === 1 ? event.key.toLowerCase() : event.key.toLowerCase();
+  const eventKey = event.key.toLowerCase();
   const hasControl = parts.includes('control') || parts.includes('ctrl');
   const hasAlt = parts.includes('alt');
   const hasShift = parts.includes('shift');
