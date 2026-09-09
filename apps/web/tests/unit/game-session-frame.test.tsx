@@ -60,7 +60,7 @@ describe('GameSessionFrame', () => {
     expect(screen.getByText('Actor')).toBeTruthy();
     expect(screen.getAllByText('Active').length).toBeGreaterThan(0);
     expect(screen.getByText('Table slot')).toBeTruthy();
-    expect(screen.getByRole('group', { name: 'Legal actions' })).toBeTruthy();
+    expect(screen.getByRole('toolbar', { name: 'Legal actions' })).toBeTruthy();
   });
 
   it('fires enabled actions once and leaves disabled actions inert', () => {

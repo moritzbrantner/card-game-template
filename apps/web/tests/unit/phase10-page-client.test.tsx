@@ -41,12 +41,22 @@ const snapshotState = vi.hoisted(() => ({
       drawPileCount: 47,
       legalActions: [
         {
-          id: 'draw-card',
+          id: 'draw-card:{"source":"discard"}',
           label: 'Draw Red 9',
           move: {
             createdAt: '2026-04-26T12:00:00.000Z',
             kind: 'draw-card',
             payload: { source: 'discard' },
+            playerId: 'p1',
+          },
+        },
+        {
+          id: 'discard-card:{"cardId":"red-5"}',
+          label: 'Discard Red 5',
+          move: {
+            createdAt: '2026-04-26T12:00:00.000Z',
+            kind: 'discard-card',
+            payload: { cardId: 'red-5' },
             playerId: 'p1',
           },
         },
@@ -234,6 +244,31 @@ const labels = {
   waitingForPlayers: 'No legal action is available for the current view.',
 };
 
+function resetLegalActions() {
+  snapshotState.current.view.legalActions = [
+    {
+      id: 'draw-card:{"source":"discard"}',
+      label: 'Draw Red 9',
+      move: {
+        createdAt: '2026-04-26T12:00:00.000Z',
+        kind: 'draw-card',
+        payload: { source: 'discard' },
+        playerId: 'p1',
+      },
+    },
+    {
+      id: 'discard-card:{"cardId":"red-5"}',
+      label: 'Discard Red 5',
+      move: {
+        createdAt: '2026-04-26T12:00:00.000Z',
+        kind: 'discard-card',
+        payload: { cardId: 'red-5' },
+        playerId: 'p1',
+      },
+    },
+  ];
+}
+
 describe('Phase10PageClient', () => {
   beforeEach(() => {
     window.history.replaceState({}, '', '/en/phase-10');
@@ -242,18 +277,7 @@ describe('Phase10PageClient', () => {
     sessionSpies.submitMove.mockReset();
     sessionSpies.subscribe.mockClear();
     snapshotState.current.pendingHotseatPlayerId = null;
-    snapshotState.current.view.legalActions = [
-      {
-        id: 'draw-card',
-        label: 'Draw Red 9',
-        move: {
-          createdAt: '2026-04-26T12:00:00.000Z',
-          kind: 'draw-card',
-          payload: { source: 'discard' },
-          playerId: 'p1',
-        },
-      },
-    ];
+    resetLegalActions();
   });
 
   it('renders the local showcase and routes legal actions into the session', () => {
@@ -280,6 +304,26 @@ describe('Phase10PageClient', () => {
     expect(sessionSpies.subscribe).toHaveBeenCalled();
     expect(window.location.search).toContain('preset=mixed-table');
     expect(window.location.search).toContain('phases=s3%2Bs3');
+  });
+
+  it('selects an actionable hand card and routes its move directly', () => {
+    render(<Phase10PageClient labels={labels} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Red 5' }));
+
+    expect(screen.getByText('Red 5 selected')).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'Discard Red 5' }),
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discard Red 5' }));
+
+    expect(sessionSpies.submitMove).toHaveBeenCalledWith({
+      createdAt: '2026-04-26T12:00:00.000Z',
+      kind: 'discard-card',
+      payload: { cardId: 'red-5' },
+      playerId: 'p1',
+    });
   });
 
   it('shows the hotseat takeover flow when the next human player must confirm', () => {
