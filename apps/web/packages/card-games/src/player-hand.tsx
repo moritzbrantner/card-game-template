@@ -12,10 +12,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import {
-  useCardActionRegistry,
-  useCardDragState,
-} from './card-action-context';
+import { useCardActionRegistry, useCardDragState } from './card-action-context';
 import { CARD_DRAG_MIME_TYPE } from './card-drop-zone';
 import { CardControls } from './card-controls';
 import { CardFan, type CardFanProps } from './card-fan';
