@@ -21,7 +21,7 @@ const excludedPaths = [
   'app/[locale]/(admin)',
   'app/[locale]/(protected)',
   'app/[locale]/(public)/profile',
-  'tests',
+  'tests/integration',
 ];
 const scannedRoutes = [
   '/en',
