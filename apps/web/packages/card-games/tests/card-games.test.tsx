@@ -5,7 +5,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CardActionProvider } from '../src/card-action-context';
 import { CardControls } from '../src/card-controls';
-import { CardPileControl } from '../src/card-pile-control';
+import {
+  CardActionPileControl,
+  CardPileControl,
+} from '../src/card-pile-control';
 import { CardTable } from '../src/card-table';
 import { InteractivePlayingCard } from '../src/interactive-playing-card';
 import { PlayerHand } from '../src/player-hand';
@@ -108,6 +111,106 @@ describe('@moritzbrantner/card-games', () => {
     expect(pile.getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(pile);
     expect(onActivate).toHaveBeenCalledOnce();
+  });
+
+  it('routes a pile through its single engine-provided action', () => {
+    const draw = vi.fn();
+
+    render(
+      <CardActionProvider
+        actions={[
+          {
+            id: 'draw-card',
+            label: 'Draw a card',
+            onActivate: draw,
+            target: 'draw-pile',
+          },
+        ]}
+      >
+        <CardActionPileControl actionTarget="draw-pile" aria-label="Draw pile">
+          <PlayingCard
+            aria-label="Top draw card"
+            face="back"
+            interactive={false}
+            rank="?"
+            size="sm"
+          />
+        </CardActionPileControl>
+      </CardActionProvider>,
+    );
+
+    const pile = screen.getByRole('button', { name: 'Draw pile' });
+
+    expect(pile.getAttribute('data-card-action-id')).toBe('draw-card');
+    fireEvent.click(pile);
+    expect(draw).toHaveBeenCalledOnce();
+  });
+
+  it('keeps a pile inert when its engine action is missing, disabled, or ambiguous', () => {
+    const firstDraw = vi.fn();
+    const secondDraw = vi.fn();
+
+    const { rerender } = render(
+      <CardActionProvider actions={[]}>
+        <CardActionPileControl actionTarget="draw-pile" aria-label="Draw pile">
+          Draw pile
+        </CardActionPileControl>
+      </CardActionProvider>,
+    );
+
+    const getPile = () =>
+      screen.getByRole('button', { name: 'Draw pile' }) as HTMLButtonElement;
+
+    expect(getPile().disabled).toBe(true);
+
+    rerender(
+      <CardActionProvider
+        actions={[
+          {
+            disabled: true,
+            id: 'draw-card',
+            label: 'Draw a card',
+            onActivate: firstDraw,
+            target: 'draw-pile',
+          },
+        ]}
+      >
+        <CardActionPileControl actionTarget="draw-pile" aria-label="Draw pile">
+          Draw pile
+        </CardActionPileControl>
+      </CardActionProvider>,
+    );
+
+    expect(getPile().disabled).toBe(true);
+
+    rerender(
+      <CardActionProvider
+        actions={[
+          {
+            id: 'draw-card-one',
+            label: 'Draw first card',
+            onActivate: firstDraw,
+            target: 'draw-pile',
+          },
+          {
+            id: 'draw-card-two',
+            label: 'Draw second card',
+            onActivate: secondDraw,
+            target: 'draw-pile',
+          },
+        ]}
+      >
+        <CardActionPileControl actionTarget="draw-pile" aria-label="Draw pile">
+          Draw pile
+        </CardActionPileControl>
+      </CardActionProvider>,
+    );
+
+    fireEvent.click(getPile());
+
+    expect(getPile().disabled).toBe(true);
+    expect(firstDraw).not.toHaveBeenCalled();
+    expect(secondDraw).not.toHaveBeenCalled();
   });
 
   it('turns engine-addressed hand cards into contextual controls', () => {

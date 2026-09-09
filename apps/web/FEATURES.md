@@ -51,5 +51,5 @@
   - [x] The controls remain callback-driven so game engines stay authoritative for legal moves.
   - [x] Phase 10 card-specific legal moves are triggered from contextual hand-card controls instead of duplicated generic buttons.
   - [x] UNO direct card play remains click/keyboard/drag driven while draw/pass actions live inside the play surface.
-  - [ ] Make the visible draw/discard pile representations themselves direct controls across both showcases.
+  - [x] Make the visible draw/discard pile representations themselves direct controls across both showcases.
   - [ ] Add Phase 10 pointer drag-and-drop for legal moves while retaining equivalent button/keyboard controls.

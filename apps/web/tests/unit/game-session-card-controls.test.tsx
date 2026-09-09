@@ -4,9 +4,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { GameSessionFrame } from '@/apps/showcase/components/game-session';
+import { CardActionPileControl } from '@moritzbrantner/card-games';
 
 describe('GameSessionFrame card controls', () => {
-  it('keeps UNO card plays on the cards while exposing draw as a table control', () => {
+  it('routes the visible pile and toolbar button through the same draw action', () => {
     const draw = vi.fn();
     const play = vi.fn();
 
@@ -26,18 +27,32 @@ describe('GameSessionFrame card controls', () => {
         ]}
         actionsLabel="Legal actions"
         emptyActionsLabel="No actions"
-        table={<div>UNO table</div>}
+        table={
+          <div>
+            UNO table
+            <CardActionPileControl
+              actionTarget="draw-pile"
+              aria-label="Visible draw pile"
+            >
+              Draw pile
+            </CardActionPileControl>
+          </div>
+        }
         title="UNO"
       />,
     );
 
     expect(screen.getByText('UNO table')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Draw a card' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Visible draw pile' }),
+    ).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Play Red 5' })).toBeNull();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Visible draw pile' }));
     fireEvent.click(screen.getByRole('button', { name: 'Draw a card' }));
 
-    expect(draw).toHaveBeenCalledOnce();
+    expect(draw).toHaveBeenCalledTimes(2);
     expect(play).not.toHaveBeenCalled();
   });
 

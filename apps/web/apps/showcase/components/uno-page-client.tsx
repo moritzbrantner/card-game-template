@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 import { buttonVariants } from '@moritzbrantner/ui';
+import { CardActionPileControl } from '@moritzbrantner/card-games';
 import { defaultGameCatalog } from '@repo/game-catalog';
 import {
   HiddenUnoCardStack,
@@ -1424,11 +1425,17 @@ export function UnoPageClient({
                           Draw pile
                         </p>
                         <div className="mt-3 flex justify-center">
-                          <HiddenUnoCardStack
-                            cardCount={currentMatch.view.drawPileCount}
-                            compact
-                            label="Draw pile"
-                          />
+                          <CardActionPileControl
+                            actionTarget="draw-pile"
+                            aria-label="Draw pile"
+                            className="p-0"
+                          >
+                            <HiddenUnoCardStack
+                              cardCount={currentMatch.view.drawPileCount}
+                              compact
+                              label="Draw pile"
+                            />
+                          </CardActionPileControl>
                         </div>
                       </div>
 
