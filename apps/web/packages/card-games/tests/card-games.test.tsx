@@ -211,4 +211,41 @@ describe('@moritzbrantner/card-games', () => {
       screen.getByRole('button', { name: 'Flip' }).getAttribute('aria-pressed'),
     ).toBe('true');
   });
+
+  it('implements advertised card control keyboard shortcuts', () => {
+    const draw = vi.fn();
+    const disabledDiscard = vi.fn();
+
+    render(
+      <CardControls
+        actions={[
+          {
+            id: 'draw',
+            kind: 'draw',
+            label: 'Draw',
+            onActivate: draw,
+            shortcut: 'D',
+          },
+          {
+            disabled: true,
+            id: 'discard',
+            kind: 'discard',
+            label: 'Discard',
+            onActivate: disabledDiscard,
+            shortcut: 'X',
+          },
+        ]}
+      />,
+    );
+
+    const drawButton = screen.getByRole('button', { name: 'Draw D' });
+
+    expect(drawButton.getAttribute('aria-keyshortcuts')).toBe('D');
+
+    fireEvent.keyDown(drawButton, { key: 'd' });
+    fireEvent.keyDown(drawButton, { key: 'x' });
+
+    expect(draw).toHaveBeenCalledOnce();
+    expect(disabledDiscard).not.toHaveBeenCalled();
+  });
 });
