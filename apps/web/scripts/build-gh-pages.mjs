@@ -21,6 +21,7 @@ const excludedPaths = [
   'app/[locale]/(admin)',
   'app/[locale]/(protected)',
   'app/[locale]/(public)/profile',
+  'app/[locale]/(public)/past-games/[matchId]',
   'tests/integration',
 ];
 const scannedRoutes = [
