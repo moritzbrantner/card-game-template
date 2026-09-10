@@ -23,20 +23,6 @@ export default async function HomePage({ locale }: { locale: AppLocale }) {
       description: t('games.phase10.description'),
       cta: t('games.phase10.cta'),
     },
-    {
-      href: '/poker',
-      category: t('games.poker.category'),
-      title: t('games.poker.title'),
-      description: t('games.poker.description'),
-      cta: t('games.poker.cta'),
-    },
-    {
-      href: '/tcg',
-      category: t('games.tcg.category'),
-      title: t('games.tcg.title'),
-      description: t('games.tcg.description'),
-      cta: t('games.tcg.cta'),
-    },
   ] as const;
   const foundationSections = [
     {
