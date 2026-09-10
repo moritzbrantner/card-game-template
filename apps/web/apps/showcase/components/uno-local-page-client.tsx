@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   createLocalGameSession,
@@ -12,6 +12,7 @@ import {
   defaultUnoRules,
   getUnoExamplePreset,
   projectUnoPlayerView,
+  type UnoColor,
   type UnoMove,
   type UnoPlayerView,
   type UnoState,
@@ -24,15 +25,28 @@ import {
 } from '@/components/uno-card-visuals';
 
 type UnoLocalPageLabels = {
+  activeColorLabel: string;
+  activeTurnLabel: string;
+  botLabel: string;
+  cardsLabel: string;
+  colors: Record<UnoColor, string>;
+  completedMessage: string;
   description: string;
   discardPileLabel: string;
   drawPileLabel: string;
   handTitle: string;
+  humanLabel: string;
+  inProgressStatus: string;
   legalActionsTitle: string;
+  localMatchLabel: string;
   playersTitle: string;
   restartAction: string;
+  statusLabel: string;
+  tableLabel: string;
   title: string;
+  turnLabel: string;
   waitingForPlayers: string;
+  winnerLabel: string;
 };
 
 const PRESET_ID = 'bot-duel' as const;
@@ -65,6 +79,8 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
     UnoMove,
     UnoPlayerView
   > | null>(null);
+  const applyingMoveRef = useRef(false);
+  const [isApplyingMove, setIsApplyingMove] = useState(false);
   const [snapshot, setSnapshot] = useState(() =>
     createPreviewSession().getSnapshot(),
   );
@@ -73,8 +89,10 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
     const session = createPreviewSession();
     sessionRef.current = session;
     const unsubscribe = session.subscribe((nextSnapshot) => {
-      startTransition(() => {
-        setSnapshot(nextSnapshot);
+      setSnapshot(nextSnapshot);
+      requestAnimationFrame(() => {
+        applyingMoveRef.current = false;
+        setIsApplyingMove(false);
       });
     });
 
@@ -86,13 +104,37 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
   const humanPlayer = snapshot.view.players.find(
     (player) => player.controller === 'human',
   );
+  const winnerPlayer = snapshot.matchResult
+    ? snapshot.view.players.find(
+        (player) => player.playerId === snapshot.matchResult?.winnerIds[0],
+      )
+    : null;
+
+  function submitMove(move: UnoMove) {
+    const session = sessionRef.current;
+
+    if (!session || applyingMoveRef.current) {
+      return;
+    }
+
+    applyingMoveRef.current = true;
+    setIsApplyingMove(true);
+
+    try {
+      session.submitMove(move);
+    } catch (error) {
+      applyingMoveRef.current = false;
+      setIsApplyingMove(false);
+      throw error;
+    }
+  }
 
   return (
     <section className="space-y-8 pb-8">
       <header className="flex flex-col gap-5 border-b border-zinc-200 pb-8 dark:border-zinc-800 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-2xl">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-            Local bot match
+            {labels.localMatchLabel}
           </p>
           <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-zinc-950 sm:text-5xl dark:text-zinc-50">
             {labels.title}
@@ -113,7 +155,7 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
-            Turn
+            {labels.turnLabel}
           </p>
           <p className="mt-2 font-semibold text-zinc-950 dark:text-zinc-50">
             {snapshot.view.players.find(
@@ -123,23 +165,31 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
         </div>
         <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
-            Active color
+            {labels.activeColorLabel}
           </p>
           <div className="mt-2">
-            <UnoColorBadge color={snapshot.view.activeColor} />
+            <UnoColorBadge
+              color={snapshot.view.activeColor}
+              label={labels.colors[snapshot.view.activeColor]}
+            />
           </div>
         </div>
         <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
-            Status
+            {labels.statusLabel}
           </p>
           <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
-            {snapshot.view.matchResultBanner ?? snapshot.view.status}
+            {snapshot.matchResult
+              ? `${labels.winnerLabel}: ${winnerPlayer?.displayName ?? snapshot.matchResult.winnerIds[0]}`
+              : labels.inProgressStatus}
           </p>
         </div>
       </div>
 
-      <section aria-label="Table" className="rounded-3xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-900">
+      <section
+        aria-label={labels.tableLabel}
+        className="rounded-3xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-900"
+      >
         <div className="grid gap-8 sm:grid-cols-2 sm:items-start">
           <div>
             <h2 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
@@ -148,7 +198,7 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
             <div className="mt-3">
               <HiddenUnoCardStack
                 cardCount={snapshot.view.drawPileCount}
-                label={`${labels.drawPileLabel}: ${snapshot.view.drawPileCount}`}
+                label={labels.drawPileLabel}
               />
             </div>
           </div>
@@ -188,14 +238,23 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
         >
           {labels.legalActionsTitle}
         </h2>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {snapshot.view.legalActions.length > 0 ? (
+        <div
+          className="mt-4 flex flex-wrap gap-2"
+          role="group"
+          aria-label={labels.legalActionsTitle}
+        >
+          {snapshot.matchResult ? (
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+              {labels.completedMessage}
+            </p>
+          ) : snapshot.view.legalActions.length > 0 ? (
             snapshot.view.legalActions.map((action) => (
               <button
                 key={action.id}
                 type="button"
-                onClick={() => sessionRef.current?.submitMove(action.move)}
-                className="min-h-11 rounded-full border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-950 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-800"
+                disabled={isApplyingMove}
+                onClick={() => submitMove(action.move)}
+                className="min-h-11 rounded-full border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-950 hover:bg-zinc-100 disabled:cursor-wait disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-800"
               >
                 {action.label}
               </button>
@@ -226,12 +285,14 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
                   {player.displayName}
                 </p>
                 <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium uppercase tracking-wide text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
-                  {player.controller}
+                  {player.controller === 'human'
+                    ? labels.humanLabel
+                    : labels.botLabel}
                 </span>
               </div>
               <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
-                {player.handCount} cards
-                {player.isActive ? ' · Active turn' : ''}
+                {player.handCount} {labels.cardsLabel}
+                {player.isActive ? ` · ${labels.activeTurnLabel}` : ''}
               </p>
             </article>
           ))}
