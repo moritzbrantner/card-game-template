@@ -1,33 +1,33 @@
 export const homePage = {
-  eyebrow: 'Card game foundation',
-  title: 'Build card games from one reusable foundation.',
+  eyebrow: 'Card game preview',
+  title: 'Pick a game and play against bots.',
   description:
-    'card-game-template separates reusable game contracts, rules, sessions, and multiplayer concerns from individual games. The GitHub Pages site demonstrates that foundation with complete browser-playable examples.',
-  browseGames: 'Explore playable games',
+    'The preview is deliberately local and simple: no account, no analytics, no ads, no lobby, and no server state. Open a game and play it in the browser.',
+  browseGames: 'Choose a game',
   viewSource: 'View source',
   pills: {
     engine: 'Shared game engine',
-    rules: 'Composable rule packages',
-    delivery: 'Browser-ready examples',
+    rules: 'Independent rules',
+    delivery: 'Local bot play',
   },
-  gamesEyebrow: 'Implemented with the template',
-  gamesTitle: 'Playable games',
+  gamesEyebrow: 'Playable now',
+  gamesTitle: 'Local browser games',
   gamesDescription:
-    'Each example exercises the same foundation while keeping game-specific rules and presentation in their own packages and surfaces.',
+    'These examples run through the reusable game packages and local session model without exposing unfinished account or multiplayer surfaces.',
   games: {
     uno: {
       category: 'Shedding game',
       title: 'UNO-style',
       description:
-        'Create and join lobbies, play legal card actions, use bots, resume matches, and inspect completed games through the shared session model.',
-      cta: 'Open UNO-style game',
+        'Play a complete local UNO-style match against a deterministic bot with the real rules engine and legal actions.',
+      cta: 'Play UNO-style',
     },
     phase10: {
       category: 'Rummy-style game',
       title: 'Phase 10-style',
       description:
         'Play locally with configurable phase definitions, deterministic bot profiles, visible legal actions, and reusable round state.',
-      cta: 'Open Phase 10-style game',
+      cta: 'Play Phase 10-style',
     },
     poker: {
       category: 'Poker',
@@ -44,10 +44,10 @@ export const homePage = {
       cta: 'Open Arcane Duel',
     },
   },
-  foundationEyebrow: 'One foundation',
-  foundationTitle: 'Reusable foundations, independent games.',
+  foundationEyebrow: 'Under the games',
+  foundationTitle: 'Reusable engine, rules, and local sessions.',
   foundationDescription:
-    'The examples are consumers of the template architecture. They demonstrate the shared contracts without turning any one game into the platform itself.',
+    'The preview focuses on the parts that are useful for building card games and keeps unfinished website-account infrastructure out of the way.',
   foundation: {
     engine: {
       title: 'Game engine and contracts',
@@ -57,12 +57,12 @@ export const homePage = {
     rules: {
       title: 'Independent rule packages',
       description:
-        'UNO-style, poker, TCG, and other rules remain independently testable consumers rather than leaking into the core engine.',
+        'Each game keeps its rules in an independently testable package instead of leaking game-specific behavior into the core engine.',
     },
     sessions: {
-      title: 'Sessions and multiplayer',
+      title: 'Local sessions and bots',
       description:
-        'Lobby, persistence, bot, replay, and multiplayer concerns can be reused across games without duplicating their domain rules.',
+        'Browser-local sessions exercise the same game contracts with deterministic bot opponents and no account or persistence requirement.',
     },
   },
 };
