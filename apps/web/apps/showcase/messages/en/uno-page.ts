@@ -1,7 +1,12 @@
 export const unoPage = {
-  title: 'UNO-style matches',
+  title: 'UNO-style',
   description:
-    'Create private UNO lobbies, invite other players with a shareable link, reserve bots, and keep the live authoritative match after the lobby starts.',
+    'Play a complete local match against a bot directly in this browser. No account, lobby, server, analytics, or persistence is involved.',
+  restartAction: 'Restart match',
+  drawPileLabel: 'Draw pile',
+  discardPileLabel: 'Discard pile',
+  handTitle: 'Your hand',
+  playersTitle: 'Players',
   createTitle: 'Create a lobby',
   createHint:
     'Pick a player name, choose the total table size, and reserve bot seats before you invite anyone else.',
@@ -32,7 +37,7 @@ export const unoPage = {
   reservedBotsLabel: 'Reserved bots',
   readyToStart:
     'Everyone who joined is ready. The host can start the game now.',
-  waitingForPlayers: 'No legal action is available for the current state.',
+  waitingForPlayers: 'The bot is taking its turn.',
   activeMatchTitle: 'Active match',
   activeMatchDescription:
     'The server is authoritative. Submit moves here and the match resumes from persisted state after reload.',
@@ -50,7 +55,7 @@ export const unoPage = {
   noActiveMatch: 'Create a lobby, join an invite, or resume an active match.',
   overviewAction: 'Back to overview',
   reviewReplayAction: 'Review replay',
-  legalActionsTitle: 'Legal actions',
+  legalActionsTitle: 'Your move',
   analysisTitle: 'Analysis',
   wildChoiceTitle: 'Choose wild color',
   wildChoiceDescription: 'Pick the color this wild card should set.',
