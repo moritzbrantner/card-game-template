@@ -1,7 +1,12 @@
 export const unoPage = {
-  title: 'UNO-aehnliche Partien',
+  title: 'UNO-aehnlich',
   description:
-    'Erstelle private UNO-Lobbys, teile Einladungslinks mit anderen Spielern, reserviere Bot-Sitze und fuehre danach weiterhin serverautoritativ durch das Match.',
+    'Spiele direkt in diesem Browser eine komplette lokale Partie gegen einen Bot. Kein Konto, keine Lobby, kein Server, keine Analyse und keine Persistenz.',
+  restartAction: 'Partie neu starten',
+  drawPileLabel: 'Nachziehstapel',
+  discardPileLabel: 'Ablagestapel',
+  handTitle: 'Deine Hand',
+  playersTitle: 'Spieler',
   createTitle: 'Lobby erstellen',
   createHint:
     'Waehle einen Spielernamen, lege die Tischgroesse fest und reserviere Bot-Sitze, bevor du andere einlaedst.',
@@ -32,8 +37,7 @@ export const unoPage = {
   reservedBotsLabel: 'Reservierte Bots',
   readyToStart:
     'Alle beigetretenen Spieler sind bereit. Der Host kann das Spiel jetzt starten.',
-  waitingForPlayers:
-    'Fuer den aktuellen Zustand gibt es keine zulaessige Aktion.',
+  waitingForPlayers: 'Der Bot ist am Zug.',
   activeMatchTitle: 'Aktives Match',
   activeMatchDescription:
     'Der Server ist autoritativ. Reiche hier Zuege ein und setze die Partie nach einem Reload fort.',
@@ -53,7 +57,7 @@ export const unoPage = {
     'Erstelle eine Lobby, tritt einer Einladung bei oder setze eine aktive Partie fort.',
   overviewAction: 'Zur Uebersicht',
   reviewReplayAction: 'Replay ansehen',
-  legalActionsTitle: 'Zulaessige Aktionen',
+  legalActionsTitle: 'Dein Zug',
   analysisTitle: 'Analyse',
   wildChoiceTitle: 'Wild-Farbe waehlen',
   wildChoiceDescription: 'Waehle die Farbe, die diese Wild-Karte setzen soll.',
