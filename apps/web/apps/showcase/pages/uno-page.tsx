@@ -17,7 +17,6 @@ export default async function UnoPage({ locale }: { locale: AppLocale }) {
           blue: t('colors.blue'),
           green: t('colors.green'),
           red: t('colors.red'),
-          wild: t('colors.wild'),
           yellow: t('colors.yellow'),
         },
         completedMessage: t('completedMessage'),
