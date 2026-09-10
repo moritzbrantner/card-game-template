@@ -1,68 +1,68 @@
 export const homePage = {
-  eyebrow: 'Kartenspiel-Fundament',
-  title: 'Kartenspiele auf einem wiederverwendbaren Fundament bauen.',
+  eyebrow: 'Kartenspiel-Vorschau',
+  title: 'Waehle ein Spiel und spiele gegen Bots.',
   description:
-    'card-game-template trennt wiederverwendbare Spielverträge, Regeln, Sessions und Multiplayer-Belange von den einzelnen Spielen. Die GitHub-Pages-Seite zeigt dieses Fundament mit vollständig im Browser spielbaren Beispielen.',
-  browseGames: 'Spielbare Beispiele ansehen',
+    'Die Vorschau ist bewusst lokal und einfach: kein Konto, keine Analyse, keine Werbung, keine Lobby und kein Serverzustand. Oeffne ein Spiel und spiele direkt im Browser.',
+  browseGames: 'Spiel auswaehlen',
   viewSource: 'Quellcode ansehen',
   pills: {
     engine: 'Gemeinsame Game Engine',
-    rules: 'Komponierbare Regelpakete',
-    delivery: 'Browserfähige Beispiele',
+    rules: 'Unabhaengige Regeln',
+    delivery: 'Lokales Bot-Spiel',
   },
-  gamesEyebrow: 'Mit dem Template umgesetzt',
-  gamesTitle: 'Spielbare Spiele',
+  gamesEyebrow: 'Jetzt spielbar',
+  gamesTitle: 'Lokale Browser-Spiele',
   gamesDescription:
-    'Jedes Beispiel nutzt dasselbe Fundament, während spielspezifische Regeln und Darstellung in eigenen Paketen und Oberflächen bleiben.',
+    'Diese Beispiele nutzen die wiederverwendbaren Spielpakete und das lokale Session-Modell, ohne unfertige Konto- oder Multiplayer-Oberflaechen zu zeigen.',
   games: {
     uno: {
       category: 'Ablegespiel',
       title: 'UNO-artig',
       description:
-        'Lobbys erstellen und betreten, erlaubte Kartenaktionen spielen, Bots verwenden, Partien fortsetzen und abgeschlossene Spiele über das gemeinsame Session-Modell ansehen.',
-      cta: 'UNO-artiges Spiel öffnen',
+        'Spiele eine komplette lokale UNO-artige Partie gegen einen deterministischen Bot mit der echten Regel-Engine und zulaessigen Aktionen.',
+      cta: 'UNO-artig spielen',
     },
     phase10: {
-      category: 'Rommé-artiges Spiel',
+      category: 'Romme-artiges Spiel',
       title: 'Phase-10-artig',
       description:
-        'Lokal mit konfigurierbaren Phasen, deterministischen Bot-Profilen, sichtbaren erlaubten Aktionen und wiederverwendbarem Rundenzustand spielen.',
-      cta: 'Phase-10-artiges Spiel öffnen',
+        'Spiele lokal mit konfigurierbaren Phasen, deterministischen Bot-Profilen, sichtbaren erlaubten Aktionen und wiederverwendbarem Rundenzustand.',
+      cta: 'Phase-10-artig spielen',
     },
     poker: {
       category: 'Poker',
       title: 'Texas Hold’em',
       description:
-        'Einen persistierten Tisch erstellen, gegen deterministische Bots spielen, erlaubte Aktionen senden und die maßgebliche Hand nach einem Neuladen fortsetzen.',
-      cta: 'Pokerspiel öffnen',
+        'Einen persistierten Tisch erstellen, gegen deterministische Bots spielen, erlaubte Aktionen senden und die massgebliche Hand nach einem Neuladen fortsetzen.',
+      cta: 'Pokerspiel oeffnen',
     },
     tcg: {
       category: 'Sammelkartenspiel',
       title: 'Arcane Duel',
       description:
-        'Ein persistiertes eigenes Kartenduell mit Deckzustand, sichtbaren Händen, erlaubten Aktionen, menschlichen oder Bot-Gegnern und einem maßgeblichen Match-Modell.',
-      cta: 'Arcane Duel öffnen',
+        'Ein persistiertes eigenes Kartenduell mit Deckzustand, sichtbaren Haenden, erlaubten Aktionen, menschlichen oder Bot-Gegnern und einem massgeblichen Match-Modell.',
+      cta: 'Arcane Duel oeffnen',
     },
   },
-  foundationEyebrow: 'Ein Fundament',
-  foundationTitle: 'Gemeinsames Fundament, unabhängige Spiele.',
+  foundationEyebrow: 'Unter den Spielen',
+  foundationTitle: 'Wiederverwendbare Engine, Regeln und lokale Sessions.',
   foundationDescription:
-    'Die Beispiele sind Verbraucher der Template-Architektur. Sie demonstrieren die gemeinsamen Verträge, ohne ein einzelnes Spiel selbst zur Plattform zu machen.',
+    'Die Vorschau konzentriert sich auf die Teile, die fuer Kartenspiele nuetzlich sind, und haelt unfertige Website-Konto-Infrastruktur aus dem Weg.',
   foundation: {
     engine: {
-      title: 'Game Engine und Verträge',
+      title: 'Game Engine und Vertraege',
       description:
-        'Gemeinsame Zustandsübergänge, Grenzen erlaubter Aktionen, Kataloge und typisierte Verträge bilden den wiederverwendbaren Kern.',
+        'Gemeinsame Zustandsuebergaenge, Grenzen erlaubter Aktionen, Kataloge und typisierte Vertraege bilden den wiederverwendbaren Kern.',
     },
     rules: {
-      title: 'Unabhängige Regelpakete',
+      title: 'Unabhaengige Regelpakete',
       description:
-        'UNO-artige, Poker-, TCG- und weitere Regeln bleiben unabhängig testbare Verbraucher und sickern nicht in die Kern-Engine ein.',
+        'Jedes Spiel behaelt seine Regeln in einem unabhaengig testbaren Paket, statt spielspezifisches Verhalten in die Kern-Engine sickern zu lassen.',
     },
     sessions: {
-      title: 'Sessions und Multiplayer',
+      title: 'Lokale Sessions und Bots',
       description:
-        'Lobby-, Persistenz-, Bot-, Replay- und Multiplayer-Belange können spielübergreifend wiederverwendet werden, ohne Domain-Regeln zu duplizieren.',
+        'Browser-lokale Sessions verwenden dieselben Spielvertraege mit deterministischen Bot-Gegnern und ohne Konto- oder Persistenzanforderung.',
     },
   },
 };
