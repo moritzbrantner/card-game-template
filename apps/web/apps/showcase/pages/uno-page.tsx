@@ -1,65 +1,42 @@
 import type { AppLocale } from '@moritzbrantner/app-pack';
 
-import { UnoPageClient } from '@/apps/showcase/components/uno-page-client';
+import { UnoLocalPageClient } from '@/apps/showcase/components/uno-local-page-client';
 import { createTranslator } from '@/src/i18n/messages';
 
 export default async function UnoPage({ locale }: { locale: AppLocale }) {
   const t = createTranslator(locale, 'UnoPage');
 
   return (
-    <UnoPageClient
+    <UnoLocalPageClient
       labels={{
+        activeColorLabel: t('activeColorLabel'),
+        activeTurnLabel: t('activeTurnLabel'),
+        botLabel: t('botLabel'),
+        cardsLabel: t('cardsLabel'),
+        colors: {
+          blue: t('colors.blue'),
+          green: t('colors.green'),
+          red: t('colors.red'),
+          yellow: t('colors.yellow'),
+        },
+        completedMessage: t('completedMessage'),
         description: t('description'),
-        activeMatchDescription: t('activeMatchDescription'),
-        activeMatchTitle: t('activeMatchTitle'),
-        activeMatchesTitle: t('activeMatchesTitle'),
-        analysisTitle: t('analysisTitle'),
-        botAmountHint: t('botAmountHint'),
-        botAmountLabel: t('botAmountLabel'),
-        completedMatchStatus: t('completedMatchStatus'),
-        copyInviteAction: t('copyInviteAction'),
-        copyInviteStatus: t('copyInviteStatus'),
-        createAction: t('createAction'),
-        createHint: t('createHint'),
-        createTitle: t('createTitle'),
-        emptyOpenLobbies: t('emptyOpenLobbies'),
-        emptyRecentMatches: t('emptyRecentMatches'),
-        exitGame: t('exitGame'),
-        exitedGameStatus: t('exitedGameStatus'),
-        finishGame: t('finishGame'),
-        hostBadge: t('hostBadge'),
-        inviteDescription: t('inviteDescription'),
-        inviteLinkLabel: t('inviteLinkLabel'),
-        inviteTitle: t('inviteTitle'),
-        joinAction: t('joinAction'),
-        joinedLobbyStatus: t('joinedLobbyStatus'),
-        leaveLobby: t('leaveLobby'),
-        leftLobbyStatus: t('leftLobbyStatus'),
+        discardPileLabel: t('discardPileLabel'),
+        drawPileLabel: t('drawPileLabel'),
+        handTitle: t('handTitle'),
+        humanLabel: t('humanLabel'),
+        inProgressStatus: t('inProgressStatus'),
         legalActionsTitle: t('legalActionsTitle'),
-        lobbyReadyTitle: t('lobbyReadyTitle'),
-        nameLabel: t('nameLabel'),
-        noActiveMatch: t('noActiveMatch'),
-        openLobbiesTitle: t('openLobbiesTitle'),
-        overviewAction: t('overviewAction'),
-        pastGamesCta: t('pastGamesCta'),
-        readyAction: t('readyAction'),
-        readyToStart: t('readyToStart'),
-        reloadAction: t('reloadAction'),
-        recentMatchesTitle: t('recentMatchesTitle'),
-        reservedBotsLabel: t('reservedBotsLabel'),
-        resumeAction: t('resumeAction'),
-        reviewReplayAction: t('reviewReplayAction'),
-        roomSizeLabel: t('roomSizeLabel'),
-        shareInviteHint: t('shareInviteHint'),
-        startGame: t('startGame'),
-        startedGameStatus: t('startedGameStatus'),
+        localMatchLabel: t('localMatchLabel'),
+        playersTitle: t('playersTitle'),
+        restartAction: t('restartAction'),
+        statusLabel: t('statusLabel'),
+        tableLabel: t('tableLabel'),
         title: t('title'),
+        turnLabel: t('turnLabel'),
         waitingForPlayers: t('waitingForPlayers'),
-        wildChoiceCancel: t('wildChoiceCancel'),
-        wildChoiceDescription: t('wildChoiceDescription'),
-        wildChoiceTitle: t('wildChoiceTitle'),
+        winnerLabel: t('winnerLabel'),
       }}
-      pastGamesHref={`/${locale}/past-games`}
     />
   );
 }
