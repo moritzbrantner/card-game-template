@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { CardActionPileControl, PlayerHand } from '@moritzbrantner/card-games';
 import {
   createLocalGameSession,
   type LocalGameSession,
@@ -13,9 +14,11 @@ import {
   getUnoExamplePreset,
   projectUnoPlayerView,
   type UnoColor,
+  type UnoDirectPlayActionView,
   type UnoMove,
   type UnoPlayerView,
   type UnoState,
+  type UnoVisibleCardView,
 } from '@repo/game-uno';
 
 import {
@@ -23,6 +26,7 @@ import {
   UnoCardVisual,
   UnoColorBadge,
 } from '@/components/uno-card-visuals';
+import { GameSessionFrame } from './game-session';
 
 type UnoLocalPageLabels = {
   activeColorLabel: string;
@@ -49,6 +53,11 @@ type UnoLocalPageLabels = {
   winnerLabel: string;
 };
 
+type PendingColorChoice = {
+  actions: readonly UnoDirectPlayActionView[];
+  cardId: string;
+};
+
 const PRESET_ID = 'bot-duel' as const;
 
 function createPreviewSession(): LocalGameSession<
@@ -73,6 +82,19 @@ function createPreviewSession(): LocalGameSession<
   });
 }
 
+function colorChoiceActions(actions: readonly UnoDirectPlayActionView[]) {
+  const seen = new Set<UnoColor>();
+
+  return actions.filter((action) => {
+    if (!action.chosenColor || seen.has(action.chosenColor)) {
+      return false;
+    }
+
+    seen.add(action.chosenColor);
+    return true;
+  });
+}
+
 export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
   const sessionRef = useRef<LocalGameSession<
     UnoState,
@@ -81,6 +103,8 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
   > | null>(null);
   const applyingMoveRef = useRef(false);
   const [isApplyingMove, setIsApplyingMove] = useState(false);
+  const [pendingColorChoice, setPendingColorChoice] =
+    useState<PendingColorChoice | null>(null);
   const [snapshot, setSnapshot] = useState(() =>
     createPreviewSession().getSnapshot(),
   );
@@ -90,6 +114,7 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
     sessionRef.current = session;
     const unsubscribe = session.subscribe((nextSnapshot) => {
       setSnapshot(nextSnapshot);
+      setPendingColorChoice(null);
       requestAnimationFrame(() => {
         applyingMoveRef.current = false;
         setIsApplyingMove(false);
@@ -103,6 +128,9 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
 
   const humanPlayer = snapshot.view.players.find(
     (player) => player.controller === 'human',
+  );
+  const activePlayer = snapshot.view.players.find(
+    (player) => player.playerId === snapshot.view.activePlayerId,
   );
   const winnerPlayer = snapshot.matchResult
     ? snapshot.view.players.find(
@@ -119,6 +147,7 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
 
     applyingMoveRef.current = true;
     setIsApplyingMove(true);
+    setPendingColorChoice(null);
 
     try {
       session.submitMove(move);
@@ -129,175 +158,240 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
     }
   }
 
+  function handleCardPlay(card: UnoVisibleCardView) {
+    if (isApplyingMove || !card.directPlay) {
+      return;
+    }
+
+    if (card.directPlay.promptsForColorChoice) {
+      setPendingColorChoice({
+        actions: card.directPlay.actions,
+        cardId: card.id,
+      });
+      return;
+    }
+
+    const action = card.directPlay.actions.find(
+      (candidate) => candidate.id === card.directPlay?.defaultActionId,
+    );
+
+    if (action) {
+      submitMove(action.move);
+    }
+  }
+
+  function restartMatch() {
+    setPendingColorChoice(null);
+    sessionRef.current?.restart();
+  }
+
+  const winnerText = snapshot.matchResult
+    ? `${labels.winnerLabel}: ${winnerPlayer?.displayName ?? snapshot.matchResult.winnerIds[0]}`
+    : labels.inProgressStatus;
+  const nonCardActions = snapshot.view.legalActions.filter(
+    (action) => action.move.kind !== 'play-card',
+  );
+
   return (
-    <section className="space-y-8 pb-8">
-      <header className="flex flex-col gap-5 border-b border-zinc-200 pb-8 dark:border-zinc-800 sm:flex-row sm:items-end sm:justify-between">
-        <div className="max-w-2xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-            {labels.localMatchLabel}
-          </p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-zinc-950 sm:text-5xl dark:text-zinc-50">
-            {labels.title}
-          </h1>
-          <p className="mt-4 text-base leading-7 text-zinc-600 dark:text-zinc-300">
-            {labels.description}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => sessionRef.current?.restart()}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
-        >
-          {labels.restartAction}
-        </button>
-      </header>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
-            {labels.turnLabel}
-          </p>
-          <p className="mt-2 font-semibold text-zinc-950 dark:text-zinc-50">
-            {snapshot.view.players.find(
-              (player) => player.playerId === snapshot.view.activePlayerId,
-            )?.displayName ?? snapshot.view.activePlayerId}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
-            {labels.activeColorLabel}
-          </p>
-          <div className="mt-2">
-            <UnoColorBadge
-              color={snapshot.view.activeColor}
-              label={labels.colors[snapshot.view.activeColor]}
-            />
-          </div>
-        </div>
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
-            {labels.statusLabel}
-          </p>
-          <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
-            {snapshot.matchResult
-              ? `${labels.winnerLabel}: ${winnerPlayer?.displayName ?? snapshot.matchResult.winnerIds[0]}`
-              : labels.inProgressStatus}
-          </p>
-        </div>
-      </div>
-
-      <section
-        aria-label={labels.tableLabel}
-        className="rounded-3xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-900"
-      >
-        <div className="grid gap-8 sm:grid-cols-2 sm:items-start">
-          <div>
-            <h2 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
-              {labels.drawPileLabel}
-            </h2>
-            <div className="mt-3">
-              <HiddenUnoCardStack
-                cardCount={snapshot.view.drawPileCount}
-                label={labels.drawPileLabel}
+    <div className="pb-8">
+      <GameSessionFrame
+        actions={[
+          ...nonCardActions.map((action) => ({
+            id: action.id,
+            label: action.label,
+            disabled: isApplyingMove,
+            onSelect: () => submitMove(action.move),
+          })),
+          {
+            id: 'restart',
+            label: labels.restartAction,
+            disabled: isApplyingMove,
+            onSelect: restartMatch,
+            tone: 'secondary' as const,
+          },
+        ]}
+        actionsLabel={labels.legalActionsTitle}
+        badges={[
+          {
+            id: 'mode',
+            label: labels.localMatchLabel,
+            tone: 'neutral',
+          },
+        ]}
+        emptyActionsLabel={
+          snapshot.matchResult ? labels.completedMessage : labels.waitingForPlayers
+        }
+        eyebrow={labels.localMatchLabel}
+        participants={snapshot.view.players.map((player) => ({
+          detail: `${player.controller === 'human' ? labels.humanLabel : labels.botLabel} · ${player.handCount} ${labels.cardsLabel}`,
+          displayName: player.displayName,
+          id: player.playerId,
+          isActive: player.isActive,
+          isActor: player.isActor,
+          isViewer: player.isViewer,
+        }))}
+        pending={isApplyingMove}
+        result={snapshot.matchResult ? winnerText : undefined}
+        statusItems={[
+          {
+            id: 'turn',
+            label: labels.turnLabel,
+            value: activePlayer?.displayName ?? snapshot.view.activePlayerId,
+          },
+          {
+            id: 'color',
+            label: labels.activeColorLabel,
+            value: (
+              <UnoColorBadge
+                color={snapshot.view.activeColor}
+                label={labels.colors[snapshot.view.activeColor]}
               />
-            </div>
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
-              {labels.discardPileLabel}
-            </h2>
-            <div className="mt-3">
-              {snapshot.view.discardTop ? (
-                <UnoCardVisual card={snapshot.view.discardTop} />
-              ) : (
-                <p className="text-sm text-zinc-500">—</p>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section aria-labelledby="hand-heading">
-        <h2
-          id="hand-heading"
-          className="text-xl font-semibold text-zinc-950 dark:text-zinc-50"
-        >
-          {labels.handTitle}
-        </h2>
-        <div className="mt-4 flex gap-3 overflow-x-auto pb-3">
-          {humanPlayer?.visibleCards.map((card) => (
-            <UnoCardVisual key={card.id} card={card} variant="compact" />
-          ))}
-        </div>
-      </section>
-
-      <section aria-labelledby="actions-heading">
-        <h2
-          id="actions-heading"
-          className="text-xl font-semibold text-zinc-950 dark:text-zinc-50"
-        >
-          {labels.legalActionsTitle}
-        </h2>
-        <div
-          className="mt-4 flex flex-wrap gap-2"
-          role="group"
-          aria-label={labels.legalActionsTitle}
-        >
-          {snapshot.matchResult ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              {labels.completedMessage}
-            </p>
-          ) : snapshot.view.legalActions.length > 0 ? (
-            snapshot.view.legalActions.map((action) => (
-              <button
-                key={action.id}
-                type="button"
-                disabled={isApplyingMove}
-                onClick={() => submitMove(action.move)}
-                className="min-h-11 rounded-full border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-950 hover:bg-zinc-100 disabled:cursor-wait disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-800"
-              >
-                {action.label}
-              </button>
-            ))
-          ) : (
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              {labels.waitingForPlayers}
-            </p>
-          )}
-        </div>
-      </section>
-
-      <section aria-labelledby="players-heading">
-        <h2
-          id="players-heading"
-          className="text-xl font-semibold text-zinc-950 dark:text-zinc-50"
-        >
-          {labels.playersTitle}
-        </h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {snapshot.view.players.map((player) => (
-            <article
-              key={player.playerId}
-              className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-semibold text-zinc-950 dark:text-zinc-50">
-                  {player.displayName}
+            ),
+          },
+          {
+            id: 'status',
+            label: labels.statusLabel,
+            value: winnerText,
+          },
+        ]}
+        subtitle={labels.description}
+        table={
+          <div aria-label={labels.tableLabel} className="space-y-9">
+            <div className="flex flex-wrap items-start justify-center gap-10 sm:gap-16">
+              <div className="text-center">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+                  {labels.drawPileLabel}
                 </p>
-                <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium uppercase tracking-wide text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
-                  {player.controller === 'human'
-                    ? labels.humanLabel
-                    : labels.botLabel}
-                </span>
+                <CardActionPileControl
+                  actionTarget="draw-pile"
+                  aria-label={labels.drawPileLabel}
+                  className="p-0 text-left"
+                >
+                  <HiddenUnoCardStack
+                    cardCount={snapshot.view.drawPileCount}
+                    label={labels.drawPileLabel}
+                    compact
+                    className="justify-center text-white"
+                  />
+                </CardActionPileControl>
               </div>
-              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
-                {player.handCount} {labels.cardsLabel}
-                {player.isActive ? ` · ${labels.activeTurnLabel}` : ''}
-              </p>
-            </article>
-          ))}
-        </div>
-      </section>
-    </section>
+
+              <div className="text-center">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+                  {labels.discardPileLabel}
+                </p>
+                {snapshot.view.discardTop ? (
+                  <UnoCardVisual
+                    card={snapshot.view.discardTop}
+                    interactive={false}
+                    variant="compact"
+                  />
+                ) : (
+                  <div className="grid aspect-[5/7] w-24 place-items-center rounded-2xl border border-dashed border-white/20 text-sm text-white/40">
+                    —
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <section
+              aria-labelledby="hand-heading"
+              className="border-t border-white/10 pt-6"
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
+                <h3
+                  id="hand-heading"
+                  className="text-sm font-semibold uppercase tracking-[0.18em] text-white/60"
+                >
+                  {labels.handTitle}
+                </h3>
+                {humanPlayer ? (
+                  <p className="text-xs text-white/45">
+                    {humanPlayer.handCount} {labels.cardsLabel}
+                    {humanPlayer.isActive ? ` · ${labels.activeTurnLabel}` : ''}
+                  </p>
+                ) : null}
+              </div>
+
+              {humanPlayer?.visibleCards.length ? (
+                <PlayerHand
+                  aria-label={labels.handTitle}
+                  className="-mx-3 mt-5 overflow-x-auto px-3 pb-3 pt-2"
+                  curve={8}
+                  overlap={38}
+                  spreadDegrees={10}
+                >
+                  {humanPlayer.visibleCards.map((card) => {
+                    const playable = Boolean(card.directPlay);
+
+                    return (
+                      <UnoCardVisual
+                        key={card.id}
+                        aria-disabled={!playable || isApplyingMove}
+                        card={card}
+                        className={
+                          pendingColorChoice?.cardId === card.id
+                            ? 'ring-2 ring-white/80 ring-offset-2 ring-offset-zinc-950'
+                            : undefined
+                        }
+                        interactive={playable && !isApplyingMove}
+                        onClick={() => handleCardPlay(card)}
+                        onKeyDown={(event) => {
+                          if (
+                            playable &&
+                            (event.key === 'Enter' || event.key === ' ')
+                          ) {
+                            event.preventDefault();
+                            handleCardPlay(card);
+                          }
+                        }}
+                        role={playable ? 'button' : 'img'}
+                        tabIndex={playable && !isApplyingMove ? 0 : undefined}
+                        variant="compact"
+                      />
+                    );
+                  })}
+                </PlayerHand>
+              ) : (
+                <p className="mt-5 text-sm text-white/55">
+                  {labels.waitingForPlayers}
+                </p>
+              )}
+
+              {pendingColorChoice ? (
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/12 bg-black/20 p-3">
+                  <span className="mr-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
+                    {labels.activeColorLabel}
+                  </span>
+                  {colorChoiceActions(pendingColorChoice.actions).map((action) => (
+                    <button
+                      key={action.id}
+                      type="button"
+                      aria-label={action.label}
+                      className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                      disabled={isApplyingMove}
+                      onClick={() => submitMove(action.move)}
+                    >
+                      <UnoColorBadge
+                        color={action.chosenColor!}
+                        label={labels.colors[action.chosenColor!]}
+                      />
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className="min-h-8 rounded-full border border-white/14 px-3 text-xs font-medium text-white/65 hover:bg-white/8 hover:text-white"
+                    onClick={() => setPendingColorChoice(null)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : null}
+            </section>
+          </div>
+        }
+        title={labels.title}
+      />
+    </div>
   );
 }
