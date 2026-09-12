@@ -203,13 +203,10 @@ describe('UnoLocalPageClient', () => {
   it('keeps draw and restart controls connected to the local session', () => {
     render(<UnoLocalPageClient labels={labels} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Draw pile' }));
-
-    expect(sessionSpies.submitMove).toHaveBeenCalledWith(drawMove);
-
-    sessionSpies.submitMove.mockClear();
     fireEvent.click(screen.getByRole('button', { name: 'Restart match' }));
-
     expect(sessionSpies.restart).toHaveBeenCalledOnce();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Draw pile' }));
+    expect(sessionSpies.submitMove).toHaveBeenCalledWith(drawMove);
   });
 });
