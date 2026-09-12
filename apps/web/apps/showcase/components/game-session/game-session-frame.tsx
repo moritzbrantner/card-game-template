@@ -274,7 +274,9 @@ export function GameSessionFrame({
                     <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-white/45">
                       {item.label}
                     </span>
-                    <span className="font-medium text-white/90">{item.value}</span>
+                    <span className="font-medium text-white/90">
+                      {item.value}
+                    </span>
                     {item.detail ? (
                       <span className="hidden text-xs text-white/45 md:inline">
                         {item.detail}
