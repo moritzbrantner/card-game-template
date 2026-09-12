@@ -19,14 +19,14 @@ import type {
 function badgeClassName(tone: GameSessionBadge['tone']) {
   switch (tone) {
     case 'success':
-      return 'border-emerald-300/30 bg-emerald-300/10 text-emerald-100';
+      return 'border-emerald-300/70 bg-emerald-50 text-emerald-800 dark:border-emerald-300/30 dark:bg-emerald-300/10 dark:text-emerald-100';
     case 'warning':
-      return 'border-amber-300/30 bg-amber-300/10 text-amber-100';
+      return 'border-amber-300/70 bg-amber-50 text-amber-800 dark:border-amber-300/30 dark:bg-amber-300/10 dark:text-amber-100';
     case 'danger':
-      return 'border-red-300/30 bg-red-300/10 text-red-100';
+      return 'border-red-300/70 bg-red-50 text-red-800 dark:border-red-300/30 dark:bg-red-300/10 dark:text-red-100';
     case 'neutral':
     default:
-      return 'border-white/15 bg-white/8 text-white/78';
+      return 'border-zinc-300 bg-zinc-50 text-zinc-700 dark:border-white/15 dark:bg-white/8 dark:text-white/78';
   }
 }
 
