@@ -25,12 +25,7 @@
     "test:e2e": "turbo run test:e2e --concurrency=1",
     "benchmark": "bun scripts/run-build-benchmark.mjs",
     "format": "oxfmt --write .",
-    "check-types": "turbo run check-types",
-    "backup:build": "bash -lc 'cd apps/web.backup && bun run build'",
-    "backup:check-types": "bash -lc 'cd apps/web.backup && bun run check-types'",
-    "backup:test:unit": "bash -lc 'cd apps/web.backup && bun run test:unit'",
-    "backup:test:integration": "bash -lc 'cd apps/web.backup && bun run test:integration'",
-    "backup:test:e2e": "bash -lc 'cd apps/web.backup && bun run test:e2e'"
+    "check-types": "turbo run check-types"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
