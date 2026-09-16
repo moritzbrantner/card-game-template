@@ -3,14 +3,19 @@ import { describe, expect, it } from 'vitest';
 import {
   NAVIGATION_CONTEXT_ID,
   NAVIGATION_PALETTE_ACTION_ID,
+  createNavigationInputRegistry,
   defaultInputProfile,
   formatInputSequence,
   navigationActionId,
-  navigationInputRegistry,
   navigationPageContextId,
   readInputProfile,
 } from '@/src/input-bindings/foundation';
-import { appPageDefinitions } from '@/src/navigation/app-routes';
+
+const navigationPages = [
+  { key: 'home', hotkey: ['alt', 'h'] as const },
+  { key: 'reports', hotkey: ['ctrl', '2'] as const },
+] as const;
+const navigationInputRegistry = createNavigationInputRegistry(navigationPages);
 
 describe('shared input-bindings adapter', () => {
   it('declares semantic navigation actions with visibility-scoped contexts', () => {
@@ -19,7 +24,7 @@ describe('shared input-bindings adapter', () => {
     expect(new Set(actionIds).size).toBe(actionIds.length);
     expect(actionIds).toContain(NAVIGATION_PALETTE_ACTION_ID);
 
-    for (const page of appPageDefinitions) {
+    for (const page of navigationPages) {
       const action = navigationInputRegistry.actions.find(
         (candidate) => candidate.id === navigationActionId(page.key),
       );
@@ -30,6 +35,28 @@ describe('shared input-bindings adapter', () => {
         id: navigationPageContextId(page.key),
       });
     }
+  });
+
+  it('translates declared hotkeys into physical input strokes', () => {
+    const homeBinding = navigationInputRegistry.actions.find(
+      (action) => action.id === navigationActionId('home'),
+    )?.defaults?.[0];
+    const reportsBinding = navigationInputRegistry.actions.find(
+      (action) => action.id === navigationActionId('reports'),
+    )?.defaults?.[0];
+
+    expect(homeBinding?.sequence).toEqual([
+      {
+        key: { kind: 'physical', value: 'KeyH' },
+        modifiers: { alt: true },
+      },
+    ]);
+    expect(reportsBinding?.sequence).toEqual([
+      {
+        key: { kind: 'physical', value: 'Digit2' },
+        modifiers: { ctrl: true },
+      },
+    ]);
   });
 
   it('keeps the launcher in the general navigation context', () => {
