@@ -12,7 +12,7 @@ export const APP_SETTINGS_FOUNDATION_STORAGE_KEY =
 
 export type SettingsFoundationStatus = 'loading' | 'ready' | 'degraded';
 
-type WireSettingValue =
+export type WireSettingValue =
   | { type: 'bool'; value: boolean }
   | { type: 'integer'; value: number }
   | { type: 'number'; value: number }
@@ -47,7 +47,7 @@ type SettingsBrowserModule = {
   ): Promise<SettingsFoundationSession>;
 };
 
-const settingIds = {
+export const settingIds = {
   background: 'appearance.background',
   dateFormat: 'dates.format',
   weekStartsOn: 'dates.week_starts_on',
@@ -74,11 +74,7 @@ export const appSettingDefinitions: readonly WireSettingDefinition[] = [
   boolDefinition(settingIds.reducedMotion, false),
   boolDefinition(settingIds.showHotkeyHints, true),
   boolDefinition(settingIds.notificationsEnabled, true),
-  choiceDefinition(
-    settingIds.notificationType,
-    ['instant', 'digest', 'silent'],
-    'instant',
-  ),
+  textDefinition(settingIds.notificationType, 'instant'),
 ] as const;
 
 let browserModulePromise: Promise<SettingsBrowserModule> | undefined;
@@ -110,7 +106,10 @@ export async function createAppSettingsFoundation(
     syncAppSettingsToFoundation(session, initialSettings);
   }
 
-  const settings = materializeAppSettings(session.effectiveValues(), initialSettings);
+  const settings = materializeAppSettings(
+    session.effectiveValues(),
+    initialSettings,
+  );
   storage.setItem(
     APP_SETTINGS_FOUNDATION_STORAGE_KEY,
     session.exportScope('user'),
@@ -134,7 +133,7 @@ export function syncAppSettingsToFoundation(
     settingIds.notificationsEnabled,
     bool(settings.notifications.enabled),
   );
-  session.set(settingIds.notificationType, choice(settings.notifications.type));
+  session.set(settingIds.notificationType, text(settings.notifications.type));
 }
 
 export function persistAppSettingsFoundation(
@@ -154,7 +153,7 @@ export function materializeAppSettings(
   const background = choiceValue(values[settingIds.background]);
   const dateFormat = choiceValue(values[settingIds.dateFormat]);
   const weekStartsOn = integerValue(values[settingIds.weekStartsOn]);
-  const notificationType = choiceValue(values[settingIds.notificationType]);
+  const notificationType = textValue(values[settingIds.notificationType]);
 
   return {
     background: backgroundOptions.includes(
@@ -192,9 +191,7 @@ export function materializeAppSettings(
         values[settingIds.notificationsEnabled],
         fallback.notifications.enabled,
       ),
-      type: ['instant', 'digest', 'silent'].includes(notificationType ?? '')
-        ? notificationType!
-        : fallback.notifications.type,
+      type: notificationType ?? fallback.notifications.type,
     },
   };
 }
@@ -233,12 +230,26 @@ function choiceDefinition(
   };
 }
 
+function textDefinition(id: string, value: string): WireSettingDefinition {
+  return {
+    id,
+    kind: { type: 'text', min_chars: 0, max_chars: 80 },
+    default: text(value),
+    scope: 'user',
+    apply_mode: 'immediate',
+  };
+}
+
 function bool(value: boolean): WireSettingValue {
   return { type: 'bool', value };
 }
 
 function integer(value: number): WireSettingValue {
   return { type: 'integer', value };
+}
+
+function text(value: string): WireSettingValue {
+  return { type: 'text', value };
 }
 
 function choice(value: string): WireSettingValue {
@@ -251,6 +262,10 @@ function boolValue(value: WireSettingValue | undefined, fallback: boolean) {
 
 function integerValue(value: WireSettingValue | undefined) {
   return value?.type === 'integer' ? value.value : undefined;
+}
+
+function textValue(value: WireSettingValue | undefined) {
+  return value?.type === 'text' ? value.value : undefined;
 }
 
 function choiceValue(value: WireSettingValue | undefined) {
