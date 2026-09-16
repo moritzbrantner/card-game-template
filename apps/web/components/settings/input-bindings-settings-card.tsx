@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/card';
 import {
   formatInputSequence,
-  navigationInputRegistry,
   type InputBinding,
   type InputBindingPatch,
   type InputProfile,
@@ -25,6 +24,7 @@ export function InputBindingsSettingsCard() {
   const t = useTranslations('SettingsPage');
   const {
     browserModule,
+    registry,
     profile,
     report,
     status,
@@ -40,14 +40,14 @@ export function InputBindingsSettingsCard() {
     const result = new Map<string, InputBinding[]>();
     const bindings =
       report?.effectiveBindings ??
-      navigationInputRegistry.actions.flatMap((action) => action.defaults ?? []);
+      registry.actions.flatMap((action) => action.defaults ?? []);
     for (const binding of bindings) {
       const actionBindings = result.get(binding.action) ?? [];
       actionBindings.push(binding);
       result.set(binding.action, actionBindings);
     }
     return result;
-  }, [report]);
+  }, [registry, report]);
 
   useEffect(() => {
     if (!recordingBindingId || !browserModule) {
@@ -87,10 +87,7 @@ export function InputBindingsSettingsCard() {
         sequence: [stroke],
       };
       const nextProfile = replaceBinding(profile, nextBinding);
-      const nextReport = browserModule.validateRegistry(
-        navigationInputRegistry,
-        nextProfile,
-      );
+      const nextReport = browserModule.validateRegistry(registry, nextProfile);
       const bindingConflict = nextReport.conflicts.find(
         (conflict) =>
           conflict.leftBindingId === recordingBindingId ||
@@ -119,6 +116,7 @@ export function InputBindingsSettingsCard() {
     browserModule,
     profile,
     recordingBindingId,
+    registry,
     report,
     t,
     updateProfile,
@@ -167,7 +165,7 @@ export function InputBindingsSettingsCard() {
         ) : null}
       </CardHeader>
       <CardContent className="space-y-5">
-        {navigationInputRegistry.actions.map((action) => {
+        {registry.actions.map((action) => {
           const bindings = bindingsByAction.get(action.id) ?? [];
           return (
             <section key={action.id} className="space-y-2">
