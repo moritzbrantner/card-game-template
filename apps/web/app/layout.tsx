@@ -3,12 +3,16 @@ import type { Metadata } from 'next';
 import { AppHydrationMarker } from '@/components/app-hydration-marker';
 import { AppServiceWorker } from '@/components/app-service-worker';
 import { DocumentBootstrap } from '@/components/document-bootstrap';
+import { createNavigationInputRegistry } from '@/src/input-bindings/foundation';
 import { InputBindingsProvider } from '@/src/input-bindings/provider';
+import { appPageDefinitions } from '@/src/navigation/app-routes';
 import { AppSettingsProvider } from '@/src/settings/provider';
 import { loadDocumentContext } from '@/src/runtime/document-context';
 import { getPublicSiteConfig } from '@/src/site-config/service';
 
 import './globals.css';
+
+const navigationInputRegistry = createNavigationInputRegistry(appPageDefinitions);
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteConfig = await getPublicSiteConfig();
@@ -56,7 +60,9 @@ export default async function RootLayout({
         <AppHydrationMarker />
         <AppServiceWorker />
         <AppSettingsProvider initialSettings={documentContext.settings}>
-          <InputBindingsProvider>{children}</InputBindingsProvider>
+          <InputBindingsProvider registry={navigationInputRegistry}>
+            {children}
+          </InputBindingsProvider>
         </AppSettingsProvider>
       </body>
     </html>
