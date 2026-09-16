@@ -6,7 +6,7 @@ import {
 } from '@/src/settings/preferences';
 
 export const SETTINGS_BROWSER_BUNDLE_URL =
-  'https://moritzbrantner.github.io/settings/settings-browser.js';
+  'https://cdn.jsdelivr.net/gh/moritzbrantner/settings@7c730f8f10441213e08c9cb9dd467f0470085eb2/settings-browser.js';
 export const APP_SETTINGS_FOUNDATION_STORAGE_KEY =
   'card-game-template.settings.user.v2';
 
