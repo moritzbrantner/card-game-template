@@ -135,18 +135,21 @@ export const navigationInputRegistry: InputActionRegistry = {
           NAVIGATION_PALETTE_ACTION_ID,
           'Slash',
           { shift: true },
+          NAVIGATION_CONTEXT_ID,
         ),
         binding(
           'card-game.navigation.palette.ctrl-k',
           NAVIGATION_PALETTE_ACTION_ID,
           'KeyK',
           { ctrl: true },
+          NAVIGATION_CONTEXT_ID,
         ),
         binding(
           'card-game.navigation.palette.meta-k',
           NAVIGATION_PALETTE_ACTION_ID,
           'KeyK',
           { meta: true },
+          NAVIGATION_CONTEXT_ID,
         ),
       ],
       provenance: { source: 'card-game-template/navigation', version: '1' },
@@ -163,6 +166,7 @@ export const navigationInputRegistry: InputActionRegistry = {
           navigationActionId(page.key),
           `Key${page.hotkey[1].toUpperCase()}`,
           { alt: true },
+          navigationPageContextId(page.key),
         ),
       ],
       provenance: { source: 'card-game-template/navigation', version: '1' },
@@ -183,6 +187,10 @@ export function navigationActionId(pageKey: string) {
   return `navigation.go.${pageKey}`;
 }
 
+export function navigationPageContextId(pageKey: string) {
+  return `${NAVIGATION_CONTEXT_ID}.page.${pageKey}`;
+}
+
 export function readInputProfile(
   storage: Pick<Storage, 'getItem'> = window.localStorage,
 ): InputProfile {
@@ -193,7 +201,11 @@ export function readInputProfile(
 
   try {
     const parsed = JSON.parse(stored) as unknown;
-    if (!isRecord(parsed) || typeof parsed.id !== 'string' || !Array.isArray(parsed.patches)) {
+    if (
+      !isRecord(parsed) ||
+      typeof parsed.id !== 'string' ||
+      !Array.isArray(parsed.patches)
+    ) {
       return structuredClone(defaultInputProfile);
     }
     return parsed as InputProfile;
@@ -230,6 +242,7 @@ function binding(
   action: string,
   keyCode: string,
   modifiers: InputModifiers,
+  contextId: string,
 ): InputBinding {
   return {
     id,
@@ -240,7 +253,7 @@ function binding(
         modifiers,
       },
     ],
-    when: { op: 'context', id: NAVIGATION_CONTEXT_ID },
+    when: { op: 'context', id: contextId },
     priority: 0,
   };
 }
