@@ -1,7 +1,13 @@
+import { NavigationHotkeysTrigger } from '@/components/navigation-hotkeys-trigger';
 import { LocalizedLink } from '@/i18n/server-link';
 import type { AppLocale } from '@/i18n/routing';
 import type { AppSession } from '@/src/auth';
 import type { NotificationPreview } from '@/src/domain/notifications/use-cases';
+import { createTranslator } from '@/src/i18n/messages';
+import {
+  formatAppHotkey,
+  getVisibleAppPages,
+} from '@/src/navigation/app-routes';
 
 type NavigationBarProps = {
   locale: AppLocale;
@@ -10,17 +16,66 @@ type NavigationBarProps = {
   notificationCenter?: NotificationPreview | null;
 };
 
-export function NavigationBar({ locale, siteName }: NavigationBarProps) {
+function getHotkeyGroupLabel(
+  category: 'discover' | 'workspace' | 'admin' | undefined,
+  t: ReturnType<typeof createTranslator>,
+) {
+  if (category === 'discover') {
+    return t('categories.discover');
+  }
+
+  if (category === 'workspace') {
+    return t('categories.workspace');
+  }
+
+  if (category === 'admin') {
+    return t('categories.admin');
+  }
+
+  return t('hotkeys.accountGroup');
+}
+
+export function NavigationBar({
+  locale,
+  siteName,
+  session,
+}: NavigationBarProps) {
   const labels =
     locale === 'de'
       ? { games: 'Spiele', phase10: 'Phase 10', uno: 'UNO' }
       : { games: 'Games', phase10: 'Phase 10', uno: 'UNO' };
-
+  const t = createTranslator(locale, 'NavigationBar');
   const links = [
     { href: '/', label: labels.games },
     { href: '/uno', label: labels.uno },
     { href: '/phase-10', label: labels.phase10 },
   ] as const;
+  const hotkeyItems = getVisibleAppPages({
+    isAuthenticated: Boolean(session?.user?.id),
+    role: session?.user?.role,
+  }).map((page) => {
+    const label = t(page.translationKey);
+    const groupLabel = getHotkeyGroupLabel(page.navigationCategory, t);
+    const hotkeyLabel = formatAppHotkey(page.hotkey);
+
+    return {
+      key: page.key,
+      href: page.href,
+      label,
+      groupLabel,
+      hotkey: page.hotkey,
+      hotkeyLabel,
+      searchText:
+        `${groupLabel} ${label} ${page.hotkey.join(' ')} ${hotkeyLabel}`.toLowerCase(),
+    };
+  });
+  const hotkeyLabels = {
+    button: t('hotkeys.button'),
+    title: t('hotkeys.title'),
+    description: t('hotkeys.description'),
+    searchPlaceholder: t('hotkeys.searchPlaceholder'),
+    empty: t('hotkeys.empty'),
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/88 backdrop-blur-xl dark:border-white/8 dark:bg-zinc-950/88">
@@ -41,7 +96,10 @@ export function NavigationBar({ locale, siteName }: NavigationBarProps) {
           </span>
         </LocalizedLink>
 
-        <div className="flex items-center gap-5 sm:gap-7" aria-label={labels.games}>
+        <div
+          className="flex items-center gap-3 sm:gap-5"
+          aria-label={labels.games}
+        >
           {links.map((link) => (
             <LocalizedLink
               key={link.href}
@@ -52,6 +110,7 @@ export function NavigationBar({ locale, siteName }: NavigationBarProps) {
               {link.label}
             </LocalizedLink>
           ))}
+          <NavigationHotkeysTrigger items={hotkeyItems} labels={hotkeyLabels} />
         </div>
       </nav>
     </header>

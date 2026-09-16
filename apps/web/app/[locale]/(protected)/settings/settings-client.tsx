@@ -12,6 +12,7 @@ import { ProfileFollowerVisibilityForm } from '@/components/profile-follower-vis
 import { ConsentSettingsCard } from '@/components/privacy/consent-settings-card';
 import { ProfileImageForm } from '@/components/profile-image-form';
 import { ProfileSearchVisibilityForm } from '@/components/profile-search-visibility-form';
+import { InputBindingsSettingsCard } from '@/components/settings/input-bindings-settings-card';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -337,18 +338,13 @@ export function SettingsClient({
                   updateSettings({ showHotkeyHints: checked })
                 }
               />
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">G H</Badge>
-                <Badge variant="secondary">G A</Badge>
-                <Badge variant="secondary">G F</Badge>
-                <Badge variant="secondary">G P</Badge>
-                <Badge variant="secondary">?</Badge>
-              </div>
               <p className="text-sm text-zinc-600 dark:text-zinc-300">
                 {t('workflow.hotkeySummary')}
               </p>
             </CardContent>
           </Card>
+
+          <InputBindingsSettingsCard />
 
           <Card>
             <CardHeader className="flex flex-col gap-2">

@@ -4,7 +4,9 @@ import {
   createContext,
   startTransition,
   useContext,
+  useEffect,
   useLayoutEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -17,6 +19,14 @@ import {
   buildAppSettingsCookie,
   type AppSettings,
 } from '@/src/settings/preferences';
+import {
+  createAppSettingsFoundation,
+  materializeAppSettings,
+  persistAppSettingsFoundation,
+  syncAppSettingsToFoundation,
+  type SettingsFoundationSession,
+  type SettingsFoundationStatus,
+} from '@/src/settings/foundation';
 
 type AppSettingsUpdater =
   | Partial<AppSettings>
@@ -25,6 +35,8 @@ type AppSettingsUpdater =
 type AppSettingsContextValue = {
   settings: AppSettings;
   updateSettings: (nextSettings: AppSettingsUpdater) => void;
+  foundationStatus: SettingsFoundationStatus;
+  foundationDiagnostics: readonly string[];
 };
 
 const AppSettingsContext = createContext<AppSettingsContextValue | null>(null);
@@ -64,8 +76,16 @@ export function AppSettingsProvider({
   const [settings, setSettings] = useState<AppSettings>(() =>
     getInitialClientSettings(initialSettings),
   );
+  const [foundationStatus, setFoundationStatus] =
+    useState<SettingsFoundationStatus>('loading');
+  const [foundationDiagnostics, setFoundationDiagnostics] = useState<
+    readonly string[]
+  >([]);
+  const sessionRef = useRef<SettingsFoundationSession | null>(null);
+  const latestSettingsRef = useRef(settings);
 
   useLayoutEffect(() => {
+    latestSettingsRef.current = settings;
     (window as WindowWithAppSettings).__appSettings = settings;
     applyAppSettingsToDocument(settings);
     window.localStorage.setItem(
@@ -75,18 +95,90 @@ export function AppSettingsProvider({
     document.cookie = buildAppSettingsCookie(settings);
   }, [settings]);
 
+  useEffect(() => {
+    let disposed = false;
+    const settingsAtLoad = latestSettingsRef.current;
+
+    void createAppSettingsFoundation(settingsAtLoad).then(
+      ({ session, settings: restoredSettings, diagnostics }) => {
+        if (disposed) {
+          session.dispose();
+          return;
+        }
+
+        let authoritativeSettings = restoredSettings;
+        if (latestSettingsRef.current !== settingsAtLoad) {
+          // Only fold the legacy projection back into the shared state when the
+          // user actually changed it while the remote foundation was loading.
+          syncAppSettingsToFoundation(session, latestSettingsRef.current);
+          authoritativeSettings = materializeAppSettings(
+            session.effectiveValues(),
+            restoredSettings,
+          );
+        }
+        persistAppSettingsFoundation(session);
+
+        sessionRef.current = session;
+        latestSettingsRef.current = authoritativeSettings;
+        setFoundationDiagnostics(diagnostics);
+        setFoundationStatus('ready');
+        setSettings(authoritativeSettings);
+      },
+      (error) => {
+        if (disposed) {
+          return;
+        }
+        console.error('Shared settings foundation could not be loaded.', error);
+        setFoundationStatus('degraded');
+      },
+    );
+
+    return () => {
+      disposed = true;
+      sessionRef.current?.dispose();
+      sessionRef.current = null;
+    };
+  }, []);
+
   return (
     <AppSettingsContext.Provider
       value={{
         settings,
+        foundationStatus,
+        foundationDiagnostics,
         updateSettings: (nextSettings) => {
           startTransition(() => {
-            setSettings((currentSettings) => ({
-              ...currentSettings,
-              ...(typeof nextSettings === 'function'
-                ? nextSettings(currentSettings)
-                : nextSettings),
-            }));
+            setSettings((currentSettings) => {
+              const proposedSettings = {
+                ...currentSettings,
+                ...(typeof nextSettings === 'function'
+                  ? nextSettings(currentSettings)
+                  : nextSettings),
+              };
+              const session = sessionRef.current;
+
+              if (!session) {
+                latestSettingsRef.current = proposedSettings;
+                return proposedSettings;
+              }
+
+              try {
+                syncAppSettingsToFoundation(session, proposedSettings);
+                const authoritativeSettings = materializeAppSettings(
+                  session.effectiveValues(),
+                  currentSettings,
+                );
+                persistAppSettingsFoundation(session);
+                latestSettingsRef.current = authoritativeSettings;
+                return authoritativeSettings;
+              } catch (error) {
+                console.error(
+                  'Shared settings foundation rejected a preference update.',
+                  error,
+                );
+                return currentSettings;
+              }
+            });
           });
         },
       }}
