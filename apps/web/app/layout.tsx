@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { AppHydrationMarker } from '@/components/app-hydration-marker';
 import { AppServiceWorker } from '@/components/app-service-worker';
 import { DocumentBootstrap } from '@/components/document-bootstrap';
+import { InputBindingsProvider } from '@/src/input-bindings/provider';
 import { AppSettingsProvider } from '@/src/settings/provider';
 import { loadDocumentContext } from '@/src/runtime/document-context';
 import { getPublicSiteConfig } from '@/src/site-config/service';
@@ -55,7 +56,7 @@ export default async function RootLayout({
         <AppHydrationMarker />
         <AppServiceWorker />
         <AppSettingsProvider initialSettings={documentContext.settings}>
-          {children}
+          <InputBindingsProvider>{children}</InputBindingsProvider>
         </AppSettingsProvider>
       </body>
     </html>
