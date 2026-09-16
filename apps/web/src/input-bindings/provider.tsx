@@ -23,7 +23,7 @@ import {
 type InputBindingsStatus = 'loading' | 'ready' | 'invalid' | 'degraded';
 
 type InputBindingsContextValue = {
-  module: InputBindingsBrowserModule | null;
+  browserModule: InputBindingsBrowserModule | null;
   profile: InputProfile;
   report: InputValidationReport | null;
   status: InputBindingsStatus;
@@ -34,7 +34,8 @@ type InputBindingsContextValue = {
 const InputBindingsContext = createContext<InputBindingsContextValue | null>(null);
 
 export function InputBindingsProvider({ children }: { children: ReactNode }) {
-  const [module, setModule] = useState<InputBindingsBrowserModule | null>(null);
+  const [browserModule, setBrowserModule] =
+    useState<InputBindingsBrowserModule | null>(null);
   const [profile, setProfile] = useState<InputProfile>(() =>
     structuredClone(defaultInputProfile),
   );
@@ -47,15 +48,15 @@ export function InputBindingsProvider({ children }: { children: ReactNode }) {
     setProfile(storedProfile);
 
     void loadInputBindingsBrowser().then(
-      (browserModule) => {
+      (loadedBrowserModule) => {
         if (disposed) {
           return;
         }
-        const validationReport = browserModule.validateRegistry(
+        const validationReport = loadedBrowserModule.validateRegistry(
           navigationInputRegistry,
           storedProfile,
         );
-        setModule(browserModule);
+        setBrowserModule(loadedBrowserModule);
         setReport(validationReport);
         setStatus(validationReport.valid ? 'ready' : 'invalid');
       },
@@ -75,17 +76,17 @@ export function InputBindingsProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<InputBindingsContextValue>(
     () => ({
-      module,
+      browserModule,
       profile,
       report,
       status,
       updateProfile: (nextProfile) => {
         setProfile(nextProfile);
         writeInputProfile(nextProfile);
-        if (!module) {
+        if (!browserModule) {
           return;
         }
-        const validationReport = module.validateRegistry(
+        const validationReport = browserModule.validateRegistry(
           navigationInputRegistry,
           nextProfile,
         );
@@ -96,10 +97,10 @@ export function InputBindingsProvider({ children }: { children: ReactNode }) {
         const nextProfile = structuredClone(defaultInputProfile);
         setProfile(nextProfile);
         writeInputProfile(nextProfile);
-        if (!module) {
+        if (!browserModule) {
           return;
         }
-        const validationReport = module.validateRegistry(
+        const validationReport = browserModule.validateRegistry(
           navigationInputRegistry,
           nextProfile,
         );
@@ -107,7 +108,7 @@ export function InputBindingsProvider({ children }: { children: ReactNode }) {
         setStatus(validationReport.valid ? 'ready' : 'invalid');
       },
     }),
-    [module, profile, report, status],
+    [browserModule, profile, report, status],
   );
 
   return (
