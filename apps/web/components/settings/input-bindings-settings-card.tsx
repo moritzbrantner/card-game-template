@@ -19,27 +19,10 @@ import {
   type InputProfile,
 } from '@/src/input-bindings/foundation';
 import { useInputBindings } from '@/src/input-bindings/provider';
+import { useTranslations } from '@/src/i18n';
 
-export type InputBindingsSettingsLabels = {
-  title: string;
-  description: string;
-  loading: string;
-  degraded: string;
-  invalid: string;
-  ready: string;
-  record: string;
-  recording: string;
-  cancel: string;
-  reset: string;
-  resetAll: string;
-  conflict: string;
-};
-
-export function InputBindingsSettingsCard({
-  labels,
-}: {
-  labels: InputBindingsSettingsLabels;
-}) {
+export function InputBindingsSettingsCard() {
+  const t = useTranslations('SettingsPage');
   const { module, profile, report, status, updateProfile, resetProfile } =
     useInputBindings();
   const [recordingBindingId, setRecordingBindingId] = useState<string | null>(
@@ -86,7 +69,7 @@ export function InputBindingsSettingsCard({
         (binding) => binding.id === recordingBindingId,
       );
       if (!existingBinding) {
-        setRecordingError(labels.invalid);
+        setRecordingError(t('inputBindings.invalid'));
         setRecordingBindingId(null);
         return;
       }
@@ -109,8 +92,8 @@ export function InputBindingsSettingsCard({
       if (!nextReport.valid || bindingConflict) {
         setRecordingError(
           bindingConflict
-            ? `${labels.conflict}: ${bindingConflict.kind}`
-            : labels.invalid,
+            ? `${t('inputBindings.conflict')}: ${bindingConflict.kind}`
+            : t('inputBindings.invalid'),
         );
         setRecordingBindingId(null);
         return;
@@ -124,32 +107,24 @@ export function InputBindingsSettingsCard({
     window.addEventListener('keydown', handleKeyDown, { capture: true });
     return () =>
       window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, [
-    labels.conflict,
-    labels.invalid,
-    module,
-    profile,
-    recordingBindingId,
-    report,
-    updateProfile,
-  ]);
+  }, [module, profile, recordingBindingId, report, t, updateProfile]);
 
   const statusLabel =
     status === 'loading'
-      ? labels.loading
+      ? t('inputBindings.loading')
       : status === 'degraded'
-        ? labels.degraded
+        ? t('inputBindings.degraded')
         : status === 'invalid'
-          ? labels.invalid
-          : labels.ready;
+          ? t('inputBindings.invalid')
+          : t('inputBindings.ready');
 
   return (
     <Card>
       <CardHeader className="gap-2">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <CardTitle>{labels.title}</CardTitle>
-            <CardDescription>{labels.description}</CardDescription>
+            <CardTitle>{t('inputBindings.title')}</CardTitle>
+            <CardDescription>{t('inputBindings.description')}</CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant={status === 'ready' ? 'secondary' : 'outline'}>
@@ -166,7 +141,7 @@ export function InputBindingsSettingsCard({
                 setRecordingError(null);
               }}
             >
-              {labels.resetAll}
+              {t('inputBindings.resetAll')}
             </Button>
           </div>
         </div>
@@ -201,12 +176,12 @@ export function InputBindingsSettingsCard({
                       <div className="flex min-w-0 items-center gap-2">
                         <Badge variant="outline">
                           {isRecording
-                            ? labels.recording
+                            ? t('inputBindings.recording')
                             : formatInputSequence(binding.sequence)}
                         </Badge>
                         {isCustomized ? (
                           <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                            {binding.id}
+                            {t('inputBindings.customized')}
                           </span>
                         ) : null}
                       </div>
@@ -223,7 +198,9 @@ export function InputBindingsSettingsCard({
                             );
                           }}
                         >
-                          {isRecording ? labels.cancel : labels.record}
+                          {isRecording
+                            ? t('inputBindings.cancel')
+                            : t('inputBindings.record')}
                         </Button>
                         <Button
                           type="button"
@@ -234,7 +211,7 @@ export function InputBindingsSettingsCard({
                             updateProfile(resetBinding(profile, binding.id))
                           }
                         >
-                          {labels.reset}
+                          {t('inputBindings.reset')}
                         </Button>
                       </div>
                     </div>
