@@ -97,21 +97,25 @@ export function AppSettingsProvider({
 
   useEffect(() => {
     let disposed = false;
+    const settingsAtLoad = latestSettingsRef.current;
 
-    void createAppSettingsFoundation(latestSettingsRef.current).then(
+    void createAppSettingsFoundation(settingsAtLoad).then(
       ({ session, settings: restoredSettings, diagnostics }) => {
         if (disposed) {
           session.dispose();
           return;
         }
 
-        // Settings can be changed while the remote foundation is loading. Fold
-        // those changes into the authoritative session before exposing it.
-        syncAppSettingsToFoundation(session, latestSettingsRef.current);
-        const authoritativeSettings = materializeAppSettings(
-          session.effectiveValues(),
-          restoredSettings,
-        );
+        let authoritativeSettings = restoredSettings;
+        if (latestSettingsRef.current !== settingsAtLoad) {
+          // Only fold the legacy projection back into the shared state when the
+          // user actually changed it while the remote foundation was loading.
+          syncAppSettingsToFoundation(session, latestSettingsRef.current);
+          authoritativeSettings = materializeAppSettings(
+            session.effectiveValues(),
+            restoredSettings,
+          );
+        }
         persistAppSettingsFoundation(session);
 
         sessionRef.current = session;
