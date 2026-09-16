@@ -23,8 +23,14 @@ import { useTranslations } from '@/src/i18n';
 
 export function InputBindingsSettingsCard() {
   const t = useTranslations('SettingsPage');
-  const { module, profile, report, status, updateProfile, resetProfile } =
-    useInputBindings();
+  const {
+    browserModule,
+    profile,
+    report,
+    status,
+    updateProfile,
+    resetProfile,
+  } = useInputBindings();
   const [recordingBindingId, setRecordingBindingId] = useState<string | null>(
     null,
   );
@@ -44,7 +50,7 @@ export function InputBindingsSettingsCard() {
   }, [report]);
 
   useEffect(() => {
-    if (!recordingBindingId || !module) {
+    if (!recordingBindingId || !browserModule) {
       return;
     }
 
@@ -57,7 +63,9 @@ export function InputBindingsSettingsCard() {
         return;
       }
 
-      const stroke = module.keyboardEventToStroke(event, { mode: 'physical' });
+      const stroke = browserModule.keyboardEventToStroke(event, {
+        mode: 'physical',
+      });
       if (!stroke) {
         return;
       }
@@ -79,7 +87,7 @@ export function InputBindingsSettingsCard() {
         sequence: [stroke],
       };
       const nextProfile = replaceBinding(profile, nextBinding);
-      const nextReport = module.validateRegistry(
+      const nextReport = browserModule.validateRegistry(
         navigationInputRegistry,
         nextProfile,
       );
@@ -107,7 +115,14 @@ export function InputBindingsSettingsCard() {
     window.addEventListener('keydown', handleKeyDown, { capture: true });
     return () =>
       window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, [module, profile, recordingBindingId, report, t, updateProfile]);
+  }, [
+    browserModule,
+    profile,
+    recordingBindingId,
+    report,
+    t,
+    updateProfile,
+  ]);
 
   const statusLabel =
     status === 'loading'
@@ -134,7 +149,7 @@ export function InputBindingsSettingsCard() {
               type="button"
               variant="outline"
               size="sm"
-              disabled={!module}
+              disabled={!browserModule}
               onClick={() => {
                 resetProfile();
                 setRecordingBindingId(null);
@@ -190,7 +205,7 @@ export function InputBindingsSettingsCard() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          disabled={!module || status === 'degraded'}
+                          disabled={!browserModule || status === 'degraded'}
                           onClick={() => {
                             setRecordingError(null);
                             setRecordingBindingId(
