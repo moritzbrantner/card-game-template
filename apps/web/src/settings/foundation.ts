@@ -87,8 +87,10 @@ export async function createAppSettingsFoundation(
   settings: AppSettings;
   diagnostics: string[];
 }> {
-  const module = await loadSettingsBrowserModule();
-  const session = await module.createSettingsSession(appSettingDefinitions);
+  const browserModule = await loadSettingsBrowserModule();
+  const session = await browserModule.createSettingsSession(
+    appSettingDefinitions,
+  );
   let diagnostics: string[] = [];
   const storedSnapshot = storage.getItem(APP_SETTINGS_FOUNDATION_STORAGE_KEY);
 
