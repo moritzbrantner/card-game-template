@@ -88,7 +88,23 @@ export const settingsPage = {
     hotkeyHintsDescription:
       'Display the hotkeys launcher and inline shortcut badges in navigation.',
     hotkeySummary:
-      'Use `Alt` plus a letter to jump between pages, or press `?` to open the full shortcut list.',
+      'Default shortcuts use `Alt` plus a letter to jump between pages, and `?` opens the shortcut list. You can rebind them below.',
+  },
+  inputBindings: {
+    title: 'Controls and key bindings',
+    description:
+      'Configure semantic navigation actions through the shared input-bindings foundation. Conflicting shortcuts are rejected before they are saved.',
+    loading: 'Loading controls',
+    degraded: 'Controls unavailable',
+    invalid: 'Invalid binding profile',
+    ready: 'Controls ready',
+    record: 'Rebind',
+    recording: 'Press a key',
+    cancel: 'Cancel',
+    reset: 'Reset',
+    resetAll: 'Reset all',
+    conflict: 'Shortcut conflict',
+    customized: 'Customized',
   },
   notifications: {
     title: 'Notification preferences',
