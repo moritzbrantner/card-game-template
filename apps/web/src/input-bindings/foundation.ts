@@ -1,5 +1,3 @@
-import { appPageDefinitions } from '@/src/navigation/app-routes';
-
 export const INPUT_BINDINGS_BROWSER_BUNDLE_URL =
   'https://moritzbrantner.github.io/input-bindings/input-bindings-browser.js';
 export const INPUT_BINDINGS_STORAGE_KEY = 'card-game-template.input-bindings.v1';
@@ -116,63 +114,72 @@ export type InputBindingsBrowserModule = {
   ): InputValidationReport;
 };
 
+export type NavigationBindingPage = {
+  key: string;
+  hotkey: readonly [string, string];
+};
+
 export const defaultInputProfile: InputProfile = {
   id: 'card-game-template',
   patches: [],
 };
 
-export const navigationInputRegistry: InputActionRegistry = {
-  actions: [
-    {
-      id: NAVIGATION_PALETTE_ACTION_ID,
-      title: 'Open shortcut navigator',
-      categoryPath: ['Application', 'Navigation'],
-      repeatPolicy: 'never',
-      allowedDevices: ['keyboard'],
-      defaults: [
-        binding(
-          'card-game.navigation.palette.question',
-          NAVIGATION_PALETTE_ACTION_ID,
-          'Slash',
-          { shift: true },
-          NAVIGATION_CONTEXT_ID,
-        ),
-        binding(
-          'card-game.navigation.palette.ctrl-k',
-          NAVIGATION_PALETTE_ACTION_ID,
-          'KeyK',
-          { ctrl: true },
-          NAVIGATION_CONTEXT_ID,
-        ),
-        binding(
-          'card-game.navigation.palette.meta-k',
-          NAVIGATION_PALETTE_ACTION_ID,
-          'KeyK',
-          { meta: true },
-          NAVIGATION_CONTEXT_ID,
-        ),
-      ],
-      provenance: { source: 'card-game-template/navigation', version: '1' },
-    },
-    ...appPageDefinitions.map<InputAction>((page) => ({
-      id: navigationActionId(page.key),
-      title: `Go to ${humanize(page.key)}`,
-      categoryPath: ['Application', 'Navigation'],
-      repeatPolicy: 'never',
-      allowedDevices: ['keyboard'],
-      defaults: [
-        binding(
-          `card-game.navigation.${page.key}.default`,
-          navigationActionId(page.key),
-          `Key${page.hotkey[1].toUpperCase()}`,
-          { alt: true },
-          navigationPageContextId(page.key),
-        ),
-      ],
-      provenance: { source: 'card-game-template/navigation', version: '1' },
-    })),
-  ],
-};
+export function createNavigationInputRegistry(
+  pages: readonly NavigationBindingPage[],
+): InputActionRegistry {
+  return {
+    actions: [
+      {
+        id: NAVIGATION_PALETTE_ACTION_ID,
+        title: 'Open shortcut navigator',
+        categoryPath: ['Application', 'Navigation'],
+        repeatPolicy: 'never',
+        allowedDevices: ['keyboard'],
+        defaults: [
+          binding(
+            'card-game.navigation.palette.question',
+            NAVIGATION_PALETTE_ACTION_ID,
+            'Slash',
+            { shift: true },
+            NAVIGATION_CONTEXT_ID,
+          ),
+          binding(
+            'card-game.navigation.palette.ctrl-k',
+            NAVIGATION_PALETTE_ACTION_ID,
+            'KeyK',
+            { ctrl: true },
+            NAVIGATION_CONTEXT_ID,
+          ),
+          binding(
+            'card-game.navigation.palette.meta-k',
+            NAVIGATION_PALETTE_ACTION_ID,
+            'KeyK',
+            { meta: true },
+            NAVIGATION_CONTEXT_ID,
+          ),
+        ],
+        provenance: { source: 'card-game-template/navigation', version: '1' },
+      },
+      ...pages.map<InputAction>((page) => ({
+        id: navigationActionId(page.key),
+        title: `Go to ${humanize(page.key)}`,
+        categoryPath: ['Application', 'Navigation'],
+        repeatPolicy: 'never',
+        allowedDevices: ['keyboard'],
+        defaults: [
+          binding(
+            `card-game.navigation.${page.key}.default`,
+            navigationActionId(page.key),
+            physicalKeyCode(page.hotkey[1]),
+            modifiersFromHotkey(page.hotkey[0]),
+            navigationPageContextId(page.key),
+          ),
+        ],
+        provenance: { source: 'card-game-template/navigation', version: '1' },
+      })),
+    ],
+  };
+}
 
 let browserModulePromise: Promise<InputBindingsBrowserModule> | undefined;
 
@@ -258,6 +265,37 @@ function binding(
   };
 }
 
+function modifiersFromHotkey(modifier: string): InputModifiers {
+  switch (modifier.toLowerCase()) {
+    case 'alt':
+      return { alt: true };
+    case 'ctrl':
+    case 'control':
+      return { ctrl: true };
+    case 'meta':
+    case 'cmd':
+    case 'command':
+      return { meta: true };
+    case 'shift':
+      return { shift: true };
+    default:
+      return {};
+  }
+}
+
+function physicalKeyCode(key: string) {
+  if (/^[a-z]$/iu.test(key)) {
+    return `Key${key.toUpperCase()}`;
+  }
+  if (/^[0-9]$/u.test(key)) {
+    return `Digit${key}`;
+  }
+  if (key === '/') {
+    return 'Slash';
+  }
+  return key;
+}
+
 function humanize(value: string) {
   return value
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
@@ -268,6 +306,9 @@ function humanize(value: string) {
 function displayKey(code: string) {
   if (code.startsWith('Key') && code.length === 4) {
     return code.slice(3);
+  }
+  if (code.startsWith('Digit') && code.length === 6) {
+    return code.slice(5);
   }
   if (code === 'Slash') {
     return '/';
