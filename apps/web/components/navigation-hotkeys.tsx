@@ -11,7 +11,6 @@ import {
   NAVIGATION_CONTEXT_ID,
   NAVIGATION_PALETTE_ACTION_ID,
   navigationActionId,
-  navigationInputRegistry,
   navigationPageContextId,
 } from '@/src/input-bindings/foundation';
 import { useInputBindings } from '@/src/input-bindings/provider';
@@ -43,7 +42,8 @@ type NavigationHotkeysProps = {
 export function NavigationHotkeys({ items, labels }: NavigationHotkeysProps) {
   const router = useRouter();
   const { settings } = useAppSettings();
-  const { browserModule, profile, report, status } = useInputBindings();
+  const { browserModule, registry, profile, report, status } =
+    useInputBindings();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -100,7 +100,7 @@ export function NavigationHotkeys({ items, labels }: NavigationHotkeysProps) {
       items.map((item) => [navigationActionId(item.key), item.href]),
     );
     const controller = new browserModule.InputRuntimeController({
-      registry: navigationInputRegistry,
+      registry,
       profile,
       getActiveContexts: () => activeContexts,
       chordTimeoutMs: 900,
@@ -129,7 +129,7 @@ export function NavigationHotkeys({ items, labels }: NavigationHotkeysProps) {
       ignoreTextEntry: true,
       mode: 'physical',
     });
-  }, [browserModule, items, profile, router, status]);
+  }, [browserModule, items, profile, registry, router, status]);
 
   const groupedPages = items.reduce<Record<string, NavigationHotkeyItem[]>>(
     (groups, page) => {
