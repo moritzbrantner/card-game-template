@@ -12,9 +12,9 @@ import {
 import {
   defaultInputProfile,
   loadInputBindingsBrowser,
-  navigationInputRegistry,
   readInputProfile,
   writeInputProfile,
+  type InputActionRegistry,
   type InputBindingsBrowserModule,
   type InputProfile,
   type InputValidationReport,
@@ -24,6 +24,7 @@ type InputBindingsStatus = 'loading' | 'ready' | 'invalid' | 'degraded';
 
 type InputBindingsContextValue = {
   browserModule: InputBindingsBrowserModule | null;
+  registry: InputActionRegistry;
   profile: InputProfile;
   report: InputValidationReport | null;
   status: InputBindingsStatus;
@@ -33,7 +34,13 @@ type InputBindingsContextValue = {
 
 const InputBindingsContext = createContext<InputBindingsContextValue | null>(null);
 
-export function InputBindingsProvider({ children }: { children: ReactNode }) {
+export function InputBindingsProvider({
+  children,
+  registry,
+}: {
+  children: ReactNode;
+  registry: InputActionRegistry;
+}) {
   const [browserModule, setBrowserModule] =
     useState<InputBindingsBrowserModule | null>(null);
   const [profile, setProfile] = useState<InputProfile>(() =>
@@ -46,6 +53,7 @@ export function InputBindingsProvider({ children }: { children: ReactNode }) {
     let disposed = false;
     const storedProfile = readInputProfile();
     setProfile(storedProfile);
+    setStatus('loading');
 
     void loadInputBindingsBrowser().then(
       (loadedBrowserModule) => {
@@ -53,7 +61,7 @@ export function InputBindingsProvider({ children }: { children: ReactNode }) {
           return;
         }
         const validationReport = loadedBrowserModule.validateRegistry(
-          navigationInputRegistry,
+          registry,
           storedProfile,
         );
         setBrowserModule(loadedBrowserModule);
@@ -64,7 +72,10 @@ export function InputBindingsProvider({ children }: { children: ReactNode }) {
         if (disposed) {
           return;
         }
-        console.error('Shared input-bindings foundation could not be loaded.', error);
+        console.error(
+          'Shared input-bindings foundation could not be loaded.',
+          error,
+        );
         setStatus('degraded');
       },
     );
@@ -72,11 +83,12 @@ export function InputBindingsProvider({ children }: { children: ReactNode }) {
     return () => {
       disposed = true;
     };
-  }, []);
+  }, [registry]);
 
   const value = useMemo<InputBindingsContextValue>(
     () => ({
       browserModule,
+      registry,
       profile,
       report,
       status,
@@ -87,7 +99,7 @@ export function InputBindingsProvider({ children }: { children: ReactNode }) {
           return;
         }
         const validationReport = browserModule.validateRegistry(
-          navigationInputRegistry,
+          registry,
           nextProfile,
         );
         setReport(validationReport);
@@ -101,14 +113,14 @@ export function InputBindingsProvider({ children }: { children: ReactNode }) {
           return;
         }
         const validationReport = browserModule.validateRegistry(
-          navigationInputRegistry,
+          registry,
           nextProfile,
         );
         setReport(validationReport);
         setStatus(validationReport.valid ? 'ready' : 'invalid');
       },
     }),
-    [browserModule, profile, report, status],
+    [browserModule, profile, registry, report, status],
   );
 
   return (
