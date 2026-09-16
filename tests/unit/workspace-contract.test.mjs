@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const repoRoot = resolve(new URL('../..', import.meta.url).pathname);
@@ -9,7 +9,7 @@ function readJson(relativePath) {
   return JSON.parse(readFileSync(resolve(repoRoot, relativePath), 'utf8'));
 }
 
-test('root workspace graph keeps only active apps in default commands', () => {
+test('root workspace graph contains only active apps and packages', () => {
   const pkg = readJson('package.json');
 
   assert.deepEqual(pkg.workspaces, [
@@ -19,10 +19,11 @@ test('root workspace graph keeps only active apps in default commands', () => {
     'apps/web/packages/*',
     'packages/*',
   ]);
-  assert.equal(pkg.workspaces.includes('apps/web.backup'), false);
-  assert.equal(typeof pkg.scripts['backup:build'], 'string');
-  assert.equal(typeof pkg.scripts['backup:check-types'], 'string');
-  assert.equal(typeof pkg.scripts['backup:test:unit'], 'string');
+  assert.equal(existsSync(resolve(repoRoot, 'apps/web.backup')), false);
+  assert.equal(
+    Object.keys(pkg.scripts).some((scriptName) => scriptName.startsWith('backup:')),
+    false,
+  );
 });
 
 test('active apps expose the standardized validation script contract', () => {
@@ -71,7 +72,7 @@ test('internal web packages are private workspaces with standardized package scr
   }
 });
 
-test('root validation commands cover active workspaces without relying on backup app scripts', () => {
+test('root validation commands cover active workspaces only', () => {
   const pkg = readJson('package.json');
 
   assert.match(pkg.scripts.lint, /turbo run lint/);

@@ -21,10 +21,6 @@ The repository still uses `apps/*`, `packages/*`, and `templates/platform-packag
 
 `apps/web`, `apps/mobile`, and `apps/desktop` are the active apps. They participate in default root commands and CI, and each one is expected to expose `lint`, `check-types`, `test:unit`, `test:integration`, and `test:e2e`.
 
-### Reference apps
-
-`apps/web.backup` remains on disk as a reference app. It is intentionally excluded from the default root workspace graph so it can evolve or be consulted without affecting the primary validation path.
-
 ### App-private modules
 
 `apps/web/packages/*` and `apps/desktop/packages/*` are app-private modules. They should be treated as internal implementation modules owned by their parent app rather than reusable publishable packages.

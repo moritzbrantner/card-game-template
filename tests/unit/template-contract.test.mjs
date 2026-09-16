@@ -23,7 +23,7 @@ test('architecture doc defines the thin-template boundary and app manifest contr
     /Every deployable app should expose an `app\.manifest\.ts` file/,
   );
   assert.match(source, /Active apps/);
-  assert.match(source, /Reference apps/);
+  assert.doesNotMatch(source, /Reference apps/);
   assert.match(source, /App-private modules/);
 });
 
