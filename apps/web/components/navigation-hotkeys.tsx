@@ -43,7 +43,7 @@ type NavigationHotkeysProps = {
 export function NavigationHotkeys({ items, labels }: NavigationHotkeysProps) {
   const router = useRouter();
   const { settings } = useAppSettings();
-  const { module, profile, report, status } = useInputBindings();
+  const { browserModule, profile, report, status } = useInputBindings();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -88,7 +88,7 @@ export function NavigationHotkeys({ items, labels }: NavigationHotkeysProps) {
   }, [open]);
 
   useEffect(() => {
-    if (!module || status !== 'ready') {
+    if (!browserModule || status !== 'ready') {
       return;
     }
 
@@ -99,7 +99,7 @@ export function NavigationHotkeys({ items, labels }: NavigationHotkeysProps) {
     const hrefByAction = new Map(
       items.map((item) => [navigationActionId(item.key), item.href]),
     );
-    const controller = new module.InputRuntimeController({
+    const controller = new browserModule.InputRuntimeController({
       registry: navigationInputRegistry,
       profile,
       getActiveContexts: () => activeContexts,
@@ -122,14 +122,14 @@ export function NavigationHotkeys({ items, labels }: NavigationHotkeysProps) {
       },
     });
 
-    return module.attachKeyboardRuntime(controller, {
+    return browserModule.attachKeyboardRuntime(controller, {
       keyTarget: document,
       focusTarget: window,
       visibilityTarget: document,
       ignoreTextEntry: true,
       mode: 'physical',
     });
-  }, [items, module, profile, router, status]);
+  }, [browserModule, items, profile, router, status]);
 
   const groupedPages = items.reduce<Record<string, NavigationHotkeyItem[]>>(
     (groups, page) => {
