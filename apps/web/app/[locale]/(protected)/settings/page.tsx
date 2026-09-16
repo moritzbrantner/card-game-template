@@ -1,4 +1,3 @@
-import { InputBindingsSettingsCard } from '@/components/settings/input-bindings-settings-card';
 import { getConsentState } from '@/src/privacy/consent';
 import { getPermissionSetForRole } from '@/src/domain/authorization/service';
 import {
@@ -32,27 +31,22 @@ export default async function SettingsPage({
   ]);
 
   return (
-    <>
-      <SettingsClient
-        locale={locale}
-        session={session}
-        consent={consent.state}
-        currentPermissions={[...permissionSet]}
-        initialSearchVisibility={
-          visibilityResult.ok ? visibilityResult.data.isSearchable : true
-        }
-        initialFollowerVisibility={
-          followerVisibilityResult.ok
-            ? followerVisibilityResult.data.followerVisibility
-            : 'PUBLIC'
-        }
-        initialBlockedProfiles={
-          blockedProfilesResult.ok ? blockedProfilesResult.data.profiles : []
-        }
-      />
-      <section className="mx-auto mt-6 max-w-5xl">
-        <InputBindingsSettingsCard />
-      </section>
-    </>
+    <SettingsClient
+      locale={locale}
+      session={session}
+      consent={consent.state}
+      currentPermissions={[...permissionSet]}
+      initialSearchVisibility={
+        visibilityResult.ok ? visibilityResult.data.isSearchable : true
+      }
+      initialFollowerVisibility={
+        followerVisibilityResult.ok
+          ? followerVisibilityResult.data.followerVisibility
+          : 'PUBLIC'
+      }
+      initialBlockedProfiles={
+        blockedProfilesResult.ok ? blockedProfilesResult.data.profiles : []
+      }
+    />
   );
 }
