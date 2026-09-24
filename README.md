@@ -54,7 +54,6 @@ Important details:
 ## Workspace classes
 
 - `active apps`: `apps/web`, `apps/mobile`, and `apps/desktop` are part of the default workspace graph and must satisfy the standard `lint`, `check-types`, `test:unit`, `test:integration`, and `test:e2e` contract
-- `reference apps`: `apps/web.backup` stays in the repository as a preserved reference workspace, but it is excluded from default root commands and CI unless explicitly invoked through `backup:*` scripts
 - `app-private modules`: `apps/web/packages/*` and `apps/desktop/packages/*` stay tied to their owning apps; they are internal modules rather than publishable template packages
 
 ## Automation notes
