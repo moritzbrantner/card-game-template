@@ -199,9 +199,12 @@ export class UnoMatchesPage {
     expect(measurements.length).toBeGreaterThan(0);
 
     for (const measurement of measurements) {
-      expect(measurement).not.toBeNull();
-      expect(measurement?.widthRatio).toBeGreaterThan(0.9);
-      expect(measurement?.heightRatio).toBeGreaterThan(0.9);
+      if (!measurement) {
+        throw new Error('UNO card is missing its dedicated face surface');
+      }
+
+      expect(measurement.widthRatio).toBeGreaterThan(0.9);
+      expect(measurement.heightRatio).toBeGreaterThan(0.9);
     }
   }
 
