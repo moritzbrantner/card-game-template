@@ -174,6 +174,37 @@ export class UnoMatchesPage {
     );
   }
 
+  async verifyCardFacesFillShells() {
+    const cards = this.hand.locator('[data-uno-card]');
+    await expect(cards.first()).toBeVisible();
+
+    const measurements = await cards.evaluateAll((elements) =>
+      elements.map((element) => {
+        const face = element.querySelector<HTMLElement>('[data-uno-card-face]');
+
+        if (!face) {
+          return null;
+        }
+
+        const cardRect = element.getBoundingClientRect();
+        const faceRect = face.getBoundingClientRect();
+
+        return {
+          heightRatio: faceRect.height / cardRect.height,
+          widthRatio: faceRect.width / cardRect.width,
+        };
+      }),
+    );
+
+    expect(measurements.length).toBeGreaterThan(0);
+
+    for (const measurement of measurements) {
+      expect(measurement).not.toBeNull();
+      expect(measurement?.widthRatio).toBeGreaterThan(0.9);
+      expect(measurement?.heightRatio).toBeGreaterThan(0.9);
+    }
+  }
+
   async submitFirstLegalActionLocally() {
     const gameApiRequests: string[] = [];
     const recordGameApiRequest = (request: Request) => {
