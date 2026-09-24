@@ -174,6 +174,59 @@ export class UnoMatchesPage {
     );
   }
 
+  async verifyCardsRemainLegible() {
+    const cards = this.hand.locator('[data-uno-card]');
+    await expect(cards.first()).toBeVisible();
+
+    const measurements = await cards.evaluateAll((elements) =>
+      elements.map((element) => {
+        const face = element.querySelector<HTMLElement>('[data-uno-card-face]');
+
+        if (!face) {
+          return null;
+        }
+
+        const cardRect = element.getBoundingClientRect();
+        const faceRect = face.getBoundingClientRect();
+
+        return {
+          faceHeightRatio: faceRect.height / cardRect.height,
+          faceWidthRatio: faceRect.width / cardRect.width,
+          left: cardRect.left,
+          width: cardRect.width,
+        };
+      }),
+    );
+
+    const cardsWithFaces = measurements.flatMap((measurement) =>
+      measurement ? [measurement] : [],
+    );
+
+    expect(cardsWithFaces.length).toBe(measurements.length);
+    expect(cardsWithFaces.length).toBeGreaterThan(1);
+
+    for (const measurement of cardsWithFaces) {
+      expect(measurement.faceWidthRatio).toBeGreaterThan(0.9);
+      expect(measurement.faceHeightRatio).toBeGreaterThan(0.9);
+    }
+
+    const orderedCards = [...cardsWithFaces].sort(
+      (left, right) => left.left - right.left,
+    );
+
+    for (let index = 0; index < orderedCards.length - 1; index += 1) {
+      const current = orderedCards[index];
+      const next = orderedCards[index + 1];
+
+      if (!current || !next) {
+        continue;
+      }
+
+      const visibleWidthRatio = (next.left - current.left) / current.width;
+      expect(visibleWidthRatio).toBeGreaterThan(0.72);
+    }
+  }
+
   async submitFirstLegalActionLocally() {
     const gameApiRequests: string[] = [];
     const recordGameApiRequest = (request: Request) => {

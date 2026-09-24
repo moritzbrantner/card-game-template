@@ -317,9 +317,9 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
                 <PlayerHand
                   aria-label={labels.handTitle}
                   className="-mx-3 mt-5 overflow-x-auto px-3 pb-3 pt-2"
-                  curve={8}
-                  overlap={38}
-                  spreadDegrees={10}
+                  curve={4}
+                  overlap={14}
+                  spreadDegrees={6}
                 >
                   {humanPlayer.visibleCards.map((card) => {
                     const playable = Boolean(card.directPlay);

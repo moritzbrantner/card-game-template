@@ -30,6 +30,8 @@ test.describe('card game page fixtures', () => {
     await unoPage.goto();
     await unoPage.verifyLocalBotMatch();
 
+    await unoPage.verifyCardsRemainLegible();
+
     const openingHandLabels = await unoPage.readHandLabels();
     expect(openingHandLabels.length).toBeGreaterThan(0);
 

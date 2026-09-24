@@ -5,9 +5,6 @@ import { type ComponentPropsWithoutRef } from 'react';
 import {
   CardStack,
   PlayerHand,
-  PlayingCard,
-  type CardSuit,
-  type PlayingCardEffect,
   type PlayingCardSize,
 } from '@moritzbrantner/card-games';
 import type { UnoCard, UnoColor } from '@repo/game-uno';
@@ -18,38 +15,6 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function getCardSuit(color: UnoCard['color']): CardSuit {
-  switch (color) {
-    case 'red':
-      return 'hearts';
-    case 'yellow':
-      return 'diamonds';
-    case 'green':
-      return 'clubs';
-    case 'blue':
-      return 'spades';
-    case 'wild':
-      return 'joker';
-  }
-}
-
-function getCardRank(card: UnoCard) {
-  switch (card.kind) {
-    case 'number':
-      return String(card.value ?? '?');
-    case 'skip':
-      return 'SKIP';
-    case 'reverse':
-      return 'REV';
-    case 'draw-two':
-      return '+2';
-    case 'wild':
-      return 'WILD';
-    case 'wild-draw-four':
-      return '+4';
-  }
 }
 
 function getCardSymbol(card: UnoCard) {
@@ -69,12 +34,21 @@ function getCardSymbol(card: UnoCard) {
   }
 }
 
-function getCardEffect(card: UnoCard): PlayingCardEffect {
-  if (card.kind === 'wild-draw-four' || card.kind === 'wild') {
-    return 'foil';
+function getCardActionLabel(card: UnoCard) {
+  switch (card.kind) {
+    case 'number':
+      return null;
+    case 'skip':
+      return 'Skip';
+    case 'reverse':
+      return 'Reverse';
+    case 'draw-two':
+      return 'Draw 2';
+    case 'wild':
+      return 'Wild';
+    case 'wild-draw-four':
+      return 'Draw 4';
   }
-
-  return 'standard';
 }
 
 function getColorChipClass(color: UnoCard['color']) {
@@ -107,38 +81,204 @@ function getFaceClass(color: UnoCard['color']) {
   }
 }
 
-const unoCardBaseClassName = [
-  '!rounded-[1.35rem]',
-  'border-white/80',
-  '[&_.mb-playing-card__frame]:inset-[0.42rem]',
-  '[&_.mb-playing-card__frame]:rounded-[1rem]',
-  '[&_.mb-playing-card__frame]:border-white/35',
-  '[&_.mb-playing-card__frame]:p-[0.35rem]',
-  '[&_.mb-playing-card__corner]:hidden',
-  '[&_.mb-playing-card__badge]:hidden',
-  '[&_.mb-playing-card__body]:gap-0',
-  '[&_.mb-playing-card__artwork]:h-full',
-  '[&_.mb-playing-card__artwork]:min-h-0',
-  '[&_.mb-playing-card__artwork]:rounded-[0.82rem]',
-  '[&_.mb-playing-card__artwork]:border-0',
-  '[&_.mb-playing-card__artwork]:p-0',
-  '[&_.mb-playing-card__content]:hidden',
-].join(' ');
+function getCenterTextClass(color: UnoCard['color']) {
+  switch (color) {
+    case 'red':
+      return 'text-rose-600';
+    case 'yellow':
+      return 'text-amber-500';
+    case 'green':
+      return 'text-emerald-600';
+    case 'blue':
+      return 'text-sky-600';
+    case 'wild':
+      return 'text-zinc-950';
+  }
+}
 
-const compactUnoCardClassName = [
-  '!w-[clamp(6rem,10vw,7.25rem)]',
-  '!rounded-[1rem]',
-  '[&_.mb-playing-card__frame]:inset-[0.32rem]',
-  '[&_.mb-playing-card__frame]:rounded-[0.78rem]',
-  '[&_.mb-playing-card__frame]:p-[0.24rem]',
-  '[&_.mb-playing-card__artwork]:rounded-[0.62rem]',
-  '[&_.mb-playing-card__back]:h-full',
-  '[&_.mb-playing-card__back]:min-h-0',
-  '[&_.mb-playing-card__back]:rounded-[0.62rem]',
-  '[&_.mb-playing-card__back]:p-2',
-  '[&_.mb-playing-card__back-inner]:gap-1',
-  '[&_.mb-playing-card__back-inner]:rounded-[0.5rem]',
-].join(' ');
+const CARD_WIDTH_CLASSES: Record<
+  'compact' | 'standard',
+  Record<PlayingCardSize, string>
+> = {
+  compact: {
+    sm: 'w-[6.75rem] min-w-[6.75rem]',
+    md: 'w-[7.75rem] min-w-[7.75rem]',
+    lg: 'w-[9rem] min-w-[9rem]',
+  },
+  standard: {
+    sm: 'w-[7.75rem] min-w-[7.75rem]',
+    md: 'w-[9.5rem] min-w-[9.5rem]',
+    lg: 'w-[11.25rem] min-w-[11.25rem]',
+  },
+};
+
+function getCardWidthClass(size: PlayingCardSize, compact: boolean) {
+  return CARD_WIDTH_CLASSES[compact ? 'compact' : 'standard'][size];
+}
+
+function getCardShellClassName({
+  className,
+  compact,
+  interactive,
+  selected,
+  size,
+}: {
+  className?: string;
+  compact: boolean;
+  interactive: boolean;
+  selected: boolean;
+  size: PlayingCardSize;
+}) {
+  return joinClasses(
+    'relative isolate aspect-[5/7] shrink-0 select-none overflow-hidden border border-white/85 bg-white shadow-[0_12px_30px_rgba(0,0,0,0.22)] outline-none transition-[box-shadow,filter,border-color] duration-150',
+    compact ? 'rounded-[0.9rem]' : 'rounded-[1.05rem]',
+    getCardWidthClass(size, compact),
+    interactive
+      ? 'cursor-pointer hover:brightness-105 focus-visible:ring-2 focus-visible:ring-white/90 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950'
+      : null,
+    selected
+      ? 'border-white shadow-[0_16px_38px_rgba(0,0,0,0.32)] ring-2 ring-white/80 ring-offset-2 ring-offset-zinc-950'
+      : null,
+    className,
+  );
+}
+
+function UnoCardFace({
+  card,
+  compact,
+}: {
+  card: UnoCard;
+  compact: boolean;
+}) {
+  const symbol = getCardSymbol(card);
+  const actionLabel = getCardActionLabel(card);
+  const isWild = card.color === 'wild';
+
+  return (
+    <div
+      className={joinClasses(
+        'absolute inset-[0.25rem] overflow-hidden border border-white/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]',
+        compact ? 'rounded-[0.68rem]' : 'rounded-[0.82rem]',
+        getFaceClass(card.color),
+      )}
+      data-uno-card-face=""
+    >
+      <span
+        aria-hidden="true"
+        className="absolute inset-[5%] rounded-[0.55rem] border border-white/18"
+      />
+
+      {isWild ? (
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 bg-[linear-gradient(118deg,transparent_18%,rgba(255,255,255,0.34)_38%,transparent_58%)] opacity-60"
+        />
+      ) : null}
+
+      <span
+        aria-hidden="true"
+        className={joinClasses(
+          'absolute left-[9%] top-[8%] z-20 font-black leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.18)]',
+          compact ? 'text-[1.05rem]' : 'text-[1.25rem]',
+        )}
+      >
+        {symbol}
+      </span>
+
+      <span
+        aria-hidden="true"
+        className={joinClasses(
+          'absolute bottom-[8%] right-[9%] z-20 rotate-180 font-black leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.18)]',
+          compact ? 'text-[1.05rem]' : 'text-[1.25rem]',
+        )}
+      >
+        {symbol}
+      </span>
+
+      <span
+        aria-hidden="true"
+        className="absolute left-1/2 top-1/2 h-[70%] w-[67%] -translate-x-1/2 -translate-y-1/2 -rotate-12 rounded-[50%] bg-white/95 shadow-[0_8px_20px_rgba(0,0,0,0.18)]"
+      />
+
+      <span
+        className={joinClasses(
+          'absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 -rotate-12 whitespace-nowrap font-black leading-none tracking-[-0.08em]',
+          compact ? 'text-[2.7rem]' : 'text-[3.7rem]',
+          getCenterTextClass(card.color),
+        )}
+      >
+        {symbol}
+      </span>
+
+      {actionLabel ? (
+        <span
+          className={joinClasses(
+            'absolute bottom-[12%] left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full bg-zinc-950/82 font-bold uppercase tracking-[0.12em] text-white shadow-sm',
+            compact
+              ? 'px-2 py-0.5 text-[0.46rem]'
+              : 'px-2.5 py-1 text-[0.58rem]',
+          )}
+        >
+          {actionLabel}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function UnoCardBack({
+  ariaLabel,
+  cardClassName,
+  compact,
+  size,
+}: {
+  ariaLabel: string;
+  cardClassName?: string;
+  compact: boolean;
+  size: PlayingCardSize;
+}) {
+  return (
+    <div
+      aria-label={ariaLabel}
+      className={getCardShellClassName({
+        className: cardClassName,
+        compact,
+        interactive: false,
+        selected: false,
+        size,
+      })}
+      data-card-variant={compact ? 'compact' : 'standard'}
+      data-uno-card=""
+      data-uno-card-back=""
+      role="img"
+    >
+      <div
+        className={joinClasses(
+          'absolute inset-[0.25rem] grid place-items-center overflow-hidden border border-white/30 bg-zinc-950 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]',
+          compact ? 'rounded-[0.68rem]' : 'rounded-[0.82rem]',
+        )}
+        data-uno-card-face=""
+      >
+        <span
+          aria-hidden="true"
+          className="absolute left-1/2 top-1/2 h-[150%] w-[30%] -translate-x-1/2 -translate-y-1/2 -rotate-[28deg] bg-gradient-to-b from-rose-500 via-amber-300 via-emerald-500 to-sky-500 opacity-85"
+        />
+        <span
+          aria-hidden="true"
+          className="absolute left-1/2 top-1/2 h-[66%] w-[62%] -translate-x-1/2 -translate-y-1/2 -rotate-12 rounded-[50%] border-2 border-white/80 bg-zinc-950/88 shadow-[0_6px_18px_rgba(0,0,0,0.35)]"
+        />
+        <span
+          className={joinClasses(
+            'relative z-10 -rotate-12 font-black uppercase tracking-[0.1em] text-white',
+            compact ? 'text-[0.72rem]' : 'text-sm',
+          )}
+        >
+          Cards
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export function UnoColorBadge({
   color,
@@ -163,6 +303,19 @@ export function UnoColorBadge({
   );
 }
 
+type UnoCardElementProps = Omit<
+  ComponentPropsWithoutRef<'div'>,
+  'aria-label' | 'children'
+>;
+
+export type UnoCardVisualProps = UnoCardElementProps & {
+  card: UnoCard;
+  size?: PlayingCardSize;
+  selected?: boolean;
+  interactive?: boolean;
+  variant?: 'standard' | 'compact';
+};
+
 export function UnoCardVisual({
   card,
   size = 'sm',
@@ -170,98 +323,33 @@ export function UnoCardVisual({
   className,
   interactive = false,
   variant = 'standard',
+  role,
   ...cardProps
-}: {
-  card: UnoCard;
-  size?: PlayingCardSize;
-  selected?: boolean;
-  className?: string;
-  interactive?: boolean;
-  variant?: 'standard' | 'compact';
-} & Omit<
-  ComponentPropsWithoutRef<typeof PlayingCard>,
-  | 'aria-label'
-  | 'artwork'
-  | 'badge'
-  | 'children'
-  | 'className'
-  | 'description'
-  | 'effect'
-  | 'interactive'
-  | 'rank'
-  | 'selected'
-  | 'size'
-  | 'suit'
-  | 'tone'
->) {
-  const symbol = getCardSymbol(card);
+}: UnoCardVisualProps) {
   const compact = variant === 'compact';
 
   return (
-    <PlayingCard
+    <div
       {...cardProps}
       aria-label={card.label}
-      artwork={
-        <div
-          className={joinClasses(
-            'relative grid h-full w-full place-items-center overflow-hidden text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]',
-            getFaceClass(card.color),
-          )}
-        >
-          <span
-            aria-hidden="true"
-            className="absolute left-[8%] top-[7%] text-sm font-black leading-none opacity-90 sm:text-base"
-          >
-            {symbol}
-          </span>
-          <span
-            aria-hidden="true"
-            className="absolute bottom-[7%] right-[8%] rotate-180 text-sm font-black leading-none opacity-90 sm:text-base"
-          >
-            {symbol}
-          </span>
-          <span
-            aria-hidden="true"
-            className="absolute left-1/2 top-1/2 h-[74%] w-[58%] -translate-x-1/2 -translate-y-1/2 -rotate-12 rounded-[50%] bg-white/92 shadow-[0_12px_30px_rgba(0,0,0,0.18)]"
-          />
-          <span
-            className={joinClasses(
-              'relative z-10 -rotate-12 font-black leading-none tracking-[-0.06em] text-zinc-950',
-              compact
-                ? 'text-[clamp(2rem,5vw,3.2rem)]'
-                : 'text-[clamp(2.8rem,7vw,5rem)]',
-            )}
-          >
-            {symbol}
-          </span>
-          {card.kind !== 'number' ? (
-            <span
-              className={joinClasses(
-                'absolute bottom-[12%] z-10 -rotate-12 rounded-full bg-zinc-950/80 font-semibold uppercase tracking-[0.12em] text-white',
-                compact
-                  ? 'px-2 py-0.5 text-[0.48rem]'
-                  : 'px-3 py-1 text-[0.62rem]',
-              )}
-            >
-              {card.kind.replaceAll('-', ' ')}
-            </span>
-          ) : null}
-        </div>
-      }
-      className={joinClasses(
-        'shrink-0',
-        unoCardBaseClassName,
-        compact ? compactUnoCardClassName : undefined,
+      className={getCardShellClassName({
         className,
-      )}
-      effect={getCardEffect(card)}
-      interactive={interactive}
-      rank={getCardRank(card)}
-      selected={selected}
-      size={size}
-      suit={getCardSuit(card.color)}
-      tone="classic"
-    />
+        compact,
+        interactive,
+        selected,
+        size,
+      })}
+      data-card-color={card.color}
+      data-card-kind={card.kind}
+      data-card-size={size}
+      data-card-variant={variant}
+      data-interactive={interactive}
+      data-selected={selected}
+      data-uno-card=""
+      role={role ?? 'img'}
+    >
+      <UnoCardFace card={card} compact={compact} />
+    </div>
   );
 }
 
@@ -301,41 +389,14 @@ export function HiddenUnoCardStack({
       className={joinClasses('flex flex-wrap items-center gap-3', className)}
       aria-label={`${label}: ${cardCount} hidden cards`}
     >
-      <CardStack className="shrink-0" offsetX={10} offsetY={7} rotateStep={1.8}>
+      <CardStack className="shrink-0" offsetX={9} offsetY={6} rotateStep={1.4}>
         {Array.from({ length: previewCount }, (_, index) => (
-          <PlayingCard
+          <UnoCardBack
             key={`${label}:${index}`}
-            aria-label={`${label} hidden card ${index + 1}`}
-            back={
-              <div className="relative grid h-full w-full place-items-center overflow-hidden rounded-[0.8rem] bg-zinc-950 text-center">
-                <span
-                  aria-hidden="true"
-                  className="absolute -left-6 top-1/2 h-8 w-[140%] -translate-y-1/2 -rotate-12 bg-gradient-to-r from-rose-500 via-amber-300 via-emerald-500 to-sky-500 opacity-75"
-                />
-                <span
-                  className={joinClasses(
-                    'relative z-10 -rotate-12 rounded-full border border-white/25 bg-zinc-950/90 font-black uppercase text-white shadow-lg',
-                    compact
-                      ? 'px-3 py-1 text-[0.65rem] tracking-[0.12em]'
-                      : 'px-4 py-1.5 text-xs tracking-[0.18em]',
-                  )}
-                >
-                  Cards
-                </span>
-              </div>
-            }
-            face="back"
-            className={joinClasses(
-              unoCardBaseClassName,
-              compact ? compactUnoCardClassName : undefined,
-              '[&_.mb-playing-card__back]:h-full [&_.mb-playing-card__back]:min-h-0 [&_.mb-playing-card__back]:border-0 [&_.mb-playing-card__back]:p-0',
-              cardClassName,
-            )}
-            interactive={false}
-            rank="?"
+            ariaLabel={`${label} hidden card ${index + 1}`}
+            cardClassName={cardClassName}
+            compact={compact}
             size={size}
-            suit="joker"
-            tone="midnight"
           />
         ))}
       </CardStack>
@@ -369,20 +430,7 @@ export function UnoHandPreview({
   getCardProps?: (
     card: UnoCard,
     index: number,
-  ) => Omit<
-    ComponentPropsWithoutRef<typeof PlayingCard>,
-    | 'aria-label'
-    | 'artwork'
-    | 'badge'
-    | 'children'
-    | 'description'
-    | 'effect'
-    | 'rank'
-    | 'selected'
-    | 'size'
-    | 'suit'
-    | 'tone'
-  > & { interactive?: boolean };
+  ) => Omit<UnoCardVisualProps, 'card' | 'selected' | 'size' | 'variant'>;
 }) {
   if (visibleCards.length === 0 && hiddenCount <= 0) {
     return null;
@@ -394,9 +442,9 @@ export function UnoHandPreview({
         <PlayerHand
           aria-label={`${label} visible hand`}
           className="-mx-3 overflow-x-auto px-3 pb-2"
-          curve={10}
-          overlap={44}
-          spreadDegrees={12}
+          curve={6}
+          overlap={16}
+          spreadDegrees={8}
         >
           {visibleCards.map((card, index) => (
             <UnoCardVisual
@@ -424,7 +472,6 @@ export function UnoHandPreview({
                 key={card.id}
                 card={card}
                 {...cardProps}
-                className={cardProps?.className}
                 selected={
                   index === visibleCards.length - 1 && hiddenCount === 0
                 }
