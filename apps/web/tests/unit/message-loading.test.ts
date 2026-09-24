@@ -14,6 +14,6 @@ describe('message loading', () => {
     expect(categories.discover).toBe('Discover');
     expect(auth.login).toBe('Log in');
     expect(links.home).toBe('Home');
-    expect(homePage.title).toBeDefined();
+    expect(homePage.games).toBeDefined();
   });
 });
