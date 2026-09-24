@@ -174,7 +174,7 @@ export class UnoMatchesPage {
     );
   }
 
-  async verifyCardFacesFillShells() {
+  async verifyCardsRemainLegible() {
     const cards = this.hand.locator('[data-uno-card]');
     await expect(cards.first()).toBeVisible();
 
@@ -190,21 +190,40 @@ export class UnoMatchesPage {
         const faceRect = face.getBoundingClientRect();
 
         return {
-          heightRatio: faceRect.height / cardRect.height,
-          widthRatio: faceRect.width / cardRect.width,
+          faceHeightRatio: faceRect.height / cardRect.height,
+          faceWidthRatio: faceRect.width / cardRect.width,
+          left: cardRect.left,
+          width: cardRect.width,
         };
       }),
     );
 
-    expect(measurements.length).toBeGreaterThan(0);
+    const cardsWithFaces = measurements.flatMap((measurement) =>
+      measurement ? [measurement] : [],
+    );
 
-    for (const measurement of measurements) {
-      if (!measurement) {
-        throw new Error('UNO card is missing its dedicated face surface');
+    expect(cardsWithFaces.length).toBe(measurements.length);
+    expect(cardsWithFaces.length).toBeGreaterThan(1);
+
+    for (const measurement of cardsWithFaces) {
+      expect(measurement.faceWidthRatio).toBeGreaterThan(0.9);
+      expect(measurement.faceHeightRatio).toBeGreaterThan(0.9);
+    }
+
+    const orderedCards = [...cardsWithFaces].sort(
+      (left, right) => left.left - right.left,
+    );
+
+    for (let index = 0; index < orderedCards.length - 1; index += 1) {
+      const current = orderedCards[index];
+      const next = orderedCards[index + 1];
+
+      if (!current || !next) {
+        continue;
       }
 
-      expect(measurement.widthRatio).toBeGreaterThan(0.9);
-      expect(measurement.heightRatio).toBeGreaterThan(0.9);
+      const visibleWidthRatio = (next.left - current.left) / current.width;
+      expect(visibleWidthRatio).toBeGreaterThan(0.72);
     }
   }
 
