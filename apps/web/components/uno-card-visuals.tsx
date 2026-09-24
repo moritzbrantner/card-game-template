@@ -96,26 +96,24 @@ function getCenterTextClass(color: UnoCard['color']) {
   }
 }
 
-function getCardWidthClass(size: PlayingCardSize, compact: boolean) {
-  if (compact) {
-    switch (size) {
-      case 'sm':
-        return 'w-[6.75rem] min-w-[6.75rem]';
-      case 'md':
-        return 'w-[7.75rem] min-w-[7.75rem]';
-      case 'lg':
-        return 'w-[9rem] min-w-[9rem]';
-    }
-  }
+const CARD_WIDTH_CLASSES: Record<
+  'compact' | 'standard',
+  Record<PlayingCardSize, string>
+> = {
+  compact: {
+    sm: 'w-[6.75rem] min-w-[6.75rem]',
+    md: 'w-[7.75rem] min-w-[7.75rem]',
+    lg: 'w-[9rem] min-w-[9rem]',
+  },
+  standard: {
+    sm: 'w-[7.75rem] min-w-[7.75rem]',
+    md: 'w-[9.5rem] min-w-[9.5rem]',
+    lg: 'w-[11.25rem] min-w-[11.25rem]',
+  },
+};
 
-  switch (size) {
-    case 'sm':
-      return 'w-[7.75rem] min-w-[7.75rem]';
-    case 'md':
-      return 'w-[9.5rem] min-w-[9.5rem]';
-    case 'lg':
-      return 'w-[11.25rem] min-w-[11.25rem]';
-  }
+function getCardWidthClass(size: PlayingCardSize, compact: boolean) {
+  return CARD_WIDTH_CLASSES[compact ? 'compact' : 'standard'][size];
 }
 
 function getCardShellClassName({
