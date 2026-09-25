@@ -9,12 +9,7 @@ import {
   type GameServerExternalSimulationRequest,
 } from '@repo/game-server-bridge';
 import { createServerGameSession } from '@repo/game-session';
-import type {
-  UnoEvent,
-  UnoMove,
-  UnoSetup,
-  UnoState,
-} from '@repo/game-uno';
+import type { UnoEvent, UnoMove, UnoSetup, UnoState } from '@repo/game-uno';
 
 import { engineFixtureCases } from './cases.ts';
 import type { EngineFixtureCase } from './harness.ts';
@@ -23,12 +18,7 @@ const FIXTURE_ID = 'uno/replay-summary';
 const MATCH_ID = 'game-server/uno-replay-v1';
 const TICK_HZ = 1;
 
-type UnoFixture = EngineFixtureCase<
-  UnoSetup,
-  UnoState,
-  UnoMove,
-  UnoEvent
->;
+type UnoFixture = EngineFixtureCase<UnoSetup, UnoState, UnoMove, UnoEvent>;
 
 type TranscriptEntry = {
   operation: GameServerExternalSimulationRequest['operation'];
@@ -54,9 +44,7 @@ function createFixtureClock(): () => string {
   return () => {
     const currentSecond = second;
     second += 1;
-    return new Date(
-      Date.UTC(2026, 3, 21, 12, 0, currentSecond),
-    ).toISOString();
+    return new Date(Date.UTC(2026, 3, 21, 12, 0, currentSecond)).toISOString();
   };
 }
 
@@ -67,7 +55,9 @@ function numericPlayerId(gamePlayerId: string): number {
     case 'p2':
       return 2;
     default:
-      throw new Error('Fixture player is not mapped to game-server: ' + gamePlayerId);
+      throw new Error(
+        'Fixture player is not mapped to game-server: ' + gamePlayerId,
+      );
   }
 }
 
@@ -159,10 +149,7 @@ function createFixtureRuntime() {
       }
       if (targetTick !== tick + 1n) {
         throw new Error(
-          'Target tick ' +
-            targetTick +
-            ' cannot follow current tick ' +
-            tick,
+          'Target tick ' + targetTick + ' cannot follow current tick ' + tick,
         );
       }
 
@@ -259,16 +246,12 @@ export function createUnoGameServerConvergenceFixture(): string {
     operation: 'snapshot',
   });
 
-  const checkpoint = decodeGameServerExternalSimulationResponse(
-    checkpointResponse,
-  ).response;
+  const checkpoint =
+    decodeGameServerExternalSimulationResponse(checkpointResponse).response;
   const finalSnapshot =
     decodeGameServerExternalSimulationResponse(finalResponse).response;
 
-  if (
-    checkpoint.kind !== 'snapshot' ||
-    finalSnapshot.kind !== 'snapshot'
-  ) {
+  if (checkpoint.kind !== 'snapshot' || finalSnapshot.kind !== 'snapshot') {
     throw new Error('Expected snapshot responses from the fixture endpoint');
   }
 
@@ -295,18 +278,11 @@ export function createUnoGameServerConvergenceFixture(): string {
     'tick_hz=' + TICK_HZ,
     ...fixture.players.map(
       (player) =>
-        'player=' +
-        numericPlayerId(player.playerId) +
-        ':' +
-        player.playerId,
+        'player=' + numericPlayerId(player.playerId) + ':' + player.playerId,
     ),
-    'command=' +
-      commandPlayerId +
-      ':1:' +
-      toGameServerHex(commandPayload),
+    'command=' + commandPlayerId + ':1:' + toGameServerHex(commandPayload),
     'expected_final_tick=1',
-    'expected_replay_fingerprint=' +
-      toGameServerU64Hex(localFingerprint),
+    'expected_replay_fingerprint=' + toGameServerU64Hex(localFingerprint),
     'expected_accepted_move_count=' + replay.acceptedMoves.length,
     'expected_winner=' + (replay.result?.winnerIds[0] ?? ''),
     ...transcript.map(
