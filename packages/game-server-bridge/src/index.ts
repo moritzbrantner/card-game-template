@@ -89,7 +89,9 @@ const OPERATION_CODES: Record<GameServerExternalSimulationOperation, number> = {
   'snapshot-for': 7,
 };
 
-function operationFromCode(code: number): GameServerExternalSimulationOperation {
+function operationFromCode(
+  code: number,
+): GameServerExternalSimulationOperation {
   switch (code) {
     case 1:
       return 'describe';
@@ -118,11 +120,7 @@ function assertIntegerInRange(
 ): void {
   if (!Number.isInteger(value) || value < minimum || value > maximum) {
     throw new RangeError(
-      label +
-        ' must be an integer between ' +
-        minimum +
-        ' and ' +
-        maximum,
+      label + ' must be an integer between ' + minimum + ' and ' + maximum,
     );
   }
 }
@@ -134,11 +132,7 @@ function assertExactLength(
 ): void {
   if (bytes.length !== expected) {
     throw new Error(
-      label +
-        ' expected ' +
-        expected +
-        ' bytes, received ' +
-        bytes.length,
+      label + ' expected ' + expected + ' bytes, received ' + bytes.length,
     );
   }
 }
@@ -262,7 +256,11 @@ export function encodeGameServerExternalSimulationRequest(
 export function decodeGameServerExternalSimulationRequest(
   bytes: Uint8Array,
 ): GameServerExternalSimulationRequest {
-  assertMinimumLength(bytes, REQUEST_HEADER_BYTES, 'External simulation request');
+  assertMinimumLength(
+    bytes,
+    REQUEST_HEADER_BYTES,
+    'External simulation request',
+  );
   assertProtocolVersion(bytes[0] ?? -1);
   const operation = operationFromCode(bytes[1] ?? -1);
 
@@ -463,9 +461,7 @@ export function encodeGameServerExternalSimulationResponse(
   return Uint8Array.from(output);
 }
 
-export function decodeGameServerExternalSimulationResponse(
-  bytes: Uint8Array,
-): {
+export function decodeGameServerExternalSimulationResponse(bytes: Uint8Array): {
   operation: GameServerExternalSimulationOperation;
   response: GameServerExternalSimulationResponse;
 } {
@@ -611,13 +607,10 @@ export function createGameServerExternalSimulationEndpoint(
             });
           }
           case 'remove-player': {
-            return encodeGameServerExternalSimulationResponse(
-              'remove-player',
-              {
-                kind: 'player-removed',
-                removed: handler.removePlayer(request.playerId),
-              },
-            );
+            return encodeGameServerExternalSimulationResponse('remove-player', {
+              kind: 'player-removed',
+              removed: handler.removePlayer(request.playerId),
+            });
           }
           case 'apply-command': {
             handler.applyCommand({
@@ -625,19 +618,15 @@ export function createGameServerExternalSimulationEndpoint(
               sequence: request.sequence,
               payload: request.payload,
             });
-            return encodeGameServerExternalSimulationResponse(
-              'apply-command',
-              { kind: 'acknowledged' },
-            );
+            return encodeGameServerExternalSimulationResponse('apply-command', {
+              kind: 'acknowledged',
+            });
           }
           case 'advance-tick': {
-            return encodeGameServerExternalSimulationResponse(
-              'advance-tick',
-              {
-                kind: 'tick-advanced',
-                tick: handler.advanceTick(request.targetTick),
-              },
-            );
+            return encodeGameServerExternalSimulationResponse('advance-tick', {
+              kind: 'tick-advanced',
+              tick: handler.advanceTick(request.targetTick),
+            });
           }
           case 'snapshot': {
             const snapshot = handler.snapshot();
@@ -655,20 +644,17 @@ export function createGameServerExternalSimulationEndpoint(
           }
           case 'snapshot-for': {
             const snapshot = handler.snapshotFor(request.playerId);
-            return encodeGameServerExternalSimulationResponse(
-              'snapshot-for',
-              {
-                kind: 'snapshot',
-                snapshot: {
-                  tick: snapshot.tick,
-                  stateHash: gameServerSnapshotHash(
-                    snapshot.tick,
-                    snapshot.payload,
-                  ),
-                  payload: snapshot.payload,
-                },
+            return encodeGameServerExternalSimulationResponse('snapshot-for', {
+              kind: 'snapshot',
+              snapshot: {
+                tick: snapshot.tick,
+                stateHash: gameServerSnapshotHash(
+                  snapshot.tick,
+                  snapshot.payload,
+                ),
+                payload: snapshot.payload,
               },
-            );
+            });
           }
         }
       } catch (error) {
