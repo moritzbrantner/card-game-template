@@ -154,7 +154,6 @@ for (const showdownCase of pokerShowdownRankCases) {
   });
 }
 
-
 test('UNO game-server fixture stays derived from the canonical TypeScript rules', () => {
   const committed = readFileSync(
     new URL('../fixtures/game-server/uno-replay-v1.txt', import.meta.url),
