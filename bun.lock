@@ -350,12 +350,21 @@
         "typescript": "6.0.3",
       },
     },
+    "packages/game-server-bridge": {
+      "name": "@repo/game-server-bridge",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "typescript": "6.0.3",
+      },
+    },
     "packages/game-fixtures": {
       "name": "@repo/game-fixtures",
       "version": "0.0.0",
       "dependencies": {
         "@repo/game-contracts": "workspace:*",
         "@repo/game-engine": "workspace:*",
+        "@repo/game-server-bridge": "workspace:*",
         "@repo/game-poker": "workspace:*",
         "@repo/game-session": "workspace:*",
         "@repo/game-tcg": "workspace:*",
