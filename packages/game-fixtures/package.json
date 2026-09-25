@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@repo/game-contracts": "workspace:*",
+    "@repo/game-server-bridge": "workspace:*",
     "@repo/game-engine": "workspace:*",
     "@repo/game-poker": "workspace:*",
     "@repo/game-session": "workspace:*",
