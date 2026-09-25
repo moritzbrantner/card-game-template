@@ -88,7 +88,23 @@ export const settingsPage = {
     hotkeyHintsDescription:
       'Zeigt den Hotkey-Launcher und Inline-Kürzel in der Navigation an.',
     hotkeySummary:
-      'Nutze `Alt` plus einen Buchstaben zum Seitenwechsel oder drücke `?`, um die vollständige Kürzelliste zu öffnen.',
+      'Standardmäßig wechselst du mit `Alt` plus Buchstabe die Seite und öffnest mit `?` die Kürzelliste. Unten kannst du die Belegungen ändern.',
+  },
+  inputBindings: {
+    title: 'Steuerung und Tastenbelegung',
+    description:
+      'Konfiguriere semantische Navigationsaktionen über die gemeinsame Input-Bindings-Grundlage. Konflikte werden vor dem Speichern abgelehnt.',
+    loading: 'Steuerung wird geladen',
+    degraded: 'Steuerung nicht verfügbar',
+    invalid: 'Ungültiges Belegungsprofil',
+    ready: 'Steuerung bereit',
+    record: 'Neu belegen',
+    recording: 'Taste drücken',
+    cancel: 'Abbrechen',
+    reset: 'Zurücksetzen',
+    resetAll: 'Alle zurücksetzen',
+    conflict: 'Tastenkonflikt',
+    customized: 'Angepasst',
   },
   notifications: {
     title: 'Benachrichtigungseinstellungen',
