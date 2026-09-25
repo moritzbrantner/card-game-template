@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -14,6 +15,7 @@ import {
 } from '../../game-session/src/index.ts';
 import { summarizeUnoReplay } from '../../game-uno/src/index.ts';
 import {
+  createUnoGameServerConvergenceFixture,
   engineFixtureCases,
   pokerShowdownRankCases,
   runEngineFixtureCase,
@@ -151,3 +153,17 @@ for (const showdownCase of pokerShowdownRankCases) {
     );
   });
 }
+
+test('UNO game-server fixture stays derived from the canonical TypeScript rules', () => {
+  const committed = readFileSync(
+    new URL('../fixtures/game-server/uno-replay-v1.txt', import.meta.url),
+    'utf8',
+  );
+  const generated = createUnoGameServerConvergenceFixture();
+
+  assert.equal(
+    committed,
+    generated,
+    'Regenerate uno-replay-v1.txt from the canonical UNO rules when this changes',
+  );
+});

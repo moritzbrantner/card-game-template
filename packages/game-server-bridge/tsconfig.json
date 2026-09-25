@@ -1,0 +1,7 @@
+{
+  "extends": "../typescript-config/base.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src/**/*.ts"]
+}
