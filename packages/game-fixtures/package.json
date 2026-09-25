@@ -9,16 +9,16 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "lint": "oxfmt . && git diff -- package.json src/game-server.ts tests/unit.test.ts && exit 1",
+    "lint": "oxfmt --check . && bun run lint:code",
     "lint:code": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "test:unit": "../../scripts/run-with-node.sh --experimental-strip-types --test ./tests/unit.test.ts"
   },
   "dependencies": {
     "@repo/game-contracts": "workspace:*",
-    "@repo/game-server-bridge": "workspace:*",
     "@repo/game-engine": "workspace:*",
     "@repo/game-poker": "workspace:*",
+    "@repo/game-server-bridge": "workspace:*",
     "@repo/game-session": "workspace:*",
     "@repo/game-tcg": "workspace:*",
     "@repo/game-tic-tac-toe": "workspace:*",
