@@ -36,7 +36,7 @@ test('external simulation request bytes match the Rust v1 wire fixtures', () => 
 
 test('snapshot hash matches the Rust FNV-1a fixture', () => {
   const response = decodeGameServerExternalSimulationResponse(
-    fromGameServerHex('0106000000000000000735594afc4eab92da0001bb'),
+    fromGameServerHex('010600000000000000000135594afc4eab92da0001bb'),
   );
 
   assert.equal(response.operation, 'snapshot');
@@ -46,14 +46,14 @@ test('snapshot hash matches the Rust FNV-1a fixture', () => {
     throw new Error('Expected snapshot response');
   }
 
-  assert.equal(response.response.snapshot.tick, 7n);
+  assert.equal(response.response.snapshot.tick, 1n);
   assert.equal(
     toGameServerU64Hex(response.response.snapshot.stateHash),
     '35594afc4eab92da',
   );
   assert.equal(
     response.response.snapshot.stateHash,
-    gameServerSnapshotHash(7n, Uint8Array.of(0xbb)),
+    gameServerSnapshotHash(1n, Uint8Array.of(0xbb)),
   );
 });
 
