@@ -42,7 +42,6 @@ Important details:
 - `INFRASTRUCTURE.md`: required backend services and environments
 - `OPERATIONS.md`: deployment and incident handling expectations
 - `DECISIONS.md`: initial architectural decisions
-- `PLANS.md`: ordered implementation roadmap
 
 ## Core principles
 
