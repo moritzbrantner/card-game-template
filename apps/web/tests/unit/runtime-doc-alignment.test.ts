@@ -8,7 +8,6 @@ const docs = [
   'ARCHITECTURE.md',
   'PRODUCT_BRIEF.md',
   'DECISIONS.md',
-  'PLANS.md',
   'MIGRATION_NOTES.md',
 ];
 

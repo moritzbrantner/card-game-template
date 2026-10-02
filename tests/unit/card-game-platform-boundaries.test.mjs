@@ -109,16 +109,9 @@ test('all client apps depend on the shared turn-based packages they consume', ()
   }
 });
 
-test('roadmap status reflects the implemented turn-based foundation', () => {
+test('README reflects the implemented turn-based foundation', () => {
   const readme = readFileSync(resolve(repoRoot, 'README.md'), 'utf8');
-  const plans = readFileSync(resolve(repoRoot, 'PLANS.md'), 'utf8');
 
-  assert.match(plans, /\| P-001 \| completed\s+\| Shared game contracts/);
-  assert.match(plans, /\| P-002 \| completed\s+\| Portable game engine/);
-  assert.match(plans, /\| P-006 \| completed\s+\| Sample games/);
-  assert.match(plans, /Generic persisted match service/);
-  assert.match(plans, /packages\/card-kit/);
-  assert.match(plans, /packages\/game-tic-tac-toe/);
   assert.match(
     readme,
     /web UNO-style server-authoritative matches with guest\/account ownership/,
