@@ -25,3 +25,12 @@
 - Decision: Web, desktop, and mobile should share the same domain contracts and gameplay behavior.
 - Rationale: A template is most useful when a game can be shipped broadly with minimal rule drift between platforms.
 - Consequence: Platform-specific code should stay at the shell and UX layers, not in the game model.
+
+## 2026-09-12
+
+### Online card matches target game-server for authority
+
+- Decision: Use `game-server` as the canonical runtime target for server-authoritative online matches. Keep `multiplayer-setup-service` as an optional rendezvous/signaling path for explicitly peer-hosted or casual modes, not as the authority for hidden-information card games.
+- Rationale: `multiplayer-setup-service` deliberately stops at connection setup and WebRTC signaling, while card games need one trusted owner for hidden hands, legal-move validation, reconnect state, snapshots, and replay. `game-server` already owns those runtime responsibilities.
+- Consequence: Accounts, lobby discovery, match history, and product persistence remain application concerns in this repository. Live-match transport should move behind a dedicated adapter targeting `game-server`; peer-to-peer setup must not silently replace server authority.
+- Integration gate: Do not duplicate the TypeScript rules inside the Rust server just to connect the repositories. The integration is complete only when an explicit turn-based simulation/protocol boundary can run the same deterministic fixtures and replay fingerprints, and when `game-server` exposes the per-match transport routing and browser-facing client contract required by the web app.

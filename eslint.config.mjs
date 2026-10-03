@@ -30,7 +30,6 @@ export default [
       '**/out/**',
       '**/playwright-report/**',
       '**/test-results/**',
-      'apps/web.backup/**',
       'benchmark-results/**',
       'packages/eslint-config/**',
       'templates/**',

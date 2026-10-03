@@ -2,6 +2,10 @@
 
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
+import {
+  useCardPileActions,
+  type CardActionTarget,
+} from './card-action-context';
 import { cx } from './lib/cx';
 
 const ENABLED_CLASS_NAME =
@@ -40,5 +44,29 @@ export function CardPileControl({
     >
       {children}
     </button>
+  );
+}
+
+export interface CardActionPileControlProps extends Omit<
+  CardPileControlProps,
+  'disabled' | 'onClick'
+> {
+  actionTarget: CardActionTarget;
+}
+
+export function CardActionPileControl({
+  actionTarget,
+  ...pileProps
+}: CardActionPileControlProps) {
+  const actions = useCardPileActions(actionTarget);
+  const action = actions.length === 1 ? actions[0] : undefined;
+
+  return (
+    <CardPileControl
+      {...pileProps}
+      data-card-action-id={action?.id}
+      disabled={!action || action.disabled}
+      onClick={action?.onActivate}
+    />
   );
 }

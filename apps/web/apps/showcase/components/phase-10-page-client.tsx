@@ -9,7 +9,11 @@ import {
 } from 'react';
 
 import { Badge, Button, cn } from '@moritzbrantner/ui';
-import { PlayerHand, PlayingCard } from '@moritzbrantner/card-games';
+import {
+  CardActionPileControl,
+  PlayerHand,
+  PlayingCard,
+} from '@moritzbrantner/card-games';
 import { defaultGameCatalog } from '@repo/game-catalog';
 import {
   createLocalGameSession,
@@ -880,15 +884,21 @@ export function Phase10PageClient({
                 {labels.tableDrawLabel}
               </p>
               <div className="mt-4 flex items-center gap-4">
-                <PlayingCard
-                  aria-label="Draw pile"
-                  className="w-24 min-w-[6rem]"
-                  face="back"
-                  interactive={false}
-                  rank="10"
-                  size="sm"
-                  tone="midnight"
-                />
+                <CardActionPileControl
+                  actionTarget="draw-pile"
+                  aria-label={labels.tableDrawLabel}
+                  className="p-0"
+                >
+                  <PlayingCard
+                    aria-label="Draw pile"
+                    className="w-24 min-w-[6rem]"
+                    face="back"
+                    interactive={false}
+                    rank="10"
+                    size="sm"
+                    tone="midnight"
+                  />
+                </CardActionPileControl>
                 <div className="space-y-1">
                   <p className="text-xl font-semibold text-white">
                     {snapshot.view.drawPileCount}
@@ -903,19 +913,25 @@ export function Phase10PageClient({
                 {labels.tableDiscardLabel}
               </p>
               <div className="mt-4 flex items-center gap-4">
-                {snapshot.view.discardTop ? (
-                  renderCard(snapshot.view.discardTop, { compact: true })
-                ) : (
-                  <PlayingCard
-                    aria-label="Empty discard pile"
-                    className="w-24 min-w-[6rem]"
-                    face="back"
-                    interactive={false}
-                    rank="0"
-                    size="sm"
-                    tone="classic"
-                  />
-                )}
+                <CardActionPileControl
+                  actionTarget="discard-pile"
+                  aria-label={labels.tableDiscardLabel}
+                  className="p-0"
+                >
+                  {snapshot.view.discardTop ? (
+                    renderCard(snapshot.view.discardTop, { compact: true })
+                  ) : (
+                    <PlayingCard
+                      aria-label="Empty discard pile"
+                      className="w-24 min-w-[6rem]"
+                      face="back"
+                      interactive={false}
+                      rank="0"
+                      size="sm"
+                      tone="classic"
+                    />
+                  )}
+                </CardActionPileControl>
                 <div className="space-y-1">
                   <p className="text-xl font-semibold text-white">
                     {snapshot.view.discardTop?.label ?? 'Empty pile'}

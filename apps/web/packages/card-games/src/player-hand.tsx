@@ -111,13 +111,18 @@ export function PlayerHand({
       setSelectedCardId((current) => (current === cardId ? null : cardId));
     };
 
+    // Data attributes are valid DOM props but not part of PlayingCardProps.
+    const dataAttributes = {
+      'data-card-draggable': draggable || undefined,
+    };
+
     return cloneElement(child, {
+      ...dataAttributes,
       'aria-pressed': selected,
       className: cx(
         child.props.className,
         draggable ? 'cursor-grab active:cursor-grabbing' : null,
       ),
-      'data-card-draggable': draggable || undefined,
       draggable: child.props.draggable ?? draggable,
       interactive: true,
       onClick: (event: MouseEvent<HTMLDivElement>) => {

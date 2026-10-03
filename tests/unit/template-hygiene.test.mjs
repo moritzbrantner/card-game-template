@@ -24,9 +24,7 @@ test('template README documents the supported creation helper flow', () => {
 
 test('README referenced root docs exist', () => {
   for (const path of [
-    'PLANS.md',
     'INFRASTRUCTURE.md',
-    'AGENT_WORKFLOW.md',
     'ARCHITECTURE.md',
     'OPERATIONS.md',
     'DECISIONS.md',

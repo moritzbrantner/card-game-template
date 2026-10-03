@@ -41,6 +41,16 @@ const snapshotState = vi.hoisted(() => ({
       drawPileCount: 47,
       legalActions: [
         {
+          id: 'draw-card:{"source":"draw"}',
+          label: 'Draw from draw pile',
+          move: {
+            createdAt: '2026-04-26T12:00:00.000Z',
+            kind: 'draw-card',
+            payload: { source: 'draw' },
+            playerId: 'p1',
+          },
+        },
+        {
           id: 'draw-card:{"source":"discard"}',
           label: 'Draw Red 9',
           move: {
@@ -247,6 +257,16 @@ const labels = {
 function resetLegalActions() {
   snapshotState.current.view.legalActions = [
     {
+      id: 'draw-card:{"source":"draw"}',
+      label: 'Draw from draw pile',
+      move: {
+        createdAt: '2026-04-26T12:00:00.000Z',
+        kind: 'draw-card',
+        payload: { source: 'draw' },
+        playerId: 'p1',
+      },
+    },
+    {
       id: 'draw-card:{"source":"discard"}',
       label: 'Draw Red 9',
       move: {
@@ -322,6 +342,26 @@ describe('Phase10PageClient', () => {
       createdAt: '2026-04-26T12:00:00.000Z',
       kind: 'discard-card',
       payload: { cardId: 'red-5' },
+      playerId: 'p1',
+    });
+  });
+
+  it('routes visible draw and discard piles through their legal actions', () => {
+    render(<Phase10PageClient labels={labels} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Draw stack' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Discard stack' }));
+
+    expect(sessionSpies.submitMove).toHaveBeenNthCalledWith(1, {
+      createdAt: '2026-04-26T12:00:00.000Z',
+      kind: 'draw-card',
+      payload: { source: 'draw' },
+      playerId: 'p1',
+    });
+    expect(sessionSpies.submitMove).toHaveBeenNthCalledWith(2, {
+      createdAt: '2026-04-26T12:00:00.000Z',
+      kind: 'draw-card',
+      payload: { source: 'discard' },
       playerId: 'p1',
     });
   });

@@ -43,5 +43,5 @@ This document tracks user-facing capabilities that the application template guar
   - [x] UNO direct card play remains click/keyboard/drag driven while draw/pass actions live inside the play surface.
   - [x] Phase 10 supports unambiguous legal discard drag/drop while retaining equivalent button and keyboard controls.
   - [x] Ambiguous card-to-target mappings fail closed instead of choosing a move implicitly.
-  - [ ] Make the visible draw/discard pile representations themselves direct controls across both showcases.
+  - [x] Make the visible draw/discard pile representations themselves direct controls across both showcases.
   - [ ] Add touch-first pointer dragging so the shared drop path works consistently on mobile without removing keyboard/button controls.

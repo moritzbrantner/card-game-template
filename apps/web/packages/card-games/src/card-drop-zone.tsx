@@ -23,9 +23,7 @@ function resolveDropAction(
 
   const matches = actions.filter(
     (action) =>
-      action.cardId === cardId &&
-      action.target === target &&
-      !action.disabled,
+      action.cardId === cardId && action.target === target && !action.disabled,
   );
 
   return matches.length === 1 ? matches[0] : null;
@@ -49,7 +47,18 @@ export function CardDropZone({
   const actions = useCardActionRegistry();
   const { draggedCardId, endCardDrag } = useCardDragState();
   const [active, setActive] = useState(false);
+  const [trackedDraggedCardId, setTrackedDraggedCardId] =
+    useState(draggedCardId);
   const dropAction = resolveDropAction(actions, draggedCardId, target);
+
+  // A canceled drag (e.g. Escape while hovering) never fires dragleave/drop
+  // here, so clear the highlight whenever the shared drag state changes.
+  if (trackedDraggedCardId !== draggedCardId) {
+    setTrackedDraggedCardId(draggedCardId);
+    setActive(false);
+  }
+
+  const isActive = active && dropAction !== null;
 
   const handleDragEnter = (event: DragEvent<HTMLDivElement>) => {
     onDragEnter?.(event);
@@ -111,8 +120,8 @@ export function CardDropZone({
   return (
     <div
       {...divProps}
-      className={cx(className, active ? activeClassName : null)}
-      data-card-drop-active={active || undefined}
+      className={cx(className, isActive ? activeClassName : null)}
+      data-card-drop-active={isActive || undefined}
       data-card-drop-target={target}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}

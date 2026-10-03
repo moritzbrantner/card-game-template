@@ -76,5 +76,10 @@ export function useCardActions(cardId: string | null) {
 }
 
 export function useCardPileActions(target: CardActionTarget) {
-  return useCardActionRegistry().filter((action) => action.target === target);
+  // Card-scoped actions (e.g. discarding a specific hand card) share the pile
+  // target for drag and drop, but the pile control itself only activates
+  // pile-level actions such as drawing from that pile.
+  return useCardActionRegistry().filter(
+    (action) => action.target === target && !action.cardId,
+  );
 }
