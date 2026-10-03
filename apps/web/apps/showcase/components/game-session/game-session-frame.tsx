@@ -3,6 +3,7 @@
 import {
   CardActionProvider,
   CardControls,
+  CardDropZone,
   type CardActionDescriptor,
   type CardActionTarget,
   type CardControlActionKind,
@@ -85,6 +86,10 @@ function controlKind(kind: string): CardControlActionKind {
 }
 
 function actionTarget(parsed: ParsedActionId): CardActionTarget | undefined {
+  if (parsed.kind === 'discard-card') {
+    return 'discard-pile';
+  }
+
   if (parsed.kind !== 'draw-card') {
     return undefined;
   }
@@ -154,6 +159,10 @@ export function GameSessionFrame({
   );
   const surfaceActions = actions.filter(
     (action) => !isContextualCardAction(action),
+  );
+  const hasDiscardDropTarget = actionRegistry.some(
+    (action) =>
+      action.cardId && action.target === 'discard-pile' && !action.disabled,
   );
 
   return (
@@ -293,6 +302,24 @@ export function GameSessionFrame({
             <div className="mx-auto min-h-64 max-w-6xl py-7 sm:py-9">
               {table}
             </div>
+
+            {hasDiscardDropTarget ? (
+              <div className="mx-auto mb-5 max-w-6xl">
+                <CardDropZone
+                  activeClassName="border-emerald-300/70 bg-emerald-400/14 shadow-[0_0_0_2px_rgba(110,231,183,0.16)]"
+                  aria-label={`${actionsLabel} discard pile drop target`}
+                  className="rounded-2xl border border-dashed border-white/18 bg-white/6 px-4 py-3 transition-[border-color,background-color,box-shadow]"
+                  target="discard-pile"
+                >
+                  <p className="text-sm font-semibold text-white">
+                    Discard pile
+                  </p>
+                  <p className="mt-1 text-sm text-white/68">
+                    Drag a legal hand card here to discard it.
+                  </p>
+                </CardDropZone>
+              </div>
+            ) : null}
 
             {aside ? (
               <div className="mx-auto max-w-6xl border-t border-white/10 pt-5">

@@ -3,8 +3,27 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import {
+  CARD_DRAG_MIME_TYPE,
+  PlayerHand,
+  PlayingCard,
+} from '@moritzbrantner/card-games';
+
 import { GameSessionFrame } from '@/apps/showcase/components/game-session';
 import { CardActionPileControl } from '@moritzbrantner/card-games';
+
+function createDataTransfer() {
+  const data = new Map<string, string>();
+
+  return {
+    dropEffect: 'none',
+    effectAllowed: 'all',
+    getData: (type: string) => data.get(type) ?? '',
+    setData: (type: string, value: string) => {
+      data.set(type, value);
+    },
+  } as DataTransfer;
+}
 
 describe('GameSessionFrame card controls', () => {
   it('routes the visible pile and toolbar button through the same draw action', () => {
@@ -54,6 +73,50 @@ describe('GameSessionFrame card controls', () => {
 
     expect(draw).toHaveBeenCalledTimes(2);
     expect(play).not.toHaveBeenCalled();
+  });
+
+  it('routes a Phase 10 discard by dragging the legal hand card to the discard target', () => {
+    const discard = vi.fn();
+    const dataTransfer = createDataTransfer();
+
+    render(
+      <GameSessionFrame
+        actions={[
+          {
+            id: 'discard-card:{"cardId":"red-5"}',
+            label: 'Discard Red 5',
+            onSelect: discard,
+          },
+        ]}
+        actionsLabel="Legal actions"
+        emptyActionsLabel="No actions"
+        table={
+          <PlayerHand aria-label="Player One hand">
+            <PlayingCard
+              key="red-5"
+              aria-label="Red 5"
+              interactive={false}
+              rank="5"
+              size="sm"
+            />
+          </PlayerHand>
+        }
+        title="Phase 10"
+      />,
+    );
+
+    const card = screen.getByRole('button', { name: 'Red 5' });
+    const target = screen.getByLabelText(
+      'Legal actions discard pile drop target',
+    );
+
+    fireEvent.dragStart(card, { dataTransfer });
+    expect(dataTransfer.getData(CARD_DRAG_MIME_TYPE)).toBe('red-5');
+
+    fireEvent.dragOver(target, { dataTransfer });
+    fireEvent.drop(target, { dataTransfer });
+
+    expect(discard).toHaveBeenCalledOnce();
   });
 
   it('does not suppress another game play-card action without UNO payload semantics', () => {
