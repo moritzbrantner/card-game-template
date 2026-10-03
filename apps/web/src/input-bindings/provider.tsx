@@ -32,7 +32,9 @@ type InputBindingsContextValue = {
   resetProfile: () => void;
 };
 
-const InputBindingsContext = createContext<InputBindingsContextValue | null>(null);
+const InputBindingsContext = createContext<InputBindingsContextValue | null>(
+  null,
+);
 
 export function InputBindingsProvider({
   children,
@@ -60,10 +62,27 @@ export function InputBindingsProvider({
         if (disposed) {
           return;
         }
-        const validationReport = loadedBrowserModule.validateRegistry(
-          registry,
-          storedProfile,
-        );
+        let validationReport: InputValidationReport;
+        try {
+          validationReport = loadedBrowserModule.validateRegistry(
+            registry,
+            storedProfile,
+          );
+        } catch (error) {
+          // A persisted profile the runtime cannot read must not leave the
+          // controls stuck loading; fall back to the defaults instead.
+          console.warn(
+            'Ignoring an unreadable persisted input-bindings profile.',
+            error,
+          );
+          const fallbackProfile = structuredClone(defaultInputProfile);
+          setProfile(fallbackProfile);
+          writeInputProfile(fallbackProfile);
+          validationReport = loadedBrowserModule.validateRegistry(
+            registry,
+            fallbackProfile,
+          );
+        }
         setBrowserModule(loadedBrowserModule);
         setReport(validationReport);
         setStatus(validationReport.valid ? 'ready' : 'invalid');

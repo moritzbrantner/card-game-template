@@ -95,6 +95,62 @@ describe('shared input-bindings adapter', () => {
     ).toEqual(defaultInputProfile);
   });
 
+  it('fails closed to the default profile when persisted patches are corrupt', () => {
+    const corruptProfiles = [
+      { id: 'stale', patches: [null] },
+      { id: 'stale', patches: [{ op: 'rename', bindingId: 'x' }] },
+      { id: 'stale', patches: [{ op: 'add', binding: { id: 'b' } }] },
+      {
+        id: 'stale',
+        patches: [
+          {
+            op: 'replace',
+            bindingId: 'b',
+            binding: {
+              id: 'b',
+              action: 'navigation.palette',
+              sequence: [{ key: { kind: 'physical' } }],
+            },
+          },
+        ],
+      },
+    ];
+
+    for (const corruptProfile of corruptProfiles) {
+      expect(
+        readInputProfile({ getItem: () => JSON.stringify(corruptProfile) }),
+      ).toEqual(defaultInputProfile);
+    }
+  });
+
+  it('keeps structurally valid persisted patches', () => {
+    const storedProfile = {
+      id: 'custom',
+      patches: [
+        { op: 'remove', bindingId: 'card-game.navigation.palette.ctrl-k' },
+        {
+          op: 'add',
+          binding: {
+            id: 'custom.palette',
+            action: NAVIGATION_PALETTE_ACTION_ID,
+            sequence: [
+              {
+                key: { kind: 'physical', value: 'KeyP' },
+                modifiers: { ctrl: true },
+              },
+            ],
+            when: { op: 'context', id: NAVIGATION_CONTEXT_ID },
+            priority: 1,
+          },
+        },
+      ],
+    };
+
+    expect(
+      readInputProfile({ getItem: () => JSON.stringify(storedProfile) }),
+    ).toEqual(storedProfile);
+  });
+
   it('loads the vendored browser distribution instead of a remote endpoint', async () => {
     const browserModule = await loadInputBindingsBrowser();
 

@@ -208,14 +208,10 @@ export function readInputProfile(
 
   try {
     const parsed = JSON.parse(stored) as unknown;
-    if (
-      !isRecord(parsed) ||
-      typeof parsed.id !== 'string' ||
-      !Array.isArray(parsed.patches)
-    ) {
+    if (!isInputProfile(parsed)) {
       return structuredClone(defaultInputProfile);
     }
-    return parsed as InputProfile;
+    return parsed;
   } catch {
     return structuredClone(defaultInputProfile);
   }
@@ -314,6 +310,71 @@ function displayKey(code: string) {
     return '/';
   }
   return code;
+}
+
+export function isInputProfile(value: unknown): value is InputProfile {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    Array.isArray(value.patches) &&
+    value.patches.every(isInputBindingPatch)
+  );
+}
+
+function isInputBindingPatch(value: unknown): value is InputBindingPatch {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  switch (value.op) {
+    case 'add':
+      return isInputBinding(value.binding);
+    case 'remove':
+      return typeof value.bindingId === 'string';
+    case 'replace':
+      return (
+        typeof value.bindingId === 'string' && isInputBinding(value.binding)
+      );
+    default:
+      return false;
+  }
+}
+
+function isInputBinding(value: unknown): value is InputBinding {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.action === 'string' &&
+    Array.isArray(value.sequence) &&
+    value.sequence.length > 0 &&
+    value.sequence.every(isKeyStroke) &&
+    (value.when === undefined || isBindingCondition(value.when)) &&
+    (value.priority === undefined || typeof value.priority === 'number')
+  );
+}
+
+function isKeyStroke(value: unknown): value is KeyStroke {
+  if (!isRecord(value) || !isRecord(value.key)) {
+    return false;
+  }
+
+  return (
+    (value.key.kind === 'logical' || value.key.kind === 'physical') &&
+    typeof value.key.value === 'string' &&
+    (value.modifiers === undefined ||
+      (isRecord(value.modifiers) &&
+        Object.values(value.modifiers).every(
+          (modifier) => modifier === undefined || typeof modifier === 'boolean',
+        )))
+  );
+}
+
+function isBindingCondition(value: unknown): value is InputBinding['when'] {
+  return (
+    isRecord(value) &&
+    (value.op === 'always' ||
+      (value.op === 'context' && typeof value.id === 'string'))
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
