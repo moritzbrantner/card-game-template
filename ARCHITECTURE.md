@@ -59,7 +59,7 @@ Shared packages should carry the reusable platform logic. The intended package s
 
 ### `templates/platform-packages/*`
 
-This scaffold remains the extraction path for packages that outgrow this repository and need to move into a dedicated private packages repository.
+This scaffold remains the extraction path for packages that outgrow this repository and need to move into a dedicated public package repository.
 
 ## Runtime model
 

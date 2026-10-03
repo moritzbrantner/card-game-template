@@ -51,7 +51,7 @@ Consumers pin owner packages as git source dependencies on a full commit SHA. No
 
 ## Access model
 
-- consumers fetch package sources over plain `git+https`, so package repositories must be readable without a token
+- package repositories must be public: consumers fetch them over plain `git+https`, and a consumer's CI `GITHUB_TOKEN` cannot read another private repository
 - use pinned commits instead of copying code between repos
 
 ## Dependency update automation

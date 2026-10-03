@@ -57,7 +57,7 @@ test('every app workspace exposes a manifest with the agreed contract keys', () 
   }
 });
 
-test('the template includes a scaffold for a separate private packages repository', () => {
+test('the template includes a scaffold for a separate public packages repository', () => {
   const readme = readFileSync(
     new URL('../../templates/platform-packages/README.md', import.meta.url),
     'utf8',
@@ -77,7 +77,7 @@ test('the template includes a scaffold for a separate private packages repositor
     'utf8',
   );
 
-  assert.match(readme, /dedicated private repository/);
+  assert.match(readme, /dedicated public repository/);
   assert.match(workflow, /changesets\/action@v1/);
   assert.match(workflow, /https:\/\/npm\.pkg\.github\.com/);
   assert.match(changesets, /"access": "restricted"/);
