@@ -6,6 +6,7 @@ import {
   createNavigationInputRegistry,
   defaultInputProfile,
   formatInputSequence,
+  loadInputBindingsBrowser,
   navigationActionId,
   navigationPageContextId,
   readInputProfile,
@@ -19,7 +20,9 @@ const navigationInputRegistry = createNavigationInputRegistry(navigationPages);
 
 describe('shared input-bindings adapter', () => {
   it('declares semantic navigation actions with visibility-scoped contexts', () => {
-    const actionIds = navigationInputRegistry.actions.map((action) => action.id);
+    const actionIds = navigationInputRegistry.actions.map(
+      (action) => action.id,
+    );
 
     expect(new Set(actionIds).size).toBe(actionIds.length);
     expect(actionIds).toContain(NAVIGATION_PALETTE_ACTION_ID);
@@ -90,5 +93,20 @@ describe('shared input-bindings adapter', () => {
         getItem: () => '{not-json',
       }),
     ).toEqual(defaultInputProfile);
+  });
+
+  it('loads the vendored browser distribution instead of a remote endpoint', async () => {
+    const browserModule = await loadInputBindingsBrowser();
+
+    expect(typeof browserModule.InputRuntimeController).toBe('function');
+    expect(typeof browserModule.attachKeyboardRuntime).toBe('function');
+    expect(typeof browserModule.keyboardEventToStroke).toBe('function');
+
+    const report = browserModule.validateRegistry(
+      navigationInputRegistry,
+      defaultInputProfile,
+    );
+    expect(report.valid).toBe(true);
+    expect(report.conflicts).toEqual([]);
   });
 });

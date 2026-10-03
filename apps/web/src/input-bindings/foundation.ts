@@ -1,6 +1,5 @@
-export const INPUT_BINDINGS_BROWSER_BUNDLE_URL =
-  'https://moritzbrantner.github.io/input-bindings/input-bindings-browser.js';
-export const INPUT_BINDINGS_STORAGE_KEY = 'card-game-template.input-bindings.v1';
+export const INPUT_BINDINGS_STORAGE_KEY =
+  'card-game-template.input-bindings.v1';
 export const NAVIGATION_CONTEXT_ID = 'app.navigation';
 export const NAVIGATION_PALETTE_ACTION_ID = 'navigation.palette';
 
@@ -184,9 +183,10 @@ export function createNavigationInputRegistry(
 let browserModulePromise: Promise<InputBindingsBrowserModule> | undefined;
 
 export function loadInputBindingsBrowser(): Promise<InputBindingsBrowserModule> {
-  browserModulePromise ??= import(
-    /* webpackIgnore: true */ INPUT_BINDINGS_BROWSER_BUNDLE_URL
-  ) as Promise<InputBindingsBrowserModule>;
+  // The browser distribution is vendored and bundled with the app so no
+  // mutable remote endpoint can change the code that runs at runtime.
+  browserModulePromise ??=
+    import('../../vendor/input-bindings/input-bindings-browser.js') as Promise<InputBindingsBrowserModule>;
   return browserModulePromise;
 }
 
