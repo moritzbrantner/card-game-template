@@ -1,11 +1,19 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  formatInputSequence,
+  NAVIGATION_CONTEXT_ID,
+  NAVIGATION_PALETTE_ACTION_ID,
+  navigationActionId,
+  navigationPageContextId,
+} from '@/src/input-bindings/foundation';
+import { useInputBindings } from '@/src/input-bindings/provider';
 import { useAppSettings } from '@/src/settings/provider';
 
 type NavigationHotkey = readonly [string, string];
@@ -31,30 +39,27 @@ type NavigationHotkeysProps = {
   };
 };
 
-function isTypingTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-
-  const tagName = target.tagName.toLowerCase();
-  return (
-    tagName === 'input' ||
-    tagName === 'textarea' ||
-    tagName === 'select' ||
-    target.isContentEditable
-  );
-}
-
-function getShortcutCode(shortcut: NavigationHotkey) {
-  return `Key${shortcut[1].toUpperCase()}`;
-}
-
 export function NavigationHotkeys({ items, labels }: NavigationHotkeysProps) {
   const router = useRouter();
   const { settings } = useAppSettings();
+  const { browserModule, registry, profile, report, status } =
+    useInputBindings();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const hotkeyLabelsByAction = useMemo(() => {
+    const labelsByAction = new Map<string, string>();
+    for (const binding of report?.effectiveBindings ?? []) {
+      if (!labelsByAction.has(binding.action)) {
+        labelsByAction.set(
+          binding.action,
+          formatInputSequence(binding.sequence),
+        );
+      }
+    }
+    return labelsByAction;
+  }, [report]);
 
   useEffect(() => {
     if (!open) {
@@ -68,50 +73,63 @@ export function NavigationHotkeys({ items, labels }: NavigationHotkeysProps) {
   }, [open]);
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
+    if (!open) {
+      return;
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        if (open) {
-          setOpen(false);
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [open]);
+
+  useEffect(() => {
+    if (!browserModule || status !== 'ready') {
+      return;
+    }
+
+    const activeContexts = new Set([
+      NAVIGATION_CONTEXT_ID,
+      ...items.map((item) => navigationPageContextId(item.key)),
+    ]);
+    const hrefByAction = new Map(
+      items.map((item) => [navigationActionId(item.key), item.href]),
+    );
+    const controller = new browserModule.InputRuntimeController({
+      registry,
+      profile,
+      getActiveContexts: () => activeContexts,
+      chordTimeoutMs: 900,
+      consumePolicy: 'matched',
+      onDispatch: (dispatch) => {
+        if (dispatch.phase !== 'press') {
+          return;
         }
-        return;
-      }
+        if (dispatch.action === NAVIGATION_PALETTE_ACTION_ID) {
+          setOpen((currentOpenState) => !currentOpenState);
+          return;
+        }
 
-      if (isTypingTarget(event.target)) {
-        return;
-      }
+        const href = hrefByAction.get(dispatch.action);
+        if (href) {
+          setOpen(false);
+          router.push(href);
+        }
+      },
+    });
 
-      if (
-        (event.key === '?' && !event.metaKey && !event.ctrlKey) ||
-        ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k')
-      ) {
-        event.preventDefault();
-        setOpen((currentOpenState) => !currentOpenState);
-        return;
-      }
-
-      if (!event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) {
-        return;
-      }
-
-      const matchingPage = items.find(
-        (page) => getShortcutCode(page.hotkey) === event.code,
-      );
-
-      if (!matchingPage) {
-        return;
-      }
-
-      event.preventDefault();
-      setOpen(false);
-      router.push(matchingPage.href);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [items, open, router]);
+    return browserModule.attachKeyboardRuntime(controller, {
+      keyTarget: document,
+      focusTarget: window,
+      visibilityTarget: document,
+      ignoreTextEntry: true,
+      mode: 'physical',
+    });
+  }, [browserModule, items, profile, registry, router, status]);
 
   const groupedPages = items.reduce<Record<string, NavigationHotkeyItem[]>>(
     (groups, page) => {
@@ -151,7 +169,7 @@ export function NavigationHotkeys({ items, labels }: NavigationHotkeysProps) {
         >
           {labels.button}
           <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-            ?
+            {hotkeyLabelsByAction.get(NAVIGATION_PALETTE_ACTION_ID) ?? '?'}
           </Badge>
         </Button>
       ) : null}
@@ -210,7 +228,9 @@ export function NavigationHotkeys({ items, labels }: NavigationHotkeysProps) {
                         >
                           <span className="font-medium">{page.label}</span>
                           <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                            {page.hotkeyLabel}
+                            {hotkeyLabelsByAction.get(
+                              navigationActionId(page.key),
+                            ) ?? page.hotkeyLabel}
                           </span>
                         </button>
                       ))}

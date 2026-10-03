@@ -20,10 +20,21 @@ type LocaleShellProps = {
   analyticsEnabled?: boolean;
 };
 
-export function LocaleShell({ children, locale, siteName }: LocaleShellProps) {
+export function LocaleShell({
+  children,
+  locale,
+  siteName,
+  session,
+  notificationCenter,
+}: LocaleShellProps) {
   return (
     <>
-      <NavigationBar locale={locale} siteName={siteName} />
+      <NavigationBar
+        locale={locale}
+        siteName={siteName}
+        session={session}
+        notificationCenter={notificationCenter}
+      />
       <main className="app-shell mx-auto min-h-[calc(100vh-4rem)] w-full max-w-[90rem] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         {children}
       </main>
