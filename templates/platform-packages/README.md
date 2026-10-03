@@ -1,4 +1,4 @@
-# Private Platform Packages Scaffold
+# Platform Packages Scaffold
 
 Copy this folder into a dedicated private repository when you are ready to publish shared packages for multiple app repositories.
 
@@ -7,9 +7,9 @@ Copy this folder into a dedicated private repository when you are ready to publi
 - Bun workspace root
 - Turbo pipeline
 - Changesets configuration
-- private GitHub Packages npm publishing workflow
+- optional npm publishing workflow (producer side only; consumers never depend on it)
 - starter package manifests for UI and config packages
-- consumer `.npmrc` example
+- consumers pin packages as git source dependencies on a commit SHA; see `PLATFORM_PACKAGES.md`
 
 ## First setup
 

@@ -27,19 +27,17 @@ test('architecture doc defines the thin-template boundary and app manifest contr
   assert.match(source, /App-private modules/);
 });
 
-test('platform packages guide documents private GitHub publishing and consumer auth', () => {
+test('platform packages guide documents git source pins without registry auth', () => {
   const source = readFileSync(
     new URL('../../PLATFORM_PACKAGES.md', import.meta.url),
     'utf8',
   );
 
-  assert.match(source, /private repository/);
-  assert.match(source, /GitHub Packages/);
   assert.match(source, /changesets/);
-  assert.match(
-    source,
-    /@YOUR_GITHUB_USERNAME:registry=https:\/\/npm\.pkg\.github\.com/,
-  );
+  assert.match(source, /git\+https:\/\/github\.com\/YOUR_GITHUB_USERNAME\/ui\.git#/);
+  assert.match(source, /trustedDependencies/);
+  assert.doesNotMatch(source, /npm\.pkg\.github\.com/);
+  assert.doesNotMatch(source, /GH_PACKAGES_TOKEN/);
 });
 
 test('every app workspace exposes a manifest with the agreed contract keys', () => {

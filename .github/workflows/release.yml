@@ -1,6 +1,4 @@
 name: Release to Production
-env:
-  GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
 on:
   workflow_dispatch:
     inputs:
