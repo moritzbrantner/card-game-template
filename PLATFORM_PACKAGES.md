@@ -1,6 +1,6 @@
-# PLATFORM_PACKAGES.md — private shared packages on GitHub
+# PLATFORM_PACKAGES.md — shared packages on GitHub
 
-Use a separate private repository for long-lived shared packages. Do not publish them from this template repository.
+Use separate repositories for long-lived shared packages. Do not publish them from this template repository.
 
 ## Recommended repository shape
 
@@ -9,7 +9,7 @@ Use a separate private repository for long-lived shared packages. Do not publish
 - package manager: `bun`
 - task runner: `turbo`
 - versioning: `changesets`
-- registry: GitHub Packages npm registry
+- distribution: git source pins on a commit SHA (no registry auth)
 
 The starter scaffold lives in `templates/platform-packages/`.
 
@@ -20,37 +20,39 @@ The starter scaffold lives in `templates/platform-packages/`.
 
 Only add more packages when the API boundary is stable and reuse is real.
 
-## Publishing model
+## Release model
 
-- keep the repository private
-- publish package versions from GitHub Actions on `main`
 - use `changesets` to manage release notes and version bumps
-- use package semver to let app repos upgrade independently
+- consumers upgrade independently by moving their pinned commit SHA
+- publishing to a registry is optional; consumers must never depend on it
 
-## Private GitHub Packages setup
+## Shared packages setup
 
-1. Create a private repository for shared packages.
-2. Copy `templates/platform-packages/` into that repository root.
-3. Replace `YOUR_GITHUB_USERNAME` placeholders in package names, `.npmrc`, and workflow docs.
-4. Push to GitHub and enable Actions.
-5. Publish with the workflow in `.github/workflows/publish-packages.yml`.
+1. Keep each shared package in its own repository.
+2. Copy the relevant parts of `templates/platform-packages/` into that repository root.
+3. Replace `YOUR_GITHUB_USERNAME` placeholders in package names and workflow docs.
+4. Give the package a `prepare` script that builds it from a clean clone, and commit its `bun.lock`:
+   `"prepare": "bun install --frozen-lockfile --ignore-scripts && bun run build"`.
 
 ## Consumer repository setup
 
-Each app repository should include:
+Consumers pin owner packages as git source dependencies on a full commit SHA. No registry token or `.npmrc` registry line is needed:
 
-```ini
-@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}
+```json
+{
+  "dependencies": {
+    "@YOUR_GITHUB_USERNAME/ui": "git+https://github.com/YOUR_GITHUB_USERNAME/ui.git#<full-40-char-sha>"
+  },
+  "trustedDependencies": ["@YOUR_GITHUB_USERNAME/ui"]
+}
 ```
 
-Use a private token locally and a repository secret in CI.
+`trustedDependencies` lets bun run the package's `prepare` build. bun cannot install a git subdirectory, so a package that only lives under a monorepo subdirectory (`packages/*`) cannot be pinned this way; give it a standalone repository.
 
 ## Access model
 
-- keep both the packages repo and consumer app repos private
-- grant package access only to repositories that should install the packages
-- use versioned package releases instead of copying code between repos
+- package repositories must be public: consumers fetch them over plain `git+https`, and a consumer's CI `GITHUB_TOKEN` cannot read another private repository
+- use pinned commits instead of copying code between repos
 
 ## Dependency update automation
 

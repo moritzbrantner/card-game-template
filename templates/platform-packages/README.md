@@ -1,19 +1,21 @@
-# Private Platform Packages Scaffold
+# Platform Packages Scaffold
 
-Copy this folder into a dedicated private repository when you are ready to publish shared packages for multiple app repositories.
+Copy this folder into a dedicated public repository when you are ready to share packages across multiple app repositories.
 
 ## What this scaffold includes
 
 - Bun workspace root
 - Turbo pipeline
 - Changesets configuration
-- private GitHub Packages npm publishing workflow
+- optional npm publishing workflow (producer side only; consumers never depend on it)
 - starter package manifests for UI and config packages
-- consumer `.npmrc` example
+- consumers pin packages as git source dependencies on a commit SHA; see `PLATFORM_PACKAGES.md`
+
+Git pins resolve the repository root and bun cannot install a git subdirectory, so a package kept under `packages/*` of this multi-package layout is not directly consumable; give each consumable package its own repository root.
 
 ## First setup
 
-1. Create a new private repository, for example `platform-packages`.
+1. Create a new public repository, for example `platform-packages`. Consumers install it without credentials, so it must be public.
 2. Copy this folder's contents to the new repository root.
 3. Replace every `YOUR_GITHUB_USERNAME` placeholder.
 4. Install dependencies with `bun install`.

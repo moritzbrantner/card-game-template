@@ -27,19 +27,17 @@ test('architecture doc defines the thin-template boundary and app manifest contr
   assert.match(source, /App-private modules/);
 });
 
-test('platform packages guide documents private GitHub publishing and consumer auth', () => {
+test('platform packages guide documents git source pins without registry auth', () => {
   const source = readFileSync(
     new URL('../../PLATFORM_PACKAGES.md', import.meta.url),
     'utf8',
   );
 
-  assert.match(source, /private repository/);
-  assert.match(source, /GitHub Packages/);
   assert.match(source, /changesets/);
-  assert.match(
-    source,
-    /@YOUR_GITHUB_USERNAME:registry=https:\/\/npm\.pkg\.github\.com/,
-  );
+  assert.match(source, /git\+https:\/\/github\.com\/YOUR_GITHUB_USERNAME\/ui\.git#/);
+  assert.match(source, /trustedDependencies/);
+  assert.doesNotMatch(source, /npm\.pkg\.github\.com/);
+  assert.doesNotMatch(source, /GH_PACKAGES_TOKEN/);
 });
 
 test('every app workspace exposes a manifest with the agreed contract keys', () => {
@@ -59,7 +57,7 @@ test('every app workspace exposes a manifest with the agreed contract keys', () 
   }
 });
 
-test('the template includes a scaffold for a separate private packages repository', () => {
+test('the template includes a scaffold for a separate public packages repository', () => {
   const readme = readFileSync(
     new URL('../../templates/platform-packages/README.md', import.meta.url),
     'utf8',
@@ -79,7 +77,7 @@ test('the template includes a scaffold for a separate private packages repositor
     'utf8',
   );
 
-  assert.match(readme, /dedicated private repository/);
+  assert.match(readme, /dedicated public repository/);
   assert.match(workflow, /changesets\/action@v1/);
   assert.match(workflow, /https:\/\/npm\.pkg\.github\.com/);
   assert.match(changesets, /"access": "restricted"/);

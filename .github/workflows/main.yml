@@ -1,6 +1,4 @@
 name: Main - Full Test Suite
-env:
-  GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
 on:
   push:
     branches: [main]
