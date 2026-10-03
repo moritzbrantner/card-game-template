@@ -2,7 +2,9 @@ import { NavigationHotkeysTrigger } from '@/components/navigation-hotkeys-trigge
 import { LocalizedLink } from '@/i18n/server-link';
 import type { AppLocale } from '@/i18n/routing';
 import type { AppSession } from '@/src/auth';
+import { getPermissionSetForRole } from '@/src/domain/authorization/service';
 import type { NotificationPreview } from '@/src/domain/notifications/use-cases';
+import { getFoundationFeatureAvailabilityMap } from '@/src/foundation/features/access';
 import { createTranslator } from '@/src/i18n/messages';
 import {
   formatAppHotkey,
@@ -35,7 +37,7 @@ function getHotkeyGroupLabel(
   return t('hotkeys.accountGroup');
 }
 
-export function NavigationBar({
+export async function NavigationBar({
   locale,
   siteName,
   session,
@@ -50,9 +52,17 @@ export function NavigationBar({
     { href: '/uno', label: labels.uno },
     { href: '/phase-10', label: labels.phase10 },
   ] as const;
+  // Resolve the same dynamic permissions and feature overrides the route
+  // guards enforce, so the shortcut palette only offers reachable pages.
+  const [permissionSet, featureStateByKey] = await Promise.all([
+    getPermissionSetForRole(session?.user?.role),
+    getFoundationFeatureAvailabilityMap(session?.user),
+  ]);
   const hotkeyItems = getVisibleAppPages({
     isAuthenticated: Boolean(session?.user?.id),
     role: session?.user?.role,
+    permissionSet,
+    featureStateByKey,
   }).map((page) => {
     const label = t(page.translationKey);
     const groupLabel = getHotkeyGroupLabel(page.navigationCategory, t);
