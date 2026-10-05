@@ -17,9 +17,11 @@ on:
         required: false
         type: boolean
         default: false
-    secrets:
-      GH_PROMOTION_TOKEN:
+      promote_workflows:
+        description: Space-separated workflow files to dispatch on the promoted branch (defaults to <promote_to>.yml).
         required: false
+        type: string
+        default: ''
 
 jobs:
   test:
@@ -124,20 +126,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
-      - name: Require promotion token
-        env:
-          PROMOTION_TOKEN: ${{ secrets.GH_PROMOTION_TOKEN }}
-        run: |
-          if [ -z "${PROMOTION_TOKEN}" ]; then
-            echo "::error::GH_PROMOTION_TOKEN is required for direct promotion because pushes made with GITHUB_TOKEN do not trigger downstream push workflows." >&2
-            exit 1
-          fi
-
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
-          token: ${{ secrets.GH_PROMOTION_TOKEN }}
 
       - name: Verify snapshot branch flow
         env:
@@ -162,3 +155,15 @@ jobs:
             --force-with-lease="refs/heads/${TARGET_BRANCH}:${EXPECTED_TARGET}" \
             origin \
             "${TESTED_SHA}:refs/heads/${TARGET_BRANCH}"
+
+      - name: Start ${{ inputs.promote_to }} workflows
+        # Pushes made with GITHUB_TOKEN do not start push-triggered workflows,
+        # so the next stage (and any other branch workflows) are dispatched explicitly.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_BRANCH: ${{ inputs.promote_to }}
+          PROMOTE_WORKFLOWS: ${{ inputs.promote_workflows }}
+        run: |
+          for workflow in ${PROMOTE_WORKFLOWS:-${TARGET_BRANCH}.yml}; do
+            gh workflow run "${workflow}" --repo "${GITHUB_REPOSITORY}" --ref "${TARGET_BRANCH}"
+          done

@@ -63,15 +63,12 @@ test('direct promotion removes temporary promotion branches and pull request aut
   }
 });
 
-test('reusable workflow requires the promotion token and pushes the tested commit directly', () => {
-  assert.match(workflowSources.snapshotStage, /GH_PROMOTION_TOKEN:/);
+test('reusable workflow promotes with GITHUB_TOKEN and dispatches the next stage', () => {
+  assert.doesNotMatch(workflowSources.snapshotStage, /GH_PROMOTION_TOKEN/);
+  assert.doesNotMatch(workflowSources.snapshotStage, /secrets\./);
   assert.match(
     workflowSources.snapshotStage,
-    /PROMOTION_TOKEN:\s+\$\{\{\s*secrets\.GH_PROMOTION_TOKEN\s*\}\}/,
-  );
-  assert.match(
-    workflowSources.snapshotStage,
-    /token:\s+\$\{\{\s*secrets\.GH_PROMOTION_TOKEN\s*\}\}/,
+    /permissions:\s+contents:\s+write\s+actions:\s+write/,
   );
   assert.match(workflowSources.snapshotStage, /git push/);
   assert.match(workflowSources.snapshotStage, /--force-with-lease=/);
@@ -79,6 +76,28 @@ test('reusable workflow requires the promotion token and pushes the tested commi
     workflowSources.snapshotStage,
     /"\$\{TESTED_SHA\}:refs\/heads\/\$\{TARGET_BRANCH\}"/,
   );
+  assert.match(
+    workflowSources.snapshotStage,
+    /GH_TOKEN:\s+\$\{\{\s*github\.token\s*\}\}/,
+  );
+  assert.match(
+    workflowSources.snapshotStage,
+    /gh workflow run "\$\{workflow\}"[^\n]*--ref "\$\{TARGET_BRANCH\}"/,
+  );
+
+  assert.match(workflowSources.develop, /promote_workflows:\s+nightly\.yml/);
+  assert.match(workflowSources.nightly, /promote_workflows:\s+beta\.yml/);
+  assert.match(workflowSources.beta, /promote_workflows:\s+staging\.yml/);
+  for (const stage of ['develop', 'nightly', 'beta', 'staging']) {
+    assert.doesNotMatch(workflowSources[stage], /secrets:/);
+    assert.match(
+      workflowSources[stage],
+      /permissions:\s+contents:\s+write\s+actions:\s+write/,
+    );
+  }
+  for (const stage of ['nightly', 'beta', 'staging']) {
+    assert.match(workflowSources[stage], /workflow_dispatch:/);
+  }
 });
 
 test('reusable workflow guards snapshot branches from drift before promotion', () => {
@@ -89,8 +108,9 @@ test('reusable workflow guards snapshot branches from drift before promotion', (
   );
 });
 
-test('README documents the automation token required for release branch promotion', () => {
-  assert.match(readmeSource, /GH_PROMOTION_TOKEN/);
+test('README documents token-free release branch promotion', () => {
+  assert.doesNotMatch(readmeSource, /GH_PROMOTION_TOKEN/);
+  assert.match(readmeSource, /GITHUB_TOKEN/);
   assert.match(readmeSource, /develop -> nightly -> beta -> staging/);
   assert.match(readmeSource, /directly push snapshot branch updates/i);
   assert.doesNotMatch(readmeSource, /create and merge pull requests/);

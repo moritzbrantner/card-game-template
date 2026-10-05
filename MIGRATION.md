@@ -43,15 +43,15 @@ The promotion workflow verifies that the target snapshot branch tip is already c
 
 ## Tokens And Branch Protection
 
-The promotion jobs use `GH_PROMOTION_TOKEN`.
+The promotion jobs use the built-in `GITHUB_TOKEN` with job-level `contents: write` and `actions: write` permissions; no promotion secret is required.
 
-They do not fall back to `github.token`, because GitHub does not start a new `push` workflow run for pushes created with the default `GITHUB_TOKEN`. This direct-promotion chain needs a token that can both push the branch update and trigger the next branch workflow.
+GitHub does not start a new `push` workflow run for pushes created with `GITHUB_TOKEN`, so after moving the branch the promotion job dispatches the next branch workflow explicitly with `gh workflow run <workflow> --ref <branch>` (the `promote_workflows` input, e.g. `staging.yml gh-pages.yml` for the staging promotion). The `nightly`, `beta` and `staging` workflows therefore also accept `workflow_dispatch`.
 
-For this to work reliably, branch protection for `nightly`, `beta`, and `staging` must allow the selected token to push directly to those branches. A common setup is:
+For this to work reliably, branch protection or rulesets for `nightly`, `beta`, and `staging` must allow GitHub Actions to push directly to those branches. A common setup is:
 
 - require status checks before merge on `develop`
 - prevent manual pushes to `nightly`, `beta`, and `staging`
-- allow the promotion token or GitHub App behind that token to update `nightly`, `beta`, and `staging`
+- allow GitHub Actions (`github-actions[bot]`) to update `nightly`, `beta`, and `staging`
 
 If snapshot branches are protected from all direct updates, the promotion job will fail when it tries to move the branch ref.
 
