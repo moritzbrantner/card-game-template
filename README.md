@@ -58,7 +58,7 @@ Important details:
 ## Automation notes
 
 - release promotion still follows `develop -> nightly -> beta -> staging`
-- `GH_PROMOTION_TOKEN` is required to directly push snapshot branch updates and trigger downstream workflows
+- promotion jobs directly push snapshot branch updates with the built-in `GITHUB_TOKEN` and then dispatch the next branch workflow, so no promotion secret is needed
 - subtree synchronization still uses `GH_SUBTREE_SYNC_TOKEN` in the monorepo and `MONOREPO_SUBTREE_DISPATCH_TOKEN` in upstream subtree repositories
 - the subtree sync workflow opens or updates a pull request back into `develop`
 

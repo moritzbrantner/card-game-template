@@ -3,16 +3,18 @@ name: Nightly
 on:
   push:
     branches: [nightly]
+  workflow_dispatch:
 
 jobs:
   nightly:
     # Branch flow: nightly only moves from develop, then promotes the same tested commit to beta.
     permissions:
       contents: write
+      actions: write
     uses: ./.github/workflows/snapshot-stage.yml
     with:
       stage: nightly
       tested_sha: ${{ github.sha }}
       promote_to: beta
+      promote_workflows: beta.yml
       promote: true
-    secrets: inherit

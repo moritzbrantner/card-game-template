@@ -38,7 +38,6 @@ Expected secret and config categories:
 - realtime provider credentials or server keys
 - session signing secret
 - storage keys if avatars or media are added later
-- `GH_PROMOTION_TOKEN`
 - `GH_SUBTREE_SYNC_TOKEN`
 - `MONOREPO_SUBTREE_DISPATCH_TOKEN`
 
