@@ -98,7 +98,7 @@
         "expo-web-browser": "~55.0.14",
         "motion": "^12.35.2",
         "react": "19.1.0",
-        "react-dom": "19.1.0",
+        "react-dom": "19.3.0",
         "react-native": "0.85.1",
         "react-native-gesture-handler": "~2.31.1",
         "react-native-reanimated": "~4.3.0",
@@ -350,22 +350,14 @@
         "typescript": "6.0.3",
       },
     },
-    "packages/game-server-bridge": {
-      "name": "@repo/game-server-bridge",
-      "version": "0.0.0",
-      "devDependencies": {
-        "@repo/typescript-config": "workspace:*",
-        "typescript": "6.0.3",
-      },
-    },
     "packages/game-fixtures": {
       "name": "@repo/game-fixtures",
       "version": "0.0.0",
       "dependencies": {
         "@repo/game-contracts": "workspace:*",
         "@repo/game-engine": "workspace:*",
-        "@repo/game-server-bridge": "workspace:*",
         "@repo/game-poker": "workspace:*",
+        "@repo/game-server-bridge": "workspace:*",
         "@repo/game-session": "workspace:*",
         "@repo/game-tcg": "workspace:*",
         "@repo/game-tic-tac-toe": "workspace:*",
@@ -399,6 +391,14 @@
         "@repo/game-engine": "workspace:*",
         "@repo/game-session": "workspace:*",
       },
+      "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "typescript": "6.0.3",
+      },
+    },
+    "packages/game-server-bridge": {
+      "name": "@repo/game-server-bridge",
+      "version": "0.0.0",
       "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "typescript": "6.0.3",
@@ -1480,6 +1480,8 @@
     "@repo/game-phase-10": ["@repo/game-phase-10@workspace:packages/game-phase-10"],
 
     "@repo/game-poker": ["@repo/game-poker@workspace:packages/game-poker"],
+
+    "@repo/game-server-bridge": ["@repo/game-server-bridge@workspace:packages/game-server-bridge"],
 
     "@repo/game-session": ["@repo/game-session@workspace:packages/game-session"],
 
@@ -5183,7 +5185,7 @@
 
     "mobile/react": ["react@19.1.0", "", {}, "sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg=="],
 
-    "mobile/react-dom": ["react-dom@19.1.0", "", { "dependencies": { "scheduler": "^0.26.0" }, "peerDependencies": { "react": "^19.1.0" } }, "sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g=="],
+    "mobile/react-dom": ["react-dom@19.3.0", "", { "dependencies": { "scheduler": "^0.28.0" }, "peerDependencies": { "react": "^19.3.0" } }, "sha512-JDk8dgif51OjFoDE70+OT9ICyYr+69HlmihNwp1+Nsfbna3t5sIiCa9ZJktDmQ4/1b/rn26hIAR2uYXDMr5r0Q=="],
 
     "motion-v/framer-motion": ["framer-motion@13.1.1", "", { "dependencies": { "motion-dom": "^13.1.1", "motion-utils": "^13.0.0", "tslib": "^2.4.0" }, "peerDependencies": { "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["react", "react-dom"] }, "sha512-B/xn2TPS4f61cEBLFjiYlQFnBZUW1YVj/LM+C+N4OP8Rs95VLEI2ot/RlfBg111la/EiyECFaJJi/A3FWA8MUA=="],
 
@@ -5955,7 +5957,9 @@
 
     "mlly/pkg-types/confbox": ["confbox@0.1.8", "", {}, "sha512-RMtmw0iFkeR4YV+fUOSucriAQNb9g8zFR52MWCtl+cCZOFRNL6zeB395vPzFhEjjn4fMxXudmELnl/KF/WrK6w=="],
 
-    "mobile/react-dom/scheduler": ["scheduler@0.26.0", "", {}, "sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA=="],
+    "mobile/react-dom/react": ["react@19.2.8", "", {}, "sha512-PWaYA1L/q9u2u7xYQi+Y3L3Yfnie7XyLeaJICV1MGD6LprsBxcAqGjYyr0eY3p+QdsA+x/Irkt4Qif8D63+Sbw=="],
+
+    "mobile/react-dom/scheduler": ["scheduler@0.28.0", "", {}, "sha512-juorfCmIkIw8tT+p5BXSm6PJjQF/ycEYmKyzURCIt/RaZIhL+PulbQ9Yu2z1HdOJDdqDTlxA1+xKBmHXJsczAw=="],
 
     "node-fetch/whatwg-url/tr46": ["tr46@0.0.3", "", {}, "sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw=="],
 
