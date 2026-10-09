@@ -1,0 +1,18 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "packageRules": [
+    {
+      "description": "Keep the mobile runtime on the installed Expo SDK 55 compatibility line; update this rule when upgrading Expo.",
+      "matchFileNames": ["apps/mobile/package.json"],
+      "matchPackageNames": ["react-native"],
+      "allowedVersions": "0.83.10"
+    },
+    {
+      "description": "Keep React and its test renderer aligned with Expo SDK 55.",
+      "matchFileNames": ["apps/mobile/package.json"],
+      "matchPackageNames": ["react", "react-dom", "react-test-renderer"],
+      "allowedVersions": "19.2.0",
+      "groupName": "Expo SDK 55 React runtime"
+    }
+  ]
+}
