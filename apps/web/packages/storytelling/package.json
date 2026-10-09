@@ -38,7 +38,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "remotion": "^4.0.379",
-    "three": "^0.180.0"
+    "three": "^0.186.0"
   },
   "peerDependencies": {
     "@react-three/fiber": "^9.4.0",
