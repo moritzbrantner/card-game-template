@@ -167,11 +167,13 @@ export class UnoMatchesPage {
   }
 
   async readHandLabels() {
-    return this.hand.locator('[aria-label]').evaluateAll((elements) =>
-      elements
-        .map((element) => element.getAttribute('aria-label'))
-        .filter((label): label is string => Boolean(label)),
-    );
+    return this.hand
+      .locator('[aria-label]')
+      .evaluateAll((elements) =>
+        elements
+          .map((element) => element.getAttribute('aria-label'))
+          .filter((label): label is string => Boolean(label)),
+      );
   }
 
   async verifyCardsRemainLegible() {

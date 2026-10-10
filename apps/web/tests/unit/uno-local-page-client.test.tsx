@@ -92,8 +92,7 @@ const snapshot = {
                   targetPlayerId: null,
                 },
               ],
-              defaultActionId:
-                'play-card:{"cardId":"green-2","sayUno":false}',
+              defaultActionId: 'play-card:{"cardId":"green-2","sayUno":false}',
               promptsForColorChoice: false,
             },
             id: 'green-2',

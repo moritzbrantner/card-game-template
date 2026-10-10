@@ -219,7 +219,9 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
           },
         ]}
         emptyActionsLabel={
-          snapshot.matchResult ? labels.completedMessage : labels.waitingForPlayers
+          snapshot.matchResult
+            ? labels.completedMessage
+            : labels.waitingForPlayers
         }
         eyebrow={labels.localMatchLabel}
         participants={snapshot.view.players.map((player) => ({
@@ -363,21 +365,23 @@ export function UnoLocalPageClient({ labels }: { labels: UnoLocalPageLabels }) {
                   <span className="mr-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
                     {labels.activeColorLabel}
                   </span>
-                  {colorChoiceActions(pendingColorChoice.actions).map((action) => (
-                    <button
-                      key={action.id}
-                      type="button"
-                      aria-label={action.label}
-                      className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                      disabled={isApplyingMove}
-                      onClick={() => submitMove(action.move)}
-                    >
-                      <UnoColorBadge
-                        color={action.chosenColor!}
-                        label={labels.colors[action.chosenColor!]}
-                      />
-                    </button>
-                  ))}
+                  {colorChoiceActions(pendingColorChoice.actions).map(
+                    (action) => (
+                      <button
+                        key={action.id}
+                        type="button"
+                        aria-label={action.label}
+                        className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                        disabled={isApplyingMove}
+                        onClick={() => submitMove(action.move)}
+                      >
+                        <UnoColorBadge
+                          color={action.chosenColor!}
+                          label={labels.colors[action.chosenColor!]}
+                        />
+                      </button>
+                    ),
+                  )}
                   <button
                     type="button"
                     className="min-h-8 rounded-full border border-white/14 px-3 text-xs font-medium text-white/65 hover:bg-white/8 hover:text-white"

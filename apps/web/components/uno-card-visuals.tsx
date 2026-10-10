@@ -143,13 +143,7 @@ function getCardShellClassName({
   );
 }
 
-function UnoCardFace({
-  card,
-  compact,
-}: {
-  card: UnoCard;
-  compact: boolean;
-}) {
+function UnoCardFace({ card, compact }: { card: UnoCard; compact: boolean }) {
   const symbol = getCardSymbol(card);
   const actionLabel = getCardActionLabel(card);
   const isWild = card.color === 'wild';

@@ -205,10 +205,7 @@ async function loadSettingsBrowserModule(): Promise<SettingsBrowserModule> {
   return browserModulePromise;
 }
 
-function boolDefinition(
-  id: string,
-  value: boolean,
-): WireSettingDefinition {
+function boolDefinition(id: string, value: boolean): WireSettingDefinition {
   return {
     id,
     kind: { type: 'bool' },
