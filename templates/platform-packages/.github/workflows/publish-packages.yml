@@ -39,8 +39,8 @@ jobs:
       - name: Version or publish packages
         uses: changesets/action@v2.1.2
         with:
-          version: bunx changeset version
-          publish: bunx changeset publish
+          version-script: bunx changeset version
+          publish-script: bunx changeset publish
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

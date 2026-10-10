@@ -78,7 +78,10 @@ test('the template includes a scaffold for a separate public packages repository
   );
 
   assert.match(readme, /dedicated public repository/);
-  assert.match(workflow, /changesets\/action@v1/);
+  assert.match(workflow, /changesets\/action@v2/);
+  assert.match(workflow, /version-script: bunx changeset version/);
+  assert.match(workflow, /publish-script: bunx changeset publish/);
+  assert.match(workflow, /github-token: \$\{\{ secrets.GITHUB_TOKEN \}\}/);
   assert.match(workflow, /https:\/\/npm\.pkg\.github\.com/);
   assert.match(changesets, /"access": "restricted"/);
 });
