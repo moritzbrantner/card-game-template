@@ -12,7 +12,8 @@ import { getPublicSiteConfig } from '@/src/site-config/service';
 
 import './globals.css';
 
-const navigationInputRegistry = createNavigationInputRegistry(appPageDefinitions);
+const navigationInputRegistry =
+  createNavigationInputRegistry(appPageDefinitions);
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteConfig = await getPublicSiteConfig();

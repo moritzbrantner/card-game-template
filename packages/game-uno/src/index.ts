@@ -1639,16 +1639,14 @@ export function projectUnoPlayerView(
         move: UnoPlayCardMove;
       } => isUnoPlayCardMove(action.move),
     )
-    .map(
-      (action): UnoDirectPlayActionView => ({
-        chosenColor: action.move.payload.chosenColor ?? null,
-        id: action.id,
-        label: action.label,
-        move: action.move,
-        sayUno: action.move.payload.sayUno ?? false,
-        targetPlayerId: action.move.payload.targetPlayerId ?? null,
-      }),
-    );
+    .map((action): UnoDirectPlayActionView => ({
+      chosenColor: action.move.payload.chosenColor ?? null,
+      id: action.id,
+      label: action.label,
+      move: action.move,
+      sayUno: action.move.payload.sayUno ?? false,
+      targetPlayerId: action.move.payload.targetPlayerId ?? null,
+    }));
   const targetHandCounts = new Map(
     input.participants.map(
       (participant) =>
