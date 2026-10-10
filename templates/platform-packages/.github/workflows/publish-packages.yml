@@ -37,7 +37,7 @@ jobs:
         run: bun run test
 
       - name: Version or publish packages
-        uses: changesets/action@v1
+        uses: changesets/action@v2.1.2
         with:
           version: bunx changeset version
           publish: bunx changeset publish
