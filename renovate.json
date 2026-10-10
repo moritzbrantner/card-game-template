@@ -13,6 +13,11 @@
       "matchPackageNames": ["react", "react-dom", "react-test-renderer"],
       "allowedVersions": "19.2.0",
       "groupName": "Expo SDK 55 React runtime"
+    },
+    {
+      "description": "Electron Forge makers and plugins share types with @electron-forge/cli; move them to a new major together.",
+      "matchPackageNames": ["@electron-forge/**"],
+      "groupName": "Electron Forge"
     }
   ]
 }
