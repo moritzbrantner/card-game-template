@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
-import { render, screen } from '@testing-library/react';
-import { describe, expect, test } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { ColumnDef } from '@tanstack/react-table';
+import { afterEach, describe, expect, test } from 'vitest';
 
 import {
   Button,
@@ -14,7 +15,11 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  DataTable,
+  type DataTableFeatures,
 } from '../src';
+
+afterEach(cleanup);
 
 const calendarIcsData = [
   'vcalendar',
@@ -110,5 +115,52 @@ describe('@moritzbrantner/ui', () => {
 
     expect(screen.getAllByText(/Design sync/).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Release window').length).toBeGreaterThan(1);
+  });
+});
+
+describe('DataTable', () => {
+  type Player = { name: string; score: number };
+  const players: Player[] = Array.from({ length: 12 }, (_, index) => ({
+    name: index % 2 === 0 ? `Alice ${index}` : `Bob ${index}`,
+    score: index,
+  }));
+  const columns: ColumnDef<DataTableFeatures, Player, unknown>[] = [
+    { accessorKey: 'name', header: 'Name' },
+    { accessorKey: 'score', header: 'Score' },
+  ];
+
+  test('renders headers and paginates ten rows per page', () => {
+    render(<DataTable columns={columns} data={players} />);
+
+    expect(screen.getByText('Name')).toBeTruthy();
+    expect(screen.getByText('Alice 0')).toBeTruthy();
+    expect(screen.getByText('Bob 9')).toBeTruthy();
+    expect(screen.queryByText('Alice 10')).toBeNull();
+    expect(screen.getByText('12 row(s)')).toBeTruthy();
+  });
+
+  test('filters the search column with the built-in auto filter', () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={players}
+        searchColumn="name"
+        searchPlaceholder="Find player"
+      />,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Find player'), {
+      target: { value: 'bob' },
+    });
+
+    expect(screen.getByText('6 row(s)')).toBeTruthy();
+    expect(screen.queryByText('Alice 0')).toBeNull();
+    expect(screen.getByText('Bob 11')).toBeTruthy();
+  });
+
+  test('shows the empty message without rows', () => {
+    render(<DataTable columns={columns} data={[]} emptyMessage="Nothing" />);
+
+    expect(screen.getByText('Nothing')).toBeTruthy();
   });
 });

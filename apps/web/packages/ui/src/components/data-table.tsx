@@ -4,13 +4,21 @@ import * as React from 'react';
 import {
   type ColumnDef,
   type ColumnFiltersState,
+  columnFilteringFeature,
+  columnVisibilityFeature,
+  createFilteredRowModel,
+  createPaginatedRowModel,
+  createSortedRowModel,
+  filterFns,
   flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
+  type RowData,
+  rowPaginationFeature,
+  rowSelectionFeature,
+  rowSortingFeature,
   type SortingState,
-  useReactTable,
+  sortFns,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table';
 
 import { Button } from './button';
@@ -25,8 +33,26 @@ import {
 } from './table';
 import { cn } from '../lib/cn';
 
-type DataTableProps<TData, TValue> = {
-  columns: ColumnDef<TData, TValue>[];
+// The v8 table enabled every stock feature; register the ones this
+// component uses (with the full built-in filter/sort registries so 'auto'
+// filtering and sorting resolve as before).
+const dataTableFeatures = tableFeatures({
+  columnFilteringFeature,
+  columnVisibilityFeature,
+  rowSortingFeature,
+  rowPaginationFeature,
+  rowSelectionFeature,
+  filteredRowModel: createFilteredRowModel(),
+  sortedRowModel: createSortedRowModel(),
+  paginatedRowModel: createPaginatedRowModel(),
+  filterFns,
+  sortFns,
+});
+
+type DataTableFeatures = typeof dataTableFeatures;
+
+type DataTableProps<TData extends RowData, TValue> = {
+  columns: ColumnDef<DataTableFeatures, TData, TValue>[];
   data: TData[];
   className?: string;
   emptyMessage?: string;
@@ -34,7 +60,7 @@ type DataTableProps<TData, TValue> = {
   searchPlaceholder?: string;
 };
 
-function DataTable<TData, TValue>({
+function DataTable<TData extends RowData, TValue>({
   columns,
   data,
   className,
@@ -47,19 +73,17 @@ function DataTable<TData, TValue>({
     [],
   );
 
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data,
-    columns,
+    // useTable takes columns of any value type; TValue only types callers' defs.
+    columns: columns as ColumnDef<DataTableFeatures, TData, unknown>[],
     state: {
       sorting,
       columnFilters,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
   });
 
   const filterColumn = searchColumn ? table.getColumn(searchColumn) : undefined;
@@ -154,4 +178,4 @@ function DataTable<TData, TValue>({
 }
 
 export { DataTable };
-export type { DataTableProps };
+export type { DataTableFeatures, DataTableProps };
