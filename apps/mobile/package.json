@@ -37,7 +37,7 @@
     "@repo/game-tcg": "workspace:*",
     "@repo/game-uno": "workspace:*",
     "@repo/multiplayer-contract": "workspace:*",
-    "expo": "~55.0.15",
+    "expo": "~57.0.0",
     "expo-constants": "~55.0.14",
     "expo-font": "~55.0.6",
     "expo-haptics": "~55.0.14",
