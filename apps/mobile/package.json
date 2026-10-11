@@ -38,7 +38,7 @@
     "@repo/game-uno": "workspace:*",
     "@repo/multiplayer-contract": "workspace:*",
     "expo": "~55.0.15",
-    "expo-constants": "~55.0.14",
+    "expo-constants": "~57.0.0",
     "expo-font": "~55.0.6",
     "expo-haptics": "~55.0.14",
     "expo-image": "~57.0.0",
