@@ -15,6 +15,12 @@
       "groupName": "Expo SDK 55 React runtime"
     },
     {
+      "description": "Expo SDK packages follow the installed Expo SDK 55; move them only as part of a deliberate SDK upgrade and update this rule then.",
+      "matchFileNames": ["apps/mobile/package.json"],
+      "matchPackageNames": ["expo", "expo-*"],
+      "allowedVersions": "<56"
+    },
+    {
       "description": "Electron Forge makers and plugins share types with @electron-forge/cli; move them to a new major together.",
       "matchPackageNames": ["@electron-forge/**"],
       "groupName": "Electron Forge"
