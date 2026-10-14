@@ -124,7 +124,7 @@
     "@unlighthouse/cli": "^0.19.0",
     "drizzle-kit": "^0.31.10",
     "jsdom": "^29.0.2",
-    "puppeteer": "^24.40.0",
+    "puppeteer": "^25.0.0",
     "react-email": "6.11.1",
     "tailwindcss": "^4.2.2",
     "tsup": "^8.5.0",
