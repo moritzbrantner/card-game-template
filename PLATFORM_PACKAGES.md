@@ -56,6 +56,6 @@ Consumers pin owner packages as git source dependencies on a full commit SHA. No
 
 ## Dependency update automation
 
-- keep `.github/dependabot.yml` in each app repo
-- allow Dependabot to open PRs for package updates and GitHub Actions updates
-- validate every upgrade PR with typecheck, lint, build, and the app's smoke tests
+- use `renovate.json` to extend `github>moritzbrantner/coding-agent-conventions`
+- use Renovate as the sole routine version-update bot for package and GitHub Actions updates; do not also configure `.github/dependabot.yml` for version updates
+- require passing typecheck, lint, build, and app smoke checks before automatic merges; major updates still require Dependency Dashboard approval
