@@ -27,7 +27,7 @@ jobs:
           import subprocess
           patterns = ['.github/workflows/gh-pages.yml', 'apps/web/**', 'packages/**', 'package.json', 'bun.lock', '.github/workflows/develop.yml']
           paths = subprocess.check_output([
-              "git", "diff", "--name-only", "-z", os.environ["BASE_SHA"] + "..." + os.environ["HEAD_SHA"]
+              "git", "diff", "--no-renames", "--name-only", "-z", os.environ["BASE_SHA"] + "..." + os.environ["HEAD_SHA"]
           ]).decode().split("\0")
           required = any(fnmatch.fnmatchcase(path, pattern) for path in paths for pattern in patterns)
           with open(os.environ["GITHUB_OUTPUT"], "a") as output:
