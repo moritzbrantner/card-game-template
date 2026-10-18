@@ -1,14 +1,7 @@
 name: Deploy GitHub Pages
 
 on:
-  pull_request:
-    branches: [develop]
-    paths:
-      - '.github/workflows/gh-pages.yml'
-      - 'apps/web/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'bun.lock'
+  workflow_call:
   push:
     branches: [develop, staging]
     paths:
