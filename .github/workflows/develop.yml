@@ -7,6 +7,32 @@ on:
     branches: [develop]
 
 jobs:
+  pages-scope:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      required: ${{ steps.paths.outputs.required }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+      - id: paths
+        shell: python
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          import fnmatch
+          import os
+          import subprocess
+          patterns = ['.github/workflows/gh-pages.yml', 'apps/web/**', 'packages/**', 'package.json', 'bun.lock', '.github/workflows/develop.yml']
+          paths = subprocess.check_output([
+              "git", "diff", "--no-renames", "--name-only", "-z", os.environ["BASE_SHA"] + "..." + os.environ["HEAD_SHA"]
+          ]).decode().split("\0")
+          required = any(fnmatch.fnmatchcase(path, pattern) for path in paths for pattern in patterns)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              print(f"required={str(required).lower()}", file=output)
+
   develop:
     # Branch flow: develop is tested first, then pushes promote that exact commit to nightly.
     permissions:
@@ -19,3 +45,26 @@ jobs:
       promote_to: nightly
       promote_workflows: nightly.yml
       promote: ${{ github.event_name == 'push' }}
+
+  pages-validation:
+    if: github.event_name == 'pull_request' && needs.pages-scope.outputs.required == 'true'
+    needs: pages-scope
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/gh-pages.yml
+
+  merge-ready:
+    name: merge-ready
+    if: ${{ always() }}
+    needs: ["develop", "pages-validation", "pages-scope"]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: moritzbrantner/reusable-workflows/.github/actions/merge-ready@b0f25f241d76af2584dfc9e375084ff5c5cb97da
+        with:
+          needs: ${{ toJSON(needs) }}
+          required: '["develop", "pages-validation", "pages-scope"]'
+          allow-skipped: ${{ github.event_name != 'pull_request' && '["pages-validation", "pages-scope"]' || (needs.pages-scope.outputs.required == 'false' && '["pages-validation"]' || '[]') }}
