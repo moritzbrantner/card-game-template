@@ -78,7 +78,8 @@ test('the template includes a scaffold for a separate public packages repository
   );
 
   assert.match(readme, /dedicated public repository/);
-  assert.match(workflow, /changesets\/action@v2/);
+  // Accept a tag (`@v2`) or a commit pin annotated with the v2 tag (`@<sha> # v2.x`).
+  assert.match(workflow, /changesets\/action@(v2|[0-9a-f]{40} # v2)/);
   assert.match(workflow, /version-script: bunx changeset version/);
   assert.match(workflow, /publish-script: bunx changeset publish/);
   assert.match(workflow, /github-token: \$\{\{ secrets.GITHUB_TOKEN \}\}/);
