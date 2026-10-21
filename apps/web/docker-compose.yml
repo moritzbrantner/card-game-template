@@ -2,7 +2,7 @@ name: card-game-template-web
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     container_name: card-game-template-web-postgres
     restart: unless-stopped
     environment:
@@ -21,7 +21,7 @@ services:
       start_period: 10s
 
   postgres-dev:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     container_name: '${DEV_DB_CONTAINER_NAME:-web-dev-postgres}'
     profiles: ['dev']
     environment:
@@ -44,7 +44,7 @@ services:
       start_period: 5s
 
   postgres-dev-host:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     container_name: '${DEV_DB_HOST_CONTAINER_NAME:-web-dev-postgres-host}'
     profiles: ['dev']
     network_mode: host
@@ -67,7 +67,7 @@ services:
       start_period: 5s
 
   postgres-test:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     container_name: '${TEST_DB_CONTAINER_NAME:-web-test-postgres}'
     profiles: ['test']
     environment:
@@ -86,13 +86,13 @@ services:
       start_period: 5s
 
   mailpit:
-    image: axllent/mailpit:latest
+    image: axllent/mailpit:latest@sha256:23fe39e81bde596a918000b3135c0f85dc8bb4c9ea6be274b051143f3e300387
     ports:
       - '1029:1025' # SMTP
       - '8029:8025' # Web UI
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:latest@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     container_name: card-game-template-web-minio
     restart: unless-stopped
     environment:
@@ -106,7 +106,7 @@ services:
       - minio_data:/data
 
   minio-create-bucket:
-    image: minio/mc:latest
+    image: minio/mc:latest@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
     depends_on:
       - minio
     restart: 'no'

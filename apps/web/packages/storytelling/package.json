@@ -32,13 +32,13 @@
     "motion": "^14.0.0"
   },
   "devDependencies": {
-    "@react-three/fiber": "^9.4.0",
+    "@react-three/fiber": "9.8.2",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "remotion": "^4.0.379",
-    "three": "^0.186.0"
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.537",
+    "three": "0.186.1"
   },
   "peerDependencies": {
     "@react-three/fiber": "^9.4.0",
