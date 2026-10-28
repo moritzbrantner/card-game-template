@@ -26,7 +26,7 @@ jobs:
       E2E_BASE_URL: http://127.0.0.1:3005
     services:
       postgres:
-        image: postgres:16@sha256:9e2cf6287f25c3151f4c9421ccce2b17f3e60061c111a29165e0d2cdd9ff0a97
+        image: postgres:16@sha256:d4d4f1579fcfba19c2257326f6a93f4bcf677a430619f084ced704e18eb428ce
         env:
           POSTGRES_DB: next_template
           POSTGRES_USER: postgres
