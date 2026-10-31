@@ -675,6 +675,84 @@ test('discarding skip skips the targeted player on the next turn', () => {
   assert.equal(afterDiscard.state.skippedPlayerIds.includes('p2'), false);
 });
 
+test('with skipping disabled a skip card is a plain discard', () => {
+  const state = createState({
+    drawnCardThisTurn: true,
+    hands: {
+      p1: [skip('skip-1'), numberCard('red', 1, 'red-1')],
+      p2: [numberCard('green', 2, 'p2-green-2')],
+      p3: [numberCard('blue', 11, 'p3-blue-11')],
+    },
+    rules: { ...defaultPhase10Rules, allowSkipping: false },
+  });
+  const skipMoves = adapter
+    .listLegalMoves(state, 'p1')
+    .filter(
+      (move) =>
+        move.kind === 'discard-card' && move.payload.cardId === 'skip-1',
+    );
+
+  assert.equal(skipMoves.length, 1);
+
+  const afterDiscard = adapter.applyMove(state, skipMoves[0]!);
+
+  assert.equal(afterDiscard.activePlayerId, 'p2');
+  assert.deepEqual(afterDiscard.state.skippedPlayerIds, []);
+  assert.equal(afterDiscard.state.discardPile.at(-1)?.id, 'skip-1');
+});
+
+test('with skipping disabled a skip card cannot target a player', () => {
+  assert.throws(
+    () =>
+      adapter.applyMove(
+        createState({
+          drawnCardThisTurn: true,
+          rules: { ...defaultPhase10Rules, allowSkipping: false },
+        }),
+        {
+          playerId: 'p1',
+          kind: 'discard-card',
+          createdAt: '2026-04-26T12:00:00.000Z',
+          payload: {
+            cardId: 'skip-1',
+            targetPlayerId: 'p2',
+          },
+        },
+      ),
+    /Skipping is disabled for this table/,
+  );
+});
+
+test('bot games finish with skipping disabled', () => {
+  for (const seed of ['skip-off-1', 'skip-off-2', 'skip-off-3']) {
+    let state = adapter.createInitialState({
+      matchId: `match-${seed}`,
+      players,
+      setup: { seed, rules: { allowSkipping: false } },
+      executionMode: 'local',
+    });
+
+    for (let step = 0; step < 20_000; step += 1) {
+      if (state.state.winnerPlayerId) {
+        break;
+      }
+
+      const playerId = state.activePlayerId;
+      const move = choosePhase10Move({
+        legalMoves: adapter.listLegalMoves(state, playerId),
+        playerId,
+        seed: `${seed}-${step}`,
+        state,
+      });
+
+      assert.ok(move, `no move for ${playerId}`);
+      state = adapter.applyMove(state, move);
+    }
+
+    assert.ok(state.state.winnerPlayerId, `${seed} did not finish`);
+  }
+});
+
 test('finishing after laying phase declares the winner', () => {
   const engine = createGameEngine(adapter);
   const afterLay = adapter.applyMove(
