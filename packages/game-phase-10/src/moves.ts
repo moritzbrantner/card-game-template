@@ -325,11 +325,13 @@ export function applyDiscardMove(
   }
 
   if (removed.card.kind === 'skip') {
+    // Skip cards stay in the deck when skipping is disabled, so they must remain
+    // discardable (without a target) or a hand of only skips could never discard.
     if (!state.state.rules.allowSkipping) {
-      throw new Error('Skipping is disabled for this table.');
-    }
-
-    if (
+      if (move.payload.targetPlayerId) {
+        throw new Error('Skipping is disabled for this table.');
+      }
+    } else if (
       !move.payload.targetPlayerId ||
       move.payload.targetPlayerId === move.playerId
     ) {
