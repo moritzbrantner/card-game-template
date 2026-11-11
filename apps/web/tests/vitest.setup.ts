@@ -4,6 +4,20 @@ import React, { type ReactNode } from 'react';
 import { afterEach, vi } from 'vitest';
 
 applyVitestEnvironment();
+
+// Node >= 25 ships its own `localStorage`/`sessionStorage` globals, which are
+// `undefined` without `--localstorage-file`. Vitest's jsdom environment keeps
+// existing globals, so point both at the jsdom window when one is active.
+const jsdomWindow = (globalThis as { jsdom?: { window: Window } }).jsdom
+  ?.window;
+if (jsdomWindow) {
+  for (const key of ['localStorage', 'sessionStorage'] as const) {
+    Object.defineProperty(globalThis, key, {
+      configurable: true,
+      get: () => jsdomWindow[key],
+    });
+  }
+}
 afterEach(() => {
   cleanup();
 });
