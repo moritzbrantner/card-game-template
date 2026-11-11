@@ -1,7 +1,7 @@
-import { cleanup } from "@testing-library/react";
-import { applyVitestEnvironment } from "@/tests/environment";
-import React, { type ReactNode } from "react";
-import { afterEach, vi } from "vitest";
+import { cleanup } from '@testing-library/react';
+import { applyVitestEnvironment } from '@/tests/environment';
+import React, { type ReactNode } from 'react';
+import { afterEach, vi } from 'vitest';
 
 applyVitestEnvironment();
 
@@ -11,7 +11,7 @@ applyVitestEnvironment();
 const jsdomWindow = (globalThis as { jsdom?: { window: Window } }).jsdom
   ?.window;
 if (jsdomWindow) {
-  for (const key of ["localStorage", "sessionStorage"] as const) {
+  for (const key of ['localStorage', 'sessionStorage'] as const) {
     Object.defineProperty(globalThis, key, {
       configurable: true,
       get: () => jsdomWindow[key],
@@ -63,7 +63,7 @@ function createMotionValue<T>(initialValue: T): MotionValueLike<T> {
   };
 }
 
-vi.mock("motion/react", () => {
+vi.mock('motion/react', () => {
   const motion = new Proxy(
     {},
     {
@@ -92,7 +92,7 @@ vi.mock("motion/react", () => {
     }),
     useSpring: <T>(value: MotionValueLike<T> | T) =>
       createMotionValue(
-        value && typeof value === "object" && "get" in value
+        value && typeof value === 'object' && 'get' in value
           ? value.get()
           : value,
       ),
@@ -102,11 +102,11 @@ vi.mock("motion/react", () => {
       output?: unknown[],
     ) => {
       const resolvedValue =
-        value && typeof value === "object" && "get" in value
+        value && typeof value === 'object' && 'get' in value
           ? value.get()
           : value;
 
-      if (typeof transformOrInput === "function") {
+      if (typeof transformOrInput === 'function') {
         return createMotionValue(transformOrInput(resolvedValue ?? 0));
       }
 
