@@ -2,7 +2,7 @@ name: card-game-template-web
 
 services:
   postgres:
-    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+    image: postgres:16-alpine@sha256:aa6cb33cf4c19c765cefcf48d96176258800870a9a1e930ad126200f9d825139
     container_name: card-game-template-web-postgres
     restart: unless-stopped
     environment:
@@ -21,7 +21,7 @@ services:
       start_period: 10s
 
   postgres-dev:
-    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+    image: postgres:16-alpine@sha256:aa6cb33cf4c19c765cefcf48d96176258800870a9a1e930ad126200f9d825139
     container_name: '${DEV_DB_CONTAINER_NAME:-web-dev-postgres}'
     profiles: ['dev']
     environment:
@@ -44,7 +44,7 @@ services:
       start_period: 5s
 
   postgres-dev-host:
-    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+    image: postgres:16-alpine@sha256:aa6cb33cf4c19c765cefcf48d96176258800870a9a1e930ad126200f9d825139
     container_name: '${DEV_DB_HOST_CONTAINER_NAME:-web-dev-postgres-host}'
     profiles: ['dev']
     network_mode: host
@@ -67,7 +67,7 @@ services:
       start_period: 5s
 
   postgres-test:
-    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+    image: postgres:16-alpine@sha256:aa6cb33cf4c19c765cefcf48d96176258800870a9a1e930ad126200f9d825139
     container_name: '${TEST_DB_CONTAINER_NAME:-web-test-postgres}'
     profiles: ['test']
     environment:
@@ -86,7 +86,7 @@ services:
       start_period: 5s
 
   mailpit:
-    image: axllent/mailpit:latest@sha256:9b3a463be15354c0f0eba91697d80e3e0d8a5623ef0e627cacc836bc17fd5231
+    image: axllent/mailpit:latest@sha256:aef2aacc11f075ec0fb6874275ee4a421e688e11a96ebb296134d1735c7761ce
     ports:
       - '1029:1025' # SMTP
       - '8029:8025' # Web UI
