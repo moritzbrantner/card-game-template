@@ -37,7 +37,7 @@
     "@types/react-dom": "19.3.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "remotion": "4.0.541",
+    "remotion": "4.0.542",
     "three": "0.187.0"
   },
   "peerDependencies": {
