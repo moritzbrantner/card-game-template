@@ -43,6 +43,12 @@
   "engines": {
     "node": ">=18"
   },
+  "devEngines": {
+    "packageManager": {
+      "name": "bun",
+      "version": "^1.4.0"
+    }
+  },
   "trustedDependencies": [
     "electron",
     "electron-winstaller",
