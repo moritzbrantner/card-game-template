@@ -43,7 +43,6 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "bun@1.4.5",
   "trustedDependencies": [
     "electron",
     "electron-winstaller",
